@@ -1,0 +1,725 @@
+import { Request, Response } from "express";
+import { AppDataSource } from "../config/database";
+import { AuthRequest } from "../middleware/auth";
+
+export class DashboardMetricsController {
+  // GET /api/metrics/general - Métricas generales del dashboard
+  static async getGeneralMetrics(req: AuthRequest, res: Response) {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      // Verificar permisos del usuario
+      const userRepo = AppDataSource.getRepository("UserProfile");
+      const user = await userRepo.findOne({
+        where: { id: userId },
+        relations: [
+          "role",
+          "role.rolePermissions",
+          "role.rolePermissions.permission",
+        ],
+      });
+
+      // Verificar si tiene permisos para ver métricas generales
+      const canReadAllMetrics = user?.role?.rolePermissions?.some(
+        (rp: any) =>
+          rp.permission.name === "metrics.general.read.all" ||
+          rp.permission.name === "admin.full"
+      );
+
+      let totalCasesQuery = `SELECT COUNT(*) as count FROM case_control`;
+      let activeCasesQuery = `SELECT COUNT(*) as count FROM case_control WHERE "isTimerActive" = true`;
+      let totalUsersQuery = `SELECT COUNT(*) as count FROM user_profiles WHERE "isActive" = true`;
+
+      // Si no tiene permisos para ver todo, filtrar por sus casos
+      if (!canReadAllMetrics) {
+        totalCasesQuery += ` WHERE "userId" = $1`;
+        activeCasesQuery += ` AND "userId" = $1`;
+      }
+
+      const [totalCases, activeCases, totalUsers] = await Promise.all([
+        AppDataSource.query(totalCasesQuery, canReadAllMetrics ? [] : [userId]),
+        AppDataSource.query(
+          activeCasesQuery,
+          canReadAllMetrics ? [] : [userId]
+        ),
+        canReadAllMetrics
+          ? AppDataSource.query(totalUsersQuery)
+          : [{ count: 0 }],
+      ]);
+
+      const metrics = {
+        totalCases: parseInt(totalCases[0]?.count || 0),
+        activeCases: parseInt(activeCases[0]?.count || 0),
+        totalUsers: parseInt(totalUsers[0]?.count || 0),
+        completedCases:
+          parseInt(totalCases[0]?.count || 0) -
+          parseInt(activeCases[0]?.count || 0),
+      };
+
+      res.json({ success: true, data: metrics });
+    } catch (error) {
+      console.error("Error en getGeneralMetrics:", error);
+      res.status(500).json({
+        error: "Error interno del servidor",
+        details: process.env.NODE_ENV === "development" ? error : undefined,
+      });
+    }
+  }
+
+  // GET /api/metrics/time - Métricas de tiempo total
+  static async getTimeMetrics(req: AuthRequest, res: Response) {
+    try {
+      const { startDate, endDate } = req.query;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      // Verificar permisos del usuario
+      const userRepo = AppDataSource.getRepository("UserProfile");
+      const user = await userRepo.findOne({
+        where: { id: userId },
+        relations: [
+          "role",
+          "role.rolePermissions",
+          "role.rolePermissions.permission",
+        ],
+      });
+
+      let timeQuery = `
+        SELECT 
+          COALESCE(SUM(cc."totalTimeMinutes"), 0) as total_time_minutes,
+          COALESCE(SUM(cc."totalTimeMinutes") / 60.0, 0) as total_hours,
+          COALESCE(AVG(cc."totalTimeMinutes"), 0) as average_time_per_case,
+          COUNT(CASE WHEN cc."isTimerActive" = true THEN 1 END) as active_timers
+        FROM case_control cc
+        WHERE 1=1
+      `;
+
+      const queryParams: any[] = [];
+      let paramIndex = 1;
+
+      if (startDate) {
+        timeQuery += ` AND cc."assignedAt" >= $${paramIndex}`;
+        queryParams.push(startDate);
+        paramIndex++;
+      }
+
+      if (endDate) {
+        timeQuery += ` AND cc."assignedAt" <= $${paramIndex}`;
+        queryParams.push(endDate);
+        paramIndex++;
+      }
+
+      // Filtrar por permisos
+      const canReadAllMetrics = user?.role?.rolePermissions?.some(
+        (rp: any) =>
+          rp.permission.name === "metrics.time.read.all" ||
+          rp.permission.name === "admin.full"
+      );
+
+      if (!canReadAllMetrics) {
+        // Solo sus propios datos
+        timeQuery += ` AND cc."userId" = $${paramIndex}`;
+        queryParams.push(userId);
+      }
+
+      const result = await AppDataSource.query(timeQuery, queryParams);
+
+      const now = new Date();
+      const timeMetrics = {
+        totalTimeMinutes: parseInt(result[0]?.total_time_minutes || 0),
+        totalHours: parseFloat(result[0]?.total_hours || 0),
+        averageTimePerCase: parseFloat(result[0]?.average_time_per_case || 0),
+        activeTimers: parseInt(result[0]?.active_timers || 0),
+        currentMonth: now.toLocaleString("es-ES", { month: "long" }),
+        currentYear: now.getFullYear(),
+      };
+
+      res.json({ success: true, data: timeMetrics });
+    } catch (error) {
+      console.error("Error en getTimeMetrics:", error);
+      res.status(500).json({
+        error: "Error interno del servidor",
+        details: process.env.NODE_ENV === "development" ? error : undefined,
+      });
+    }
+  }
+
+  // GET /api/metrics/users/time - Métricas de tiempo por usuario
+  static async getUserTimeMetrics(req: AuthRequest, res: Response) {
+    try {
+      const { startDate, endDate } = req.query;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      // Verificar permisos (solo supervisores y admins)
+      const userRepo = AppDataSource.getRepository("UserProfile");
+      const user = await userRepo.findOne({
+        where: { id: userId },
+        relations: [
+          "role",
+          "role.rolePermissions",
+          "role.rolePermissions.permission",
+        ],
+      });
+
+      const canReadUserMetrics = user?.role?.rolePermissions?.some(
+        (rp: any) =>
+          rp.permission.name === "metrics.users.read.team" ||
+          rp.permission.name === "metrics.users.read.all" ||
+          rp.permission.name === "admin.full"
+      );
+
+      if (!canReadUserMetrics) {
+        return res
+          .status(403)
+          .json({ error: "Sin permisos para ver métricas de usuarios" });
+      }
+
+      let userQuery = `
+        SELECT 
+          u.id as user_id,
+          u."fullName" as user_name,
+          COALESCE(SUM(cc."totalTimeMinutes"), 0) as total_time_minutes,
+          COUNT(DISTINCT cc."caseId") as cases_worked
+        FROM user_profiles u
+        LEFT JOIN case_control cc ON u.id = cc."userId"
+        WHERE 1=1
+      `;
+
+      const queryParams: any[] = [];
+      let paramIndex = 1;
+
+      if (startDate) {
+        userQuery += ` AND (cc."assignedAt" IS NULL OR cc."assignedAt" >= $${paramIndex})`;
+        queryParams.push(startDate);
+        paramIndex++;
+      }
+
+      if (endDate) {
+        userQuery += ` AND (cc."assignedAt" IS NULL OR cc."assignedAt" <= $${paramIndex})`;
+        queryParams.push(endDate);
+        paramIndex++;
+      }
+
+      userQuery += ` GROUP BY u.id, u."fullName" ORDER BY total_time_minutes DESC`;
+
+      const result = await AppDataSource.query(userQuery, queryParams);
+
+      const userTimeMetrics = result.map((row: any) => ({
+        userId: row.user_id,
+        userName: row.user_name,
+        totalTimeMinutes: parseInt(row.total_time_minutes || 0),
+        casesWorked: parseInt(row.cases_worked || 0),
+      }));
+
+      res.json({ success: true, data: userTimeMetrics });
+    } catch (error) {
+      console.error("Error en getUserTimeMetrics:", error);
+      res.status(500).json({
+        error: "Error interno del servidor",
+        details: process.env.NODE_ENV === "development" ? error : undefined,
+      });
+    }
+  }
+
+  // GET /api/metrics/cases/time - Métricas de tiempo por caso
+  static async getCaseTimeMetrics(req: AuthRequest, res: Response) {
+    try {
+      const { startDate, endDate } = req.query;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      // Verificar permisos del usuario
+      const userRepo = AppDataSource.getRepository("UserProfile");
+      const user = await userRepo.findOne({
+        where: { id: userId },
+        relations: [
+          "role",
+          "role.rolePermissions",
+          "role.rolePermissions.permission",
+        ],
+      });
+
+      console.log("=== DEBUG: Usuario y permisos ===");
+      console.log("Usuario:", user?.fullName, "Rol:", user?.role?.name);
+      console.log(
+        "Permisos:",
+        user?.role?.rolePermissions?.map((rp: any) => rp.permission.name)
+      );
+
+      // Verificar si tiene permisos para ver todas las métricas de casos
+      const canReadAllCaseMetrics = user?.role?.rolePermissions?.some(
+        (rp: any) =>
+          rp.permission.name === "metrics.cases.read.all" ||
+          rp.permission.name === "metrics.time.read.all" ||
+          rp.permission.name === "admin.full"
+      );
+
+      console.log(
+        "Puede ver todas las métricas de casos:",
+        canReadAllCaseMetrics
+      );
+
+      // Consulta que obtiene datos reales de los casos con JOIN a la tabla cases
+      let caseQuery = `
+        SELECT 
+          cc.id as case_id,
+          COALESCE(c."numeroCaso", 'Caso #' || LEFT(cc.id::text, 8)) as case_number,
+          COALESCE(c."descripcion", 'Caso sin título') as title,
+          COALESCE(c."descripcion", 'Sin descripción') as description,
+          COALESCE(cs.name, 'En progreso') as status,
+          COALESCE(cs.color, '#3b82f6') as status_color,
+          cc."totalTimeMinutes" as total_time_minutes,
+          c."clasificacion" as complexity
+        FROM case_control cc
+        LEFT JOIN cases c ON cc."caseId" = c.id
+        LEFT JOIN case_status_control cs ON cc."statusId" = cs.id
+        WHERE cc."totalTimeMinutes" > 0
+      `;
+
+      const queryParams: any[] = [];
+
+      // Aplicar filtros de fecha si se proporcionan
+      if (startDate) {
+        caseQuery += ` AND cc."assignedAt" >= $${queryParams.length + 1}`;
+        queryParams.push(startDate);
+      }
+
+      if (endDate) {
+        caseQuery += ` AND cc."assignedAt" <= $${queryParams.length + 1}`;
+        queryParams.push(endDate);
+      }
+
+      // Filtrar por permisos: si no tiene permisos para ver todos, solo mostrar sus casos
+      if (!canReadAllCaseMetrics) {
+        console.log("Aplicando filtro por usuario actual:", userId);
+        caseQuery += ` AND cc."userId" = $${queryParams.length + 1}`;
+        queryParams.push(userId);
+      } else {
+        console.log("Usuario tiene permisos para ver todos los casos");
+      }
+
+      caseQuery += `
+        ORDER BY cc."totalTimeMinutes" DESC
+        LIMIT 10
+      `;
+
+      const result = await AppDataSource.query(caseQuery, queryParams);
+
+      const caseTimeMetrics = result.map((row: any) => ({
+        caseId: row.case_id,
+        caseNumber: row.case_number,
+        title: row.title,
+        description: row.description,
+        status: row.status,
+        statusColor: row.status_color,
+        totalTimeMinutes: parseInt(row.total_time_minutes) || 0,
+        complexity: row.complexity,
+      }));
+
+      res.json({ success: true, data: caseTimeMetrics });
+    } catch (error) {
+      console.error("Error en getCaseTimeMetrics:", error);
+      res.status(500).json({
+        error: "Error interno del servidor",
+        details: process.env.NODE_ENV === "development" ? error : undefined,
+      });
+    }
+  }
+
+  // GET /api/metrics/status - Métricas por estado
+  static async getStatusMetrics(req: AuthRequest, res: Response) {
+    try {
+      const { startDate, endDate } = req.query;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      // Verificar permisos del usuario
+      const userRepo = AppDataSource.getRepository("UserProfile");
+      const user = await userRepo.findOne({
+        where: { id: userId },
+        relations: [
+          "role",
+          "role.rolePermissions",
+          "role.rolePermissions.permission",
+        ],
+      });
+
+      let statusQuery = `
+        SELECT 
+          cs.id as status_id,
+          cs.name as status_name,
+          cs.color as status_color,
+          COUNT(cc.id) as cases_count,
+          COALESCE(SUM(cc."totalTimeMinutes"), 0) as total_time_minutes
+        FROM case_status_control cs
+        INNER JOIN case_control cc ON cs.id = cc."statusId"
+        WHERE cs."isActive" = true
+      `;
+
+      const queryParams: any[] = [];
+      let paramIndex = 1;
+
+      if (startDate) {
+        statusQuery += ` AND (cc."assignedAt" IS NULL OR cc."assignedAt" >= $${paramIndex})`;
+        queryParams.push(startDate);
+        paramIndex++;
+      }
+
+      if (endDate) {
+        statusQuery += ` AND (cc."assignedAt" IS NULL OR cc."assignedAt" <= $${paramIndex})`;
+        queryParams.push(endDate);
+        paramIndex++;
+      }
+
+      // Filtrar por permisos
+      const canReadAllMetrics = user?.role?.rolePermissions?.some(
+        (rp: any) =>
+          rp.permission.name === "metrics.status.read.all" ||
+          rp.permission.name === "admin.full"
+      );
+
+      if (!canReadAllMetrics) {
+        statusQuery += ` AND (cc."userId" IS NULL OR cc."userId" = $${paramIndex})`;
+        queryParams.push(userId);
+      }
+
+      statusQuery += ` GROUP BY cs.id, cs.name, cs.color ORDER BY cases_count DESC`;
+
+      const result = await AppDataSource.query(statusQuery, queryParams);
+
+      const statusMetrics = result.map((row: any) => ({
+        statusId: row.status_id,
+        statusName: row.status_name,
+        statusColor: row.status_color,
+        casesCount: parseInt(row.cases_count || 0),
+        totalTimeMinutes: parseInt(row.total_time_minutes || 0),
+      }));
+
+      res.json({ success: true, data: statusMetrics });
+    } catch (error) {
+      console.error("Error en getStatusMetrics:", error);
+      res.status(500).json({
+        error: "Error interno del servidor",
+        details: process.env.NODE_ENV === "development" ? error : undefined,
+      });
+    }
+  }
+
+  // GET /api/metrics/applications - Métricas por aplicación
+  static async getApplicationMetrics(req: AuthRequest, res: Response) {
+    try {
+      const { startDate, endDate } = req.query;
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      // Verificar permisos del usuario
+      const userRepo = AppDataSource.getRepository("UserProfile");
+      const user = await userRepo.findOne({
+        where: { id: userId },
+        relations: [
+          "role",
+          "role.rolePermissions",
+          "role.rolePermissions.permission",
+        ],
+      });
+
+      // Consulta simplificada que obtiene aplicaciones desde los casos existentes
+      let appQuery = `
+        SELECT 
+          app.id as app_id,
+          app.nombre as app_name,
+          COUNT(DISTINCT c.id) as cases_count,
+          COALESCE(SUM(cc."totalTimeMinutes"), 0) as total_time_minutes
+        FROM cases c
+        INNER JOIN aplicaciones app ON c."applicationId" = app.id
+        LEFT JOIN case_control cc ON c.id = cc."caseId"
+        WHERE 1=1
+      `;
+
+      const queryParams: any[] = [];
+      let paramIndex = 1;
+
+      if (startDate) {
+        appQuery += ` AND (cc."assignedAt" IS NULL OR cc."assignedAt" >= $${paramIndex})`;
+        queryParams.push(startDate);
+        paramIndex++;
+      }
+
+      if (endDate) {
+        appQuery += ` AND (cc."assignedAt" IS NULL OR cc."assignedAt" <= $${paramIndex})`;
+        queryParams.push(endDate);
+        paramIndex++;
+      }
+
+      // Filtrar por permisos
+      const canReadAllMetrics = user?.role?.rolePermissions?.some(
+        (rp: any) =>
+          rp.permission.name === "metrics.applications.read.all" ||
+          rp.permission.name === "admin.full"
+      );
+
+      if (!canReadAllMetrics) {
+        appQuery += ` AND (cc."userId" IS NULL OR cc."userId" = $${paramIndex})`;
+        queryParams.push(userId);
+      }
+
+      appQuery += ` GROUP BY app.id, app.nombre HAVING COUNT(DISTINCT c.id) > 0 ORDER BY cases_count DESC`;
+
+      const result = await AppDataSource.query(appQuery, queryParams);
+
+      const applicationMetrics = result.map((row: any) => ({
+        applicationId: row.app_id,
+        applicationName: row.app_name,
+        casesCount: parseInt(row.cases_count) || 0,
+        totalTimeMinutes: parseInt(row.total_time_minutes) || 0,
+      }));
+
+      res.json({ success: true, data: applicationMetrics });
+    } catch (error) {
+      console.error("Error en getApplicationMetrics:", error);
+      res.status(500).json({
+        error: "Error interno del servidor",
+        details: process.env.NODE_ENV === "development" ? error : undefined,
+      });
+    }
+  }
+
+  // GET /api/metrics/performance - Métricas de rendimiento
+  static async getPerformanceMetrics(req: AuthRequest, res: Response) {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      // Verificar permisos del usuario
+      const userRepo = AppDataSource.getRepository("UserProfile");
+      const user = await userRepo.findOne({
+        where: { id: userId },
+        relations: [
+          "role",
+          "role.rolePermissions",
+          "role.rolePermissions.permission",
+        ],
+      });
+
+      const canReadAllMetrics = user?.role?.rolePermissions?.some(
+        (rp: any) =>
+          rp.permission.name === "metrics.performance.read.all" ||
+          rp.permission.name === "admin.full"
+      );
+
+      // Métricas básicas de rendimiento
+      let performanceQuery = `
+        SELECT 
+          COUNT(*) as total_cases,
+          COUNT(CASE WHEN cc."completedAt" IS NOT NULL THEN 1 END) as completed_cases,
+          AVG(CASE 
+            WHEN cc."completedAt" IS NOT NULL AND cc."startedAt" IS NOT NULL 
+            THEN EXTRACT(EPOCH FROM (cc."completedAt" - cc."startedAt")) / 3600 
+          END) as avg_completion_hours,
+          AVG(cc."totalTimeMinutes") as avg_time_minutes
+        FROM case_control cc
+        WHERE 1=1
+      `;
+
+      const queryParams: any[] = [];
+
+      if (!canReadAllMetrics) {
+        performanceQuery += ` AND cc."userId" = $1`;
+        queryParams.push(userId);
+      }
+
+      const result = await AppDataSource.query(performanceQuery, queryParams);
+
+      const performanceMetrics = {
+        totalCases: parseInt(result[0]?.total_cases || 0),
+        completedCases: parseInt(result[0]?.completed_cases || 0),
+        completionRate:
+          result[0]?.total_cases > 0
+            ? (
+                (result[0]?.completed_cases / result[0]?.total_cases) *
+                100
+              ).toFixed(1)
+            : "0",
+        avgCompletionHours: parseFloat(
+          result[0]?.avg_completion_hours || 0
+        ).toFixed(1),
+        avgTimeMinutes: parseFloat(result[0]?.avg_time_minutes || 0).toFixed(0),
+      };
+
+      res.json({ success: true, data: performanceMetrics });
+    } catch (error) {
+      console.error("Error en getPerformanceMetrics:", error);
+      res.status(500).json({
+        error: "Error interno del servidor",
+        details: process.env.NODE_ENV === "development" ? error : undefined,
+      });
+    }
+  }
+
+  // GET /api/metrics/dashboard-stats - Estadísticas completas del dashboard
+  static async getDashboardStats(req: AuthRequest, res: Response) {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      // Verificar permisos del usuario
+      const userRepo = AppDataSource.getRepository("UserProfile");
+      const user = await userRepo.findOne({
+        where: { id: userId },
+        relations: [
+          "role",
+          "role.rolePermissions",
+          "role.rolePermissions.permission",
+        ],
+      });
+
+      // Verificar si tiene permisos para ver métricas generales
+      const canReadAllMetrics = user?.role?.rolePermissions?.some(
+        (rp: any) =>
+          rp.permission.name === "metrics.general.read.all" ||
+          rp.permission.name === "admin.full"
+      );
+
+      // Consulta para obtener estadísticas de complejidad de TODOS los casos (asignados o no)
+      let complexityQuery = `
+        SELECT 
+          c."clasificacion" as complexity,
+          COUNT(DISTINCT c.id) as cases_count
+        FROM cases c
+        WHERE 1=1
+      `;
+
+      // Para admin, mostrar todos los casos
+      // Para usuarios normales, solo casos asignados a ellos O casos sin asignar
+      if (!canReadAllMetrics) {
+        complexityQuery += ` AND (
+          c.id IN (SELECT cc."caseId" FROM case_control cc WHERE cc."userId" = $1)
+          OR c.id NOT IN (SELECT cc."caseId" FROM case_control cc)
+        )`;
+      }
+
+      complexityQuery += ` GROUP BY c."clasificacion"`;
+
+      const complexityResult = await AppDataSource.query(
+        complexityQuery,
+        canReadAllMetrics ? [] : [userId]
+      );
+
+      // Procesar resultados de complejidad
+      const complexityStats = {
+        lowComplexity: 0,
+        mediumComplexity: 0,
+        highComplexity: 0,
+      };
+
+      complexityResult.forEach((row: any) => {
+        const count = parseInt(row.cases_count) || 0;
+        switch (row.complexity) {
+          case "Baja Complejidad":
+            complexityStats.lowComplexity = count;
+            break;
+          case "Media Complejidad":
+            complexityStats.mediumComplexity = count;
+            break;
+          case "Alta Complejidad":
+            complexityStats.highComplexity = count;
+            break;
+        }
+      });
+
+      // Obtener total de casos (todos los casos, no solo los asignados)
+      let totalCasesQuery = `SELECT COUNT(DISTINCT c.id) as count FROM cases c WHERE 1=1`;
+      if (!canReadAllMetrics) {
+        totalCasesQuery += ` AND (
+          c.id IN (SELECT cc."caseId" FROM case_control cc WHERE cc."userId" = $1)
+          OR c.id NOT IN (SELECT cc."caseId" FROM case_control cc)
+        )`;
+      }
+
+      const totalCasesResult = await AppDataSource.query(
+        totalCasesQuery,
+        canReadAllMetrics ? [] : [userId]
+      );
+
+      const totalCases = parseInt(totalCasesResult[0]?.count || 0);
+
+      // Calcular casos de este mes y semana
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      let thisMonthQuery = `
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM cases c 
+        WHERE c."createdAt" >= $1
+      `;
+
+      let thisWeekQuery = `
+        SELECT COUNT(DISTINCT c.id) as count 
+        FROM cases c 
+        WHERE c."createdAt" >= $1
+      `;
+
+      const queryParamsMonth = [firstDayOfMonth];
+      const queryParamsWeek = [oneWeekAgo];
+
+      if (!canReadAllMetrics) {
+        thisMonthQuery += ` AND (
+          c.id IN (SELECT cc."caseId" FROM case_control cc WHERE cc."userId" = $2)
+          OR c.id NOT IN (SELECT cc."caseId" FROM case_control cc)
+        )`;
+        thisWeekQuery += ` AND (
+          c.id IN (SELECT cc."caseId" FROM case_control cc WHERE cc."userId" = $2)
+          OR c.id NOT IN (SELECT cc."caseId" FROM case_control cc)
+        )`;
+        queryParamsMonth.push(userId);
+        queryParamsWeek.push(userId);
+      }
+      const [thisMonthResult, thisWeekResult] = await Promise.all([
+        AppDataSource.query(thisMonthQuery, queryParamsMonth),
+        AppDataSource.query(thisWeekQuery, queryParamsWeek),
+      ]);
+
+      const dashboardStats = {
+        totalCases,
+        ...complexityStats,
+        thisMonth: parseInt(thisMonthResult[0]?.count || 0),
+        thisWeek: parseInt(thisWeekResult[0]?.count || 0),
+      };
+
+      res.json({ success: true, data: dashboardStats });
+    } catch (error) {
+      console.error("Error en getDashboardStats:", error);
+      res.status(500).json({
+        error: "Error interno del servidor",
+        details: process.env.NODE_ENV === "development" ? error : undefined,
+      });
+    }
+  }
+}

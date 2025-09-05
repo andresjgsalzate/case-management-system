@@ -14,6 +14,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Todo } from "../../types/todo.types";
 import { TodoTimeModal } from "./TodoTimeModal";
+import { Button } from "../ui/Button";
 
 interface TodoCardProps {
   todo: Todo;
@@ -314,15 +315,15 @@ export const TodoCard: React.FC<TodoCardProps> = ({
 
               {/* Create Control Button */}
               {!todo.control && !todo.isCompleted && (
-                <button
+                <Button
                   onClick={handleStartTimer}
-                  className="inline-flex items-center px-2 py-1 border border-blue-500 
-                           rounded-md text-sm font-medium text-blue-700 dark:text-blue-200 
-                           bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                  variant="primary"
+                  size="sm"
+                  className="inline-flex items-center"
                 >
                   <PlayIcon className="w-4 h-4 mr-1" />
                   Comenzar
-                </button>
+                </Button>
               )}
             </div>
 

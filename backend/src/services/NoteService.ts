@@ -266,19 +266,27 @@ export class NoteService {
   }
 
   async getNotesStats(userId: string): Promise<NoteStatsDto> {
+    console.log("Getting notes stats for user:", userId);
+
     const results = await this.noteRepository.query(
       "SELECT get_notes_stats($1) as stats",
       [userId]
     );
 
-    return (
-      results[0]?.stats || {
-        totalNotes: 0,
-        myNotes: 0,
-        assignedNotes: 0,
-        importantNotes: 0,
-        withReminders: 0,
-        archivedNotes: 0,
+    console.log("Raw stats result:", results);
+
+    if (results && results.length > 0 && results[0].stats) {
+      const rawStats = results[0].stats;
+      console.log("Parsed stats:", rawStats);
+
+      // Mapear de snake_case a camelCase
+      return {
+        totalNotes: rawStats.total_notes || 0,
+        myNotes: rawStats.my_notes || 0,
+        assignedNotes: rawStats.assigned_notes || 0,
+        importantNotes: rawStats.important_notes || 0,
+        withReminders: rawStats.with_reminders || 0,
+        archivedNotes: rawStats.archived_notes || 0,
         deprecatedNotes: 0,
         templatesCount: 0,
         publishedNotes: 0,
@@ -305,8 +313,44 @@ export class NoteService {
         },
         totalViews: 0,
         totalHelpful: 0,
-      }
-    );
+      };
+    }
+
+    // Valores predeterminados si no hay datos
+    return {
+      totalNotes: 0,
+      myNotes: 0,
+      assignedNotes: 0,
+      importantNotes: 0,
+      withReminders: 0,
+      archivedNotes: 0,
+      deprecatedNotes: 0,
+      templatesCount: 0,
+      publishedNotes: 0,
+      notesByType: {
+        note: 0,
+        solution: 0,
+        guide: 0,
+        faq: 0,
+        template: 0,
+        procedure: 0,
+      },
+      notesByPriority: {
+        low: 0,
+        medium: 0,
+        high: 0,
+        urgent: 0,
+      },
+      notesByDifficulty: {
+        1: 0,
+        2: 0,
+        3: 0,
+        4: 0,
+        5: 0,
+      },
+      totalViews: 0,
+      totalHelpful: 0,
+    };
   }
 
   // Nuevos métodos para funciones avanzadas

@@ -30,6 +30,10 @@ import type {
   DispositionFilters,
 } from "../../services/dispositionApi";
 import type { DispositionFormData } from "../../lib/validations/dispositionValidations";
+import {
+  exportAllDispositionsExcel,
+  exportDisitionsExcelByMonth,
+} from "../../utils/dispositionsExportUtils";
 
 export const DispositionsPage: React.FC = () => {
   // Estados para filtros
@@ -127,13 +131,58 @@ export const DispositionsPage: React.FC = () => {
   };
 
   const handleExportMonth = async (year: number, month: number) => {
-    // TODO: Implementar lógica de exportación
-    console.log("Exportar mes:", year, month);
+    try {
+      // Obtener las disposiciones del mes desde la query existente
+      const monthlyDispositions = dispositionsByMonthQuery.data?.find(
+        (m) => m.month === month
+      );
+
+      if (
+        !monthlyDispositions ||
+        monthlyDispositions.dispositions.length === 0
+      ) {
+        alert(
+          `No se encontraron disposiciones para ${year}/${month
+            .toString()
+            .padStart(2, "0")}`
+        );
+        return;
+      }
+
+      // Exportar en formato Excel
+      await exportDisitionsExcelByMonth(
+        year,
+        monthlyDispositions,
+        undefined,
+        (message) => console.log("Export success:", message)
+      );
+    } catch (error) {
+      console.error("Error al exportar mes:", error);
+      alert(
+        "Error al exportar los datos del mes. Por favor, intente nuevamente."
+      );
+    }
   };
 
   const handleExportAll = async () => {
-    // TODO: Implementar lógica de exportación
-    console.log("Exportar todas las disposiciones");
+    try {
+      // Obtener todas las disposiciones
+      const allDispositions = dispositionsQuery.data || [];
+
+      if (allDispositions.length === 0) {
+        alert("No hay disposiciones para exportar");
+        return;
+      }
+
+      await exportAllDispositionsExcel(allDispositions, undefined, (message) =>
+        console.log("Export success:", message)
+      );
+    } catch (error) {
+      console.error("Error al exportar todas las disposiciones:", error);
+      alert(
+        "Error al exportar todas las disposiciones. Por favor, intente nuevamente."
+      );
+    }
   };
 
   // Filtrar datos para la vista de tarjetas

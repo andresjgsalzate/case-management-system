@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeftIcon,
@@ -6,63 +6,23 @@ import {
   TrashIcon,
   DocumentIcon,
   CalendarIcon,
-  ClockIcon,
   UserIcon,
-  TagIcon,
 } from "@heroicons/react/24/outline";
+import { useCases } from "../../hooks/useCases";
 
 export const CaseDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-
-  const [caso, setCaso] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const { data: cases, isLoading, error } = useCases();
 
-  useEffect(() => {
-    loadCase();
-  }, [id]);
-
-  const loadCase = async () => {
-    try {
-      // Aquí haremos la llamada a la API para cargar el caso
-      setIsLoading(true);
-
-      // Simular datos hasta que conectemos con la API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Datos de ejemplo
-      setCaso({
-        id: id,
-        numeroCaso: "CASO-2024-001",
-        titulo: "Ejemplo de caso",
-        descripcion: "Descripción del caso de ejemplo",
-        clasificacion: "Media Complejidad",
-        estado: "En Proceso",
-        prioridad: "Alta",
-        fechaCreacion: "2024-01-15",
-        fechaVencimiento: "2024-01-30",
-        solicitante: "Juan Pérez",
-        correoSolicitante: "juan.perez@example.com",
-        telefonoSolicitante: "555-0123",
-        tipoDocumento: "Oficio",
-        numeroDocumento: "OF-001-2024",
-        observaciones: "Observaciones del caso",
-        etiquetas: ["urgente", "sistema"],
-        puntuacion: 85,
-      });
-    } catch (error) {
-      console.error("Error al cargar el caso:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Buscar el caso por ID
+  const caso = cases?.find((c) => c.id === id);
 
   const handleDelete = async () => {
     if (window.confirm("¿Estás seguro de que quieres eliminar este caso?")) {
       try {
-        // Aquí haremos la llamada a la API para eliminar
-        console.log("Eliminando caso:", id);
+        console.log("Eliminando caso:", caso?.id);
         navigate("/cases");
       } catch (error) {
         console.error("Error al eliminar el caso:", error);
@@ -72,336 +32,361 @@ export const CaseDetailPage = () => {
 
   const getStatusColor = (estado: string) => {
     switch (estado) {
-      case "Asignado":
-        return "bg-blue-100 text-blue-800";
-      case "En Proceso":
-        return "bg-yellow-100 text-yellow-800";
-      case "Completado":
-        return "bg-green-100 text-green-800";
-      case "Cerrado":
-        return "bg-gray-100 text-gray-800";
+      case "nuevo":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
+      case "en_progreso":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+      case "pendiente":
+        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
+      case "resuelto":
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
     }
   };
 
   const getComplexityColor = (clasificacion: string) => {
     switch (clasificacion) {
       case "Baja Complejidad":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
       case "Media Complejidad":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
       case "Alta Complejidad":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
       default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getPriorityColor = (prioridad: string) => {
-    switch (prioridad) {
-      case "Baja":
-        return "bg-gray-100 text-gray-800";
-      case "Media":
-        return "bg-blue-100 text-blue-800";
-      case "Alta":
-        return "bg-orange-100 text-orange-800";
-      case "Crítica":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-        <span className="ml-2">Cargando caso...</span>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-1/4 mb-4"></div>
+            <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-6"></div>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <div className="h-64 bg-gray-300 dark:bg-gray-700 rounded"></div>
+              </div>
+              <div>
+                <div className="h-32 bg-gray-300 dark:bg-gray-700 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">
+              Error al cargar el caso
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              {error.message}
+            </p>
+            <Link
+              to="/cases"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+            >
+              <ArrowLeftIcon className="-ml-1 mr-2 h-5 w-5" />
+              Volver a Casos
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!caso) {
     return (
-      <div className="text-center py-12">
-        <h3 className="mt-2 text-sm font-medium text-gray-900">
-          Caso no encontrado
-        </h3>
-        <p className="mt-1 text-sm text-gray-500">
-          El caso que buscas no existe o no tienes permisos para verlo.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/cases"
-            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-          >
-            Volver a Casos
-          </Link>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              Caso no encontrado
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              El caso con ID "{id}" no existe.
+            </p>
+            <Link
+              to="/cases"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+            >
+              <ArrowLeftIcon className="-ml-1 mr-2 h-5 w-5" />
+              Volver a Casos
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="mb-8">
-        <Link
-          to="/cases"
-          className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700"
-        >
-          <ArrowLeftIcon className="-ml-1 mr-1 h-5 w-5" aria-hidden="true" />
-          Volver a Casos
-        </Link>
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <Link
+            to="/cases"
+            className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+          >
+            <ArrowLeftIcon className="-ml-1 mr-1 h-5 w-5" aria-hidden="true" />
+            Volver a Casos
+          </Link>
+        </div>
 
-      {/* Header */}
-      <div className="lg:flex lg:items-center lg:justify-between">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-            {caso.numeroCaso}
-          </h2>
-          <div className="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:space-x-6">
-            <div className="mt-2 flex items-center text-sm text-gray-500">
-              <CalendarIcon className="mr-1.5 h-5 w-5 text-gray-400" />
-              Creado: {new Date(caso.fechaCreacion).toLocaleDateString()}
-            </div>
-            {caso.fechaVencimiento && (
-              <div className="mt-2 flex items-center text-sm text-gray-500">
-                <ClockIcon className="mr-1.5 h-5 w-5 text-gray-400" />
-                Vence: {new Date(caso.fechaVencimiento).toLocaleDateString()}
+        {/* Header */}
+        <div className="lg:flex lg:items-center lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:truncate sm:text-3xl sm:tracking-tight">
+              {caso.numeroCaso}
+            </h2>
+            <div className="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:space-x-6">
+              <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                <CalendarIcon className="mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500" />
+                Creado: {new Date(caso.createdAt).toLocaleDateString()}
               </div>
-            )}
-            <div className="mt-2 flex items-center text-sm text-gray-500">
-              <UserIcon className="mr-1.5 h-5 w-5 text-gray-400" />
-              {caso.solicitante || "Sin asignar"}
+              <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                <UserIcon className="mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500" />
+                {caso.assignedTo
+                  ? `Asignado a: ${
+                      caso.assignedTo.fullName || caso.assignedTo.email
+                    }`
+                  : "Sin asignar"}
+              </div>
             </div>
+          </div>
+          <div className="mt-5 flex lg:mt-0 lg:ml-4">
+            <span className="hidden sm:block">
+              <button
+                type="button"
+                onClick={() => setIsEditing(!isEditing)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <PencilIcon className="-ml-1 mr-2 h-5 w-5 text-gray-500 dark:text-gray-400" />
+                Editar
+              </button>
+            </span>
+
+            <span className="ml-3 hidden sm:block">
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <TrashIcon className="-ml-1 mr-2 h-5 w-5 text-gray-500 dark:text-gray-400" />
+                Eliminar
+              </button>
+            </span>
           </div>
         </div>
-        <div className="mt-5 flex lg:mt-0 lg:ml-4">
-          <span className="hidden sm:block">
-            <button
-              type="button"
-              onClick={() => setIsEditing(!isEditing)}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-            >
-              <PencilIcon className="-ml-1 mr-2 h-5 w-5 text-gray-500" />
-              Editar
-            </button>
-          </span>
 
-          <span className="ml-3 hidden sm:block">
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-            >
-              <TrashIcon className="-ml-1 mr-2 h-5 w-5 text-gray-500" />
-              Eliminar
-            </button>
-          </span>
-        </div>
-      </div>
-
-      {/* Estados y métricas */}
-      <div className="mt-8">
-        <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <span
-                    className={`inline-flex px-2 text-xs font-semibold rounded-full ${getStatusColor(
-                      caso.estado
-                    )}`}
-                  >
-                    {caso.estado}
-                  </span>
-                </div>
-              </div>
-              <div className="mt-1 text-sm text-gray-500">Estado</div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <span
-                    className={`inline-flex px-2 text-xs font-semibold rounded-full ${getComplexityColor(
-                      caso.clasificacion
-                    )}`}
-                  >
-                    {caso.clasificacion}
-                  </span>
-                </div>
-              </div>
-              <div className="mt-1 text-sm text-gray-500">Complejidad</div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <span
-                    className={`inline-flex px-2 text-xs font-semibold rounded-full ${getPriorityColor(
-                      caso.prioridad
-                    )}`}
-                  >
-                    {caso.prioridad}
-                  </span>
-                </div>
-              </div>
-              <div className="mt-1 text-sm text-gray-500">Prioridad</div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="text-lg font-medium text-gray-900">
-                    {Math.round(caso.puntuacion)}/15
+        {/* Estados y métricas */}
+        <div className="mt-8">
+          <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <span
+                      className={`inline-flex px-2 text-xs font-semibold rounded-full ${getStatusColor(
+                        caso.estado
+                      )}`}
+                    >
+                      {caso.estado}
+                    </span>
                   </div>
                 </div>
-              </div>
-              <div className="mt-1 text-sm text-gray-500">Puntuación</div>
-            </div>
-          </div>
-        </dl>
-      </div>
-
-      {/* Contenido principal */}
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Información principal */}
-        <div className="lg:col-span-2">
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                {caso.titulo}
-              </h3>
-              <div className="prose prose-sm text-gray-500">
-                <p>{caso.descripcion}</p>
-              </div>
-
-              {caso.observaciones && (
-                <div className="mt-6">
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">
-                    Observaciones
-                  </h4>
-                  <p className="text-sm text-gray-500">{caso.observaciones}</p>
+                <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Estado
                 </div>
-              )}
+              </div>
+            </div>
 
-              {caso.etiquetas && caso.etiquetas.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">
-                    <TagIcon className="inline h-4 w-4 mr-1" />
-                    Etiquetas
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {caso.etiquetas.map((etiqueta: string, index: number) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
-                      >
-                        {etiqueta}
-                      </span>
-                    ))}
+            <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <span
+                      className={`inline-flex px-2 text-xs font-semibold rounded-full ${getComplexityColor(
+                        caso.clasificacion
+                      )}`}
+                    >
+                      {caso.clasificacion}
+                    </span>
                   </div>
                 </div>
-              )}
+                <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Complejidad
+                </div>
+              </div>
             </div>
-          </div>
+
+            <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="text-lg font-medium text-gray-900 dark:text-white">
+                      {Math.round(caso.puntuacion)}/15
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Puntuación
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="text-lg font-medium text-gray-900 dark:text-white">
+                      {caso.origin?.nombre || "Sin origen"}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  Origen
+                </div>
+              </div>
+            </div>
+          </dl>
         </div>
 
-        {/* Información lateral */}
-        <div>
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                Detalles del Caso
-              </h3>
+        {/* Contenido principal */}
+        <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Información principal */}
+          <div className="lg:col-span-2">
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">
+                  Caso: {caso.numeroCaso}
+                </h3>
+                <div className="prose prose-sm text-gray-500 dark:text-gray-400">
+                  <p>{caso.descripcion}</p>
+                </div>
 
-              <dl className="space-y-3">
-                {caso.tipoDocumento && (
+                {caso.observaciones && (
+                  <div className="mt-6">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                      Observaciones
+                    </h4>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {caso.observaciones}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Información lateral */}
+          <div>
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">
+                  Detalles del Caso
+                </h3>
+
+                <dl className="space-y-3">
                   <div>
-                    <dt className="text-sm font-medium text-gray-500 flex items-center">
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
                       <DocumentIcon className="h-4 w-4 mr-1" />
-                      Tipo de Documento
+                      Fecha de creación
                     </dt>
-                    <dd className="mt-1 text-sm text-gray-900">
-                      {caso.tipoDocumento}
+                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                      {new Date(caso.createdAt).toLocaleDateString()}
                     </dd>
                   </div>
-                )}
 
-                {caso.numeroDocumento && (
                   <div>
-                    <dt className="text-sm font-medium text-gray-500">
-                      Número de Documento
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Última actualización
                     </dt>
-                    <dd className="mt-1 text-sm text-gray-900">
-                      {caso.numeroDocumento}
+                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                      {new Date(caso.updatedAt).toLocaleDateString()}
                     </dd>
                   </div>
-                )}
 
-                {caso.solicitante && (
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">
-                      Solicitante
-                    </dt>
-                    <dd className="mt-1 text-sm text-gray-900">
-                      {caso.solicitante}
-                    </dd>
-                  </div>
-                )}
+                  {caso.application?.nombre && (
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Aplicación
+                      </dt>
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                        {caso.application.nombre}
+                      </dd>
+                    </div>
+                  )}
 
-                {caso.correoSolicitante && (
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">
-                      Correo
-                    </dt>
-                    <dd className="mt-1 text-sm text-gray-900">
-                      <a
-                        href={`mailto:${caso.correoSolicitante}`}
-                        className="text-indigo-600 hover:text-indigo-500"
-                      >
-                        {caso.correoSolicitante}
-                      </a>
-                    </dd>
-                  </div>
-                )}
-
-                {caso.telefonoSolicitante && (
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500">
-                      Teléfono
-                    </dt>
-                    <dd className="mt-1 text-sm text-gray-900">
-                      <a
-                        href={`tel:${caso.telefonoSolicitante}`}
-                        className="text-indigo-600 hover:text-indigo-500"
-                      >
-                        {caso.telefonoSolicitante}
-                      </a>
-                    </dd>
-                  </div>
-                )}
-              </dl>
+                  {caso.userId && (
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        Creado por
+                      </dt>
+                      <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                        Usuario: {caso.userId}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              </div>
             </div>
-          </div>
 
-          {/* Actividad reciente */}
-          <div className="mt-6 bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                Actividad Reciente
-              </h3>
-              <div className="text-sm text-gray-500">
-                No hay actividad reciente registrada.
+            {/* Métricas de evaluación */}
+            <div className="mt-6 bg-white dark:bg-gray-800 shadow rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">
+                  Métricas de Evaluación
+                </h3>
+                <dl className="space-y-3">
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Historial del Caso
+                    </dt>
+                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                      {caso.historialCaso}/3
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Conocimiento del Módulo
+                    </dt>
+                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                      {caso.conocimientoModulo}/3
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Manipulación de Datos
+                    </dt>
+                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                      {caso.manipulacionDatos}/3
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Claridad de Descripción
+                    </dt>
+                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                      {caso.claridadDescripcion}/3
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Causa de Fallo
+                    </dt>
+                    <dd className="mt-1 text-sm text-gray-900 dark:text-white">
+                      {caso.causaFallo}/3
+                    </dd>
+                  </div>
+                </dl>
               </div>
             </div>
           </div>

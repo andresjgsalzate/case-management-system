@@ -284,3 +284,51 @@ export const addManualTime = async (
 
   return result.data;
 };
+
+// Funciones para reportes - obtener todos los time entries y manual time entries
+// Como el backend no tiene endpoints globales, obtenemos todos los case controls
+// y luego iteramos para obtener las time entries de cada uno
+export const getAllTimeEntries = async (): Promise<TimeEntry[]> => {
+  try {
+    // Primero obtener todos los case controls
+    const caseControls = await getCaseControls();
+
+    // Luego obtener time entries para cada case control
+    const timeEntriesPromises = caseControls.map(
+      (caseControl) => getTimeEntries(caseControl.id).catch(() => []) // Si falla, devolver array vacío
+    );
+
+    const timeEntriesArrays = await Promise.all(timeEntriesPromises);
+
+    // Aplanar el array de arrays en un solo array
+    return timeEntriesArrays.flat();
+  } catch (error) {
+    console.error("Error al obtener todas las entradas de tiempo:", error);
+    return [];
+  }
+};
+
+export const getAllManualTimeEntries = async (): Promise<ManualTimeEntry[]> => {
+  try {
+    // Primero obtener todos los case controls
+    const caseControls = await getCaseControls();
+
+    // Luego obtener manual time entries para cada case control
+    const manualTimeEntriesPromises = caseControls.map(
+      (caseControl) => getManualTimeEntries(caseControl.id).catch(() => []) // Si falla, devolver array vacío
+    );
+
+    const manualTimeEntriesArrays = await Promise.all(
+      manualTimeEntriesPromises
+    );
+
+    // Aplanar el array de arrays en un solo array
+    return manualTimeEntriesArrays.flat();
+  } catch (error) {
+    console.error(
+      "Error al obtener todas las entradas de tiempo manual:",
+      error
+    );
+    return [];
+  }
+};

@@ -19,6 +19,7 @@ import {
 import { PageWrapper } from "../../components/layout/PageWrapper";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
+import { CaseExportButtons } from "../../components/cases/CaseExportButtons";
 import {
   formatDateLocal,
   getComplexityColor,
@@ -35,6 +36,12 @@ export const CasesPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Estado para notificaciones
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   // Estados de filtros
   const [searchTerm, setSearchTerm] = useState("");
@@ -145,6 +152,17 @@ export const CasesPage: React.FC = () => {
     setSelectedComplexity("");
   };
 
+  // Helper functions for notifications
+  const showSuccess = (message: string) => {
+    setNotification({ message, type: "success" });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const showError = (message: string) => {
+    setNotification({ message, type: "error" });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
   if (isLoading) {
     return (
       <PageWrapper>
@@ -165,7 +183,7 @@ export const CasesPage: React.FC = () => {
               setError(null);
               loadData();
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            className="btn-base btn-primary btn-sm"
           >
             Intentar de nuevo
           </button>
@@ -187,13 +205,20 @@ export const CasesPage: React.FC = () => {
               Administra y realiza seguimiento de todos los casos del sistema
             </p>
           </div>
-          <Link
-            to="/cases/new"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-          >
-            <PlusIcon className="h-5 w-5" />
-            Nuevo Caso
-          </Link>
+          <div className="flex items-center gap-3">
+            <CaseExportButtons
+              filteredCases={filteredCases}
+              onSuccess={showSuccess}
+              onError={showError}
+            />
+            <Link
+              to="/cases/new"
+              className="btn-base btn-primary btn-sm flex items-center gap-2 link-btn"
+            >
+              <PlusIcon className="h-5 w-5" />
+              Nuevo Caso
+            </Link>
+          </div>
         </div>
 
         {/* Filtros */}
@@ -479,6 +504,19 @@ export const CasesPage: React.FC = () => {
         cancelText="Cancelar"
         type="danger"
       />
+
+      {/* Notificaciones */}
+      {notification && (
+        <div
+          className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+            notification.type === "success"
+              ? "bg-green-500 text-white"
+              : "bg-red-500 text-white"
+          }`}
+        >
+          {notification.message}
+        </div>
+      )}
     </PageWrapper>
   );
 };

@@ -383,7 +383,7 @@ export const CaseForm: React.FC<CaseFormProps> = ({
         <button
           type="submit"
           disabled={isLoading}
-          className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="btn-base btn-primary btn-md"
         >
           {isLoading ? "Procesando..." : submitText}
         </button>

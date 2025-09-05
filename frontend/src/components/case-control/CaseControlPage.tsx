@@ -27,6 +27,7 @@ import {
   stopTimer,
 } from "../../services/api/caseControlApi";
 import { CaseControl } from "../../types/caseControl";
+import { generateCaseControlReport } from "../../utils/exportUtilsNew";
 
 export const CaseControlPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -119,8 +120,24 @@ export const CaseControlPage: React.FC = () => {
   };
 
   const handleGenerateReport = async () => {
-    // TODO: Implement report generation
-    console.log("Generate report functionality to be implemented");
+    try {
+      const filename = `reporte-control-casos-${
+        new Date().toISOString().split("T")[0]
+      }.xlsx`;
+
+      await generateCaseControlReport(
+        filename,
+        (message) => {
+          console.log("Reporte generado exitosamente:", message);
+          // Aquí podrías mostrar un toast o notificación
+        },
+        (error) => {
+          console.error("Error al generar reporte:", error);
+        }
+      );
+    } catch (error) {
+      console.error("Error al generar reporte:", error);
+    }
   };
 
   // Handlers

@@ -44,10 +44,18 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     });
   };
 
+  const formatReminderDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString("es-ES", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const isReminderActive = (reminderDate: string) => {
-    const now = new Date();
-    const reminder = new Date(reminderDate);
-    return reminder > now && !note.isReminderSent;
+    return new Date(reminderDate) <= new Date();
   };
 
   const canUserEdit =
@@ -57,6 +65,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
 
   return (
     <div
+      id={`note-${note.id}`}
       className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border ${
         note.isImportant
           ? "border-red-200 dark:border-red-800"
@@ -146,23 +155,18 @@ export const NoteCard: React.FC<NoteCardProps> = ({
       <div className="p-4">
         {/* Content Preview */}
         <div className="mb-4">
-          <p className="text-gray-700 dark:text-gray-300 line-clamp-3">
+          <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap line-clamp-3">
             {note.content}
           </p>
         </div>
 
         {/* Case Info */}
         {note.case && (
-          <div className="flex items-center gap-2 mb-4 p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
-            <DocumentTextIcon className="h-4 w-4 text-blue-500" />
-            <span className="text-sm text-blue-800 dark:text-blue-200">
+          <div className="flex items-center gap-2 mb-4 p-2 bg-gray-50 dark:bg-gray-700 rounded">
+            <DocumentTextIcon className="h-4 w-4 text-gray-500" />
+            <span className="text-sm text-gray-600 dark:text-gray-400">
               Caso: <span className="font-medium">{note.case.numeroCaso}</span>
-              {note.case.descripcion && (
-                <span className="text-blue-600 dark:text-blue-300">
-                  {" "}
-                  - {note.case.descripcion}
-                </span>
-              )}
+              {note.case.descripcion && <span> - {note.case.descripcion}</span>}
             </span>
           </div>
         )}
@@ -191,8 +195,10 @@ export const NoteCard: React.FC<NoteCardProps> = ({
           >
             <ClockIcon className="h-4 w-4" />
             <span className="text-sm">
-              Recordatorio:{" "}
-              {new Date(note.reminderDate).toLocaleString("es-ES")}
+              Recordatorio: {formatReminderDate(note.reminderDate)}
+              {isReminderActive(note.reminderDate) && (
+                <span className="ml-2 font-medium">¡Activo!</span>
+              )}
               {note.isReminderSent && (
                 <span className="ml-2 text-xs text-green-600 dark:text-green-400">
                   (Enviado)
@@ -204,38 +210,38 @@ export const NoteCard: React.FC<NoteCardProps> = ({
 
         {/* Tags */}
         {note.tags && note.tags.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <TagIcon className="h-4 w-4 text-gray-500" />
+          <div className="flex flex-wrap gap-2 mb-4">
             {note.tags.map((tag, index) => (
               <span
                 key={index}
-                className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs"
+                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
               >
+                <TagIcon className="h-3 w-3 mr-1" />
                 {tag}
               </span>
             ))}
           </div>
         )}
-
-        {/* Archive info */}
-        {note.isArchived && note.archivedAt && (
-          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-              <ArchiveBoxIcon className="h-4 w-4" />
-              <span>
-                Archivado {formatDate(note.archivedAt)}
-                {note.archivedByUser && (
-                  <span>
-                    {" "}
-                    por{" "}
-                    {note.archivedByUser.fullName || note.archivedByUser.email}
-                  </span>
-                )}
-              </span>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Footer - Archived info */}
+      {note.isArchived && note.archivedAt && (
+        <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700 rounded-b-lg border-t border-gray-200 dark:border-gray-600">
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <ArchiveBoxIcon className="h-4 w-4" />
+            <span>
+              Archivado {formatDate(note.archivedAt)}
+              {note.archivedByUser && (
+                <span>
+                  {" "}
+                  por{" "}
+                  {note.archivedByUser.fullName || note.archivedByUser.email}
+                </span>
+              )}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

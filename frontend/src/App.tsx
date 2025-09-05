@@ -6,7 +6,7 @@ import { Layout } from "./components/layout/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
-import { DashboardPage } from "./pages/DashboardPage";
+import { AdvancedDashboardPage } from "./pages/dashboard/AdvancedDashboardPage";
 import { CasesPage, NewCasePage, CaseDetailPage } from "./pages/cases";
 import { CaseControlPage } from "./pages/cases/CaseControlPage";
 import { DispositionsPage } from "./pages/dispositions/DispositionsPage";
@@ -62,7 +62,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <Layout>
-                  <DashboardPage />
+                  <AdvancedDashboardPage />
                 </Layout>
               </ProtectedRoute>
             }

@@ -83,6 +83,7 @@ export interface DispositionPorCaso {
   quantity: number;
   caseId?: string;
   applicationId: string;
+  observations?: string; // Observaciones combinadas
 }
 
 class DispositionApi {
@@ -221,7 +222,19 @@ class DispositionApi {
               quantity: 0,
               caseId: disposition.caseId || undefined,
               applicationId: disposition.applicationId,
+              observations: disposition.observations || "",
             };
+          } else {
+            // Si ya existe, agregar las observaciones (separadas por "; ")
+            if (disposition.observations) {
+              const existingObs = caseGroups[key].observations || "";
+              const newObs = disposition.observations;
+              if (existingObs && !existingObs.includes(newObs)) {
+                caseGroups[key].observations = `${existingObs}; ${newObs}`;
+              } else if (!existingObs) {
+                caseGroups[key].observations = newObs;
+              }
+            }
           }
           caseGroups[key].quantity++;
         });

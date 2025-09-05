@@ -1,0 +1,117 @@
+/* Reglas globales para botones optimizadas para web y móvil */
+/* Padding horizontal: 32-36px, vertical: 18-24px */
+/* Texto: 16-20px, Opacidad: 30%-40%, Blur: 40-60px */
+
+@layer components {
+  /* Clases base para botones */
+  .btn-base {
+    @apply inline-flex items-center justify-center font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed;
+  }
+
+  /* Tamaños de botones optimizados */
+  .btn-xs {
+    @apply px-2 py-1 text-xs;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+
+  .btn-md {
+    @apply px-4 py-2 text-sm;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+
+  /* Variantes de botones con opacidad y blur */
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 shadow-lg;
+    background-color: rgb(37 99 235 / 0.9);
+    backdrop-filter: blur(50px);
+  }
+
+  .btn-primary:hover {
+    background-color: rgb(29 78 216 / 0.9);
+  }
+
+  .btn-primary:disabled {
+    @apply opacity-40;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500 shadow-lg;
+    background-color: rgb(75 85 99 / 0.9);
+    backdrop-filter: blur(50px);
+  }
+
+  .btn-secondary:hover {
+    background-color: rgb(55 65 81 / 0.9);
+  }
+
+  .btn-secondary:disabled {
+    @apply opacity-40;
+  }
+
+  .btn-success {
+    @apply bg-green-600 hover:bg-green-700 text-white focus:ring-green-500 shadow-lg;
+    background-color: rgb(22 163 74 / 0.9);
+    backdrop-filter: blur(50px);
+  }
+
+  .btn-success:hover {
+    background-color: rgb(21 128 61 / 0.9);
+  }
+
+  .btn-success:disabled {
+    @apply opacity-40;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 shadow-lg;
+    background-color: rgb(220 38 38 / 0.9);
+    backdrop-filter: blur(50px);
+  }
+
+  .btn-danger:hover {
+    background-color: rgb(185 28 28 / 0.9);
+  }
+
+  .btn-danger:disabled {
+    @apply opacity-40;
+  }
+
+  .btn-warning {
+    @apply bg-yellow-600 hover:bg-yellow-700 text-white focus:ring-yellow-500 shadow-lg;
+    background-color: rgb(202 138 4 / 0.9);
+    backdrop-filter: blur(50px);
+  }
+
+  .btn-warning:hover {
+    background-color: rgb(161 98 7 / 0.9);
+  }
+
+  .btn-warning:disabled {
+    @apply opacity-40;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-gray-500;
+    backdrop-filter: blur(40px);
+    opacity: 0.9;
+  }
+
+  .btn-ghost:disabled {
+    @apply opacity-30;
+  }
+
+  /* Clase especial para enlaces que actúan como botones */
+  .link-btn {
+    @apply no-underline;
+  }
+
+  .link-btn:hover {
+    @apply no-underline;
+  }
+}

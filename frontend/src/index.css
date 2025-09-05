@@ -1,6 +1,20 @@
+/* Base styles */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import "./styles/button-utils.css";
+
+/* Custom utilities */
+@layer utilities {
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+}
 
 /* ===== VARIABLES CSS NATIVAS ===== */
 :root {

@@ -9,6 +9,9 @@ import Modal from "../ui/Modal";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { useTodos } from "../../hooks/useTodos";
+import { useToast } from "../../contexts/ToastContext";
+import { useConfirmationModal } from "../../hooks/useConfirmationModal";
+import { ConfirmationModal } from "../ui/ConfirmationModal";
 
 interface TimeEntry {
   id: string;
@@ -52,6 +55,8 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
 }) => {
   const { getManualTimeEntries, addManualTimeEntry, deleteManualTimeEntry } =
     useTodos();
+  const { success, error: showErrorToast } = useToast();
+  const { confirmDelete, modalState, modalHandlers } = useConfirmationModal();
 
   const [showManualTimeForm, setShowManualTimeForm] = useState(false);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
@@ -147,12 +152,18 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
   const handleAddManualTime = async () => {
     const totalMinutes = manualTimeForm.hours * 60 + manualTimeForm.minutes;
     if (totalMinutes <= 0) {
-      alert("Debe especificar un tiempo válido");
+      showErrorToast(
+        "Error de validación",
+        "Debe especificar un tiempo válido"
+      );
       return;
     }
 
     if (!manualTimeForm.description.trim()) {
-      alert("Debe proporcionar una descripción");
+      showErrorToast(
+        "Error de validación",
+        "Debe proporcionar una descripción"
+      );
       return;
     }
 
@@ -160,15 +171,18 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
       // Usar un UUID válido del sistema por ahora
       const currentUserId = "550e8400-e29b-41d4-a716-446655440001"; // UUID válido del sistema
 
-      const success = await addManualTimeEntry(todoId, {
+      const isSuccess = await addManualTimeEntry(todoId, {
         description: manualTimeForm.description,
         durationMinutes: totalMinutes,
         date: manualTimeForm.date,
         userId: currentUserId,
       });
 
-      if (success) {
-        alert("Tiempo manual agregado");
+      if (isSuccess) {
+        success(
+          "Tiempo agregado",
+          "El tiempo manual se ha agregado correctamente"
+        );
         setManualTimeForm({
           description: "",
           hours: 0,
@@ -178,30 +192,41 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
         setShowManualTimeForm(false);
         await loadTimeData(); // Recargar datos
       } else {
-        alert("Error al agregar tiempo manual");
+        showErrorToast("Error", "No se pudo agregar el tiempo manual");
       }
     } catch (error) {
-      alert("Error al agregar tiempo manual");
+      console.error("Error adding manual time:", error);
+      showErrorToast("Error", "Ocurrió un error al agregar el tiempo manual");
     }
   };
 
   const handleDeleteManualTime = async (entryId: string) => {
-    if (
-      window.confirm(
-        "¿Está seguro de que desea eliminar esta entrada de tiempo manual? Esta acción no se puede deshacer."
-      )
-    ) {
+    const confirmed = await confirmDelete("esta entrada de tiempo manual");
+
+    if (confirmed) {
       try {
-        const success = await deleteManualTimeEntry(entryId, "current-user-id");
-        if (success) {
-          alert("Entrada de tiempo manual eliminada");
+        const isSuccess = await deleteManualTimeEntry(
+          entryId,
+          "current-user-id"
+        );
+        if (isSuccess) {
+          success(
+            "Entrada eliminada",
+            "La entrada de tiempo manual se eliminó correctamente"
+          );
           await loadTimeData();
         } else {
-          alert("Error al eliminar la entrada de tiempo manual");
+          showErrorToast(
+            "Error",
+            "No se pudo eliminar la entrada de tiempo manual"
+          );
         }
       } catch (error) {
         console.error("Error al eliminar entrada manual:", error);
-        alert("Error al eliminar la entrada de tiempo manual");
+        showErrorToast(
+          "Error",
+          "Ocurrió un error al eliminar la entrada de tiempo manual"
+        );
       }
     }
   };
@@ -450,6 +475,20 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
           )}
         </div>
       </div>
+
+      {/* Modal de confirmación */}
+      {modalState.options && (
+        <ConfirmationModal
+          isOpen={modalState.isOpen}
+          onClose={modalHandlers.onClose}
+          onConfirm={modalHandlers.onConfirm}
+          title={modalState.options.title}
+          message={modalState.options.message}
+          confirmText={modalState.options.confirmText}
+          cancelText={modalState.options.cancelText}
+          type={modalState.options.type}
+        />
+      )}
     </Modal>
   );
 };

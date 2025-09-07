@@ -8,6 +8,7 @@ import {
   Case,
   UserProfile,
 } from "../../entities";
+import { EstadoCase } from "../../entities/Case";
 import { TimeEntry } from "../../entities/TimeEntry";
 import { ManualTimeEntry } from "../../entities/ManualTimeEntry";
 import {
@@ -285,6 +286,11 @@ export class CaseControlController {
           existingControl
         );
 
+        // Actualizar el caso principal con el usuario asignado y estado ASIGNADO
+        caseExists.assignedToId = userId;
+        caseExists.estado = EstadoCase.ASIGNADO;
+        await this.caseRepository.save(caseExists);
+
         return res.status(200).json({
           success: true,
           data: updatedControl,
@@ -340,6 +346,11 @@ export class CaseControlController {
       });
 
       const savedControl = await this.caseControlRepository.save(caseControl);
+
+      // Actualizar el caso principal con el usuario asignado y estado ASIGNADO
+      caseExists.assignedToId = userId;
+      caseExists.estado = EstadoCase.ASIGNADO;
+      await this.caseRepository.save(caseExists);
 
       res.status(201).json({
         success: true,

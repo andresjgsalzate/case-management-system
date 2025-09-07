@@ -1,9 +1,9 @@
 /* Base styles */
+@import "./styles/button-utils.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import "./styles/button-utils.css";
 
 /* Custom utilities */
 @layer utilities {

@@ -1,6 +1,7 @@
 import { Fragment, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 import {
   HomeIcon,
   DocumentTextIcon,
@@ -13,6 +14,7 @@ import {
   CheckCircleIcon,
   CogIcon,
   ChevronDownIcon,
+  ArchiveBoxIcon,
 } from "@heroicons/react/24/outline";
 
 interface NavigationItem {
@@ -20,20 +22,54 @@ interface NavigationItem {
   href: string;
   icon: any;
   subItems?: { name: string; href: string }[];
+  requiredPermission?: string;
+  requiredModule?: string;
 }
 
 const navigation: NavigationItem[] = [
   { name: "Dashboard", href: "/", icon: HomeIcon },
-  { name: "Casos", href: "/cases", icon: DocumentTextIcon },
-  { name: "Nuevo Caso", href: "/cases/new", icon: PlusIcon },
-  { name: "Control de Casos", href: "/case-control", icon: ClockIcon },
-  { name: "TODOs", href: "/todos", icon: CheckCircleIcon },
-  { name: "Usuarios", href: "/users", icon: UsersIcon },
-  { name: "Roles", href: "/roles", icon: ShieldCheckIcon },
+  {
+    name: "Casos",
+    href: "/cases",
+    icon: DocumentTextIcon,
+    requiredModule: "casos",
+  },
+  {
+    name: "Nuevo Caso",
+    href: "/cases/new",
+    icon: PlusIcon,
+    requiredPermission: "casos.crear.all",
+  },
+  {
+    name: "Control de Casos",
+    href: "/case-control",
+    icon: ClockIcon,
+    requiredModule: "casos",
+  },
+  {
+    name: "TODOs",
+    href: "/todos",
+    icon: CheckCircleIcon,
+    requiredModule: "todos",
+  },
+  { name: "Archivo", href: "/archive", icon: ArchiveBoxIcon }, // Sin restricciones de permisos por ahora
+  {
+    name: "Usuarios",
+    href: "/users",
+    icon: UsersIcon,
+    requiredPermission: "usuarios.ver.all",
+  },
+  {
+    name: "Roles",
+    href: "/roles",
+    icon: ShieldCheckIcon,
+    requiredPermission: "roles:view:all",
+  },
   {
     name: "Permisos",
     href: "/permissions",
     icon: CogIcon,
+    requiredPermission: "permissions.read_all",
     subItems: [
       { name: "Gestión de Permisos", href: "/permissions" },
       { name: "Asignación por Rol", href: "/permissions/role-assignment" },
@@ -41,6 +77,9 @@ const navigation: NavigationItem[] = [
     ],
   },
 ];
+
+// Debug log para verificar que el archivo se está cargando
+console.log("Navigation items loaded:", navigation);
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
@@ -130,10 +169,67 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
 
 export const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { hasPermission, canAccessModule, user, isAuthenticated } = useAuth();
+
+  // Debug logging FORZADO - debe aparecer siempre
+  console.log("🔍 SIDEBAR RENDERIZADO - Debug Info:");
+  console.log("  - Usuario autenticado:", isAuthenticated);
+  console.log("  - Usuario:", user?.email || "No user");
+  console.log("  - Rol:", user?.roleName || "No role");
+  console.log(
+    "  - hasPermission('archive.view'):",
+    hasPermission("archive.view")
+  );
+
+  // Test de permisos específicos
+  console.log("📋 PERMISOS ESPECÍFICOS:");
+  console.log("  - archive.view:", hasPermission("archive.view"));
+  console.log("  - casos.ver.all:", hasPermission("casos.ver.all"));
+  console.log("  - usuarios.ver.all:", hasPermission("usuarios.ver.all"));
 
   const handleItemClick = () => {
     setSidebarOpen(false);
   };
+
+  // Función para verificar si el usuario puede ver un elemento del menú
+  const canAccessNavigationItem = (item: NavigationItem): boolean => {
+    console.log(`Checking access for ${item.name}:`, {
+      requiredPermission: item.requiredPermission,
+      requiredModule: item.requiredModule,
+      hasArchiveView: hasPermission("archive.view"),
+      canAccessCasos: canAccessModule("casos"),
+    });
+
+    // Dashboard siempre es accesible para usuarios autenticados
+    if (item.name === "Dashboard") return true;
+
+    // Para Archivo, verificar el permiso específico
+    if (item.name === "Archivo") {
+      const canAccess = hasPermission("archive.view");
+      console.log(`Archive access result: ${canAccess}`);
+      return canAccess;
+    }
+
+    // Verificar permiso específico
+    if (item.requiredPermission) {
+      return hasPermission(item.requiredPermission);
+    }
+
+    // Verificar módulo
+    if (item.requiredModule) {
+      return canAccessModule(item.requiredModule);
+    }
+
+    // Si no tiene restricciones, es accesible
+    return true;
+  };
+
+  // Filtrar elementos de navegación basándose en permisos
+  const filteredNavigation = navigation.filter(canAccessNavigationItem);
+  console.log(
+    "Filtered navigation:",
+    filteredNavigation.map((item) => item.name)
+  );
 
   return (
     <>
@@ -200,7 +296,7 @@ export const Sidebar = () => {
                     <ul role="list" className="flex flex-1 flex-col gap-y-7">
                       <li>
                         <ul role="list" className="-mx-2 space-y-1">
-                          {navigation.map((item) => (
+                          {filteredNavigation.map((item) => (
                             <li key={item.name}>
                               <NavigationItemComponent
                                 item={item}
@@ -231,7 +327,7 @@ export const Sidebar = () => {
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul role="list" className="-mx-2 space-y-1">
-                  {navigation.map((item) => (
+                  {filteredNavigation.map((item) => (
                     <li key={item.name}>
                       <NavigationItemComponent item={item} />
                     </li>

@@ -18,6 +18,11 @@ import { Select } from "../ui/Select";
 import { TimerControl } from "./TimerControl";
 import { CaseControlDetailsModal } from "./CaseControlDetailsModal";
 import { CaseAssignmentModal } from "./CaseAssignmentModal";
+import { ConfirmationModal } from "../ui/ConfirmationModal";
+import { archiveApi } from "../../services/archiveApi";
+import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
+import { useConfirmationModal } from "../../hooks/useConfirmationModal";
 import {
   getCaseControls,
   getCaseStatuses,
@@ -31,6 +36,10 @@ import { generateCaseControlReport } from "../../utils/exportUtilsNew";
 
 export const CaseControlPage: React.FC = () => {
   const queryClient = useQueryClient();
+  const { user, isAuthenticated } = useAuth();
+  const { success, error: showErrorToast } = useToast();
+  const { confirmDangerAction, modalState, modalHandlers } =
+    useConfirmationModal();
 
   // Estados locales
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,6 +48,7 @@ export const CaseControlPage: React.FC = () => {
   const [selectedCaseControl, setSelectedCaseControl] =
     useState<CaseControl | null>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
 
   // Queries
   const { data: caseControls = [], isLoading: loadingControls } = useQuery({
@@ -79,6 +89,64 @@ export const CaseControlPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ["caseControls"] });
     },
   });
+
+  // Función para manejar el archivado de casos
+  const handleArchiveCase = async (caseControl: CaseControl) => {
+    if (!caseControl.case?.id) return;
+
+    // Verificar autenticación
+    if (!isAuthenticated || !user) {
+      showErrorToast("Debe estar autenticado para archivar casos.");
+      return;
+    }
+
+    const confirmed = await confirmDangerAction(
+      "Archivar Caso",
+      `¿Está seguro que desea archivar el caso ${caseControl.case.numeroCaso}? Esta acción no se puede deshacer fácilmente.`
+    );
+
+    if (confirmed) {
+      setIsArchiving(true);
+      try {
+        console.log("Archivando caso:", {
+          caseId: caseControl.case.id,
+          caseNumber: caseControl.case.numeroCaso,
+          user: user,
+          isAuthenticated,
+        });
+
+        await archiveApi.archiveCaseById(
+          caseControl.case.id, // No usar parseInt() porque es un UUID
+          "Archivado desde Control de Casos"
+        );
+        queryClient.invalidateQueries({ queryKey: ["caseControls"] });
+        success("Caso archivado exitosamente");
+      } catch (error) {
+        console.error("Error archivando caso:", error);
+
+        // Mostrar más detalles del error
+        if (error instanceof Error) {
+          if (
+            error.message.includes("Session expired") ||
+            error.message.includes("401")
+          ) {
+            showErrorToast(
+              "Su sesión ha expirado. Por favor inicie sesión nuevamente."
+            );
+            // Aquí podrías redirigir al login
+          } else {
+            showErrorToast(`Error archivando el caso: ${error.message}`);
+          }
+        } else {
+          showErrorToast(
+            "Error archivando el caso. Por favor intente nuevamente."
+          );
+        }
+      } finally {
+        setIsArchiving(false);
+      }
+    }
+  };
 
   // Filtros
   const filteredControls = caseControls.filter((control) => {
@@ -129,47 +197,117 @@ export const CaseControlPage: React.FC = () => {
         filename,
         (message) => {
           console.log("Reporte generado exitosamente:", message);
-          // Aquí podrías mostrar un toast o notificación
+          success("Reporte generado exitosamente");
         },
         (error) => {
           console.error("Error al generar reporte:", error);
+          showErrorToast("Error al generar el reporte");
         }
       );
     } catch (error) {
       console.error("Error al generar reporte:", error);
+      showErrorToast("Error al generar el reporte");
     }
   };
 
   // Handlers
   const handleStartTimer = async (control: CaseControl) => {
     try {
+      // Iniciar el timer
       await startTimerMutation.mutateAsync({ caseControlId: control.id });
+
+      // Buscar dinámicamente el estado "EN CURSO"
+      const enCursoStatus = statuses.find(
+        (status) => status.name === "EN CURSO"
+      );
+
+      // Cambiar automáticamente el estado a "EN CURSO" si existe y no está ya en ese estado
+      if (enCursoStatus && control.statusId !== enCursoStatus.id) {
+        try {
+          await updateCaseControlStatus({
+            id: control.id,
+            statusId: enCursoStatus.id,
+          });
+
+          // Actualizar la cache para reflejar ambos cambios (timer + estado)
+          queryClient.invalidateQueries({ queryKey: ["caseControls"] });
+
+          success(
+            "Timer iniciado y caso cambiado a estado 'En Curso' automáticamente"
+          );
+        } catch (statusError) {
+          console.error("Error al cambiar estado:", statusError);
+          success(
+            "Timer iniciado correctamente (pero no se pudo cambiar el estado automáticamente)"
+          );
+        }
+      } else if (!enCursoStatus) {
+        console.warn("No se encontró el estado 'EN CURSO' en la base de datos");
+        success(
+          "Timer iniciado correctamente (estado 'EN CURSO' no encontrado)"
+        );
+      } else {
+        success("Timer iniciado correctamente");
+      }
     } catch (error) {
       console.error("Error al iniciar timer:", error);
+      if (error instanceof Error && error.message.includes("404")) {
+        showErrorToast(
+          "Endpoint no encontrado. El backend no está configurado para timers."
+        );
+      } else {
+        showErrorToast(
+          "Error al iniciar el timer. Verifique la conexión con el servidor."
+        );
+      }
     }
   };
 
   const handlePauseTimer = async (control: CaseControl) => {
     try {
       await pauseTimerMutation.mutateAsync({ caseControlId: control.id });
+      success("Timer pausado correctamente");
     } catch (error) {
       console.error("Error al pausar timer:", error);
+      if (error instanceof Error && error.message.includes("404")) {
+        showErrorToast(
+          "Endpoint no encontrado. El backend no está configurado para timers."
+        );
+      } else {
+        showErrorToast(
+          "Error al pausar el timer. Verifique la conexión con el servidor."
+        );
+      }
     }
   };
 
   const handleStopTimer = async (control: CaseControl) => {
     try {
       await stopTimerMutation.mutateAsync({ caseControlId: control.id });
+      success("Timer detenido correctamente");
     } catch (error) {
       console.error("Error al detener timer:", error);
+      if (error instanceof Error && error.message.includes("404")) {
+        showErrorToast(
+          "Endpoint no encontrado. El backend no está configurado para timers."
+        );
+      } else {
+        showErrorToast(
+          "Error al detener el timer. Verifique la conexión con el servidor."
+        );
+      }
     }
   };
 
   const handleStatusChange = async (controlId: string, statusId: string) => {
     try {
       await updateStatusMutation.mutateAsync({ id: controlId, statusId });
+      success("Estado actualizado correctamente");
     } catch (error) {
       console.error("Error al actualizar estado:", error);
+      showErrorToast(
+        "Error al actualizar el estado. Verifique que el endpoint esté disponible."
+      );
     }
   };
 
@@ -421,6 +559,9 @@ export const CaseControlPage: React.FC = () => {
                       variant="ghost"
                       size="sm"
                       className="text-yellow-600 hover:text-yellow-700"
+                      onClick={() => handleArchiveCase(control)}
+                      disabled={isArchiving}
+                      title="Archivar caso"
                     >
                       <ArchiveBoxIcon className="h-4 w-4" />
                     </Button>
@@ -446,6 +587,18 @@ export const CaseControlPage: React.FC = () => {
         onAssign={() => {
           queryClient.invalidateQueries({ queryKey: ["caseControls"] });
         }}
+      />
+
+      {/* Modal de confirmación */}
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={modalHandlers.onClose}
+        onConfirm={modalHandlers.onConfirm}
+        title={modalState.options?.title || ""}
+        message={modalState.options?.message || ""}
+        confirmText={modalState.options?.confirmText}
+        cancelText={modalState.options?.cancelText}
+        type={modalState.options?.type}
       />
     </div>
   );

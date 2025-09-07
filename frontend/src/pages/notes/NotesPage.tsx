@@ -13,6 +13,9 @@ import {
   useDeleteNote,
 } from "../../hooks/useNotes";
 import { NoteCard } from "../../components/notes/NoteCard";
+import { useToast } from "../../contexts/ToastContext";
+import { useConfirmationModal } from "../../hooks/useConfirmationModal";
+import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
 
 export const NotesPage: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
@@ -39,21 +42,12 @@ export const NotesPage: React.FC = () => {
   const updateNoteMutation = useUpdateNote();
   const deleteNoteMutation = useDeleteNote();
 
+  const { success, error: showErrorToast } = useToast();
+  const { confirmDelete, modalState, modalHandlers } = useConfirmationModal();
+
   // Mock data for users and cases - In real app, these would come from API calls
 
   // Extraer tags únicos cuando las notas cambian
-
-  const handleDeleteNote = async (note: Note) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar esta nota?")) {
-      return;
-    }
-
-    try {
-      await deleteNoteMutation.mutateAsync(note.id);
-    } catch (err) {
-      console.error("Error deleting note:", err);
-    }
-  };
 
   const handleEditNote = (note: Note) => {
     setEditingNote(note);
@@ -92,6 +86,21 @@ export const NotesPage: React.FC = () => {
     }
 
     setCurrentFilters(filters);
+  };
+
+  const handleDeleteNote = async (note: Note) => {
+    const confirmed = await confirmDelete("nota");
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteNoteMutation.mutateAsync(note.id);
+      success("Nota eliminada exitosamente");
+    } catch (error) {
+      console.error("Error deleting note:", error);
+      showErrorToast("Error al eliminar la nota");
+    }
   };
 
   // Loading state
@@ -494,6 +503,18 @@ export const NotesPage: React.FC = () => {
             availableTags={existingTags}
           /> */
         )}
+
+        {/* Modal de confirmación */}
+        <ConfirmationModal
+          isOpen={modalState.isOpen}
+          onClose={modalHandlers.onClose}
+          onConfirm={modalHandlers.onConfirm}
+          title={modalState.options?.title || ""}
+          message={modalState.options?.message || ""}
+          confirmText={modalState.options?.confirmText}
+          cancelText={modalState.options?.cancelText}
+          type={modalState.options?.type}
+        />
       </div>
     </div>
   );

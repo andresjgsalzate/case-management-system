@@ -14,6 +14,8 @@ import { Select } from "../../components/ui/Select";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
 import { DispositionForm } from "../../components/dispositions/DispositionForm";
+import { useToast } from "../../contexts/ToastContext";
+import { useConfirmationModal } from "../../hooks/useConfirmationModal";
 import { DispositionTable } from "../../components/dispositions/DispositionTable";
 import { DispositionMonthlyCard } from "../../components/dispositions/DispositionMonthlyCard";
 import {
@@ -74,6 +76,11 @@ export const DispositionsPage: React.FC = () => {
   const createDisposition = useCreateDisposition();
   const updateDisposition = useUpdateDisposition();
   const deleteDisposition = useDeleteDisposition();
+
+  // Toast and Modal hooks
+  const { success, error: showErrorToast, info } = useToast();
+  const { confirmDangerAction, modalState, modalHandlers } =
+    useConfirmationModal();
 
   // Handlers
   const handleCreateDisposition = () => {
@@ -141,7 +148,7 @@ export const DispositionsPage: React.FC = () => {
         !monthlyDispositions ||
         monthlyDispositions.dispositions.length === 0
       ) {
-        alert(
+        info(
           `No se encontraron disposiciones para ${year}/${month
             .toString()
             .padStart(2, "0")}`
@@ -158,7 +165,7 @@ export const DispositionsPage: React.FC = () => {
       );
     } catch (error) {
       console.error("Error al exportar mes:", error);
-      alert(
+      showErrorToast(
         "Error al exportar los datos del mes. Por favor, intente nuevamente."
       );
     }
@@ -170,7 +177,7 @@ export const DispositionsPage: React.FC = () => {
       const allDispositions = dispositionsQuery.data || [];
 
       if (allDispositions.length === 0) {
-        alert("No hay disposiciones para exportar");
+        info("No hay disposiciones para exportar");
         return;
       }
 
@@ -179,7 +186,7 @@ export const DispositionsPage: React.FC = () => {
       );
     } catch (error) {
       console.error("Error al exportar todas las disposiciones:", error);
-      alert(
+      showErrorToast(
         "Error al exportar todas las disposiciones. Por favor, intente nuevamente."
       );
     }
@@ -419,6 +426,18 @@ export const DispositionsPage: React.FC = () => {
         onConfirm={confirmDeleteDisposition}
         onClose={cancelDeleteDisposition}
         type="danger"
+      />
+
+      {/* Modal de confirmación global */}
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={modalHandlers.onClose}
+        onConfirm={modalHandlers.onConfirm}
+        title={modalState.options?.title || ""}
+        message={modalState.options?.message || ""}
+        confirmText={modalState.options?.confirmText}
+        cancelText={modalState.options?.cancelText}
+        type={modalState.options?.type}
       />
     </PageWrapper>
   );

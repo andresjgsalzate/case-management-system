@@ -63,6 +63,12 @@ export const SYSTEM_MODULES: ModulePermission[] = [
       "dispositions.read_all",
     ],
   },
+  {
+    name: "Archivo",
+    href: "/archive",
+    icon: "ArchiveBoxIcon",
+    permissions: ["archive.view"],
+  },
 ];
 
 // Secciones administrativas agrupadas
@@ -196,6 +202,27 @@ export const useModulePermissions = () => {
     // Filtrar módulos permitidos
     const allowedModules = SYSTEM_MODULES.filter(
       canAccessModuleWithPermissions
+    );
+
+    // Debug logging para el módulo de Archivo
+    const archiveModule = SYSTEM_MODULES.find((m) => m.href === "/archive");
+    console.log("🔍 MODULE PERMISSIONS - Archive Debug:");
+    console.log("  - Archive module found:", archiveModule);
+    console.log(
+      "  - Can access archive:",
+      archiveModule
+        ? canAccessModuleWithPermissions(archiveModule)
+        : "module not found"
+    );
+    console.log(
+      "  - Has archive.view permission:",
+      hasPermission("archive.view")
+    );
+    console.log("  - Is admin:", isAdmin);
+    console.log("  - Allowed modules count:", allowedModules.length);
+    console.log(
+      "  - Allowed modules:",
+      allowedModules.map((m) => m.name)
     );
 
     // Filtrar secciones administrativas permitidas

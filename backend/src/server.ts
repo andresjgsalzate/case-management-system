@@ -21,6 +21,7 @@ import manualTimeEntriesRoutes from "./modules/manual-time-entries/manual-time-e
 import dispositionRoutes from "./modules/dispositions/disposition.routes";
 import todoRoutes from "./modules/todos/todo.routes";
 import noteRoutes from "./modules/notes/notes.routes";
+import archiveRoutes from "./modules/archive/archive.routes";
 import permissionsRoutes from "./routes/permissions.routes";
 import testRoutes from "./routes/test.routes";
 import authPermissionRoutes from "./routes/auth";
@@ -72,6 +73,7 @@ app.use("/api/manual-time-entries", manualTimeEntriesRoutes);
 app.use("/api/dispositions", dispositionRoutes);
 app.use("/api/todos", todoRoutes);
 app.use("/api/notes", noteRoutes);
+app.use("/api/archive", archiveRoutes);
 app.use("/api/metrics", metricsRoutes);
 app.use("/api/debug", debugRoutes);
 app.use("/api/migration", migrationRoutes);

@@ -89,9 +89,10 @@ export const updateCaseControlStatus = async (
 
 export const startTimer = async (data: StartTimerDTO): Promise<CaseControl> => {
   const result = await authService.authenticatedRequest<CaseControl>(
-    `/case-control/${data.caseControlId}/start-timer`,
+    `/case-control/timer/start`,
     {
       method: "POST",
+      body: JSON.stringify(data),
     }
   );
 
@@ -108,9 +109,10 @@ export const startTimer = async (data: StartTimerDTO): Promise<CaseControl> => {
 
 export const stopTimer = async (data: StopTimerDTO): Promise<CaseControl> => {
   const result = await authService.authenticatedRequest<CaseControl>(
-    `/case-control/${data.caseControlId}/stop-timer`,
+    `/case-control/timer/stop`,
     {
       method: "POST",
+      body: JSON.stringify(data),
     }
   );
 
@@ -127,9 +129,10 @@ export const stopTimer = async (data: StopTimerDTO): Promise<CaseControl> => {
 
 export const pauseTimer = async (data: PauseTimerDTO): Promise<CaseControl> => {
   const result = await authService.authenticatedRequest<CaseControl>(
-    `/case-control/${data.caseControlId}/pause-timer`,
+    `/case-control/timer/pause`,
     {
       method: "POST",
+      body: JSON.stringify(data),
     }
   );
 

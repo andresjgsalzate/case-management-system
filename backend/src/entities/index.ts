@@ -16,3 +16,5 @@ export { TodoControl } from "./TodoControl";
 export { TodoTimeEntry } from "./TodoTimeEntry";
 export { TodoManualTimeEntry } from "./TodoManualTimeEntry";
 export { Note } from "./Note";
+export { ArchivedCase } from "./ArchivedCase";
+export { ArchivedTodo } from "./ArchivedTodo";

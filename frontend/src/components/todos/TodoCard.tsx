@@ -15,6 +15,9 @@ import {
 import { Todo } from "../../types/todo.types";
 import { TodoTimeModal } from "./TodoTimeModal";
 import { Button } from "../ui/Button";
+import { useToast } from "../../contexts/ToastContext";
+import { useConfirmationModal } from "../../hooks/useConfirmationModal";
+import { ConfirmationModal } from "../ui/ConfirmationModal";
 
 interface TodoCardProps {
   todo: Todo;
@@ -40,6 +43,9 @@ export const TodoCard: React.FC<TodoCardProps> = ({
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>("");
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+  const { success, error: showErrorToast } = useToast();
+  const { confirmDelete, modalState, modalHandlers } = useConfirmationModal();
 
   // Timer en tiempo real
   useEffect(() => {
@@ -138,9 +144,15 @@ export const TodoCard: React.FC<TodoCardProps> = ({
   };
 
   const handleDelete = async () => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar este TODO?")) {
+    const confirmed = await confirmDelete("TODO");
+    if (confirmed) {
       if (onDelete) {
-        await onDelete(todo.id);
+        try {
+          await onDelete(todo.id);
+          success("TODO eliminado exitosamente");
+        } catch (error) {
+          showErrorToast("Error al eliminar el TODO");
+        }
       }
     }
   };
@@ -384,6 +396,18 @@ export const TodoCard: React.FC<TodoCardProps> = ({
           todoTitle={todo.title}
         />
       )}
+
+      {/* Modal de confirmación */}
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={modalHandlers.onClose}
+        onConfirm={modalHandlers.onConfirm}
+        title={modalState.options?.title || ""}
+        message={modalState.options?.message || ""}
+        confirmText={modalState.options?.confirmText}
+        cancelText={modalState.options?.cancelText}
+        type={modalState.options?.type}
+      />
     </div>
   );
 };

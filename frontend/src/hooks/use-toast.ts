@@ -1,3 +1,8 @@
+// DEPRECATED: Usar useToast del ToastContext en su lugar
+// Este archivo se mantiene por compatibilidad temporal
+
+import { useToast as useToastContext } from "../contexts/ToastContext";
+
 type ToastProps = {
   title: string;
   description?: string;
@@ -5,14 +10,13 @@ type ToastProps = {
 };
 
 const useToast = () => {
-  const toast = ({ title, description, variant = "default" }: ToastProps) => {
-    // Por ahora usaremos un alert simple, pero después se puede integrar con un sistema de toast más sofisticado
-    const message = description ? `${title}: ${description}` : title;
+  const toastContext = useToastContext();
 
+  const toast = ({ title, description, variant = "default" }: ToastProps) => {
     if (variant === "destructive") {
-      alert(`❌ ${message}`);
+      toastContext.error(title, description);
     } else {
-      alert(`✅ ${message}`);
+      toastContext.success(title, description);
     }
   };
 

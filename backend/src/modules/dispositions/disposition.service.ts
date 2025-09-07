@@ -79,11 +79,8 @@ export class DispositionService {
     userId?: string
   ): Promise<Disposition[]> {
     try {
-      const queryBuilder = this.dispositionRepository
-        .createQueryBuilder("disposition")
-        .leftJoinAndSelect("disposition.case", "case")
-        .leftJoinAndSelect("disposition.application", "application")
-        .leftJoinAndSelect("disposition.user", "user");
+      const queryBuilder =
+        this.dispositionRepository.createQueryBuilder("disposition");
 
       // Filtro por usuario (si está proporcionado)
       if (userId) {
@@ -136,9 +133,6 @@ export class DispositionService {
     try {
       const disposition = await this.dispositionRepository
         .createQueryBuilder("disposition")
-        .leftJoinAndSelect("disposition.case", "case")
-        .leftJoinAndSelect("disposition.application", "application")
-        .leftJoinAndSelect("disposition.user", "user")
         .where("disposition.id = :id", { id })
         .getOne();
 
@@ -239,7 +233,6 @@ export class DispositionService {
     try {
       const queryBuilder = this.dispositionRepository
         .createQueryBuilder("disposition")
-        .leftJoinAndSelect("disposition.application", "application")
         .where("EXTRACT(YEAR FROM disposition.date) = :year", { year })
         .andWhere("EXTRACT(MONTH FROM disposition.date) = :month", { month });
 
@@ -249,8 +242,8 @@ export class DispositionService {
       const statsByApplication: { [key: string]: any } = {};
 
       dispositions.forEach((disposition) => {
-        const appId = disposition.applicationId;
-        const appName = disposition.application?.nombre || "Sin aplicación";
+        const appId = disposition.applicationId || "unknown";
+        const appName = disposition.applicationName || "Sin aplicación";
 
         if (!statsByApplication[appId]) {
           statsByApplication[appId] = {

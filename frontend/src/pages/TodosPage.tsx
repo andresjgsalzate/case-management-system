@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import { useTodos } from "../hooks/useTodos";
+import { useToast } from "../contexts/ToastContext";
+import { useConfirmationModal } from "../hooks/useConfirmationModal";
+import { ConfirmationModal } from "../components/ui/ConfirmationModal";
 import {
   CreateTodoData,
   UpdateTodoData,
@@ -34,6 +37,9 @@ const TodosPage: React.FC = () => {
     overdueTodos,
   } = useTodos();
 
+  const { success, error: showErrorToast } = useToast();
+  const { confirmDelete, modalState, modalHandlers } = useConfirmationModal();
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
@@ -54,8 +60,10 @@ const TodosPage: React.FC = () => {
   };
 
   const handleDeleteTodo = async (id: string) => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar este TODO?")) {
+    const confirmed = await confirmDelete("TODO");
+    if (confirmed) {
       await deleteTodo(id);
+      success("TODO eliminado exitosamente");
     }
   };
 
@@ -456,6 +464,18 @@ const TodosPage: React.FC = () => {
           onSubmit={(data) => handleUpdateTodo(editingTodo.id, data)}
         />
       )}
+
+      {/* Modal de confirmación */}
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={modalHandlers.onClose}
+        onConfirm={modalHandlers.onConfirm}
+        title={modalState.options?.title || ""}
+        message={modalState.options?.message || ""}
+        confirmText={modalState.options?.confirmText}
+        cancelText={modalState.options?.cancelText}
+        type={modalState.options?.type}
+      />
     </div>
   );
 };

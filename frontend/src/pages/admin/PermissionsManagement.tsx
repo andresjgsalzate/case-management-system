@@ -10,6 +10,9 @@ import { Trash2, Edit, Plus, Users, Shield, Settings } from "lucide-react";
 import { authPermissionService } from "../../services/authPermission.service";
 import { Permission, Role } from "../../types/auth";
 import { useToast } from "../../hooks/use-toast";
+import { useToast as useToastContext } from "../../contexts/ToastContext";
+import { useConfirmationModal } from "../../hooks/useConfirmationModal";
+import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
 
 interface PermissionsManagementProps {}
 
@@ -44,6 +47,9 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
   const [editingRole, setEditingRole] = useState<Role | null>(null);
 
   const { toast } = useToast();
+  const { success, error: showErrorToast } = useToastContext();
+  const { confirmDangerAction, modalState, modalHandlers } =
+    useConfirmationModal();
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -162,22 +168,21 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
   };
 
   const handleDeletePermission = async (permissionId: string) => {
-    if (!confirm("¿Estás seguro de que quieres eliminar este permiso?")) return;
+    const confirmed = await confirmDangerAction(
+      "Eliminar Permiso",
+      "¿Estás seguro de que quieres eliminar este permiso?",
+      "Esta acción no se puede deshacer."
+    );
+
+    if (!confirmed) return;
 
     try {
       // Aquí iría la llamada al backend para eliminar el permiso
       setPermissions((prev) => prev.filter((p) => p.id !== permissionId));
 
-      toast({
-        title: "Éxito",
-        description: "Permiso eliminado correctamente",
-      });
+      success("Permiso eliminado correctamente");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Error al eliminar el permiso",
-        variant: "destructive",
-      });
+      showErrorToast("Error al eliminar el permiso");
     }
   };
 
@@ -278,22 +283,21 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
   };
 
   const handleDeleteRole = async (roleId: string) => {
-    if (!confirm("¿Estás seguro de que quieres eliminar este rol?")) return;
+    const confirmed = await confirmDangerAction(
+      "Eliminar Rol",
+      "¿Estás seguro de que quieres eliminar este rol?",
+      "Esta acción no se puede deshacer."
+    );
+
+    if (!confirmed) return;
 
     try {
       // Aquí iría la llamada al backend para eliminar el rol
       setRoles((prev) => prev.filter((r) => r.id !== roleId));
 
-      toast({
-        title: "Éxito",
-        description: "Rol eliminado correctamente",
-      });
+      success("Rol eliminado correctamente");
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Error al eliminar el rol",
-        variant: "destructive",
-      });
+      showErrorToast("Error al eliminar el rol");
     }
   };
 
@@ -871,6 +875,18 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
           </Button>
         </div>
       </Modal>
+
+      {/* Modal de confirmación */}
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={modalHandlers.onClose}
+        onConfirm={modalHandlers.onConfirm}
+        title={modalState.options?.title || ""}
+        message={modalState.options?.message || ""}
+        confirmText={modalState.options?.confirmText}
+        cancelText={modalState.options?.cancelText}
+        type={modalState.options?.type}
+      />
     </div>
   );
 };

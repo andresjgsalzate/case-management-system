@@ -9,6 +9,9 @@ import {
   UserIcon,
 } from "@heroicons/react/24/outline";
 import { useCases } from "../../hooks/useCases";
+import { useToast } from "../../contexts/ToastContext";
+import { useConfirmationModal } from "../../hooks/useConfirmationModal";
+import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
 
 export const CaseDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,16 +19,28 @@ export const CaseDetailPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const { data: cases, isLoading, error } = useCases();
 
+  const { success, error: showErrorToast } = useToast();
+  const { confirmDangerAction, modalState, modalHandlers } =
+    useConfirmationModal();
+
   // Buscar el caso por ID
   const caso = cases?.find((c) => c.id === id);
 
   const handleDelete = async () => {
-    if (window.confirm("¿Estás seguro de que quieres eliminar este caso?")) {
+    const confirmed = await confirmDangerAction(
+      "Eliminar Caso",
+      "¿Estás seguro de que quieres eliminar este caso?",
+      "Esta acción no se puede deshacer."
+    );
+
+    if (confirmed) {
       try {
         console.log("Eliminando caso:", caso?.id);
+        success("Caso eliminado exitosamente");
         navigate("/cases");
       } catch (error) {
         console.error("Error al eliminar el caso:", error);
+        showErrorToast("Error al eliminar el caso");
       }
     }
   };
@@ -392,6 +407,18 @@ export const CaseDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de confirmación */}
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={modalHandlers.onClose}
+        onConfirm={modalHandlers.onConfirm}
+        title={modalState.options?.title || ""}
+        message={modalState.options?.message || ""}
+        confirmText={modalState.options?.confirmText}
+        cancelText={modalState.options?.cancelText}
+        type={modalState.options?.type}
+      />
     </div>
   );
 };

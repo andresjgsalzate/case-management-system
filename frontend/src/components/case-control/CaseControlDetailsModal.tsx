@@ -9,6 +9,9 @@ import {
 import { Modal } from "../ui/Modal";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
+import { ConfirmationModal } from "../ui/ConfirmationModal";
+import { useToast } from "../../contexts/ToastContext";
+import { useConfirmationModal } from "../../hooks/useConfirmationModal";
 import { CaseControl } from "../../types/caseControl";
 import {
   useTimeEntries,
@@ -49,6 +52,9 @@ export const CaseControlDetailsModal: React.FC<
   const addManualTimeMutation = useAddManualTime();
   const deleteManualTimeMutation = useDeleteManualTime();
   const deleteTimeEntryMutation = useDeleteTimeEntry();
+
+  const { success, error: showErrorToast } = useToast();
+  const { confirmDelete, modalState, modalHandlers } = useConfirmationModal();
 
   const [showManualTimeForm, setShowManualTimeForm] = useState(false);
   const [manualTimeForm, setManualTimeForm] = useState<ManualTimeForm>({
@@ -124,29 +130,27 @@ export const CaseControlDetailsModal: React.FC<
   };
 
   const handleDeleteTimeEntry = async (entryId: string) => {
-    if (
-      window.confirm(
-        "¿Estás seguro de que quieres eliminar esta entrada de tiempo?"
-      )
-    ) {
+    const confirmed = await confirmDelete("entrada de tiempo");
+    if (confirmed) {
       try {
         await deleteTimeEntryMutation.mutateAsync(entryId);
+        success("Entrada de tiempo eliminada exitosamente");
       } catch (error) {
         console.error("Error deleting time entry:", error);
+        showErrorToast("Error al eliminar la entrada de tiempo");
       }
     }
   };
 
   const handleDeleteManualEntry = async (entryId: string) => {
-    if (
-      window.confirm(
-        "¿Estás seguro de que quieres eliminar esta entrada manual?"
-      )
-    ) {
+    const confirmed = await confirmDelete("entrada manual");
+    if (confirmed) {
       try {
         await deleteManualTimeMutation.mutateAsync(entryId);
+        success("Entrada manual eliminada exitosamente");
       } catch (error) {
         console.error("Error deleting manual entry:", error);
+        showErrorToast("Error al eliminar la entrada manual");
       }
     }
   };
@@ -446,6 +450,18 @@ export const CaseControlDetailsModal: React.FC<
           )}
         </div>
       </div>
+
+      {/* Modal de confirmación */}
+      <ConfirmationModal
+        isOpen={modalState.isOpen}
+        onClose={modalHandlers.onClose}
+        onConfirm={modalHandlers.onConfirm}
+        title={modalState.options?.title || ""}
+        message={modalState.options?.message || ""}
+        confirmText={modalState.options?.confirmText}
+        cancelText={modalState.options?.cancelText}
+        type={modalState.options?.type}
+      />
     </Modal>
   );
 };

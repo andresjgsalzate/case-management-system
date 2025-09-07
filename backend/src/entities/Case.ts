@@ -21,11 +21,13 @@ export enum ClasificacionCase {
 
 export enum EstadoCase {
   NUEVO = "nuevo",
+  ASIGNADO = "asignado",
   EN_PROGRESO = "en_progreso",
   PENDIENTE = "pendiente",
   RESUELTO = "resuelto",
   CERRADO = "cerrado",
   CANCELADO = "cancelado",
+  RESTAURADO = "restaurado",
 }
 
 @Entity("cases")

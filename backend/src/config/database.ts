@@ -19,6 +19,8 @@ import {
   Note,
   Permission,
   RolePermission,
+  ArchivedCase,
+  ArchivedTodo,
 } from "../entities";
 
 export const AppDataSource = new DataSource({
@@ -49,6 +51,8 @@ export const AppDataSource = new DataSource({
     Note,
     Permission,
     RolePermission,
+    ArchivedCase,
+    ArchivedTodo,
   ],
   migrations: ["src/database/migrations/**/*.ts"],
   subscribers: ["src/database/subscribers/**/*.ts"],

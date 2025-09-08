@@ -208,32 +208,38 @@ export const DispositionForm: React.FC<DispositionFormProps> = ({
                   </div>
                 ) : filteredCases.length > 0 ? (
                   filteredCases.slice(0, 10).map((caso) => (
-                    <button
+                    <Button
                       key={caso.id}
                       type="button"
                       onClick={() => handleCaseSelect(caso)}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none"
+                      variant="ghost"
+                      size="sm"
+                      className="w-full px-4 py-2 text-left justify-start h-auto"
                     >
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        {caso.numeroCaso}
+                      <div className="text-left">
+                        <div className="font-medium text-gray-900 dark:text-white">
+                          {caso.numeroCaso}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                          {caso.descripcion}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                        {caso.descripcion}
-                      </div>
-                    </button>
+                    </Button>
                   ))
                 ) : (
                   <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                     No se encontraron casos
                   </div>
                 )}
-                <button
+                <Button
                   type="button"
                   onClick={() => setShowCaseDropdown(false)}
-                  className="w-full px-4 py-2 text-center border-t border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  variant="ghost"
+                  size="sm"
+                  className="w-full border-t border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 rounded-none"
                 >
                   Cerrar
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -254,7 +260,7 @@ export const DispositionForm: React.FC<DispositionFormProps> = ({
                     {selectedCase.estado}
                   </p>
                 </div>
-                <button
+                <Button
                   type="button"
                   onClick={() => {
                     setSelectedCase(null);
@@ -262,10 +268,12 @@ export const DispositionForm: React.FC<DispositionFormProps> = ({
                     setValue("caseNumber", "");
                     setValue("caseId", undefined);
                   }}
-                  className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200"
+                  variant="ghost"
+                  size="xs"
+                  className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 p-1"
                 >
                   <XMarkIcon className="h-4 w-4" />
-                </button>
+                </Button>
               </div>
             </div>
           )}

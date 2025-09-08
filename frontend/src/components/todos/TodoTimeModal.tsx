@@ -423,13 +423,15 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
                           <div className="text-xs text-gray-500 dark:text-gray-400">
                             Automático
                           </div>
-                          <button
+                          <Button
                             onClick={() => handleDeleteTimeEntry(entry.id)}
-                            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                            variant="ghost"
+                            size="xs"
+                            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 p-1"
                             title="Eliminar entrada de tiempo"
                           >
                             <TrashIcon className="h-4 w-4" />
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -461,12 +463,14 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
                             </div>
                           </div>
                         </div>
-                        <button
+                        <Button
                           onClick={() => handleDeleteManualTime(entry.id)}
-                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                          variant="ghost"
+                          size="xs"
+                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 p-1"
                         >
                           <TrashIcon className="h-4 w-4" />
-                        </button>
+                        </Button>
                       </div>
                     ))}
                   </div>

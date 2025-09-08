@@ -286,6 +286,46 @@ export class RoleController {
   }
 
   /**
+   * Obtener permisos de un rol
+   */
+  async getRolePermissions(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          error: "ID del rol es requerido",
+        });
+      }
+
+      const roleWithPermissions = await this.roleService.getRoleWithPermissions(
+        id
+      );
+
+      if (!roleWithPermissions) {
+        return res.status(404).json({
+          success: false,
+          error: "Rol no encontrado",
+        });
+      }
+
+      res.json({
+        success: true,
+        data: roleWithPermissions.permissions,
+        message: "Permisos del rol obtenidos correctamente",
+      });
+    } catch (error) {
+      console.error("Error al obtener permisos del rol:", error);
+
+      res.status(500).json({
+        success: false,
+        error: "Error interno del servidor",
+      });
+    }
+  }
+
+  /**
    * Asignar permisos a un rol
    */
   async assignPermissions(req: Request, res: Response) {

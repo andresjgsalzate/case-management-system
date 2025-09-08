@@ -30,6 +30,16 @@ router.get("/search", roleController.searchRoles.bind(roleController));
 router.get("/stats", roleController.getRoleStats.bind(roleController));
 
 /**
+ * @route GET /api/roles/:id/permissions
+ * @desc Obtener permisos de un rol
+ * @access Privado
+ */
+router.get(
+  "/:id/permissions",
+  roleController.getRolePermissions.bind(roleController)
+);
+
+/**
  * @route GET /api/roles/:id
  * @desc Obtener rol por ID
  * @access Privado

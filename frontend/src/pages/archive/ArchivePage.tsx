@@ -24,6 +24,7 @@ import { archiveApi } from "../../services/archiveApi";
 import { useConfirmationModal } from "../../hooks/useConfirmationModal";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
 import { ArchiveDetailsModal } from "../../components/archive/ArchiveDetailsModal";
+import { Button } from "../../components/ui/Button";
 import { toast } from "react-hot-toast";
 
 export const ArchivePage: React.FC = () => {
@@ -189,12 +190,9 @@ export const ArchivePage: React.FC = () => {
           <div className="text-red-600 dark:text-red-400 mb-4">
             Error al cargar el archivo: {error?.message}
           </div>
-          <button
-            onClick={() => refetch()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
+          <Button onClick={() => refetch()} variant="primary">
             Reintentar
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -213,20 +211,22 @@ export const ArchivePage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <button
+          <Button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center space-x-2 px-3 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            variant="ghost"
+            className="flex items-center space-x-2"
           >
             <FunnelIcon className="w-4 h-4" />
             <span>Filtros</span>
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => refetch()}
-            className="flex items-center space-x-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            variant="secondary"
+            className="flex items-center space-x-2"
           >
             <ArrowPathIcon className="w-4 h-4" />
             <span>Actualizar</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -509,32 +509,38 @@ export const ArchivePage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
-                        <button
+                        <Button
                           onClick={() => {
                             console.log("🔍 Button clicked! Item:", item.title);
                             handleViewDetails(item);
                           }}
+                          variant="ghost"
+                          size="xs"
                           className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
                           title="Ver detalles"
                         >
                           <EyeIcon className="w-4 h-4" />
-                        </button>
+                        </Button>
                         {!item.isRestored && (
-                          <button
+                          <Button
                             onClick={() => handleRestoreRequest(item)}
+                            variant="ghost"
+                            size="xs"
                             className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200"
                             title="Restaurar"
                           >
                             <ArrowPathIcon className="w-4 h-4" />
-                          </button>
+                          </Button>
                         )}
-                        <button
+                        <Button
                           onClick={() => handleDeleteRequest(item)}
+                          variant="ghost"
+                          size="xs"
                           className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200"
                           title="Eliminar permanentemente"
                         >
                           <XMarkIcon className="w-4 h-4" />
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -565,15 +571,17 @@ export const ArchivePage: React.FC = () => {
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Detalles del Elemento Archivado
                 </h2>
-                <button
+                <Button
                   onClick={() => {
                     console.log("🔍 Close button clicked");
                     setShowDetailsModal(false);
                   }}
-                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                  variant="ghost"
+                  size="xs"
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 >
                   <XMarkIcon className="h-6 w-6" />
-                </button>
+                </Button>
               </div>
 
               {/* Body */}

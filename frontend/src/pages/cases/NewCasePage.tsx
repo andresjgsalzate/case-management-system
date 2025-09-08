@@ -187,12 +187,9 @@ export const NewCasePage: React.FC = () => {
                 : "Registre un nuevo caso en el sistema con criterios de calificación"}
             </p>
           </div>
-          <button
-            onClick={() => navigate("/cases")}
-            className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 font-medium"
-          >
+          <Button onClick={() => navigate("/cases")} variant="ghost" size="sm">
             ← Volver a casos
-          </button>
+          </Button>
         </div>
       </div>
 

@@ -7,6 +7,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { Button } from "../ui/Button";
 
 interface TimerControlProps {
   isActive: boolean;
@@ -57,9 +58,6 @@ export const TimerControl: React.FC<TimerControlProps> = ({
       .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  const buttonClass =
-    "inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
-
   return (
     <div className="flex items-center gap-2">
       {/* Tiempo transcurrido */}
@@ -73,33 +71,36 @@ export const TimerControl: React.FC<TimerControlProps> = ({
       {/* Controles del timer */}
       <div className="flex items-center gap-1">
         {!isActive ? (
-          <button
+          <Button
             onClick={onStart}
             disabled={disabled || isLoading}
-            className={`${buttonClass} bg-green-600 hover:bg-green-700 text-white focus:ring-green-500`}
+            variant="success"
+            size="sm"
             title="Iniciar timer"
           >
             <PlayIcon className="h-4 w-4" />
-          </button>
+          </Button>
         ) : (
           <>
-            <button
+            <Button
               onClick={onPause}
               disabled={disabled || isLoading}
-              className={`${buttonClass} bg-yellow-600 hover:bg-yellow-700 text-white focus:ring-yellow-500`}
+              variant="warning"
+              size="sm"
               title="Pausar timer"
             >
               <PauseIcon className="h-4 w-4" />
-            </button>
+            </Button>
 
-            <button
+            <Button
               onClick={onStop}
               disabled={disabled || isLoading}
-              className={`${buttonClass} bg-red-600 hover:bg-red-700 text-white focus:ring-red-500`}
+              variant="danger"
+              size="sm"
               title="Detener timer"
             >
               <StopIcon className="h-4 w-4" />
-            </button>
+            </Button>
           </>
         )}
       </div>

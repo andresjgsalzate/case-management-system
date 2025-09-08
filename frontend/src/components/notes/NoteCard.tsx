@@ -13,6 +13,7 @@ import { ExclamationTriangleIcon as ExclamationTriangleSolid } from "@heroicons/
 import { Note } from "../../types/note.types";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { Button } from "../ui/Button";
 
 interface NoteCardProps {
   note: Note;
@@ -113,21 +114,25 @@ export const NoteCard: React.FC<NoteCardProps> = ({
           {/* Actions */}
           <div className="flex items-center gap-2">
             {canUserEdit && (
-              <button
+              <Button
                 onClick={() => onEdit(note)}
-                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                variant="ghost"
+                size="xs"
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 title="Editar nota"
               >
                 <PencilIcon className="h-4 w-4" />
-              </button>
+              </Button>
             )}
 
             {canArchive && (
-              <button
+              <Button
                 onClick={() =>
                   note.isArchived ? onUnarchive(note) : onArchive(note)
                 }
-                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                variant="ghost"
+                size="xs"
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 title={note.isArchived ? "Desarchivar nota" : "Archivar nota"}
               >
                 {note.isArchived ? (
@@ -135,17 +140,19 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                 ) : (
                   <ArchiveBoxIcon className="h-4 w-4" />
                 )}
-              </button>
+              </Button>
             )}
 
             {canUserDelete && (
-              <button
+              <Button
                 onClick={() => onDelete(note)}
-                className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                variant="ghost"
+                size="xs"
+                className="p-1 text-gray-400 hover:text-red-500"
                 title="Eliminar nota"
               >
                 <TrashIcon className="h-4 w-4" />
-              </button>
+              </Button>
             )}
           </div>
         </div>

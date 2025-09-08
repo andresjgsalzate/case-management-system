@@ -6,6 +6,7 @@ import {
   InformationCircleIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
+import { Button } from "../components/ui/Button";
 
 export type ToastType = "success" | "error" | "info" | "warning";
 
@@ -104,13 +105,15 @@ const ToastItem: React.FC<{ toast: Toast; onRemove: (id: string) => void }> = ({
             )}
           </div>
           <div className="ml-4 flex-shrink-0 flex">
-            <button
-              className="bg-transparent rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:text-gray-300 dark:hover:text-gray-200"
+            <Button
+              variant="ghost"
+              size="xs"
+              className="text-gray-400 hover:text-gray-500 dark:text-gray-300 dark:hover:text-gray-200"
               onClick={() => onRemove(toast.id)}
             >
               <span className="sr-only">Cerrar</span>
               <XCircleIcon className="h-5 w-5" />
-            </button>
+            </Button>
           </div>
         </div>
       </div>

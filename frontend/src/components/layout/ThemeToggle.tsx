@@ -1,6 +1,7 @@
 import React from "react";
 import { SunIcon, MoonIcon } from "@heroicons/react/24/outline";
 import { useTheme } from "../../providers/ThemeProvider";
+import { Button } from "../ui/Button";
 
 interface ThemeToggleProps {
   className?: string;
@@ -16,11 +17,11 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   const { isDark, toggleTheme } = useTheme();
 
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="sm"
       onClick={toggleTheme}
-      className={`w-full flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors duration-200 ${
-        isCollapsed ? "justify-center" : ""
-      } ${className}`}
+      className={`w-full ${isCollapsed ? "justify-center" : ""} ${className}`}
       title={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
     >
       {isDark ? (
@@ -38,6 +39,6 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
           )}
         </>
       )}
-    </button>
+    </Button>
   );
 };

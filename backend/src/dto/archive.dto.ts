@@ -271,6 +271,8 @@ export class ArchivedTodoResponseDto {
   restoredBy?: string;
   isRestored: boolean;
   totalTimeMinutes: number;
+  timerTimeMinutes: number;
+  manualTimeMinutes: number;
   createdAt: string;
   updatedAt: string;
 

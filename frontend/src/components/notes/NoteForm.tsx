@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import {
-  XMarkIcon,
   PlusIcon,
   TagIcon,
   ClockIcon,
   UserIcon,
   DocumentTextIcon,
 } from "@heroicons/react/24/outline";
+import { Modal } from "../ui/Modal";
+import { Button } from "../ui/Button";
 import { NoteFormData } from "../../types/note.types";
 
 interface NoteFormProps {
@@ -153,235 +154,217 @@ export const NoteForm: React.FC<NoteFormProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {isEdit ? "Editar Nota" : "Nueva Nota"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          >
-            <XMarkIcon className="h-6 w-6" />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEdit ? "Editar Nota" : "Nueva Nota"}
+      size="lg"
+    >
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Title */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Título *
+          </label>
+          <input
+            type="text"
+            value={formData.title}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, title: e.target.value }))
+            }
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            placeholder="Título de la nota"
+            required
+          />
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Título *
-            </label>
+        {/* Content */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Contenido *
+          </label>
+          <textarea
+            value={formData.content}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, content: e.target.value }))
+            }
+            rows={8}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            placeholder="Contenido de la nota..."
+            required
+          />
+        </div>
+
+        {/* Tags */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <TagIcon className="h-4 w-4 inline mr-1" />
+            Etiquetas
+          </label>
+          <div className="flex gap-2 mb-2">
             <input
               type="text"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, title: e.target.value }))
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              onKeyPress={(e) =>
+                e.key === "Enter" && (e.preventDefault(), handleAddTag())
               }
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              placeholder="Título de la nota"
-              required
+              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              placeholder="Agregar etiqueta"
             />
+            <Button onClick={handleAddTag} variant="primary" size="sm">
+              <PlusIcon className="h-4 w-4" />
+            </Button>
           </div>
-
-          {/* Content */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Contenido *
-            </label>
-            <textarea
-              value={formData.content}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, content: e.target.value }))
-              }
-              rows={8}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              placeholder="Contenido de la nota..."
-              required
-            />
-          </div>
-
-          {/* Tags */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              <TagIcon className="h-4 w-4 inline mr-1" />
-              Etiquetas
-            </label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-                onKeyPress={(e) =>
-                  e.key === "Enter" && (e.preventDefault(), handleAddTag())
-                }
-                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                placeholder="Agregar etiqueta"
-              />
-              <button
-                type="button"
-                onClick={handleAddTag}
-                className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <PlusIcon className="h-4 w-4" />
-              </button>
-            </div>
-            {formData.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {formData.tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm flex items-center gap-1"
-                  >
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTag(tag)}
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
-                    >
-                      <XMarkIcon className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Case Selection */}
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              <DocumentTextIcon className="h-4 w-4 inline mr-1" />
-              Caso Asociado
-            </label>
-            <input
-              type="text"
-              value={caseSearch}
-              onChange={(e) => handleCaseSearch(e.target.value)}
-              onFocus={() => setShowCaseDropdown(caseSearch.length > 0)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              placeholder="Buscar caso por número o descripción"
-            />
-            {showCaseDropdown && filteredCases.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                {filteredCases.slice(0, 10).map((caseItem) => (
+          {formData.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {formData.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm flex items-center gap-1"
+                >
+                  {tag}
                   <button
-                    key={caseItem.id}
                     type="button"
-                    onClick={() => handleCaseSelect(caseItem)}
-                    className="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none"
+                    onClick={() => handleRemoveTag(tag)}
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
                   >
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {caseItem.numeroCaso}
-                    </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                      {caseItem.descripcion}
-                    </div>
+                    ×
                   </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Assigned User */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              <UserIcon className="h-4 w-4 inline mr-1" />
-              Asignar a Usuario
-            </label>
-            <select
-              value={formData.assignedTo}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, assignedTo: e.target.value }))
-              }
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-            >
-              <option value="">Seleccionar usuario (opcional)</option>
-              {users.map((user) => (
-                <option key={user.id} value={user.id}>
-                  {user.fullName || user.email}
-                </option>
+                </span>
               ))}
-            </select>
-          </div>
+            </div>
+          )}
+        </div>
 
-          {/* Reminder Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              <ClockIcon className="h-4 w-4 inline mr-1" />
-              Recordatorio
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  Fecha
-                </label>
-                <input
-                  type="date"
-                  value={reminderDateOnly}
-                  onChange={(e) => setReminderDateOnly(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  Hora
-                </label>
-                <input
-                  type="time"
-                  value={reminderTimeOnly}
-                  onChange={(e) => setReminderTimeOnly(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                />
-              </div>
+        {/* Case Selection */}
+        <div className="relative">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <DocumentTextIcon className="h-4 w-4 inline mr-1" />
+            Caso Asociado
+          </label>
+          <input
+            type="text"
+            value={caseSearch}
+            onChange={(e) => handleCaseSearch(e.target.value)}
+            onFocus={() => setShowCaseDropdown(caseSearch.length > 0)}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+            placeholder="Buscar caso por número o descripción"
+          />
+          {showCaseDropdown && filteredCases.length > 0 && (
+            <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-48 overflow-y-auto">
+              {filteredCases.slice(0, 10).map((caseItem) => (
+                <button
+                  key={caseItem.id}
+                  type="button"
+                  onClick={() => handleCaseSelect(caseItem)}
+                  className="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none"
+                >
+                  <div className="font-medium text-gray-900 dark:text-white">
+                    {caseItem.numeroCaso}
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                    {caseItem.descripcion}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Assigned User */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <UserIcon className="h-4 w-4 inline mr-1" />
+            Asignar a Usuario
+          </label>
+          <select
+            value={formData.assignedTo}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, assignedTo: e.target.value }))
+            }
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+          >
+            <option value="">Seleccionar usuario (opcional)</option>
+            {users.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.fullName || user.email}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Reminder Date */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <ClockIcon className="h-4 w-4 inline mr-1" />
+            Recordatorio
+          </label>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                Fecha
+              </label>
+              <input
+                type="date"
+                value={reminderDateOnly}
+                onChange={(e) => setReminderDateOnly(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                Hora
+              </label>
+              <input
+                type="time"
+                value={reminderTimeOnly}
+                onChange={(e) => setReminderTimeOnly(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              />
             </div>
           </div>
+        </div>
 
-          {/* Important */}
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="isImportant"
-              checked={formData.isImportant}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  isImportant: e.target.checked,
-                }))
-              }
-              className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
-            />
-            <label
-              htmlFor="isImportant"
-              className="ml-2 text-sm text-gray-700 dark:text-gray-300"
-            >
-              Marcar como importante
-            </label>
-          </div>
+        {/* Important */}
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="isImportant"
+            checked={formData.isImportant}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                isImportant: e.target.checked,
+              }))
+            }
+            className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+          />
+          <label
+            htmlFor="isImportant"
+            className="ml-2 text-sm text-gray-700 dark:text-gray-300"
+          >
+            Marcar como importante
+          </label>
+        </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={
-                loading || !formData.title.trim() || !formData.content.trim()
-              }
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "Guardando..." : isEdit ? "Actualizar" : "Crear Nota"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {/* Actions */}
+        <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-600">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={
+              loading || !formData.title.trim() || !formData.content.trim()
+            }
+          >
+            {loading ? "Guardando..." : isEdit ? "Actualizar" : "Crear Nota"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 };

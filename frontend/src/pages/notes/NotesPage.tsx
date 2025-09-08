@@ -13,6 +13,8 @@ import {
   useDeleteNote,
 } from "../../hooks/useNotes";
 import { NoteCard } from "../../components/notes/NoteCard";
+import { NoteFormModal } from "../../components/notes/NoteFormModal";
+import { Button } from "../../components/ui/Button";
 import { useToast } from "../../contexts/ToastContext";
 import { useConfirmationModal } from "../../hooks/useConfirmationModal";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
@@ -52,6 +54,38 @@ export const NotesPage: React.FC = () => {
   const handleEditNote = (note: Note) => {
     setEditingNote(note);
     setShowForm(true);
+  };
+
+  const handleCreateNote = async (noteData: Partial<Note>) => {
+    try {
+      await createNoteMutation.mutateAsync({
+        ...noteData,
+        // TODO: Obtener el ID del usuario actual desde el contexto de autenticación
+        authorId: "7c1b05d7-d98e-4543-ac27-dd1c797517e6", // Placeholder
+      } as Note);
+      success("Nota creada exitosamente");
+      handleCloseForm();
+    } catch (error) {
+      showErrorToast("Error al crear la nota");
+    }
+  };
+
+  const handleUpdateNote = async (noteData: Partial<Note>) => {
+    if (!editingNote) return;
+    try {
+      await updateNoteMutation.mutateAsync({
+        id: editingNote.id,
+        data: {
+          id: editingNote.id,
+          title: noteData.title,
+          content: noteData.content,
+        },
+      });
+      success("Nota actualizada exitosamente");
+      handleCloseForm();
+    } catch (error) {
+      showErrorToast("Error al actualizar la nota");
+    }
   };
 
   const handleCloseForm = () => {
@@ -147,12 +181,9 @@ export const NotesPage: React.FC = () => {
                 (statsError as Error)?.message ||
                 "Ha ocurrido un error inesperado"}
             </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
-            >
+            <Button onClick={() => window.location.reload()} variant="primary">
               Reintentar
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -173,14 +204,10 @@ export const NotesPage: React.FC = () => {
             </p>
           </div>
           <div className="mt-4 sm:mt-0">
-            <button
-              type="button"
-              onClick={() => setShowForm(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
-            >
+            <Button onClick={() => setShowForm(true)} variant="primary">
               <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
               Nueva Nota
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -342,56 +369,41 @@ export const NotesPage: React.FC = () => {
         {/* Filters */}
         <div className="mb-6">
           <div className="flex space-x-2 mb-4">
-            <button
+            <Button
               onClick={() => handleViewModeChange("all")}
-              className={`px-4 py-2 rounded-md text-sm font-medium ${
-                viewMode === "all"
-                  ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200"
-                  : "bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-              }`}
+              variant={viewMode === "all" ? "primary" : "secondary"}
+              size="sm"
             >
               Todas las notas
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => handleViewModeChange("my")}
-              className={`px-4 py-2 rounded-md text-sm font-medium ${
-                viewMode === "my"
-                  ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200"
-                  : "bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-              }`}
+              variant={viewMode === "my" ? "primary" : "secondary"}
+              size="sm"
             >
               Mis notas
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => handleViewModeChange("assigned")}
-              className={`px-4 py-2 rounded-md text-sm font-medium ${
-                viewMode === "assigned"
-                  ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200"
-                  : "bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-              }`}
+              variant={viewMode === "assigned" ? "primary" : "secondary"}
+              size="sm"
             >
               Asignadas a mí
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => handleViewModeChange("important")}
-              className={`px-4 py-2 rounded-md text-sm font-medium ${
-                viewMode === "important"
-                  ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200"
-                  : "bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-              }`}
+              variant={viewMode === "important" ? "primary" : "secondary"}
+              size="sm"
             >
               Importantes
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => handleViewModeChange("archived")}
-              className={`px-4 py-2 rounded-md text-sm font-medium ${
-                viewMode === "archived"
-                  ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200"
-                  : "bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-              }`}
+              variant={viewMode === "archived" ? "primary" : "secondary"}
+              size="sm"
             >
               Archivadas
-            </button>
+            </Button>
           </div>
 
           {/* TODO: Implementar componente NotesSearch */}
@@ -435,74 +447,24 @@ export const NotesPage: React.FC = () => {
               Comienza creando una nueva nota.
             </p>
             <div className="mt-6">
-              <button
-                type="button"
-                onClick={() => setShowForm(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
-              >
+              <Button onClick={() => setShowForm(true)} variant="primary">
                 <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
                 Nueva Nota
-              </button>
+              </Button>
             </div>
           </div>
         )}
 
-        {/* Note Form Modal - Formulario básico temporal */}
-        {showForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                {editingNote ? "Editar Nota" : "Nueva Nota"}
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Título
-                  </label>
-                  <input
-                    type="text"
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    placeholder="Título de la nota"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Contenido
-                  </label>
-                  <textarea
-                    rows={4}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    placeholder="Contenido de la nota"
-                  />
-                </div>
-                <div className="flex space-x-2 pt-4">
-                  <button
-                    onClick={handleCloseForm}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    Cancelar
-                  </button>
-                  <button className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-                    {createNoteMutation.isPending ||
-                    updateNoteMutation.isPending
-                      ? "Guardando..."
-                      : "Guardar"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          /* TODO: Implementar componente NoteForm completo */
-          /* <NoteForm
-            note={editingNote}
-            onSave={editingNote ? handleUpdateNote : handleCreateNote}
-            onCancel={handleCloseForm}
-            isLoading={createNoteMutation.isPending || updateNoteMutation.isPending}
-            users={users}
-            cases={cases}
-            availableTags={existingTags}
-          /> */
-        )}
+        {/* Note Form Modal */}
+        <NoteFormModal
+          isOpen={showForm}
+          onClose={handleCloseForm}
+          onSave={editingNote ? handleUpdateNote : handleCreateNote}
+          note={editingNote}
+          isLoading={
+            createNoteMutation.isPending || updateNoteMutation.isPending
+          }
+        />
 
         {/* Modal de confirmación */}
         <ConfirmationModal

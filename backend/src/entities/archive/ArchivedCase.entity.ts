@@ -44,14 +44,14 @@ export class ArchivedCase {
   classification: string;
 
   // Usuarios relacionados
-  @Column({ name: "user_id", type: "uuid" })
-  userId: string;
+  @Column({ name: "assigned_to", type: "uuid", nullable: true })
+  assignedTo: string;
 
-  @Column({ name: "assigned_user_id", type: "uuid", nullable: true })
-  assignedUserId: string;
+  @Column({ name: "created_by", type: "uuid" })
+  createdBy: string;
 
-  @Column({ name: "created_by_user_id", type: "uuid" })
-  createdByUserId: string;
+  @Column({ name: "updated_by", type: "uuid", nullable: true })
+  updatedBy: string;
 
   // Datos temporales originales
   @Column({ name: "original_created_at", type: "timestamptz" })
@@ -74,7 +74,12 @@ export class ArchivedCase {
   @Column({ name: "archived_by", type: "uuid" })
   archivedBy: string;
 
-  @Column({ name: "archive_reason", type: "text", nullable: true })
+  @Column({
+    name: "archive_reason",
+    type: "varchar",
+    length: 500,
+    nullable: true,
+  })
   archiveReason: string;
 
   // Datos de restauración
@@ -88,11 +93,14 @@ export class ArchivedCase {
   isRestored: boolean;
 
   // Datos JSON para preservar información completa
-  @Column({ name: "original_data", type: "jsonb" })
-  originalData: any;
+  @Column({ name: "timer_entries", type: "jsonb", default: () => "'[]'" })
+  timerEntries: any[];
 
-  @Column({ name: "control_data", type: "jsonb" })
-  controlData: any;
+  @Column({ name: "manual_time_entries", type: "jsonb", default: () => "'[]'" })
+  manualTimeEntries: any[];
+
+  @Column({ name: "metadata", type: "jsonb", nullable: true })
+  metadata: any;
 
   // Tiempo total acumulado
   @Column({ name: "total_time_minutes", type: "integer", default: 0 })
@@ -107,16 +115,16 @@ export class ArchivedCase {
 
   // Relaciones
   @ManyToOne(() => UserProfile, { lazy: true })
-  @JoinColumn({ name: "user_id" })
-  user: Promise<UserProfile>;
+  @JoinColumn({ name: "created_by" })
+  createdByUser: Promise<UserProfile>;
 
   @ManyToOne(() => UserProfile, { lazy: true })
-  @JoinColumn({ name: "assigned_user_id" })
+  @JoinColumn({ name: "assigned_to" })
   assignedUser: Promise<UserProfile>;
 
   @ManyToOne(() => UserProfile, { lazy: true })
-  @JoinColumn({ name: "created_by_user_id" })
-  createdByUser: Promise<UserProfile>;
+  @JoinColumn({ name: "updated_by" })
+  updatedByUser: Promise<UserProfile>;
 
   @ManyToOne(() => UserProfile, { lazy: true })
   @JoinColumn({ name: "archived_by" })

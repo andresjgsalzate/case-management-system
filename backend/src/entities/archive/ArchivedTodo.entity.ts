@@ -95,9 +95,26 @@ export class ArchivedTodo {
   @Column({ name: "control_data", type: "jsonb" })
   controlData: any;
 
+  // Campos JSONB para entradas de tiempo (igual que archived_cases)
+  @Column({ name: "timer_entries", type: "jsonb", default: () => "'[]'" })
+  timerEntries: any[];
+
+  @Column({ name: "manual_time_entries", type: "jsonb", default: () => "'[]'" })
+  manualTimeEntries: any[];
+
+  @Column({ name: "metadata", type: "jsonb", nullable: true })
+  metadata: any;
+
   // Tiempo total acumulado
   @Column({ name: "total_time_minutes", type: "integer", default: 0 })
   totalTimeMinutes: number;
+
+  // Tiempo separado por tipo (mantenido para compatibilidad)
+  @Column({ name: "timer_time_minutes", type: "integer", default: 0 })
+  timerTimeMinutes: number;
+
+  @Column({ name: "manual_time_minutes", type: "integer", default: 0 })
+  manualTimeMinutes: number;
 
   // Timestamps de control
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })

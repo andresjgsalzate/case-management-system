@@ -5,7 +5,6 @@ import {
   EyeIcon,
   CalendarIcon,
   DocumentArrowDownIcon,
-  TrashIcon,
   XMarkIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -24,6 +23,7 @@ import {
 import { archiveApi } from "../../services/archiveApi";
 import { useConfirmationModal } from "../../hooks/useConfirmationModal";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
+import { ArchiveDetailsModal } from "../../components/archive/ArchiveDetailsModal";
 import { toast } from "react-hot-toast";
 
 export const ArchivePage: React.FC = () => {
@@ -54,7 +54,7 @@ export const ArchivePage: React.FC = () => {
     isLoading,
     isError,
     error: error?.message,
-    itemsLength: items?.length,
+    itemsLength: Array.isArray(items) ? items.length : 0,
   });
 
   // Debug logs para el modal
@@ -64,18 +64,9 @@ export const ArchivePage: React.FC = () => {
     selectedItemId: selectedItem?.id || null,
   });
 
-  // Filtros combinados con búsqueda
-  const finalFilters = useMemo(
-    () => ({
-      ...filters,
-      search: searchTerm,
-    }),
-    [filters, searchTerm]
-  );
-
   // Elementos filtrados
   const filteredItems = useMemo(() => {
-    if (!items) return [];
+    if (!items || !Array.isArray(items)) return [];
 
     let filtered = [...items];
 
@@ -249,7 +240,7 @@ export const ArchivePage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats.totalArchivedCases}
+                  {(stats as any)?.totalArchivedCases || 0}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Casos archivados
@@ -265,7 +256,7 @@ export const ArchivePage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats.totalArchivedTodos}
+                  {(stats as any)?.totalArchivedTodos || 0}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   TODOs archivados
@@ -281,7 +272,9 @@ export const ArchivePage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {archiveApi.formatTime(stats.totalArchivedTimeMinutes)}
+                  {archiveApi.formatTime(
+                    (stats as any)?.totalArchivedTimeMinutes || 0
+                  )}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Tiempo total
@@ -297,7 +290,7 @@ export const ArchivePage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats.archivedThisMonth}
+                  {(stats as any)?.archivedThisMonth || 0}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Este mes
@@ -313,7 +306,7 @@ export const ArchivePage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats.restoredThisMonth}
+                  {(stats as any)?.restoredThisMonth || 0}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Restaurados
@@ -730,8 +723,7 @@ export const ArchivePage: React.FC = () => {
                               </dt>
                               <dd className="mt-1 text-sm text-gray-900 dark:text-white flex items-center">
                                 <UserIcon className="w-4 h-4 mr-2 text-gray-400" />
-                                {selectedItem.archivedByUser?.displayName ||
-                                  selectedItem.archivedByUser?.fullName ||
+                                {selectedItem.archivedByUser?.fullName ||
                                   selectedItem.archivedByUser?.email ||
                                   selectedItem.archivedBy}
                               </dd>
@@ -758,29 +750,37 @@ export const ArchivePage: React.FC = () => {
                                 {(selectedItem.timerTimeMinutes ||
                                   selectedItem.manualTimeMinutes) && (
                                   <div className="ml-6 space-y-1 text-xs text-gray-600 dark:text-gray-400">
-                                    {selectedItem.timerTimeMinutes > 0 && (
+                                    {(selectedItem.timerTimeMinutes || 0) >
+                                      0 && (
                                       <div className="flex items-center">
                                         <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
                                         <span>
                                           Cronómetro:{" "}
                                           {Math.floor(
-                                            selectedItem.timerTimeMinutes / 60
+                                            (selectedItem.timerTimeMinutes ||
+                                              0) / 60
                                           )}
-                                          h {selectedItem.timerTimeMinutes % 60}
+                                          h{" "}
+                                          {(selectedItem.timerTimeMinutes ||
+                                            0) % 60}
                                           m
                                         </span>
                                       </div>
                                     )}
-                                    {selectedItem.manualTimeMinutes > 0 && (
+                                    {(selectedItem.manualTimeMinutes || 0) >
+                                      0 && (
                                       <div className="flex items-center">
                                         <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
                                         <span>
                                           Manual:{" "}
                                           {Math.floor(
-                                            selectedItem.manualTimeMinutes / 60
+                                            (selectedItem.manualTimeMinutes ||
+                                              0) / 60
                                           )}
                                           h{" "}
-                                          {selectedItem.manualTimeMinutes % 60}m
+                                          {(selectedItem.manualTimeMinutes ||
+                                            0) % 60}
+                                          m
                                         </span>
                                       </div>
                                     )}
@@ -806,6 +806,13 @@ export const ArchivePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de detalles del elemento archivado */}
+      <ArchiveDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        item={selectedItem}
+      />
 
       {/* Modal de confirmación */}
       <ConfirmationModal

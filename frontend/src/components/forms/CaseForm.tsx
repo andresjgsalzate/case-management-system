@@ -12,6 +12,7 @@ import {
   type Application,
 } from "../../types/case";
 import { calcularPuntuacion, clasificarCaso } from "../../utils/caseUtils";
+import { Button } from "../ui/Button";
 
 interface CaseFormProps {
   onSubmit: (data: CaseFormSchema) => void;
@@ -380,13 +381,9 @@ export const CaseForm: React.FC<CaseFormProps> = ({
       </div>
 
       <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="btn-base btn-primary btn-md"
-        >
+        <Button type="submit" variant="primary" disabled={isLoading}>
           {isLoading ? "Procesando..." : submitText}
-        </button>
+        </Button>
       </div>
     </form>
   );

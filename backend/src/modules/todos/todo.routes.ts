@@ -24,18 +24,24 @@ router.patch("/:id/complete", (req, res) =>
 router.patch("/:id/reactivate", (req, res) =>
   todoController.reactivateTodo(req, res)
 );
+router.patch("/:id/archive", (req, res) =>
+  todoController.archiveTodo(req, res)
+);
 
 // Timer control routes
-router.post("/:id/timer/start", (req, res) =>
+router.post("/:id/start-timer", (req, res) =>
   todoController.startTimer(req, res)
 );
-router.post("/:id/timer/pause", (req, res) =>
+router.post("/:id/pause-timer", (req, res) =>
   todoController.pauseTimer(req, res)
 );
 router.get("/:id/time-entries", (req, res) =>
   todoController.getTodoTimeEntries(req, res)
 );
-router.post("/:id/time-entries/manual", (req, res) =>
+router.delete("/:id/time-entries/:entryId", (req, res) =>
+  todoController.deleteTimeEntry(req, res)
+);
+router.post("/:id/manual-time-entries", (req, res) =>
   todoController.addManualTimeEntry(req, res)
 );
 router.get("/:id/manual-time-entries", (req, res) =>

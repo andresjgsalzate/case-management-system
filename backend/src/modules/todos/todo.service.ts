@@ -5,6 +5,7 @@ import { TodoControl } from "../../entities/TodoControl";
 import { TodoPriority } from "../../entities/TodoPriority";
 import { TodoTimeEntry } from "../../entities/TodoTimeEntry";
 import { TodoManualTimeEntry } from "../../entities/TodoManualTimeEntry";
+import { ArchivedTodo } from "../../entities/archive/ArchivedTodo.entity";
 import {
   CreateTodoDto,
   UpdateTodoDto,
@@ -30,11 +31,14 @@ export class TodoService {
     console.log("TodoService.getAllTodos - Starting...");
 
     try {
-      // Probar solo con priority JOIN primero
-      console.log("Attempting query with priority JOIN only...");
+      // Incluir la relación controls para mostrar el estado del timer correctamente
+      console.log("Attempting query with priority and controls JOIN...");
       let query = this.todoRepository
         .createQueryBuilder("todo")
         .leftJoinAndSelect("todo.priority", "priority")
+        .leftJoinAndSelect("todo.controls", "controls")
+        .leftJoinAndSelect("controls.user", "controlUser")
+        .leftJoinAndSelect("controls.status", "controlStatus")
         .orderBy("todo.createdAt", "DESC");
 
       if (filters) {
@@ -42,7 +46,7 @@ export class TodoService {
       }
 
       const todos = await query.getMany();
-      console.log("Todos with priority JOIN count:", todos.length);
+      console.log("Todos with priority and controls JOIN count:", todos.length);
       return todos.map((todo) => this.mapToResponseDto(todo));
     } catch (error) {
       console.error("Error in getAllTodos:", error);
@@ -55,9 +59,9 @@ export class TodoService {
       .leftJoinAndSelect("todo.priority", "priority")
       .leftJoinAndSelect("todo.assignedUser", "assignedUser")
       .leftJoinAndSelect("todo.createdByUser", "createdByUser")
-      .leftJoinAndSelect("todo.control", "control")
-      .leftJoinAndSelect("control.user", "controlUser")
-      .leftJoinAndSelect("control.status", "controlStatus")
+      .leftJoinAndSelect("todo.controls", "controls")
+      .leftJoinAndSelect("controls.user", "controlUser")
+      .leftJoinAndSelect("controls.status", "controlStatus")
       .where("todo.id = :id", { id })
       .getOne();
 
@@ -151,6 +155,125 @@ export class TodoService {
     }
 
     return this.mapToResponseDto(savedTodo);
+  }
+
+  async archiveTodo(id: string): Promise<TodoResponseDto | null> {
+    try {
+      console.log(`DEBUG - Archiving TODO with ID: ${id}`);
+
+      const todo = await this.todoRepository.findOne({
+        where: { id },
+        relations: ["priority", "assignedUser", "createdByUser", "controls"],
+      });
+
+      if (!todo) {
+        console.log(`DEBUG - TODO not found with ID: ${id}`);
+        return null;
+      }
+
+      console.log(`DEBUG - TODO found:`, {
+        id: todo.id,
+        title: todo.title,
+        isCompleted: todo.isCompleted,
+        priority: todo.priority?.name,
+      });
+
+      // Solo se pueden archivar TODOs completados
+      if (!todo.isCompleted) {
+        console.log(`DEBUG - TODO is not completed, cannot archive`);
+        throw new Error("Solo se pueden archivar TODOs completados");
+      }
+
+      const {
+        ArchivedTodo,
+      } = require("../../entities/archive/ArchivedTodo.entity");
+      const archivedTodoRepository = AppDataSource.getRepository(ArchivedTodo);
+
+      // Crear el registro archivado usando los campos correctos
+      const archivedTodo = archivedTodoRepository.create({
+        originalTodoId: todo.id,
+        title: todo.title,
+        description: todo.description,
+        priority: todo.priority?.name || "MEDIUM",
+        category: "General", // Campo requerido, valor por defecto
+        isCompleted: todo.isCompleted,
+        dueDate: todo.dueDate,
+        originalCreatedAt: todo.createdAt,
+        originalUpdatedAt: todo.updatedAt,
+        completedAt: todo.completedAt,
+        createdByUserId: todo.createdByUserId,
+        assignedUserId: todo.assignedUserId,
+        caseId: null, // Campo opcional para TODOs no relacionados con casos
+        archivedBy: todo.createdByUserId, // Por ahora usar el creador
+        archiveReason: "TODO completado y archivado automáticamente",
+        originalData: todo,
+        controlData: todo.controls || [],
+        totalTimeMinutes: todo.estimatedMinutes,
+      });
+
+      console.log(`DEBUG - Created archived todo object:`, {
+        originalTodoId: archivedTodo.originalTodoId,
+        title: archivedTodo.title,
+        priority: archivedTodo.priority,
+      });
+
+      // Guardar en tabla de archivados
+      await archivedTodoRepository.save(archivedTodo);
+      console.log(`DEBUG - Archived todo saved successfully`);
+
+      // Eliminar relaciones dependientes antes del TODO principal
+      console.log(
+        `DEBUG - Deleting dependent relations for TODO ID: ${todo.id}`
+      );
+
+      // Primero obtener los IDs de los controles del TODO
+      const todoControlIds = await AppDataSource.getRepository("TodoControl")
+        .createQueryBuilder("control")
+        .select("control.id")
+        .where("control.todo_id = :todoId", { todoId: todo.id })
+        .getRawMany();
+
+      const controlIds = todoControlIds.map((item) => item.control_id);
+      console.log(
+        `DEBUG - Found ${controlIds.length} todo_control records to delete`
+      );
+
+      if (controlIds.length > 0) {
+        // Eliminar registros de todo_time_entries que referencian estos controles
+        await AppDataSource.getRepository("TodoTimeEntry")
+          .createQueryBuilder()
+          .delete()
+          .where("todo_control_id IN (:...controlIds)", { controlIds })
+          .execute();
+        console.log(`DEBUG - Deleted todo_time_entries records`);
+
+        // Eliminar registros de todo_manual_time_entries que referencian estos controles
+        await AppDataSource.getRepository("TodoManualTimeEntry")
+          .createQueryBuilder()
+          .delete()
+          .where("todo_control_id IN (:...controlIds)", { controlIds })
+          .execute();
+        console.log(`DEBUG - Deleted todo_manual_time_entries records`);
+      }
+
+      // Ahora eliminar registros de todo_control
+      await AppDataSource.getRepository("TodoControl")
+        .createQueryBuilder()
+        .delete()
+        .where("todo_id = :todoId", { todoId: todo.id })
+        .execute();
+      console.log(`DEBUG - Deleted todo_control records`);
+
+      // Ahora eliminar el TODO original
+      await this.todoRepository.remove(todo);
+      console.log(`DEBUG - Original todo removed successfully`);
+
+      // Retornar el TODO original para la respuesta
+      return this.mapToResponseDto(todo);
+    } catch (error) {
+      console.error("ERROR in archiveTodo:", error);
+      throw error;
+    }
   }
 
   async getTodoMetrics(): Promise<TodoMetricsDto> {
@@ -280,6 +403,12 @@ export class TodoService {
     console.log("Mapping todo:", todo.id);
 
     try {
+      // Get the first control if exists (there can only be one due to unique constraint)
+      const control =
+        todo.controls && todo.controls.length > 0
+          ? todo.controls[0]
+          : undefined;
+
       const result = {
         id: todo.id,
         title: todo.title,
@@ -320,7 +449,61 @@ export class TodoService {
           : undefined,
         assignedUser: undefined, // Simplified for now
         createdByUser: undefined, // Simplified for now
-        control: undefined, // Simplified for now
+        control: control
+          ? {
+              id: control.id,
+              todoId: control.todoId,
+              userId: control.userId,
+              statusId: control.statusId,
+              totalTimeMinutes: control.totalTimeMinutes,
+              timerStartAt: control.timerStartAt
+                ? typeof control.timerStartAt === "string"
+                  ? control.timerStartAt
+                  : control.timerStartAt.toISOString()
+                : undefined,
+              isTimerActive: control.isTimerActive,
+              assignedAt:
+                typeof control.assignedAt === "string"
+                  ? control.assignedAt
+                  : control.assignedAt.toISOString(),
+              startedAt: control.startedAt
+                ? typeof control.startedAt === "string"
+                  ? control.startedAt
+                  : control.startedAt.toISOString()
+                : undefined,
+              completedAt: control.completedAt
+                ? typeof control.completedAt === "string"
+                  ? control.completedAt
+                  : control.completedAt.toISOString()
+                : undefined,
+              createdAt:
+                typeof control.createdAt === "string"
+                  ? control.createdAt
+                  : control.createdAt.toISOString(),
+              updatedAt:
+                typeof control.updatedAt === "string"
+                  ? control.updatedAt
+                  : control.updatedAt.toISOString(),
+              user: control.user
+                ? {
+                    id: control.user.id,
+                    email: control.user.email,
+                    fullName: control.user.fullName,
+                    isActive: control.user.isActive,
+                  }
+                : undefined,
+              status: control.status
+                ? {
+                    id: control.status.id,
+                    name: control.status.name,
+                    description: control.status.description,
+                    color: control.status.color,
+                    isActive: control.status.isActive,
+                    displayOrder: control.status.displayOrder,
+                  }
+                : undefined,
+            }
+          : undefined,
       };
 
       console.log("Mapped todo successfully");
@@ -333,9 +516,12 @@ export class TodoService {
 
   // ============= TIMER CONTROL METHODS =============
 
-  async startTimer(todoId: string): Promise<TodoResponseDto | null> {
+  async startTimer(
+    todoId: string,
+    userId: string
+  ): Promise<TodoResponseDto | null> {
     try {
-      console.log("Starting timer for TODO:", todoId);
+      console.log("Starting timer for TODO:", todoId, "by user:", userId);
 
       // Buscar el TODO
       const todo = await this.todoRepository.findOne({
@@ -348,26 +534,66 @@ export class TodoService {
         return null;
       }
 
-      let control = todo.control;
+      // Buscar si existe un control para este TODO (solo puede haber uno por la restricción unique)
+      let control =
+        todo.controls && todo.controls.length > 0
+          ? todo.controls[0]
+          : undefined;
 
-      // Si no existe control, crearlo
+      // Si no existe control para este TODO, crearlo
       if (!control) {
         console.log("Creating new control for TODO:", todoId);
+
+        // Obtener estado "EN CURSO" para cuando se inicia el timer
+        const {
+          CaseStatusControl,
+        } = require("../../entities/CaseStatusControl");
+        const statusRepository = AppDataSource.getRepository(CaseStatusControl);
+
+        let enCursoStatus = await statusRepository.findOne({
+          where: { name: "EN CURSO", isActive: true },
+        });
+
+        // Si no existe "EN CURSO", buscar otro estado apropiado
+        if (!enCursoStatus) {
+          enCursoStatus = await statusRepository.findOne({
+            where: { isActive: true },
+            order: { displayOrder: "ASC" },
+          });
+        }
+
+        if (!enCursoStatus) {
+          console.error("No se encontró ningún estado activo");
+          throw new Error(
+            "No se encontró ningún estado activo para crear el control"
+          );
+        }
+
         control = this.todoControlRepository.create({
           todoId: todoId,
-          userId: todo.createdByUserId, // Usar el creador por ahora
-          statusId: "default-status-id", // TODO: obtener status por defecto
+          userId: userId, // Usar el usuario que inicia el timer
+          statusId: enCursoStatus.id,
           totalTimeMinutes: 0,
           isTimerActive: false,
           assignedAt: new Date(),
         });
         control = await this.todoControlRepository.save(control);
+      } else {
+        // Si existe control pero es de otro usuario, transferirlo al usuario actual
+        if (control.userId !== userId) {
+          console.log(
+            `Transferring control from user ${control.userId} to user ${userId}`
+          );
+          control.userId = userId;
+          control.assignedAt = new Date();
+          await this.todoControlRepository.save(control);
+        }
       }
 
       // Pausar cualquier otro timer activo del usuario
       await this.todoControlRepository.update(
         {
-          userId: control.userId,
+          userId: userId,
           isTimerActive: true,
         },
         {
@@ -385,7 +611,24 @@ export class TodoService {
 
       await this.todoControlRepository.save(control);
 
-      console.log("Timer started successfully for TODO:", todoId);
+      // Crear nueva entrada de tiempo automática (igual que en Control de Casos)
+      const { TodoTimeEntry } = require("../../entities/TodoTimeEntry");
+      const timeEntryRepository = AppDataSource.getRepository(TodoTimeEntry);
+
+      const timeEntry = timeEntryRepository.create({
+        todoControlId: control.id,
+        userId: userId,
+        startTime: new Date(),
+        durationMinutes: 0, // Inicialmente 0, se actualiza al pausar
+      });
+
+      await timeEntryRepository.save(timeEntry);
+
+      console.log(
+        "Timer started successfully for TODO:",
+        todoId,
+        "with time entry created"
+      );
 
       // Retornar el TODO actualizado
       return this.getTodoById(todoId);
@@ -395,9 +638,12 @@ export class TodoService {
     }
   }
 
-  async pauseTimer(todoId: string): Promise<TodoResponseDto | null> {
+  async pauseTimer(
+    todoId: string,
+    userId: string
+  ): Promise<TodoResponseDto | null> {
     try {
-      console.log("Pausing timer for TODO:", todoId);
+      console.log("Pausing timer for TODO:", todoId, "by user:", userId);
 
       // Buscar el TODO con su control
       const todo = await this.todoRepository.findOne({
@@ -405,12 +651,29 @@ export class TodoService {
         relations: ["controls", "priority"],
       });
 
-      if (!todo || !todo.control) {
-        console.log("TODO or control not found:", todoId);
+      if (!todo) {
+        console.log("TODO not found:", todoId);
         return null;
       }
 
-      const control = todo.control;
+      // Buscar el control del TODO (solo puede haber uno)
+      const control =
+        todo.controls && todo.controls.length > 0
+          ? todo.controls[0]
+          : undefined;
+
+      if (!control) {
+        console.log("Control not found for TODO:", todoId);
+        return null;
+      }
+
+      // Verificar que el usuario actual es quien tiene asignado el control
+      if (control.userId !== userId) {
+        console.log(
+          `Control is assigned to different user. Control user: ${control.userId}, Current user: ${userId}`
+        );
+        return null;
+      }
 
       if (!control.isTimerActive || !control.timerStartAt) {
         console.log("Timer is not active for TODO:", todoId);
@@ -423,19 +686,25 @@ export class TodoService {
         (now.getTime() - control.timerStartAt.getTime()) / (1000 * 60)
       );
 
-      // Crear entrada de tiempo automática
+      // Buscar y actualizar la entrada de tiempo activa (igual que Control de Casos)
       const { TodoTimeEntry } = require("../../entities/TodoTimeEntry");
       const timeEntryRepository = AppDataSource.getRepository(TodoTimeEntry);
 
-      const timeEntry = timeEntryRepository.create({
-        todoControlId: control.id,
-        startTime: control.timerStartAt,
-        endTime: now,
-        durationMinutes: timeSpentMinutes,
-        description: "Sesión de trabajo automática",
+      const activeTimeEntry = await timeEntryRepository.findOne({
+        where: {
+          todoControlId: control.id,
+          userId: userId,
+          endTime: null as any, // Buscar la entrada sin endTime (activa)
+        },
+        order: { startTime: "DESC" },
       });
 
-      await timeEntryRepository.save(timeEntry);
+      if (activeTimeEntry) {
+        // Actualizar la entrada existente
+        activeTimeEntry.endTime = now;
+        activeTimeEntry.durationMinutes = timeSpentMinutes;
+        await timeEntryRepository.save(activeTimeEntry);
+      }
 
       // Actualizar el tiempo total y pausar timer
       control.totalTimeMinutes += timeSpentMinutes;
@@ -458,73 +727,49 @@ export class TodoService {
 
   async getTodoTimeEntries(todoId: string): Promise<any[]> {
     try {
-      const todo = await this.todoRepository.findOne({
-        where: { id: todoId },
-        relations: ["controls"],
+      // Buscar el control del todo
+      const todoControl = await this.todoControlRepository.findOne({
+        where: { todoId: todoId },
       });
 
-      if (!todo) {
-        return [];
-      }
-
-      // If no controls exist, return empty array (no time entries possible)
-      if (!todo.controls || todo.controls.length === 0) {
-        return [];
-      }
-
-      const todoControl = todo.controls[0];
       if (!todoControl) {
         return [];
       }
 
       const { TodoTimeEntry } = require("../../entities/TodoTimeEntry");
-      const {
-        TodoManualTimeEntry,
-      } = require("../../entities/TodoManualTimeEntry");
-
       const timeEntryRepository = AppDataSource.getRepository(TodoTimeEntry);
-      const manualEntryRepository =
-        AppDataSource.getRepository(TodoManualTimeEntry);
 
-      const [timeEntries, manualEntries] = await Promise.all([
-        timeEntryRepository.find({
-          where: { todoControlId: todoControl.id },
-          order: { startTime: "DESC" },
-        }),
-        manualEntryRepository.find({
-          where: { todoControlId: todoControl.id },
-          order: { date: "DESC" },
-        }),
-      ]);
+      // Solo devolver entradas automáticas (no manuales) ya que hay un endpoint separado para manuales
+      const timeEntries = await timeEntryRepository.find({
+        where: { todoControlId: todoControl.id },
+        order: { startTime: "DESC" },
+      });
 
-      // Combinar y formatear entradas
-      const allEntries = [
-        ...timeEntries.map((entry) => ({
+      console.log(`DEBUG - TodoControl ID: ${todoControl.id}`);
+      console.log(`DEBUG - Automatic entries found: ${timeEntries.length}`);
+
+      timeEntries.forEach((entry, index) => {
+        console.log(`DEBUG - Automatic entry ${index + 1}:`, {
           id: entry.id,
-          type: "automatic",
+          durationMinutes: entry.durationMinutes,
           startTime: entry.startTime,
           endTime: entry.endTime,
-          durationMinutes: entry.durationMinutes,
-          description: entry.description,
           createdAt: entry.createdAt,
-        })),
-        ...manualEntries.map((entry) => ({
-          id: entry.id,
-          type: "manual",
-          date: entry.date,
-          durationMinutes: entry.durationMinutes,
-          description: entry.description,
-          createdAt: entry.createdAt,
-        })),
-      ];
+        });
+      });
 
-      // Ordenar por fecha de creación
-      return allEntries.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+      // Solo formatear entradas automáticas
+      return timeEntries.map((entry) => ({
+        id: entry.id,
+        type: "automatic",
+        startTime: entry.startTime,
+        endTime: entry.endTime,
+        durationMinutes: entry.durationMinutes,
+        description: entry.description,
+        createdAt: entry.createdAt,
+      }));
     } catch (error) {
-      console.error("Error fetching time entries:", error);
+      console.error("Error getting todo time entries:", error);
       throw error;
     }
   }
@@ -558,18 +803,29 @@ export class TodoService {
       if (!todoControl) {
         console.log("Creating new control for manual time entry:", todoId);
 
-        // Obtener estado PENDIENTE por defecto
+        // Obtener estado por defecto (primero intentar PENDIENTE, sino el primero disponible)
         const {
           CaseStatusControl,
         } = require("../../entities/CaseStatusControl");
         const statusRepository = AppDataSource.getRepository(CaseStatusControl);
-        const defaultStatus = await statusRepository.findOneBy({
-          name: "PENDIENTE",
+
+        let defaultStatus = await statusRepository.findOne({
+          where: { name: "PENDIENTE", isActive: true },
         });
 
+        // Si no existe PENDIENTE, buscar otro estado por defecto
         if (!defaultStatus) {
-          console.error("Estado PENDIENTE no encontrado");
-          throw new Error("Estado PENDIENTE no encontrado");
+          defaultStatus = await statusRepository.findOne({
+            where: { isActive: true },
+            order: { displayOrder: "ASC" },
+          });
+        }
+
+        if (!defaultStatus) {
+          console.error("No se encontró ningún estado activo");
+          throw new Error(
+            "No se encontró ningún estado activo para crear el control"
+          );
         }
 
         todoControl = this.todoControlRepository.create({
@@ -600,6 +856,15 @@ export class TodoService {
 
       const savedEntry = await manualEntryRepository.save(manualEntry);
 
+      console.log("DEBUG - Manual entry created:", {
+        id: savedEntry.id,
+        todoControlId: savedEntry.todoControlId,
+        durationMinutes: savedEntry.durationMinutes,
+        description: savedEntry.description,
+        date: savedEntry.date,
+        type: "MANUAL_ONLY",
+      });
+
       // Actualizar tiempo total
       todoControl.totalTimeMinutes += data.durationMinutes;
       await this.todoControlRepository.save(todoControl);
@@ -612,11 +877,11 @@ export class TodoService {
         id: savedEntry.id,
         todoControlId: savedEntry.todoControlId,
         userId: savedEntry.userId,
-        date: savedEntry.date,
+        date: savedEntry.date.toISOString().split("T")[0], // Convertir a formato YYYY-MM-DD
         durationMinutes: savedEntry.durationMinutes,
         description: savedEntry.description,
         createdBy: savedEntry.createdBy,
-        createdAt: savedEntry.createdAt,
+        createdAt: savedEntry.createdAt.toISOString(),
       };
     } catch (error) {
       console.error("Error adding manual time entry:", error);
@@ -645,25 +910,39 @@ export class TodoService {
       if (!todoControl) {
         console.log("Creating new control for manual time entries:", todoId);
 
-        // Obtener estado PENDIENTE por defecto
+        // Obtener estado por defecto (primero intentar PENDIENTE, sino el primero disponible)
         const {
           CaseStatusControl,
         } = require("../../entities/CaseStatusControl");
         const statusRepository = AppDataSource.getRepository(CaseStatusControl);
-        const defaultStatus = await statusRepository.findOneBy({
-          name: "PENDIENTE",
+
+        let defaultStatus = await statusRepository.findOne({
+          where: { name: "PENDIENTE", isActive: true },
         });
 
+        // Si no existe PENDIENTE, buscar otro estado por defecto
         if (!defaultStatus) {
-          console.error("Estado PENDIENTE no encontrado");
+          defaultStatus = await statusRepository.findOne({
+            where: { isActive: true },
+            order: { displayOrder: "ASC" },
+          });
+        }
+
+        if (!defaultStatus) {
+          console.error("No se encontró ningún estado activo");
           // Si no hay estado por defecto, devolver array vacío pero no fallar
           return [];
         }
 
         // Para consultar entradas manuales, necesitamos determinar el userId
-        // Como no tenemos usuario en este contexto, buscaremos el creador del TODO
-        const userId =
-          todo.createdByUserId || "550e8400-e29b-41d4-a716-446655440001";
+        // Como no tenemos usuario en este contexto, usaremos el creador del TODO
+        // Si no hay creador, no podemos crear el control
+        if (!todo.createdByUserId) {
+          console.error("No se puede crear control sin usuario creador");
+          return [];
+        }
+
+        const userId = todo.createdByUserId;
 
         todoControl = this.todoControlRepository.create({
           todoId: todoId,
@@ -714,6 +993,44 @@ export class TodoService {
       }));
     } catch (error) {
       console.error("Error getting manual time entries:", error);
+      throw error;
+    }
+  }
+
+  async deleteTimeEntry(entryId: string): Promise<boolean> {
+    try {
+      const { TodoTimeEntry } = require("../../entities/TodoTimeEntry");
+      const timeEntryRepository = AppDataSource.getRepository(TodoTimeEntry);
+
+      const entry = await timeEntryRepository.findOne({
+        where: { id: entryId },
+        relations: ["todoControl"],
+      });
+
+      if (!entry) {
+        console.log("Time entry not found:", entryId);
+        return false;
+      }
+
+      // Actualizar tiempo total del control
+      const control = await this.todoControlRepository.findOne({
+        where: { id: entry.todoControlId },
+      });
+
+      if (control) {
+        control.totalTimeMinutes = Math.max(
+          0,
+          control.totalTimeMinutes - (entry.durationMinutes || 0)
+        );
+        await this.todoControlRepository.save(control);
+      }
+
+      await timeEntryRepository.remove(entry);
+
+      console.log(`Time entry deleted: ${entryId}`);
+      return true;
+    } catch (error) {
+      console.error("Error deleting time entry:", error);
       throw error;
     }
   }

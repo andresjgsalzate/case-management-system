@@ -8,8 +8,6 @@ import {
   CreateArchivedTodoData,
   RestoreArchivedItemData,
   DeleteArchivedItemData,
-  ArchiveApiResponse,
-  ArchiveSearchResult,
 } from "../types/archive.types";
 import { authService } from "./auth.service";
 

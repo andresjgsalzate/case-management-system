@@ -18,6 +18,7 @@ import {
   useDashboardStats,
 } from "../../hooks/useDashboardMetrics";
 import { useCases } from "../../hooks/useCases";
+import { Button } from "../../components/ui/Button";
 import { PageWrapper } from "../../components/layout/PageWrapper";
 
 const LoadingSpinner: React.FC<{ size?: "sm" | "lg"; text?: string }> = ({
@@ -41,12 +42,9 @@ const ErrorMessage: React.FC<{ message: string; onRetry?: () => void }> = ({
   <div className="text-center py-8">
     <p className="text-red-600 mb-4">{message}</p>
     {onRetry && (
-      <button
-        onClick={onRetry}
-        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-      >
+      <Button onClick={onRetry} variant="danger">
         Reintentar
-      </button>
+      </Button>
     )}
   </div>
 );

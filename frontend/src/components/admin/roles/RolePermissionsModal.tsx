@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
-import { Dialog, Transition } from "@headlessui/react";
-import { Fragment } from "react";
 import {
-  XMarkIcon,
   ShieldCheckIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import { toast } from "react-hot-toast";
 import { roleService } from "../../../services/roleService";
+import { Modal } from "../../ui/Modal";
+import { Button } from "../../ui/Button";
 import type { Role, Permission } from "../../../types/role";
 
 interface RolePermissionsModalProps {
@@ -232,198 +231,141 @@ export default function RolePermissionsModal({
   if (!role) return null;
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={handleClose}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black/25 backdrop-blur-sm" />
-        </Transition.Child>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={`Gestionar Permisos - ${role.name}`}
+      size="2xl"
+    >
+      {/* Filtros */}
+      <div className="mb-6 space-y-4">
+        <div className="flex gap-4">
+          {/* Búsqueda */}
+          <div className="flex-1 relative">
+            <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+            <input
+              type="text"
+              placeholder="Buscar permisos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            />
+          </div>
 
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                <div className="flex items-center justify-between mb-6">
-                  <Dialog.Title
-                    as="h3"
-                    className="text-lg font-medium leading-6 text-gray-900 flex items-center"
-                  >
-                    <ShieldCheckIcon className="h-5 w-5 mr-2 text-green-600" />
-                    Gestionar Permisos - {role.name}
-                  </Dialog.Title>
-                  <button
-                    onClick={handleClose}
-                    disabled={isLoading}
-                    className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
-                  >
-                    <XMarkIcon className="h-5 w-5" />
-                  </button>
-                </div>
+          {/* Filtro por módulo */}
+          <select
+            value={selectedModule}
+            onChange={(e) => setSelectedModule(e.target.value)}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          >
+            <option value="all">Todos los módulos</option>
+            {modules.map((module) => (
+              <option key={module} value={module}>
+                {module.charAt(0).toUpperCase() + module.slice(1)}
+              </option>
+            ))}
+          </select>
+        </div>
 
-                {/* Filtros */}
-                <div className="mb-6 space-y-4">
-                  <div className="flex gap-4">
-                    {/* Búsqueda */}
-                    <div className="flex-1 relative">
-                      <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Buscar permisos..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                    </div>
-
-                    {/* Filtro por módulo */}
-                    <select
-                      value={selectedModule}
-                      onChange={(e) => setSelectedModule(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    >
-                      <option value="all">Todos los módulos</option>
-                      {modules.map((module) => (
-                        <option key={module} value={module}>
-                          {module.charAt(0).toUpperCase() + module.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Estadísticas */}
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>Total de permisos: {permissions.length}</span>
-                      <span>Permisos asignados: {rolePermissions.length}</span>
-                      <span>Filtrados: {filteredPermissions.length}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Lista de permisos */}
-                <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
-                  <div className="divide-y divide-gray-200">
-                    {filteredPermissions.length === 0 ? (
-                      <div className="p-8 text-center text-gray-500">
-                        <ShieldCheckIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                        <p>No se encontraron permisos</p>
-                        <p className="text-sm">
-                          Ajusta los filtros de búsqueda
-                        </p>
-                      </div>
-                    ) : (
-                      filteredPermissions.map((permission) => (
-                        <div
-                          key={permission.id}
-                          className="p-4 hover:bg-gray-50 transition-colors"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                              <input
-                                type="checkbox"
-                                checked={rolePermissions.includes(
-                                  permission.id
-                                )}
-                                onChange={() =>
-                                  handlePermissionToggle(permission.id)
-                                }
-                                disabled={isLoading}
-                                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded disabled:opacity-50"
-                              />
-                              <div>
-                                <h4 className="text-sm font-medium text-gray-900">
-                                  {permission.name}
-                                </h4>
-                                <p className="text-sm text-gray-600">
-                                  {permission.description}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex space-x-2">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {permission.module}
-                              </span>
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                {permission.action}
-                              </span>
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                {permission.scope}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* Botones */}
-                <div className="flex justify-end space-x-3 pt-6 border-t mt-6">
-                  <button
-                    type="button"
-                    onClick={handleClose}
-                    disabled={isLoading}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={isLoading}
-                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
-                  >
-                    {isLoading ? (
-                      <>
-                        <svg
-                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Guardando...
-                      </>
-                    ) : (
-                      <>
-                        <ShieldCheckIcon className="h-4 w-4 mr-1" />
-                        Guardar Permisos
-                      </>
-                    )}
-                  </button>
-                </div>
-              </Dialog.Panel>
-            </Transition.Child>
+        {/* Estadísticas */}
+        <div className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
+          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300">
+            <span>Total de permisos: {permissions.length}</span>
+            <span>Permisos asignados: {rolePermissions.length}</span>
+            <span>Filtrados: {filteredPermissions.length}</span>
           </div>
         </div>
-      </Dialog>
-    </Transition>
+      </div>
+
+      {/* Lista de permisos */}
+      <div className="max-h-96 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg">
+        <div className="divide-y divide-gray-200 dark:divide-gray-600">
+          {filteredPermissions.length === 0 ? (
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+              <ShieldCheckIcon className="h-12 w-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+              <p>No se encontraron permisos</p>
+              <p className="text-sm">Ajusta los filtros de búsqueda</p>
+            </div>
+          ) : (
+            filteredPermissions.map((permission) => (
+              <div
+                key={permission.id}
+                className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={rolePermissions.includes(permission.id)}
+                      onChange={() => handlePermissionToggle(permission.id)}
+                      disabled={isLoading}
+                      className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded disabled:opacity-50 dark:bg-gray-700"
+                    />
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {permission.name}
+                      </h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {permission.description}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex space-x-2">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                      {permission.module}
+                    </span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
+                      {permission.action}
+                    </span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300">
+                      {permission.scope}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Botones */}
+      <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-600 mt-6">
+        <Button variant="secondary" onClick={handleClose} disabled={isLoading}>
+          Cancelar
+        </Button>
+        <Button variant="success" onClick={handleSave} disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <svg
+                className="animate-spin -ml-1 mr-2 h-4 w-4"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Guardando...
+            </>
+          ) : (
+            <>
+              <ShieldCheckIcon className="h-4 w-4 mr-1" />
+              Guardar Permisos
+            </>
+          )}
+        </Button>
+      </div>
+    </Modal>
   );
 }

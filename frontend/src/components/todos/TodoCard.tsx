@@ -41,13 +41,16 @@ export const TodoCard: React.FC<TodoCardProps> = ({
   showActions = true,
 }) => {
   const [showTimeModal, setShowTimeModal] = useState(false);
-  const [currentTime, setCurrentTime] = useState<string>("");
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [currentSessionTime, setCurrentSessionTime] =
+    useState<string>("00:00:00");
 
   const { success, error: showErrorToast } = useToast();
   const { confirmDelete, modalState, modalHandlers } = useConfirmationModal();
 
-  // Timer en tiempo real
+  // El estado del timer viene directamente del backend
+  const isTimerRunning = todo.control?.isTimerActive || false;
+
+  // Timer en tiempo real para la sesión actual
   useEffect(() => {
     let interval: number;
 
@@ -61,23 +64,20 @@ export const TodoCard: React.FC<TodoCardProps> = ({
         const minutes = Math.floor((diff % 3600) / 60);
         const seconds = diff % 60;
 
-        setCurrentTime(
+        setCurrentSessionTime(
           `${hours.toString().padStart(2, "0")}:${minutes
             .toString()
             .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
         );
       }, 1000);
+    } else {
+      setCurrentSessionTime("00:00:00");
     }
 
     return () => {
       if (interval) window.clearInterval(interval);
     };
   }, [isTimerRunning, todo.control?.timerStartAt]);
-
-  // Actualizar estado del timer
-  useEffect(() => {
-    setIsTimerRunning(todo.control?.isTimerActive || false);
-  }, [todo.control?.isTimerActive]);
 
   const getPriorityColor = (level: number): string => {
     switch (level) {
@@ -177,12 +177,6 @@ export const TodoCard: React.FC<TodoCardProps> = ({
               >
                 {todo.title}
               </h3>
-              {isTimerRunning && (
-                <div className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200 border border-green-200 dark:border-green-700">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 animate-pulse" />
-                  <span className="font-mono text-xs">{currentTime}</span>
-                </div>
-              )}
             </div>
             {todo.description && (
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -272,9 +266,7 @@ export const TodoCard: React.FC<TodoCardProps> = ({
               {isTimerRunning && (
                 <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 border border-green-200 dark:border-green-700">
                   <div className="w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse" />
-                  <span className="font-mono font-semibold">
-                    +{currentTime}
-                  </span>
+                  <span className="font-mono">+{currentSessionTime}</span>
                 </span>
               )}
             </div>
@@ -289,40 +281,33 @@ export const TodoCard: React.FC<TodoCardProps> = ({
               {todo.control && !todo.isCompleted && (
                 <>
                   {isTimerRunning ? (
-                    <button
+                    <Button
                       onClick={handlePauseTimer}
-                      className="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 
-                               rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 
-                               bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                      variant="secondary"
+                      size="sm"
                     >
                       <PauseIcon className="w-4 h-4 mr-1" />
                       Pausar
-                    </button>
+                    </Button>
                   ) : (
-                    <button
+                    <Button
                       onClick={handleStartTimer}
-                      className="inline-flex items-center px-2 py-1 border border-gray-300 dark:border-gray-600 
-                               rounded-md text-sm font-medium text-gray-700 dark:text-gray-200 
-                               bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                      variant="secondary"
+                      size="sm"
                     >
                       <PlayIcon className="w-4 h-4 mr-1" />
                       Reanudar
-                    </button>
+                    </Button>
                   )}
                 </>
               )}
 
               {/* Complete Button */}
               {todo.control && !todo.isCompleted && (
-                <button
-                  onClick={handleComplete}
-                  className="inline-flex items-center px-2 py-1 border border-green-500 
-                           rounded-md text-sm font-medium text-green-700 dark:text-green-200 
-                           bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30"
-                >
+                <Button onClick={handleComplete} variant="success" size="sm">
                   <CheckIcon className="w-4 h-4 mr-1" />
                   Completar
-                </button>
+                </Button>
               )}
 
               {/* Create Control Button */}
@@ -342,45 +327,53 @@ export const TodoCard: React.FC<TodoCardProps> = ({
             {/* Menu Actions */}
             <div className="flex space-x-1">
               {/* Ver detalles de tiempo */}
-              <button
+              <Button
+                variant="ghost"
+                size="xs"
                 onClick={() => setShowTimeModal(true)}
                 className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-1"
                 title="Ver detalles de tiempo"
               >
                 <EyeIcon className="w-4 h-4" />
-              </button>
+              </Button>
 
               {/* Editar */}
               {onEdit && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="xs"
                   onClick={() => onEdit(todo)}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1"
                   title="Editar TODO"
                 >
                   <PencilIcon className="w-4 h-4" />
-                </button>
+                </Button>
               )}
 
               {/* Eliminar */}
               {onDelete && !todo.isCompleted && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="xs"
                   onClick={handleDelete}
                   className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1"
                   title="Eliminar TODO"
                 >
                   <TrashIcon className="w-4 h-4" />
-                </button>
+                </Button>
               )}
 
               {/* Archivar */}
               {onArchive && todo.isCompleted && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="xs"
                   onClick={() => onArchive(todo)}
                   className="text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 p-1"
                   title="Archivar TODO"
                 >
                   <ArchiveBoxIcon className="w-4 h-4" />
-                </button>
+                </Button>
               )}
             </div>
           </div>

@@ -1,10 +1,11 @@
-import { Fragment } from "react";
-import { Dialog, Transition } from "@headlessui/react";
+import React from "react";
 import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
   InformationCircleIcon,
 } from "@heroicons/react/24/outline";
+import { Modal } from "./Modal";
+import { Button } from "./Button";
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -38,80 +39,38 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     }
   };
 
-  const getButtonStyles = () => {
+  const getButtonVariant = () => {
     switch (type) {
       case "danger":
-        return "bg-red-600 hover:bg-red-700 focus:ring-red-500";
+        return "danger";
       case "success":
-        return "bg-green-600 hover:bg-green-700 focus:ring-green-500";
+        return "success";
       default:
-        return "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500";
+        return "primary";
     }
   };
 
   return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={onClose}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black bg-opacity-25" />
-        </Transition.Child>
+    <Modal isOpen={isOpen} onClose={onClose} size="sm">
+      <div className="flex items-center space-x-3 mb-4">
+        {getIcon()}
+        <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100">
+          {title}
+        </h3>
+      </div>
 
-        <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all">
-                <div className="flex items-center space-x-3">
-                  {getIcon()}
-                  <Dialog.Title
-                    as="h3"
-                    className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100"
-                  >
-                    {title}
-                  </Dialog.Title>
-                </div>
-                <div className="mt-4">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {message}
-                  </p>
-                </div>
+      <div className="mb-6">
+        <p className="text-sm text-gray-500 dark:text-gray-400">{message}</p>
+      </div>
 
-                <div className="mt-6 flex space-x-3 justify-end">
-                  <button
-                    type="button"
-                    className="inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    onClick={onClose}
-                  >
-                    {cancelText}
-                  </button>
-                  <button
-                    type="button"
-                    className={`inline-flex justify-center rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 ${getButtonStyles()}`}
-                    onClick={onConfirm}
-                  >
-                    {confirmText}
-                  </button>
-                </div>
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
-        </div>
-      </Dialog>
-    </Transition>
+      <div className="flex space-x-3 justify-end">
+        <Button variant="secondary" onClick={onClose}>
+          {cancelText}
+        </Button>
+        <Button variant={getButtonVariant()} onClick={onConfirm}>
+          {confirmText}
+        </Button>
+      </div>
+    </Modal>
   );
 };

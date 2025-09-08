@@ -65,7 +65,7 @@ export interface CreateTodoData {
   title: string;
   description?: string;
   priorityId: string;
-  assignedUserId?: string;
+  assignedUserId: string;
   dueDate?: string;
   estimatedMinutes?: number;
 }

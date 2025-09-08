@@ -12,6 +12,7 @@ import {
   EyeIcon,
   EyeSlashIcon,
 } from "@heroicons/react/24/outline";
+import { Button } from "./ui/Button";
 
 interface PermissionIndicatorProps {
   showInProduction?: boolean;
@@ -38,13 +39,15 @@ export const PermissionIndicator: React.FC<PermissionIndicatorProps> = ({
 
   if (!isVisible) {
     return (
-      <button
+      <Button
+        variant="primary"
+        size="sm"
         onClick={() => setIsVisible(true)}
-        className="fixed bottom-4 right-4 bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-full shadow-lg z-50 transition-all"
+        className="fixed bottom-4 right-4 p-2 rounded-full shadow-lg z-50"
         title="Mostrar información de permisos"
       >
         <EyeIcon className="h-5 w-5" />
-      </button>
+      </Button>
     );
   }
 
@@ -74,16 +77,18 @@ export const PermissionIndicator: React.FC<PermissionIndicatorProps> = ({
             </span>
           </div>
           <div className="flex items-center space-x-1">
-            <button
+            <Button
+              variant="ghost"
+              size="xs"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsVisible(false);
               }}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              className="p-1"
               title="Ocultar"
             >
               <EyeSlashIcon className="h-4 w-4 text-gray-500" />
-            </button>
+            </Button>
             <ChevronDownIcon
               className={`h-4 w-4 text-gray-500 transition-transform ${
                 isExpanded ? "rotate-180" : ""

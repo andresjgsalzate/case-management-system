@@ -9,6 +9,7 @@ import {
   UserIcon,
 } from "@heroicons/react/24/outline";
 import { useCases } from "../../hooks/useCases";
+import { Button } from "../../components/ui/Button";
 import { useToast } from "../../contexts/ToastContext";
 import { useConfirmationModal } from "../../hooks/useConfirmationModal";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
@@ -29,8 +30,7 @@ export const CaseDetailPage = () => {
   const handleDelete = async () => {
     const confirmed = await confirmDangerAction(
       "Eliminar Caso",
-      "¿Estás seguro de que quieres eliminar este caso?",
-      "Esta acción no se puede deshacer."
+      "¿Estás seguro de que quieres eliminar este caso? Esta acción no se puede deshacer."
     );
 
     if (confirmed) {
@@ -105,13 +105,10 @@ export const CaseDetailPage = () => {
             <p className="text-gray-600 dark:text-gray-400 mb-4">
               {error.message}
             </p>
-            <Link
-              to="/cases"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
-            >
+            <Button onClick={() => navigate("/cases")} variant="primary">
               <ArrowLeftIcon className="-ml-1 mr-2 h-5 w-5" />
               Volver a Casos
-            </Link>
+            </Button>
           </div>
         </div>
       </div>
@@ -129,13 +126,10 @@ export const CaseDetailPage = () => {
             <p className="text-gray-600 dark:text-gray-400 mb-4">
               El caso con ID "{id}" no existe.
             </p>
-            <Link
-              to="/cases"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
-            >
+            <Button onClick={() => navigate("/cases")} variant="primary">
               <ArrowLeftIcon className="-ml-1 mr-2 h-5 w-5" />
               Volver a Casos
-            </Link>
+            </Button>
           </div>
         </div>
       </div>
@@ -178,25 +172,20 @@ export const CaseDetailPage = () => {
           </div>
           <div className="mt-5 flex lg:mt-0 lg:ml-4">
             <span className="hidden sm:block">
-              <button
-                type="button"
+              <Button
+                variant="secondary"
                 onClick={() => setIsEditing(!isEditing)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                <PencilIcon className="-ml-1 mr-2 h-5 w-5 text-gray-500 dark:text-gray-400" />
+                <PencilIcon className="-ml-1 mr-2 h-5 w-5" />
                 Editar
-              </button>
+              </Button>
             </span>
 
             <span className="ml-3 hidden sm:block">
-              <button
-                type="button"
-                onClick={handleDelete}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-              >
-                <TrashIcon className="-ml-1 mr-2 h-5 w-5 text-gray-500 dark:text-gray-400" />
+              <Button variant="danger" onClick={handleDelete}>
+                <TrashIcon className="-ml-1 mr-2 h-5 w-5" />
                 Eliminar
-              </button>
+              </Button>
             </span>
           </div>
         </div>

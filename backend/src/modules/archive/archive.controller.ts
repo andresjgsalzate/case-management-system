@@ -125,8 +125,8 @@ export class ArchiveController {
       }
 
       const archivedTodo = await this.archiveService.archiveTodo(
-        parseInt(todoId),
-        parseInt(userId.toString()),
+        todoId,
+        userId.toString(),
         reason
       );
 
@@ -199,9 +199,40 @@ export class ArchiveController {
     }
   }
 
+  async deleteArchivedTodo(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          message: "ID requerido",
+        });
+      }
+
+      await this.archiveService.deleteArchivedItem("todo", id);
+
+      res.json({
+        success: true,
+        message: "TODO eliminado permanentemente",
+      });
+    } catch (error: any) {
+      console.error("Error deleting archived todo:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Error eliminando TODO",
+      });
+    }
+  }
+
   async deleteArchivedItem(req: Request, res: Response, next: NextFunction) {
     try {
       const { type, id } = req.params;
+      console.log("DEBUG - DELETE params:", {
+        type,
+        id,
+        allParams: req.params,
+      });
 
       if (!type || !id) {
         return res.status(400).json({
@@ -219,7 +250,7 @@ export class ArchiveController {
 
       await this.archiveService.deleteArchivedItem(
         type as "case" | "todo",
-        parseInt(id)
+        id as string
       );
 
       res.json({

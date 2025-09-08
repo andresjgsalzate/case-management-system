@@ -12,26 +12,8 @@ import { useTodos } from "../../hooks/useTodos";
 import { useToast } from "../../contexts/ToastContext";
 import { useConfirmationModal } from "../../hooks/useConfirmationModal";
 import { ConfirmationModal } from "../ui/ConfirmationModal";
-
-interface TimeEntry {
-  id: string;
-  startTime?: string;
-  endTime?: string;
-  durationMinutes: number;
-  description?: string;
-  createdAt: string;
-}
-
-interface ManualTimeEntry {
-  id: string;
-  todoControlId: string;
-  userId: string;
-  date: string;
-  durationMinutes: number;
-  description: string;
-  createdBy: string;
-  createdAt: string;
-}
+import { todoAPI } from "../../services/todoAPI";
+import { TodoTimeEntry, TodoManualTimeEntry } from "../../types/todo.types";
 
 interface TodoTimeModalProps {
   isOpen: boolean;
@@ -53,16 +35,16 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
   todoId,
   todoTitle,
 }) => {
-  const { getManualTimeEntries, addManualTimeEntry, deleteManualTimeEntry } =
+  const { addManualTimeEntry, deleteManualTimeEntry, deleteTimeEntry } =
     useTodos();
   const { success, error: showErrorToast } = useToast();
   const { confirmDelete, modalState, modalHandlers } = useConfirmationModal();
 
   const [showManualTimeForm, setShowManualTimeForm] = useState(false);
-  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
-  const [manualTimeEntries, setManualTimeEntries] = useState<ManualTimeEntry[]>(
-    []
-  );
+  const [timeEntries, setTimeEntries] = useState<TodoTimeEntry[]>([]);
+  const [manualTimeEntries, setManualTimeEntries] = useState<
+    TodoManualTimeEntry[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [manualTimeForm, setManualTimeForm] = useState<ManualTimeForm>({
     description: "",
@@ -123,8 +105,8 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
     setLoading(true);
     try {
       const [timeData, manualData] = await Promise.all([
-        fetchTimeEntries(),
-        getManualTimeEntries(todoId),
+        todoAPI.getTimeEntries(todoId),
+        todoAPI.getManualTimeEntries(todoId),
       ]);
 
       setTimeEntries(timeData || []);
@@ -133,19 +115,6 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
       console.error("Error loading time data:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchTimeEntries = async (): Promise<TimeEntry[]> => {
-    try {
-      const response = await fetch(`/api/todos/${todoId}/time-entries`);
-      if (response.ok) {
-        return await response.json();
-      }
-      return [];
-    } catch (error) {
-      console.error("Error fetching time entries:", error);
-      return [];
     }
   };
 
@@ -205,10 +174,7 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
 
     if (confirmed) {
       try {
-        const isSuccess = await deleteManualTimeEntry(
-          entryId,
-          "current-user-id"
-        );
+        const isSuccess = await deleteManualTimeEntry(todoId, entryId);
         if (isSuccess) {
           success(
             "Entrada eliminada",
@@ -226,6 +192,36 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
         showErrorToast(
           "Error",
           "Ocurrió un error al eliminar la entrada de tiempo manual"
+        );
+      }
+    }
+  };
+
+  const handleDeleteTimeEntry = async (entryId: string) => {
+    const confirmed = await confirmDelete(
+      "esta entrada de tiempo del cronómetro"
+    );
+
+    if (confirmed) {
+      try {
+        const isSuccess = await deleteTimeEntry(todoId, entryId);
+        if (isSuccess) {
+          success(
+            "Entrada eliminada",
+            "La entrada de tiempo del cronómetro se eliminó correctamente"
+          );
+          await loadTimeData();
+        } else {
+          showErrorToast(
+            "Error",
+            "No se pudo eliminar la entrada de tiempo del cronómetro"
+          );
+        }
+      } catch (error) {
+        console.error("Error al eliminar entrada de tiempo:", error);
+        showErrorToast(
+          "Error",
+          "Ocurrió un error al eliminar la entrada de tiempo del cronómetro"
         );
       }
     }
@@ -415,13 +411,25 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
                           <ClockIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
                           <div>
                             <div className="font-medium text-gray-900 dark:text-white">
-                              {formatTimeDetailed(entry.durationMinutes)}
+                              {formatTimeDetailed(entry.durationMinutes || 0)}
                             </div>
                             <div className="text-sm text-gray-600 dark:text-gray-400">
                               {entry.startTime && formatDate(entry.startTime)} -{" "}
                               {entry.endTime && formatDate(entry.endTime)}
                             </div>
                           </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            Automático
+                          </div>
+                          <button
+                            onClick={() => handleDeleteTimeEntry(entry.id)}
+                            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                            title="Eliminar entrada de tiempo"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
                         </div>
                       </div>
                     ))}

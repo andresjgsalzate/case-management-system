@@ -7,7 +7,6 @@ import {
   TodoPriority,
   TodoTimeEntry,
   TodoManualTimeEntry,
-  TodoControl,
   TodoMetrics,
 } from "../types/todo.types";
 
@@ -105,7 +104,7 @@ export class TodoAPI {
     const response = await authService.authenticatedRequest<Todo>(
       `/todos/${id}/complete`,
       {
-        method: "PUT",
+        method: "PATCH",
       }
     );
 
@@ -124,7 +123,7 @@ export class TodoAPI {
     const response = await authService.authenticatedRequest<Todo>(
       `/todos/${id}/reactivate`,
       {
-        method: "PUT",
+        method: "PATCH",
       }
     );
 
@@ -134,6 +133,25 @@ export class TodoAPI {
 
     if (!response.data) {
       throw new Error("Error al reabrir TODO");
+    }
+
+    return response.data;
+  }
+
+  async archiveTodo(id: string): Promise<Todo> {
+    const response = await authService.authenticatedRequest<Todo>(
+      `/todos/${id}/archive`,
+      {
+        method: "PATCH",
+      }
+    );
+
+    if (!response.success) {
+      throw new Error(response.message || "Error al archivar TODO");
+    }
+
+    if (!response.data) {
+      throw new Error("Error al archivar TODO");
     }
 
     return response.data;
@@ -211,8 +229,8 @@ export class TodoAPI {
 
   // ============= TIMER CONTROL METHODS =============
 
-  async startTodoTimer(todoId: string): Promise<TodoControl> {
-    const response = await authService.authenticatedRequest<TodoControl>(
+  async startTodoTimer(todoId: string): Promise<Todo> {
+    const response = await authService.authenticatedRequest<Todo>(
       `/todos/${todoId}/start-timer`,
       {
         method: "POST",
@@ -230,8 +248,8 @@ export class TodoAPI {
     return response.data;
   }
 
-  async pauseTodoTimer(todoId: string): Promise<TodoControl> {
-    const response = await authService.authenticatedRequest<TodoControl>(
+  async pauseTodoTimer(todoId: string): Promise<Todo> {
+    const response = await authService.authenticatedRequest<Todo>(
       `/todos/${todoId}/pause-timer`,
       {
         method: "POST",
@@ -268,9 +286,10 @@ export class TodoAPI {
   async addManualTimeEntry(
     todoId: string,
     data: {
-      date: string;
-      durationMinutes: number;
       description: string;
+      durationMinutes: number;
+      date: string;
+      userId: string;
     }
   ): Promise<TodoManualTimeEntry> {
     const response =
@@ -293,6 +312,34 @@ export class TodoAPI {
     return response.data;
   }
 
+  async getTimeEntries(todoId: string): Promise<TodoTimeEntry[]> {
+    const response = await authService.authenticatedRequest<TodoTimeEntry[]>(
+      `/todos/${todoId}/time-entries`
+    );
+
+    if (!response.success) {
+      throw new Error(
+        response.message || "Error al obtener entradas de tiempo"
+      );
+    }
+
+    return response.data || [];
+  }
+
+  async getManualTimeEntries(todoId: string): Promise<TodoManualTimeEntry[]> {
+    const response = await authService.authenticatedRequest<
+      TodoManualTimeEntry[]
+    >(`/todos/${todoId}/manual-time-entries`);
+
+    if (!response.success) {
+      throw new Error(
+        response.message || "Error al obtener entradas de tiempo manual"
+      );
+    }
+
+    return response.data || [];
+  }
+
   async deleteTimeEntry(todoId: string, entryId: string): Promise<void> {
     const response = await authService.authenticatedRequest<void>(
       `/todos/${todoId}/time-entries/${entryId}`,
@@ -304,6 +351,21 @@ export class TodoAPI {
     if (!response.success) {
       throw new Error(
         response.message || "Error al eliminar entrada de tiempo"
+      );
+    }
+  }
+
+  async deleteManualTimeEntry(todoId: string, entryId: string): Promise<void> {
+    const response = await authService.authenticatedRequest<void>(
+      `/todos/${todoId}/manual-time-entries/${entryId}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (!response.success) {
+      throw new Error(
+        response.message || "Error al eliminar entrada de tiempo manual"
       );
     }
   }

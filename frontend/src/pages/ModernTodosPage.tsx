@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useTodos } from "../hooks/useTodos";
 import { TodoCard, TodoCreateModal, TodoEditModal } from "../components/todos";
+import { Button } from "../components/ui/Button";
+import { todoAPI } from "../services/todoAPI";
 import {
   CreateTodoData,
   UpdateTodoData,
@@ -23,6 +25,7 @@ const ModernTodosPage: React.FC = () => {
     loading,
     error,
     filters,
+    fetchTodos,
     createTodo,
     updateTodo,
     deleteTodo,
@@ -62,6 +65,17 @@ const ModernTodosPage: React.FC = () => {
 
   const handleCompleteTodo = async (id: string) => {
     await completeTodo(id);
+  };
+
+  const handleArchiveTodo = async (todo: Todo) => {
+    try {
+      await todoAPI.archiveTodo(todo.id);
+      // Refrescar la lista de TODOs
+      await fetchTodos();
+    } catch (error) {
+      console.error("Error archiving todo:", error);
+      // Aquí podrías mostrar un toast de error si tienes el contexto disponible
+    }
   };
 
   const handleStartTimer = async (id: string) => {
@@ -116,27 +130,24 @@ const ModernTodosPage: React.FC = () => {
               </p>
             </div>
             <div className="flex space-x-4">
-              <button
-                onClick={generateReport}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-              >
+              <Button onClick={generateReport} variant="secondary">
                 <DocumentChartBarIcon className="h-4 w-4 mr-2" />
                 Reporte
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setShowFilters(!showFilters)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                variant="secondary"
               >
                 <FunnelIcon className="h-4 w-4 mr-2" />
                 Filtros
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                variant="primary"
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
                 Nuevo TODO
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -294,18 +305,12 @@ const ModernTodosPage: React.FC = () => {
             </div>
 
             <div className="mt-4 flex justify-end space-x-2">
-              <button
-                onClick={handleClearFilters}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-              >
+              <Button onClick={handleClearFilters} variant="secondary">
                 Limpiar
-              </button>
-              <button
-                onClick={handleApplyFilters}
-                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-              >
+              </Button>
+              <Button onClick={handleApplyFilters} variant="primary">
                 Aplicar Filtros
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -331,13 +336,13 @@ const ModernTodosPage: React.FC = () => {
             </p>
             {Object.keys(filters).length === 0 && (
               <div className="mt-6">
-                <button
+                <Button
                   onClick={() => setShowCreateModal(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                  variant="primary"
                 >
                   <PlusIcon className="h-4 w-4 mr-2" />
                   Crear TODO
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -352,6 +357,7 @@ const ModernTodosPage: React.FC = () => {
                 onComplete={handleCompleteTodo}
                 onEdit={setEditingTodo}
                 onDelete={handleDeleteTodo}
+                onArchive={handleArchiveTodo}
                 showActions={true}
               />
             ))}

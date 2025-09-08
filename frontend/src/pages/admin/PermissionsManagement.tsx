@@ -170,8 +170,7 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
   const handleDeletePermission = async (permissionId: string) => {
     const confirmed = await confirmDangerAction(
       "Eliminar Permiso",
-      "¿Estás seguro de que quieres eliminar este permiso?",
-      "Esta acción no se puede deshacer."
+      "¿Estás seguro de que quieres eliminar este permiso? Esta acción no se puede deshacer."
     );
 
     if (!confirmed) return;
@@ -285,8 +284,7 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
   const handleDeleteRole = async (roleId: string) => {
     const confirmed = await confirmDangerAction(
       "Eliminar Rol",
-      "¿Estás seguro de que quieres eliminar este rol?",
-      "Esta acción no se puede deshacer."
+      "¿Estás seguro de que quieres eliminar este rol? Esta acción no se puede deshacer."
     );
 
     if (!confirmed) return;

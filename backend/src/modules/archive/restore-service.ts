@@ -1,6 +1,6 @@
 import { AppDataSource } from "../../config/database";
 import { ArchivedCase } from "../../entities/ArchivedCase";
-import { ArchivedTodo } from "../../entities/ArchivedTodo";
+import { ArchivedTodo } from "../../entities/archive/ArchivedTodo.entity";
 import { Case, EstadoCase } from "../../entities/Case";
 import { Todo } from "../../entities/Todo";
 import { CaseControl } from "../../entities/CaseControl";
@@ -275,99 +275,115 @@ export class RestoreService {
         throw new Error("Todo archivado no encontrado");
       }
 
-      // 1. Recrear el todo principal desde los metadatos
-      const originalData = archivedTodo.metadata;
+      // 1. Recrear el todo principal desde los datos originales
+      const originalData = archivedTodo.originalData;
 
       if (!originalData) {
         throw new Error("Los datos originales del todo no están disponibles");
       }
 
-      const newTodo = queryRunner.manager.create(Todo, {
-        titulo: originalData.titulo || archivedTodo.title,
-        descripcion: originalData.descripcion || archivedTodo.description,
-        fechaCreacion: originalData.fechaCreacion
-          ? new Date(originalData.fechaCreacion)
-          : archivedTodo.originalCreatedAt,
-        fechaLimite:
-          originalData.fechaLimite || archivedTodo.dueDate
-            ? new Date(originalData.fechaLimite || archivedTodo.dueDate)
-            : null,
-        prioridad: originalData.prioridad || archivedTodo.priority,
-        estado: originalData.estado || "NUEVO",
-        completed:
-          originalData.completed || (archivedTodo.completedAt ? true : false),
-        tags: originalData.tags || [],
-        userId: archivedTodo.createdBy, // Usuario original que creó el todo
-        assignedUserId: archivedTodo.assignedTo,
-        createdByUserId: archivedTodo.createdBy,
-        caseId: archivedTodo.caseId, // Si está asociado a un caso
-      });
+      const newTodo = new Todo();
+      newTodo.id = archivedTodo.originalTodoId; // Usar el ID original para mantener relaciones
+      newTodo.title = originalData.title || archivedTodo.title;
+      newTodo.description =
+        originalData.description || archivedTodo.description;
+      newTodo.priorityId = originalData.priorityId || originalData.priority;
+      newTodo.assignedUserId = archivedTodo.assignedUserId;
+      newTodo.createdByUserId = archivedTodo.createdByUserId;
+      newTodo.dueDate =
+        originalData.dueDate || archivedTodo.dueDate
+          ? new Date(originalData.dueDate || archivedTodo.dueDate)
+          : undefined;
+      newTodo.estimatedMinutes = originalData.estimatedMinutes || 0;
+      // Restaurar como incompleto para poder volver a trabajarlo
+      newTodo.isCompleted = false;
+      newTodo.completedAt = undefined;
 
       const savedTodo = await queryRunner.manager.save(Todo, newTodo);
 
       // 2. Recrear el control del todo si existe
       let savedTodoControl = null;
-      const controlData = originalData?.todoControlRecords?.[0];
+      const controlData = archivedTodo.controlData;
 
       if (controlData) {
+        // Buscar un status por defecto para el control
+        const defaultStatus = await queryRunner.manager.findOne(
+          CaseStatusControl,
+          {
+            where: { isActive: true },
+            order: { displayOrder: "ASC" },
+          }
+        );
+
+        if (!defaultStatus) {
+          throw new Error(
+            "No se encontró ningún status activo para asignar al control del TODO"
+          );
+        }
+
         const newTodoControl = new TodoControl();
         newTodoControl.todoId = savedTodo.id;
-        newTodoControl.userId = archivedTodo.createdBy;
+        newTodoControl.userId = archivedTodo.createdByUserId;
+        newTodoControl.statusId = defaultStatus.id; // Usar siempre el status por defecto (pendiente)
         newTodoControl.totalTimeMinutes = controlData.totalTimeMinutes || 0;
         newTodoControl.assignedAt = controlData.assignedAt
           ? new Date(controlData.assignedAt)
           : new Date();
-        newTodoControl.startedAt = controlData.startedAt
-          ? new Date(controlData.startedAt)
-          : undefined;
-        newTodoControl.completedAt = archivedTodo.completedAt
-          ? new Date(archivedTodo.completedAt)
-          : undefined;
+        newTodoControl.startedAt = undefined; // Resetear como no iniciado
+        newTodoControl.completedAt = undefined; // Resetear como no completado
         newTodoControl.isTimerActive = false; // Siempre restaurar con timer inactivo
         newTodoControl.timerStartAt = undefined;
 
         savedTodoControl = await queryRunner.manager.save(newTodoControl);
 
-        // 3. Recrear entradas de tiempo manuales si existen
+        // 3. Restaurar entradas de tiempo desde controlData si existen
         if (
-          controlData.manualTimeEntries &&
-          Array.isArray(controlData.manualTimeEntries)
+          controlData.timerEntries &&
+          Array.isArray(controlData.timerEntries)
         ) {
-          for (const timeEntry of controlData.manualTimeEntries) {
-            const newTimeEntry = new TodoManualTimeEntry();
+          for (const timerEntry of controlData.timerEntries) {
+            const newTimeEntry = new TodoTimeEntry();
             newTimeEntry.todoControlId = savedTodoControl.id;
-            newTimeEntry.userId = restoredBy;
-            newTimeEntry.date = timeEntry.date
-              ? new Date(timeEntry.date)
-              : new Date();
-            newTimeEntry.durationMinutes =
-              timeEntry.minutes || timeEntry.durationMinutes || 0;
+            newTimeEntry.userId = timerEntry.userId || restoredBy;
+            newTimeEntry.startTime = new Date(timerEntry.startTime);
+            newTimeEntry.endTime = timerEntry.endTime
+              ? new Date(timerEntry.endTime)
+              : undefined;
+            newTimeEntry.durationMinutes = timerEntry.durationMinutes || 0;
+            newTimeEntry.entryType = timerEntry.entryType || "automatic";
             newTimeEntry.description =
-              timeEntry.description || "Entrada restaurada";
+              timerEntry.description || "Entrada de timer restaurada";
 
-            await queryRunner.manager.save(newTimeEntry);
+            await queryRunner.manager.save(TodoTimeEntry, newTimeEntry);
           }
         }
 
-        // 4. Recrear entradas de tiempo automáticas si existen
-        if (controlData.timeEntries && Array.isArray(controlData.timeEntries)) {
-          for (const timeEntry of controlData.timeEntries) {
-            const newTimeEntry = new TodoTimeEntry();
-            newTimeEntry.todoControlId = savedTodoControl.id;
-            newTimeEntry.startTime = new Date(timeEntry.startTime);
-            newTimeEntry.endTime = timeEntry.endTime
-              ? new Date(timeEntry.endTime)
-              : undefined;
-            newTimeEntry.durationMinutes =
-              timeEntry.totalMinutes || timeEntry.durationMinutes || 0;
+        // 4. Restaurar entradas de tiempo manuales desde controlData si existen
+        if (
+          controlData.manualEntries &&
+          Array.isArray(controlData.manualEntries)
+        ) {
+          for (const manualEntry of controlData.manualEntries) {
+            const newManualEntry = new TodoManualTimeEntry();
+            newManualEntry.todoControlId = savedTodoControl.id;
+            newManualEntry.userId = manualEntry.userId || restoredBy;
+            newManualEntry.date = manualEntry.date
+              ? new Date(manualEntry.date)
+              : new Date();
+            newManualEntry.durationMinutes = manualEntry.durationMinutes || 0;
+            newManualEntry.description =
+              manualEntry.description || "Entrada manual restaurada";
 
-            await queryRunner.manager.save(newTimeEntry);
+            await queryRunner.manager.save(TodoManualTimeEntry, newManualEntry);
           }
         }
       }
 
-      // 5. Eliminar el todo del archivo (ya no se necesita porque fue restaurado)
-      await queryRunner.manager.remove(ArchivedTodo, archivedTodo);
+      // 5. Marcar el TODO archivado como restaurado
+      archivedTodo.isRestored = true;
+      archivedTodo.restoredAt = new Date();
+      archivedTodo.restoredBy = restoredBy;
+      await queryRunner.manager.save(ArchivedTodo, archivedTodo);
 
       // Confirmar transacción
       await queryRunner.commitTransaction();

@@ -5,6 +5,7 @@ import {
   AdjustmentsHorizontalIcon,
 } from "@heroicons/react/24/outline";
 import { NoteFilters } from "../../types/note.types";
+import { Button } from "../ui/Button";
 
 interface NotesSearchProps {
   onSearch: (filters: NoteFilters) => void;
@@ -104,33 +105,26 @@ export const NotesSearch: React.FC<NotesSearchProps> = ({
               className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             />
           </div>
-          <button
-            type="button"
+          <Button
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className={`px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              showAdvanced
-                ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                : "text-gray-700 dark:text-gray-300"
-            }`}
+            variant={showAdvanced ? "primary" : "secondary"}
+            size="sm"
             title="Filtros avanzados"
           >
             <AdjustmentsHorizontalIcon className="h-4 w-4" />
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+          </Button>
+          <Button type="submit" variant="primary">
             Buscar
-          </button>
+          </Button>
           {hasActiveFilters() && (
-            <button
-              type="button"
+            <Button
               onClick={handleReset}
-              className="px-3 py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
+              variant="ghost"
+              size="sm"
               title="Limpiar filtros"
             >
               <XMarkIcon className="h-4 w-4" />
-            </button>
+            </Button>
           )}
         </div>
 
@@ -309,18 +303,17 @@ export const NotesSearch: React.FC<NotesSearchProps> = ({
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {existingTags.map((tag) => (
-                    <button
+                    <Button
                       key={tag}
-                      type="button"
+                      variant={
+                        filters.tags?.includes(tag) ? "primary" : "secondary"
+                      }
+                      size="xs"
                       onClick={() => handleTagToggle(tag)}
-                      className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                        filters.tags?.includes(tag)
-                          ? "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border-2 border-blue-300 dark:border-blue-700"
-                          : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600"
-                      }`}
+                      className="transition-colors"
                     >
                       {tag}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>

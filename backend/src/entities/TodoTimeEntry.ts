@@ -30,7 +30,12 @@ export class TodoTimeEntry {
   @Column({ name: "duration_minutes", type: "integer", nullable: true })
   durationMinutes?: number;
 
-  @Column({ name: "entry_type", type: "varchar", length: 20 })
+  @Column({
+    name: "entry_type",
+    type: "varchar",
+    length: 20,
+    default: "automatic",
+  })
   entryType: "automatic" | "manual";
 
   @Column({ type: "text", nullable: true })

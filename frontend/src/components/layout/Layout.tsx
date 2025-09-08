@@ -13,6 +13,7 @@ import { DynamicNavigation } from "../navigation/DynamicNavigation";
 import { PermissionIndicator } from "../PermissionIndicator";
 import { useInactivityTimeout } from "../../hooks/useInactivityTimeout";
 import { InactivityWarningModal } from "../InactivityWarningModal";
+import { Button } from "../ui/Button";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -118,9 +119,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="flex flex-col h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
           {/* Header con logo como botón de colapso */}
           <div className="flex-shrink-0 flex items-center px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <button
+            <Button
               onClick={toggleCollapse}
-              className="flex items-center w-full hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors duration-200 -mx-2 px-2 py-1"
+              variant="ghost"
+              className="flex items-center w-full -mx-2 px-2 py-1"
               title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
             >
               <ChartBarIcon className="h-8 w-8 text-blue-600 dark:text-blue-400 flex-shrink-0" />
@@ -129,7 +131,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   Gestión de Casos
                 </h1>
               )}
-            </button>
+            </Button>
           </div>
 
           {/* Navigation */}
@@ -144,9 +146,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           {/* User Section */}
           <div className="border-t border-gray-200 dark:border-gray-700">
             <div className="relative p-4">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors duration-200 ${
+                className={`w-full ${
                   isCollapsed ? "justify-center" : "justify-between"
                 }`}
                 title={isCollapsed ? user?.fullName || "Usuario" : undefined}
@@ -171,39 +175,45 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     }`}
                   />
                 )}
-              </button>
+              </Button>
 
               {/* Dropdown menu */}
               {showUserMenu && !isCollapsed && (
                 <div className="absolute bottom-full left-0 w-full bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 mb-2 z-50">
                   <div className="p-2">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => {
                         console.log("Navegar a Mi Perfil");
                         setShowUserMenu(false);
                       }}
-                      className="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors duration-200"
+                      className="w-full justify-start"
                     >
                       <UserIcon className="h-4 w-4 mr-3" />
                       Mi Perfil
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => {
                         console.log("Navegar a Configuración");
                         setShowUserMenu(false);
                       }}
-                      className="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors duration-200"
+                      className="w-full justify-start"
                     >
                       <Cog6ToothIcon className="h-4 w-4 mr-3" />
                       Configuración
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
                       onClick={handleSignOut}
-                      className="w-full flex items-center px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors duration-200"
+                      className="w-full justify-start"
                     >
                       <ArrowRightOnRectangleIcon className="h-4 w-4 mr-3" />
                       Cerrar Sesión
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}

@@ -1,10 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { archiveApi } from "../services/archiveApi";
 import {
-  ArchivedCase,
-  ArchivedTodo,
-  ArchivedItem,
-  ArchiveStats,
   ArchiveFilters,
   CreateArchivedCaseData,
   CreateArchivedTodoData,
@@ -48,12 +44,6 @@ export const useArchiveStats = () => {
       return result;
     },
     staleTime: 1000 * 60 * 5, // 5 minutos
-    onSuccess: (data) => {
-      console.log("✅ useArchiveStats - Éxito:", data);
-    },
-    onError: (error) => {
-      console.error("❌ useArchiveStats - Error:", error);
-    },
   });
 };
 
@@ -271,12 +261,6 @@ export const useArchivedItems = (filters?: ArchiveFilters) => {
       return result;
     },
     staleTime: 1000 * 60 * 2, // 2 minutos
-    onSuccess: (data) => {
-      console.log("✅ useArchivedItems - Éxito:", data);
-    },
-    onError: (error) => {
-      console.error("❌ useArchivedItems - Error:", error);
-    },
   });
 };
 

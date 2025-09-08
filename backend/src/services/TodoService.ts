@@ -54,16 +54,34 @@ export class TodoService {
   }
 
   async getTodoById(id: string): Promise<TodoResponseDto | null> {
+    console.log(`getTodoById: Fetching TODO with id ${id}`);
+
     const todo = await this.todoRepository
       .createQueryBuilder("todo")
       .leftJoinAndSelect("todo.priority", "priority")
       .leftJoinAndSelect("todo.assignedUser", "assignedUser")
       .leftJoinAndSelect("todo.createdByUser", "createdByUser")
-      .leftJoinAndSelect("todo.control", "control")
-      .leftJoinAndSelect("control.user", "controlUser")
-      .leftJoinAndSelect("control.status", "controlStatus")
+      .leftJoinAndSelect("todo.controls", "controls")
+      .leftJoinAndSelect("controls.user", "controlUser")
+      .leftJoinAndSelect("controls.status", "controlStatus")
       .where("todo.id = :id", { id })
       .getOne();
+
+    if (todo) {
+      console.log(
+        `getTodoById: Found TODO ${id}, controls count: ${
+          todo.controls?.length || 0
+        }`
+      );
+      if (todo.controls && todo.controls.length > 0) {
+        const firstControl = todo.controls[0]!;
+        console.log(
+          `getTodoById: First control - id: ${firstControl.id}, isTimerActive: ${firstControl.isTimerActive}`
+        );
+      }
+    } else {
+      console.log(`getTodoById: TODO ${id} not found`);
+    }
 
     return todo ? this.mapToResponseDto(todo) : null;
   }
@@ -297,6 +315,10 @@ export class TodoService {
   }
 
   private mapToResponseDto(todo: Todo): TodoResponseDto {
+    console.log(`🔄 mapToResponseDto: TODO ${todo.id}`);
+    console.log(`🔄 Controls array length: ${todo.controls?.length || 0}`);
+    console.log(`🔄 Controls exists: ${!!todo.controls}`);
+
     return {
       id: todo.id,
       title: todo.title,
@@ -337,22 +359,27 @@ export class TodoService {
             isActive: todo.createdByUser.isActive,
           }
         : undefined,
-      control: todo.control
-        ? {
-            id: todo.control.id,
-            todoId: todo.control.todoId,
-            userId: todo.control.userId,
-            statusId: todo.control.statusId,
-            totalTimeMinutes: todo.control.totalTimeMinutes,
-            timerStartAt: todo.control.timerStartAt?.toISOString(),
-            isTimerActive: todo.control.isTimerActive,
-            assignedAt: todo.control.assignedAt.toISOString(),
-            startedAt: todo.control.startedAt?.toISOString(),
-            completedAt: todo.control.completedAt?.toISOString(),
-            createdAt: todo.control.createdAt.toISOString(),
-            updatedAt: todo.control.updatedAt.toISOString(),
-          }
-        : undefined,
+      // Use the first control from the loaded controls array
+      control:
+        todo.controls && todo.controls.length > 0
+          ? (() => {
+              const firstControl = todo.controls![0]!;
+              return {
+                id: firstControl.id,
+                todoId: firstControl.todoId,
+                userId: firstControl.userId,
+                statusId: firstControl.statusId,
+                totalTimeMinutes: firstControl.totalTimeMinutes,
+                timerStartAt: firstControl.timerStartAt?.toISOString(),
+                isTimerActive: firstControl.isTimerActive,
+                assignedAt: firstControl.assignedAt.toISOString(),
+                startedAt: firstControl.startedAt?.toISOString(),
+                completedAt: firstControl.completedAt?.toISOString(),
+                createdAt: firstControl.createdAt.toISOString(),
+                updatedAt: firstControl.updatedAt.toISOString(),
+              };
+            })()
+          : undefined,
     };
   }
 
@@ -636,6 +663,217 @@ export class TodoService {
       return true;
     } catch (error) {
       console.error("Error deleting manual time entry:", error);
+      throw error;
+    }
+  }
+
+  async startTimer(
+    todoId: string,
+    userId: string
+  ): Promise<TodoResponseDto | null> {
+    try {
+      console.log(`Starting timer for TODO ${todoId} by user ${userId}`);
+
+      // Buscar o crear control del TODO
+      let control = await this.todoControlRepository.findOne({
+        where: { todoId, userId },
+      });
+
+      if (!control) {
+        // Crear control si no existe
+        const { CaseStatusControl } = require("../entities/CaseStatusControl");
+        const statusRepository = AppDataSource.getRepository(CaseStatusControl);
+        const pendingStatus = await statusRepository.findOne({
+          where: { name: "PENDIENTE" },
+        });
+
+        if (!pendingStatus) {
+          throw new Error("Status PENDIENTE not found");
+        }
+
+        control = this.todoControlRepository.create({
+          todoId,
+          userId,
+          statusId: pendingStatus.id,
+          totalTimeMinutes: 0,
+          isTimerActive: false,
+          assignedAt: new Date(),
+        });
+
+        control = await this.todoControlRepository.save(control);
+      }
+
+      // Verificar si ya hay un timer activo
+      if (control.isTimerActive) {
+        throw new Error("Timer is already active for this TODO");
+      }
+
+      // Iniciar timer
+      control.isTimerActive = true;
+      control.timerStartAt = new Date();
+
+      if (!control.startedAt) {
+        control.startedAt = new Date();
+      }
+
+      await this.todoControlRepository.save(control);
+
+      // Crear entrada de tiempo automática
+      const { TodoTimeEntry } = require("../entities/TodoTimeEntry");
+      const timeEntryRepository = AppDataSource.getRepository(TodoTimeEntry);
+
+      const timeEntry = timeEntryRepository.create({
+        todoControlId: control.id,
+        userId,
+        startTime: new Date(),
+        entryType: "automatic",
+      });
+
+      await timeEntryRepository.save(timeEntry);
+
+      // Retornar el TODO actualizado
+      const updatedTodo = await this.getTodoById(todoId);
+      console.log(`Timer started successfully for TODO ${todoId}`);
+      return updatedTodo;
+    } catch (error) {
+      console.error("Error starting timer:", error);
+      throw error;
+    }
+  }
+
+  async pauseTimer(
+    todoId: string,
+    userId: string
+  ): Promise<TodoResponseDto | null> {
+    try {
+      console.log(`Pausing timer for TODO ${todoId} by user ${userId}`);
+
+      const control = await this.todoControlRepository.findOne({
+        where: { todoId, userId },
+      });
+
+      if (!control) {
+        throw new Error("Control not found for this TODO and user");
+      }
+
+      if (!control.isTimerActive) {
+        throw new Error("Timer is not active for this TODO");
+      }
+
+      // Pausar timer
+      control.isTimerActive = false;
+      const endTime = new Date();
+      const durationMinutes = control.timerStartAt
+        ? Math.round(
+            (endTime.getTime() - control.timerStartAt.getTime()) / (1000 * 60)
+          )
+        : 0;
+
+      control.totalTimeMinutes += durationMinutes;
+      control.timerStartAt = undefined;
+
+      await this.todoControlRepository.save(control);
+
+      // Actualizar la entrada de tiempo actual
+      const { TodoTimeEntry } = require("../entities/TodoTimeEntry");
+      const timeEntryRepository = AppDataSource.getRepository(TodoTimeEntry);
+
+      const activeTimeEntry = await timeEntryRepository.findOne({
+        where: {
+          todoControlId: control.id,
+          endTime: null,
+        },
+        order: { startTime: "DESC" },
+      });
+
+      if (activeTimeEntry) {
+        activeTimeEntry.endTime = endTime;
+        activeTimeEntry.durationMinutes = durationMinutes;
+        await timeEntryRepository.save(activeTimeEntry);
+      }
+
+      // Retornar el TODO actualizado
+      const updatedTodo = await this.getTodoById(todoId);
+      console.log(`Timer paused successfully for TODO ${todoId}`);
+      return updatedTodo;
+    } catch (error) {
+      console.error("Error pausing timer:", error);
+      throw error;
+    }
+  }
+
+  async getTimeEntries(todoId: string): Promise<any[]> {
+    try {
+      console.log(`Getting time entries for TODO ${todoId}`);
+
+      const { TodoTimeEntry } = require("../entities/TodoTimeEntry");
+      const {
+        TodoManualTimeEntry,
+      } = require("../entities/TodoManualTimeEntry");
+
+      const timeEntryRepository = AppDataSource.getRepository(TodoTimeEntry);
+      const manualTimeEntryRepository =
+        AppDataSource.getRepository(TodoManualTimeEntry);
+
+      // Buscar control del TODO
+      const control = await this.todoControlRepository.findOne({
+        where: { todoId },
+      });
+
+      if (!control) {
+        return [];
+      }
+
+      // Obtener entradas automáticas
+      const automaticEntries = await timeEntryRepository.find({
+        where: { todoControlId: control.id },
+        relations: ["user"],
+        order: { startTime: "DESC" },
+      });
+
+      // Obtener entradas manuales
+      const manualEntries = await manualTimeEntryRepository.find({
+        where: { todoControlId: control.id },
+        relations: ["user"],
+        order: { date: "DESC" },
+      });
+
+      // Combinar y formatear entradas
+      const allEntries = [
+        ...automaticEntries.map((entry) => ({
+          id: entry.id,
+          type: "automatic",
+          startTime: entry.startTime,
+          endTime: entry.endTime,
+          duration: entry.durationMinutes,
+          description: entry.description,
+          user: entry.user
+            ? {
+                id: entry.user.id,
+                fullName: entry.user.fullName,
+                email: entry.user.email,
+              }
+            : null,
+        })),
+        ...manualEntries.map((entry) => ({
+          id: entry.id,
+          type: "manual",
+          date: entry.date,
+          duration: entry.durationMinutes,
+          description: entry.description,
+          user: entry.user
+            ? {
+                id: entry.user.id,
+                fullName: entry.user.fullName,
+                email: entry.user.email,
+              }
+            : null,
+        })),
+      ];
+
+      return allEntries;
+    } catch (error) {
+      console.error("Error getting time entries:", error);
       throw error;
     }
   }

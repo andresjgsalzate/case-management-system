@@ -2,7 +2,7 @@ export interface CreateTodoDto {
   title: string;
   description?: string;
   priorityId: string;
-  assignedUserId?: string;
+  assignedUserId: string;
   dueDate?: string; // ISO date string
   estimatedMinutes?: number;
 }

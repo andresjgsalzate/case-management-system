@@ -140,15 +140,13 @@ export const useTodos = (initialFilters?: TodoFilters) => {
   const startTimer = useCallback(async (id: string): Promise<Todo | null> => {
     try {
       setError(null);
-      const response = await todoAPI.startTodoTimer(id);
-      if (response) {
-        // Actualizar el estado del todo con el control actualizado
+      const updatedTodo = await todoAPI.startTodoTimer(id);
+      if (updatedTodo) {
+        // Actualizar el estado del todo completo
         setTodos((prev) =>
-          prev.map((todo) =>
-            todo.id === id ? { ...todo, control: response } : todo
-          )
+          prev.map((todo) => (todo.id === id ? updatedTodo : todo))
         );
-        return { ...todos.find((t) => t.id === id)!, control: response };
+        return updatedTodo;
       }
       return null;
     } catch (err) {
@@ -162,15 +160,13 @@ export const useTodos = (initialFilters?: TodoFilters) => {
   const pauseTimer = useCallback(async (id: string): Promise<Todo | null> => {
     try {
       setError(null);
-      const response = await todoAPI.pauseTodoTimer(id);
-      if (response) {
-        // Actualizar el estado del todo con el control actualizado
+      const updatedTodo = await todoAPI.pauseTodoTimer(id);
+      if (updatedTodo) {
+        // Actualizar el estado del todo completo
         setTodos((prev) =>
-          prev.map((todo) =>
-            todo.id === id ? { ...todo, control: response } : todo
-          )
+          prev.map((todo) => (todo.id === id ? updatedTodo : todo))
         );
-        return { ...todos.find((t) => t.id === id)!, control: response };
+        return updatedTodo;
       }
       return null;
     } catch (err) {
@@ -234,7 +230,7 @@ export const useTodos = (initialFilters?: TodoFilters) => {
     async (todoId: string, entryId: string): Promise<boolean> => {
       try {
         setError(null);
-        await todoAPI.deleteTimeEntry(todoId, entryId);
+        await todoAPI.deleteManualTimeEntry(todoId, entryId);
         // Refetch todos para actualizar el tiempo total
         await fetchTodos(filters);
         return true;
@@ -245,6 +241,28 @@ export const useTodos = (initialFilters?: TodoFilters) => {
             : "Error al eliminar entrada de tiempo manual"
         );
         console.error("Error deleting manual time entry:", err);
+        return false;
+      }
+    },
+    [filters, fetchTodos]
+  );
+
+  // Eliminar entrada de tiempo automático
+  const deleteTimeEntry = useCallback(
+    async (todoId: string, entryId: string): Promise<boolean> => {
+      try {
+        setError(null);
+        await todoAPI.deleteTimeEntry(todoId, entryId);
+        // Refetch todos para actualizar el tiempo total
+        await fetchTodos(filters);
+        return true;
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Error al eliminar entrada de tiempo"
+        );
+        console.error("Error deleting time entry:", err);
         return false;
       }
     },
@@ -288,7 +306,6 @@ export const useTodos = (initialFilters?: TodoFilters) => {
     fetchTodos();
     fetchPriorities();
   }, []);
-
   return {
     // Estado
     todos,
@@ -313,6 +330,7 @@ export const useTodos = (initialFilters?: TodoFilters) => {
     addManualTimeEntry,
     getManualTimeEntries,
     deleteManualTimeEntry,
+    deleteTimeEntry,
 
     // Filtros
     applyFilters,

@@ -18,6 +18,7 @@ import {
 } from "../../services/api";
 import { PageWrapper } from "../../components/layout/PageWrapper";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+import { Button } from "../../components/ui/Button";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
 import { CaseExportButtons } from "../../components/cases/CaseExportButtons";
 import {
@@ -278,12 +279,9 @@ export const CasesPage: React.FC = () => {
             </select>
 
             {/* Botón limpiar filtros */}
-            <button
-              onClick={clearFilters}
-              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
+            <Button onClick={clearFilters} variant="secondary">
               Limpiar filtros
-            </button>
+            </Button>
           </div>
         </div>
 

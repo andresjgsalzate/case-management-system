@@ -12,11 +12,7 @@ import {
   ArchivedCasePriority,
   ArchivedCaseClassification,
 } from "../../entities/ArchivedCase";
-import {
-  ArchivedTodo,
-  ArchivedTodoStatus,
-  ArchivedTodoPriority,
-} from "../../entities/ArchivedTodo";
+import { ArchivedTodo } from "../../entities/archive/ArchivedTodo.entity";
 import { Todo } from "../../entities/Todo";
 import { CaseControl } from "../../entities/CaseControl";
 import { TimeEntry } from "../../entities/TimeEntry";
@@ -230,7 +226,83 @@ export class ArchiveServiceExpress {
         }
       }
 
-      // TODO: Implementar lógica similar para todos si es necesario
+      // Si se pide "todo" o "all", buscar TODOs archivados
+      if (type === "todo" || type === "all") {
+        const todoQueryBuilder = archivedTodoRepository
+          .createQueryBuilder("archived_todo")
+          .leftJoinAndSelect("archived_todo.archivedByUser", "archivedByUser");
+
+        if (search) {
+          todoQueryBuilder.where(
+            "archived_todo.title ILIKE :search OR archived_todo.description ILIKE :search",
+            { search: `%${search}%` }
+          );
+        }
+
+        if (sortBy === "title") {
+          todoQueryBuilder.orderBy("archived_todo.title", sortOrder);
+        } else if (sortBy === "archivedAt") {
+          todoQueryBuilder.orderBy("archived_todo.archivedAt", sortOrder);
+        } else {
+          todoQueryBuilder.orderBy(
+            "archived_todo.originalCreatedAt",
+            sortOrder
+          );
+        }
+
+        todoQueryBuilder.skip((page - 1) * limit).take(limit);
+
+        const [archivedTodos, todoCount] =
+          await todoQueryBuilder.getManyAndCount();
+        total += todoCount;
+
+        // Convertir TODOs archivados a DTOs
+        for (const archivedTodo of archivedTodos) {
+          // Usar directamente los datos almacenados en los campos JSONB (igual que casos)
+          const timerTimeMinutes = (archivedTodo.timerEntries || []).reduce(
+            (total: number, entry: any) => total + (entry.durationMinutes || 0),
+            0
+          );
+
+          const manualTimeMinutes = (
+            archivedTodo.manualTimeEntries || []
+          ).reduce(
+            (total: number, entry: any) => total + (entry.durationMinutes || 0),
+            0
+          );
+
+          const totalTimeMinutes = timerTimeMinutes + manualTimeMinutes;
+
+          items.push({
+            id: archivedTodo.id,
+            itemType: "todo",
+            originalId: archivedTodo.originalTodoId,
+            title: archivedTodo.title,
+            description: archivedTodo.description || undefined,
+            status: archivedTodo.isCompleted ? "completed" : "pending",
+            priority: archivedTodo.priority,
+            archivedAt: archivedTodo.archivedAt.toISOString(),
+            archivedBy: archivedTodo.archivedBy,
+            archivedReason: archivedTodo.archiveReason,
+            createdAt: archivedTodo.createdAt.toISOString(),
+            updatedAt: archivedTodo.updatedAt.toISOString(),
+            isRestored: archivedTodo.isRestored || false,
+            totalTimeMinutes,
+            timerTimeMinutes,
+            manualTimeMinutes,
+            archivedByUser: archivedTodo.archivedByUser
+              ? {
+                  id: (await archivedTodo.archivedByUser).id,
+                  fullName: (await archivedTodo.archivedByUser).fullName,
+                  email: (await archivedTodo.archivedByUser).email,
+                  displayName:
+                    (await archivedTodo.archivedByUser).fullName ||
+                    (await archivedTodo.archivedByUser).email,
+                }
+              : undefined,
+          });
+        }
+      }
 
       return { items, total };
     } catch (error: any) {
@@ -445,35 +517,261 @@ export class ArchiveServiceExpress {
   }
 
   /**
-   * Archiva un todo
+   * Archiva un todo (siguiendo el mismo patrón que archiveCase)
    */
   async archiveTodo(
-    todoId: number,
-    userId: number,
+    todoId: string,
+    userId: string,
     reason?: string
   ): Promise<ArchivedTodoResponseDto> {
     try {
-      // Mock response for now
-      const mockArchivedTodo: ArchivedTodoResponseDto = {
-        id: "mock-id",
-        originalTodoId: todoId.toString(),
-        title: "Todo archivado",
-        description: "Descripción del todo archivado",
-        priority: "ALTA",
-        isCompleted: true,
-        createdByUserId: userId.toString(),
-        originalCreatedAt: new Date().toISOString(),
-        originalUpdatedAt: new Date().toISOString(),
-        archivedAt: new Date().toISOString(),
-        archivedBy: userId.toString(),
-        archiveReason: reason,
-        isRestored: false,
-        totalTimeMinutes: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+      // Los IDs ya son strings UUID
+      const todoIdStr = todoId;
+      const userIdStr = userId;
+
+      // Obtener repositorios
+      const todoRepository = AppDataSource.getRepository(Todo);
+      const archivedTodoRepository = AppDataSource.getRepository(ArchivedTodo);
+      const { TodoControl } = await import("../../entities/TodoControl");
+      const { TodoTimeEntry } = await import("../../entities/TodoTimeEntry");
+      const { TodoManualTimeEntry } = await import(
+        "../../entities/TodoManualTimeEntry"
+      );
+      const todoControlRepository = AppDataSource.getRepository(TodoControl);
+      const todoTimeEntriesRepository =
+        AppDataSource.getRepository(TodoTimeEntry);
+      const todoManualTimeEntriesRepository =
+        AppDataSource.getRepository(TodoManualTimeEntry);
+
+      // Buscar el TODO original con todas sus relaciones
+      const originalTodo = await todoRepository.findOne({
+        where: { id: todoIdStr },
+        relations: ["priority", "assignedUser", "createdByUser"],
+      });
+
+      if (!originalTodo) {
+        throw new Error(`TODO con ID ${todoIdStr} no encontrado`);
+      }
+
+      // Solo se pueden archivar TODOs completados
+      if (!originalTodo.isCompleted) {
+        throw new Error("Solo se pueden archivar TODOs completados");
+      }
+
+      // Buscar registros de control del TODO
+      const todoControlRecords = await todoControlRepository.find({
+        where: { todoId: todoIdStr },
+        relations: ["user", "status"],
+      });
+
+      // Recolectar todas las entradas de tiempo
+      const timerEntries = [];
+      const manualEntries = [];
+
+      for (const todoControl of todoControlRecords) {
+        // Entradas de tiempo automáticas (cronómetro)
+        const automaticEntries = await todoTimeEntriesRepository.find({
+          where: { todoControlId: todoControl.id },
+          relations: ["user"],
+        });
+
+        for (const entry of automaticEntries) {
+          timerEntries.push({
+            id: entry.id,
+            todoControlId: entry.todoControlId,
+            userId: entry.userId,
+            userEmail: entry.user?.email || undefined,
+            startTime: entry.startTime,
+            endTime: entry.endTime,
+            durationMinutes: entry.durationMinutes,
+            description: entry.description,
+            createdAt: entry.createdAt,
+            updatedAt: entry.updatedAt,
+          });
+        }
+
+        // Entradas de tiempo manuales
+        const manualTimeEntries = await todoManualTimeEntriesRepository.find({
+          where: { todoControlId: todoControl.id },
+          relations: ["user"],
+        });
+
+        for (const entry of manualTimeEntries) {
+          manualEntries.push({
+            id: entry.id,
+            todoControlId: entry.todoControlId,
+            userId: entry.userId,
+            userEmail: entry.user?.email || undefined,
+            date: entry.date,
+            durationMinutes: entry.durationMinutes,
+            description: entry.description,
+            createdBy: entry.createdBy,
+            createdAt: entry.createdAt,
+          });
+        }
+      }
+
+      // Calcular tiempos por separado
+      const timerTimeMinutes = timerEntries.reduce(
+        (total, entry) => total + (entry.durationMinutes || 0),
+        0
+      );
+
+      const manualTimeMinutes = manualEntries.reduce(
+        (total, entry) => total + (entry.durationMinutes || 0),
+        0
+      );
+
+      // Calcular tiempo total
+      const totalTimeMinutes = timerTimeMinutes + manualTimeMinutes;
+
+      // Crear el TODO archivado
+      const archivedTodo = new ArchivedTodo();
+      archivedTodo.originalTodoId = todoIdStr;
+      archivedTodo.title = originalTodo.title;
+      archivedTodo.description = originalTodo.description || "";
+      archivedTodo.priority = originalTodo.priority?.name || "MEDIUM";
+      archivedTodo.isCompleted = originalTodo.isCompleted;
+      if (originalTodo.dueDate) {
+        archivedTodo.dueDate = originalTodo.dueDate;
+      }
+      archivedTodo.originalCreatedAt = originalTodo.createdAt;
+      archivedTodo.originalUpdatedAt =
+        originalTodo.updatedAt || originalTodo.createdAt;
+      if (originalTodo.completedAt) {
+        archivedTodo.completedAt = originalTodo.completedAt;
+      }
+      archivedTodo.createdByUserId = originalTodo.createdByUserId;
+      if (originalTodo.assignedUserId) {
+        archivedTodo.assignedUserId = originalTodo.assignedUserId;
+      }
+      // caseId se deja undefined por defecto para TODOs no relacionados con casos
+      archivedTodo.archivedAt = new Date();
+      archivedTodo.archivedBy = userIdStr;
+      archivedTodo.archiveReason =
+        reason || "TODO archivado a través del sistema de archivos";
+      archivedTodo.isRestored = false;
+      archivedTodo.totalTimeMinutes = totalTimeMinutes;
+      archivedTodo.timerTimeMinutes = timerTimeMinutes;
+      archivedTodo.manualTimeMinutes = manualTimeMinutes;
+
+      // Almacenar datos originales completos
+      archivedTodo.originalData = {
+        ...originalTodo,
+        priority: originalTodo.priority,
+        assignedUser: originalTodo.assignedUser,
+        createdByUser: originalTodo.createdByUser,
       };
 
-      return mockArchivedTodo;
+      // Almacenar datos de control
+      archivedTodo.controlData = {
+        todoControlRecords: todoControlRecords.map((tc) => ({
+          id: tc.id,
+          todoId: tc.todoId,
+          userId: tc.userId,
+          statusId: tc.statusId,
+          totalTimeMinutes: tc.totalTimeMinutes,
+          timerStartAt: tc.timerStartAt,
+          isTimerActive: tc.isTimerActive,
+          assignedAt: tc.assignedAt,
+          startedAt: tc.startedAt,
+          completedAt: tc.completedAt,
+          createdAt: tc.createdAt,
+          updatedAt: tc.updatedAt,
+        })),
+        timerEntries,
+        manualEntries,
+      };
+
+      // Almacenar las entradas de tiempo directamente en los campos JSONB (igual que casos)
+      archivedTodo.timerEntries = timerEntries;
+      archivedTodo.manualTimeEntries = manualEntries;
+
+      // Metadatos adicionales con información de control de TODO
+      const metadata = {
+        estimatedMinutes: originalTodo.estimatedMinutes,
+        todoControlRecords: todoControlRecords.map((tc) => ({
+          id: tc.id,
+          userId: tc.userId,
+          statusId: tc.statusId,
+          totalTimeMinutes: tc.totalTimeMinutes,
+          timerStartAt: tc.timerStartAt,
+          isTimerActive: tc.isTimerActive,
+          assignedAt: tc.assignedAt,
+          startedAt: tc.startedAt,
+          completedAt: tc.completedAt,
+          createdAt: tc.createdAt,
+          updatedAt: tc.updatedAt,
+        })),
+        // Incluir las entradas de tiempo en metadata
+        timeEntries: timerEntries,
+        manualTimeEntries: manualEntries,
+      };
+
+      // Almacenar los metadatos (igual que casos)
+      archivedTodo.metadata = { ...originalTodo, ...metadata };
+
+      // Usar transacción para garantizar consistencia
+      const result = await AppDataSource.transaction(async (manager) => {
+        // Guardar el TODO archivado
+        const savedArchivedTodo = await manager.save(
+          ArchivedTodo,
+          archivedTodo
+        );
+
+        // Eliminar todas las entradas de tiempo relacionadas
+        for (const todoControl of todoControlRecords) {
+          await manager.delete(TodoManualTimeEntry, {
+            todoControlId: todoControl.id,
+          });
+          await manager.delete(TodoTimeEntry, {
+            todoControlId: todoControl.id,
+          });
+        }
+
+        // Eliminar registros de control del TODO
+        await manager.delete(TodoControl, { todoId: todoIdStr });
+
+        // Finalmente, eliminar el TODO original
+        await manager.delete(Todo, { id: todoIdStr });
+
+        return savedArchivedTodo;
+      });
+
+      // Convertir a DTO de respuesta
+      const response: ArchivedTodoResponseDto = {
+        id: result.id,
+        originalTodoId: result.originalTodoId,
+        title: result.title,
+        description: result.description,
+        priority: result.priority,
+        isCompleted: result.isCompleted,
+        createdByUserId: result.createdByUserId,
+        originalCreatedAt: result.originalCreatedAt.toISOString(),
+        originalUpdatedAt: result.originalUpdatedAt.toISOString(),
+        archivedAt: result.archivedAt.toISOString(),
+        archivedBy: result.archivedBy,
+        archiveReason: result.archiveReason || "",
+        isRestored: result.isRestored,
+        totalTimeMinutes: totalTimeMinutes,
+        timerTimeMinutes: timerTimeMinutes,
+        manualTimeMinutes: manualTimeMinutes,
+        createdAt: result.createdAt.toISOString(),
+        updatedAt: result.updatedAt.toISOString(),
+      };
+
+      console.log(`✅ TODO ${originalTodo.title} archivado exitosamente:`, {
+        todoId: todoIdStr,
+        archivedTodoId: result.id,
+        timerEntriesCount: timerEntries.length,
+        manualEntriesCount: manualEntries.length,
+        todoControlRecordsCount: todoControlRecords.length,
+        totalTimeMinutes,
+        timerTimeMinutes,
+        manualTimeMinutes,
+      });
+
+      return response;
     } catch (error: any) {
       console.error("Error archiving todo:", error);
       throw new Error(`Error archivando todo: ${error.message}`);
@@ -505,11 +803,36 @@ export class ArchiveServiceExpress {
    */
   async deleteArchivedItem(
     type: "case" | "todo",
-    archivedId: number
+    archivedId: string
   ): Promise<void> {
     try {
-      // Mock implementation for now
-      console.log(`Deleted archived ${type} with id: ${archivedId}`);
+      if (type === "case") {
+        const archivedCaseRepository =
+          AppDataSource.getRepository(ArchivedCase);
+        const archivedCase = await archivedCaseRepository.findOne({
+          where: { id: archivedId },
+        });
+
+        if (!archivedCase) {
+          throw new Error("Caso archivado no encontrado");
+        }
+
+        await archivedCaseRepository.remove(archivedCase);
+        console.log(`Caso archivado eliminado permanentemente: ${archivedId}`);
+      } else if (type === "todo") {
+        const archivedTodoRepository =
+          AppDataSource.getRepository(ArchivedTodo);
+        const archivedTodo = await archivedTodoRepository.findOne({
+          where: { id: archivedId },
+        });
+
+        if (!archivedTodo) {
+          throw new Error("TODO archivado no encontrado");
+        }
+
+        await archivedTodoRepository.remove(archivedTodo);
+        console.log(`TODO archivado eliminado permanentemente: ${archivedId}`);
+      }
     } catch (error: any) {
       console.error("Error deleting archived item:", error);
       throw new Error(`Error eliminando elemento archivado: ${error.message}`);

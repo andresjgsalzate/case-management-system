@@ -1,8 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTodos } from "../hooks/useTodos";
 import { useToast } from "../contexts/ToastContext";
 import { useConfirmationModal } from "../hooks/useConfirmationModal";
 import { ConfirmationModal } from "../components/ui/ConfirmationModal";
+import { Button } from "../components/ui/Button";
+import { TodoCard } from "../components/todos/TodoCard";
+import { TodoCreateModal } from "../components/todos/TodoCreateModal";
+import { TodoEditModal } from "../components/todos/TodoEditModal";
 import {
   CreateTodoData,
   UpdateTodoData,
@@ -28,13 +32,16 @@ const TodosPage: React.FC = () => {
     updateTodo,
     deleteTodo,
     completeTodo,
-    reactivateTodo,
+    // reactivateTodo,
+    startTimer,
+    pauseTimer,
     applyFilters,
     clearFilters,
     totalTodos,
     activeTodos,
     completedTodos,
     overdueTodos,
+    fetchTodos,
   } = useTodos();
 
   const { success, error: showErrorToast } = useToast();
@@ -44,6 +51,13 @@ const TodosPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [currentFilters, setCurrentFilters] = useState<TodoFilters>({});
+
+  // Refrescar datos cuando se navega al componente (simula React Query invalidation)
+  useEffect(() => {
+    // Refrescar datos inmediatamente al montar el componente
+    // Esto asegura que el estado del timer esté actualizado
+    fetchTodos();
+  }, []);
 
   const handleCreateTodo = async (todoData: CreateTodoData) => {
     const newTodo = await createTodo(todoData);
@@ -68,11 +82,35 @@ const TodosPage: React.FC = () => {
   };
 
   const handleCompleteTodo = async (id: string) => {
-    await completeTodo(id);
+    const result = await completeTodo(id);
+    if (result) {
+      success("TODO completado exitosamente");
+    }
   };
 
-  const handleReactivateTodo = async (id: string) => {
-    await reactivateTodo(id);
+  // const handleReactivateTodo = async (id: string) => {
+  //   const result = await reactivateTodo(id);
+  //   if (result) {
+  //     success("TODO reactivado exitosamente");
+  //   }
+  // };
+
+  const handleStartTimer = async (id: string) => {
+    const result = await startTimer(id);
+    if (result) {
+      success("Timer iniciado exitosamente");
+    } else {
+      showErrorToast("Error al iniciar el timer");
+    }
+  };
+
+  const handlePauseTimer = async (id: string) => {
+    const result = await pauseTimer(id);
+    if (result) {
+      success("Timer pausado exitosamente");
+    } else {
+      showErrorToast("Error al pausar el timer");
+    }
   };
 
   const handleApplyFilters = () => {
@@ -84,28 +122,6 @@ const TodosPage: React.FC = () => {
     setCurrentFilters({});
     clearFilters();
     setShowFilters(false);
-  };
-
-  const getPriorityColor = (priorityLevel: number): string => {
-    switch (priorityLevel) {
-      case 1:
-        return "bg-green-100 text-green-800";
-      case 2:
-        return "bg-blue-100 text-blue-800";
-      case 3:
-        return "bg-yellow-100 text-yellow-800";
-      case 4:
-        return "bg-red-100 text-red-800";
-      case 5:
-        return "bg-red-200 text-red-900";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const isOverdue = (dueDate?: string): boolean => {
-    if (!dueDate) return false;
-    return new Date(dueDate) < new Date();
   };
 
   if (loading) {
@@ -132,20 +148,20 @@ const TodosPage: React.FC = () => {
               </p>
             </div>
             <div className="flex space-x-4">
-              <button
+              <Button
                 onClick={() => setShowFilters(!showFilters)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                variant="secondary"
               >
                 <FunnelIcon className="h-4 w-4 mr-2" />
                 Filtros
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                variant="primary"
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
                 Nuevo TODO
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -303,18 +319,12 @@ const TodosPage: React.FC = () => {
             </div>
 
             <div className="mt-4 flex justify-end space-x-2">
-              <button
-                onClick={handleClearFilters}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-              >
+              <Button onClick={handleClearFilters} variant="secondary">
                 Limpiar
-              </button>
-              <button
-                onClick={handleApplyFilters}
-                className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-              >
+              </Button>
+              <Button onClick={handleApplyFilters} variant="primary">
                 Aplicar Filtros
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -326,9 +336,9 @@ const TodosPage: React.FC = () => {
           </div>
         )}
 
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <div className="space-y-4">
           {todos.length === 0 ? (
-            <div className="text-center py-12">
+            <div className="text-center py-12 bg-white shadow rounded-md">
               <CheckCircleIcon className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">
                 No hay TODOs
@@ -340,109 +350,29 @@ const TodosPage: React.FC = () => {
               </p>
               {Object.keys(filters).length === 0 && (
                 <div className="mt-6">
-                  <button
+                  <Button
                     onClick={() => setShowCreateModal(true)}
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+                    variant="primary"
                   >
                     <PlusIcon className="h-4 w-4 mr-2" />
                     Crear TODO
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
           ) : (
-            <ul className="divide-y divide-gray-200">
-              {todos.map((todo) => (
-                <li key={todo.id} className="px-6 py-4 hover:bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={todo.isCompleted}
-                        onChange={() =>
-                          todo.isCompleted
-                            ? handleReactivateTodo(todo.id)
-                            : handleCompleteTodo(todo.id)
-                        }
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                      />
-                      <div className="ml-4">
-                        <div className="flex items-center">
-                          <h3
-                            className={`text-sm font-medium ${
-                              todo.isCompleted
-                                ? "line-through text-gray-500"
-                                : "text-gray-900"
-                            }`}
-                          >
-                            {todo.title}
-                          </h3>
-                          {todo.priority && (
-                            <span
-                              className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(
-                                todo.priority.level
-                              )}`}
-                            >
-                              {todo.priority.name}
-                            </span>
-                          )}
-                          {todo.dueDate &&
-                            isOverdue(todo.dueDate) &&
-                            !todo.isCompleted && (
-                              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                Vencido
-                              </span>
-                            )}
-                        </div>
-                        {todo.description && (
-                          <p
-                            className={`mt-1 text-sm ${
-                              todo.isCompleted
-                                ? "text-gray-400"
-                                : "text-gray-600"
-                            }`}
-                          >
-                            {todo.description}
-                          </p>
-                        )}
-                        <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500">
-                          {todo.dueDate && (
-                            <span>
-                              Vence:{" "}
-                              {new Date(todo.dueDate).toLocaleDateString()}
-                            </span>
-                          )}
-                          {todo.assignedUser && (
-                            <span>
-                              Asignado a:{" "}
-                              {todo.assignedUser.fullName ||
-                                todo.assignedUser.email}
-                            </span>
-                          )}
-                          {todo.estimatedMinutes > 0 && (
-                            <span>Estimado: {todo.estimatedMinutes} min</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => setEditingTodo(todo)}
-                        className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTodo(todo.id)}
-                        className="text-red-600 hover:text-red-900 text-sm font-medium"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            todos.map((todo) => (
+              <TodoCard
+                key={todo.id}
+                todo={todo}
+                onStartTimer={handleStartTimer}
+                onPauseTimer={handlePauseTimer}
+                onComplete={handleCompleteTodo}
+                onEdit={setEditingTodo}
+                onDelete={handleDeleteTodo}
+                showActions={true}
+              />
+            ))
           )}
         </div>
       </div>
@@ -476,57 +406,6 @@ const TodosPage: React.FC = () => {
         cancelText={modalState.options?.cancelText}
         type={modalState.options?.type}
       />
-    </div>
-  );
-};
-
-// Componente de modal para crear TODO (placeholder)
-const TodoCreateModal: React.FC<{
-  priorities: any[];
-  onClose: () => void;
-  onSubmit: (data: CreateTodoData) => void;
-}> = ({ onClose }) => {
-  return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">
-          Crear nuevo TODO
-        </h3>
-        {/* Formulario aquí */}
-        <div className="mt-4 flex justify-end space-x-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-          >
-            Cancelar
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Componente de modal para editar TODO (placeholder)
-const TodoEditModal: React.FC<{
-  todo: Todo;
-  priorities: any[];
-  onClose: () => void;
-  onSubmit: (data: UpdateTodoData) => void;
-}> = ({ onClose }) => {
-  return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Editar TODO</h3>
-        {/* Formulario aquí */}
-        <div className="mt-4 flex justify-end space-x-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-          >
-            Cancelar
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

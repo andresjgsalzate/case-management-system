@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
+import { Button } from "../components/ui/Button";
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -84,10 +85,11 @@ export const LoginPage: React.FC = () => {
           )}
 
           <div>
-            <button
+            <Button
               type="submit"
+              variant="primary"
               disabled={isSubmitting || isLoading || !email || !password}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full"
             >
               {isSubmitting || isLoading ? (
                 <span className="flex items-center">
@@ -116,7 +118,7 @@ export const LoginPage: React.FC = () => {
               ) : (
                 "Iniciar Sesión"
               )}
-            </button>
+            </Button>
           </div>
 
           <div className="text-center">

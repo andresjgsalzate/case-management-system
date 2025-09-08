@@ -111,6 +111,13 @@ router.put(
       const { id } = req.params;
       const user = req.user as { id: string };
 
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          message: "ID requerido",
+        });
+      }
+
       const result = await restoreService.restoreCase(
         id,
         (user.id || "system") as string
@@ -211,6 +218,13 @@ router.put(
       const { id } = req.params;
       const user = req.user as { id: string };
 
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          message: "ID requerido",
+        });
+      }
+
       const result = await restoreService.restoreTodo(
         id,
         (user.id || "system") as string
@@ -247,7 +261,7 @@ router.delete(
   requirePermission("archive.delete"),
   async (req, res, next) => {
     try {
-      res.status(204).send();
+      await archiveController.deleteArchivedTodo(req, res, next);
     } catch (error) {
       next(error);
     }

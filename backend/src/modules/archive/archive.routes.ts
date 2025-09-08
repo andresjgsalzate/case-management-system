@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import {
   getArchiveStats,
   getArchivedItems,
@@ -32,6 +32,16 @@ router.post("/todo/:todoId", archiveTodo);
 
 // POST /api/archive/:type/:id/restore - Restaurar elemento archivado
 router.post("/:type/:id/restore", restoreArchivedItem);
+
+// DELETE /api/archive/todos/:id - Eliminar permanentemente TODO archivado (ruta específica)
+router.delete(
+  "/todos/:id",
+  (req: Request, res: Response, next: NextFunction) => {
+    // Transformar el parámetro para que funcione con deleteArchivedItem
+    req.params.type = "todo"; // Cambiar 'todos' a 'todo'
+    deleteArchivedItem(req, res, next);
+  }
+);
 
 // DELETE /api/archive/:type/:id - Eliminar permanentemente elemento archivado
 router.delete("/:type/:id", deleteArchivedItem);

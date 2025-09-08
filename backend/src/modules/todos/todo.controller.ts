@@ -193,7 +193,10 @@ export class TodoController {
         return;
       }
 
-      res.status(204).send();
+      res.status(200).json({
+        success: true,
+        message: "TODO eliminado exitosamente",
+      });
     } catch (error) {
       console.error("Error deleting todo:", error);
       res.status(500).json({ error: "Error interno del servidor" });
@@ -264,6 +267,38 @@ export class TodoController {
     }
   }
 
+  async archiveTodo(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        res.status(400).json({ error: "ID de TODO requerido" });
+        return;
+      }
+
+      const todo = await this.todoService.archiveTodo(id);
+
+      if (!todo) {
+        res.status(404).json({
+          success: false,
+          message: "TODO no encontrado",
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        data: todo,
+      });
+    } catch (error) {
+      console.error("Error archiving todo:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error interno del servidor",
+      });
+    }
+  }
+
   async getTodoMetrics(req: Request, res: Response): Promise<void> {
     try {
       const metrics = await this.todoService.getTodoMetrics();
@@ -301,13 +336,19 @@ export class TodoController {
   async startTimer(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+      const userId = (req as any).user?.id;
 
       if (!id) {
         res.status(400).json({ error: "ID de TODO requerido" });
         return;
       }
 
-      const result = await this.todoService.startTimer(id);
+      if (!userId) {
+        res.status(401).json({ error: "Usuario no autenticado" });
+        return;
+      }
+
+      const result = await this.todoService.startTimer(id, userId);
 
       if (!result) {
         res
@@ -326,13 +367,19 @@ export class TodoController {
   async pauseTimer(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
+      const userId = (req as any).user?.id;
 
       if (!id) {
         res.status(400).json({ error: "ID de TODO requerido" });
         return;
       }
 
-      const result = await this.todoService.pauseTimer(id);
+      if (!userId) {
+        res.status(401).json({ error: "Usuario no autenticado" });
+        return;
+      }
+
+      const result = await this.todoService.pauseTimer(id, userId);
 
       if (!result) {
         res
@@ -377,37 +424,51 @@ export class TodoController {
       const { description, durationMinutes, date, userId } = req.body;
 
       if (!id) {
-        res.status(400).json({ error: "ID de TODO requerido" });
+        res.status(400).json({
+          success: false,
+          message: "ID de TODO requerido",
+        });
         return;
       }
 
       if (!durationMinutes || durationMinutes <= 0) {
         res.status(400).json({
-          error: "Duración en minutos requerida y debe ser mayor a 0",
+          success: false,
+          message: "Duración en minutos requerida y debe ser mayor a 0",
         });
         return;
       }
 
       if (!description || !description.trim()) {
-        res.status(400).json({ error: "Descripción requerida" });
+        res.status(400).json({
+          success: false,
+          message: "Descripción requerida",
+        });
         return;
       }
 
       if (!date) {
-        res.status(400).json({ error: "Fecha requerida" });
+        res.status(400).json({
+          success: false,
+          message: "Fecha requerida",
+        });
         return;
       }
 
       if (!userId) {
-        res.status(400).json({ error: "ID de usuario requerido" });
+        res.status(400).json({
+          success: false,
+          message: "ID de usuario requerido",
+        });
         return;
       }
 
       // Validar que userId sea un UUID válido
       if (!isValidUUID(userId)) {
-        res
-          .status(400)
-          .json({ error: "ID de usuario debe ser un UUID válido" });
+        res.status(400).json({
+          success: false,
+          message: "ID de usuario debe ser un UUID válido",
+        });
         return;
       }
 
@@ -419,11 +480,18 @@ export class TodoController {
       });
 
       if (!entry) {
-        res.status(404).json({ error: "TODO no encontrado" });
+        res.status(404).json({
+          success: false,
+          message: "TODO no encontrado",
+        });
         return;
       }
 
-      res.status(201).json(entry);
+      res.status(201).json({
+        success: true,
+        data: entry,
+        message: "Entrada de tiempo manual agregada exitosamente",
+      });
     } catch (error) {
       console.error("Error adding manual time entry:", error);
 
@@ -433,22 +501,61 @@ export class TodoController {
           error.message.includes("foreign key constraint") ||
           error.message.includes("violates foreign key")
         ) {
-          res.status(400).json({ error: "Usuario no válido o no existe" });
+          res.status(400).json({
+            success: false,
+            message: "Usuario no válido o no existe",
+          });
           return;
         }
         if (error.message.includes("invalid input syntax for type uuid")) {
-          res.status(400).json({ error: "ID de usuario no es un UUID válido" });
+          res.status(400).json({
+            success: false,
+            message: "ID de usuario no es un UUID válido",
+          });
           return;
         }
 
         res.status(500).json({
-          error: "Error interno del servidor",
+          success: false,
+          message: "Error interno del servidor",
           details:
             process.env.NODE_ENV === "development" ? error.message : undefined,
         });
       } else {
-        res.status(500).json({ error: "Error interno del servidor" });
+        res.status(500).json({
+          success: false,
+          message: "Error interno del servidor",
+        });
       }
+    }
+  }
+
+  async deleteTimeEntry(req: Request, res: Response): Promise<void> {
+    try {
+      const { id, entryId } = req.params;
+
+      if (!id || !entryId) {
+        res.status(400).json({ error: "ID de TODO y entrada requeridos" });
+        return;
+      }
+
+      const deleted = await this.todoService.deleteTimeEntry(entryId);
+
+      if (!deleted) {
+        res.status(404).json({ error: "Entrada de tiempo no encontrada" });
+        return;
+      }
+
+      res.json({
+        success: true,
+        message: "Entrada de tiempo eliminada exitosamente",
+      });
+    } catch (error) {
+      console.error("Error deleting time entry:", error);
+      res.status(500).json({
+        success: false,
+        message: "Error interno del servidor",
+      });
     }
   }
 

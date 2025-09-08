@@ -6,6 +6,7 @@ import { origensApi, applicationsApi, caseService } from "../../services/api";
 import { type Origin, type Application } from "../../types/case";
 import { PageWrapper } from "../../components/layout/PageWrapper";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
+import { Button } from "../../components/ui/Button";
 import { calcularPuntuacion, clasificarCaso } from "../../utils/caseUtils";
 
 export const NewCasePage: React.FC = () => {
@@ -142,12 +143,9 @@ export const NewCasePage: React.FC = () => {
             Error al cargar el caso
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
-          <button
-            onClick={() => navigate("/cases")}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-          >
+          <Button onClick={() => navigate("/cases")} variant="primary">
             Volver a casos
-          </button>
+          </Button>
         </div>
       </PageWrapper>
     );

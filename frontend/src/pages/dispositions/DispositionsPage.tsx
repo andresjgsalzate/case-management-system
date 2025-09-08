@@ -78,9 +78,8 @@ export const DispositionsPage: React.FC = () => {
   const deleteDisposition = useDeleteDisposition();
 
   // Toast and Modal hooks
-  const { success, error: showErrorToast, info } = useToast();
-  const { confirmDangerAction, modalState, modalHandlers } =
-    useConfirmationModal();
+  const { error: showErrorToast, info } = useToast();
+  const { modalState, modalHandlers } = useConfirmationModal();
 
   // Handlers
   const handleCreateDisposition = () => {

@@ -1,7 +1,8 @@
-import { Fragment, useState } from "react";
-import { Dialog, Transition } from "@headlessui/react";
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { Modal } from "../ui/Modal";
+import { Button } from "../ui/Button";
 import {
   HomeIcon,
   DocumentTextIcon,
@@ -121,10 +122,11 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
 
   return (
     <div>
-      <button
+      <Button
+        variant="ghost"
         onClick={() => setIsExpanded(!isExpanded)}
         className={classNames(
-          "text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-700",
+          "text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400",
           "group flex w-full gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold items-center justify-between"
         )}
       >
@@ -141,7 +143,7 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
             isExpanded ? "rotate-180" : ""
           )}
         />
-      </button>
+      </Button>
       {isExpanded && (
         <div className="ml-8 mt-1 space-y-1">
           {item.subItems.map((subItem) => (
@@ -234,86 +236,45 @@ export const Sidebar = () => {
   return (
     <>
       {/* Mobile sidebar */}
-      <Transition.Root show={sidebarOpen} as={Fragment}>
-        <Dialog
-          as="div"
-          className="relative z-50 lg:hidden"
-          onClose={setSidebarOpen}
-        >
-          <Transition.Child
-            as={Fragment}
-            enter="transition-opacity ease-linear duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="transition-opacity ease-linear duration-300"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-gray-900/80" />
-          </Transition.Child>
-
-          <div className="fixed inset-0 flex">
-            <Transition.Child
-              as={Fragment}
-              enter="transition ease-in-out duration-300 transform"
-              enterFrom="-translate-x-full"
-              enterTo="translate-x-0"
-              leave="transition ease-in-out duration-300 transform"
-              leaveFrom="translate-x-0"
-              leaveTo="-translate-x-full"
+      <Modal
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        size="sm"
+      >
+        <div className="flex h-full flex-col">
+          {/* Close button */}
+          <div className="flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-700">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              Sistema de Casos
+            </h1>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarOpen(false)}
             >
-              <Dialog.Panel className="relative mr-16 flex w-full max-w-xs flex-1">
-                <Transition.Child
-                  as={Fragment}
-                  enter="ease-in-out duration-300"
-                  enterFrom="opacity-0"
-                  enterTo="opacity-100"
-                  leave="ease-in-out duration-300"
-                  leaveFrom="opacity-100"
-                  leaveTo="opacity-0"
-                >
-                  <div className="absolute left-full top-0 flex w-16 justify-center pt-5">
-                    <button
-                      type="button"
-                      className="-m-2.5 p-2.5"
-                      onClick={() => setSidebarOpen(false)}
-                    >
-                      <span className="sr-only">Close sidebar</span>
-                      <XMarkIcon
-                        className="h-6 w-6 text-white"
-                        aria-hidden="true"
-                      />
-                    </button>
-                  </div>
-                </Transition.Child>
-                <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 px-6 pb-4">
-                  <div className="flex h-16 shrink-0 items-center">
-                    <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                      Sistema de Casos
-                    </h1>
-                  </div>
-                  <nav className="flex flex-1 flex-col">
-                    <ul role="list" className="flex flex-1 flex-col gap-y-7">
-                      <li>
-                        <ul role="list" className="-mx-2 space-y-1">
-                          {filteredNavigation.map((item) => (
-                            <li key={item.name}>
-                              <NavigationItemComponent
-                                item={item}
-                                onItemClick={handleItemClick}
-                              />
-                            </li>
-                          ))}
-                        </ul>
-                      </li>
-                    </ul>
-                  </nav>
-                </div>
-              </Dialog.Panel>
-            </Transition.Child>
+              <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+            </Button>
           </div>
-        </Dialog>
-      </Transition.Root>
+
+          {/* Navigation */}
+          <nav className="flex flex-1 flex-col mt-4">
+            <ul role="list" className="flex flex-1 flex-col gap-y-7">
+              <li>
+                <ul role="list" className="-mx-2 space-y-1">
+                  {filteredNavigation.map((item) => (
+                    <li key={item.name}>
+                      <NavigationItemComponent
+                        item={item}
+                        onItemClick={handleItemClick}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </Modal>
 
       {/* Static sidebar for desktop */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
@@ -341,14 +302,15 @@ export const Sidebar = () => {
 
       {/* Mobile menu button */}
       <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:hidden">
-        <button
-          type="button"
-          className="-m-2.5 p-2.5 text-gray-700 dark:text-gray-300 lg:hidden"
+        <Button
+          variant="ghost"
+          size="sm"
+          className="-m-2.5 p-2.5 lg:hidden"
           onClick={() => setSidebarOpen(true)}
         >
           <span className="sr-only">Open sidebar</span>
           <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-        </button>
+        </Button>
       </div>
     </>
   );

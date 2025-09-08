@@ -229,24 +229,17 @@ export const AdvancedDashboardPage: React.FC = () => {
                   Tiempo Total (Este Mes)
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {timeLoading || todoLoading
+                  {timeLoading
                     ? "..."
-                    : timeMetrics && todoMetrics
-                    ? `${(
-                        (timeMetrics.totalHours * 60 +
-                          (todoMetrics.totalTimeMonth || 0)) /
-                        60
-                      ).toFixed(1)}h`
+                    : timeMetrics
+                    ? `${timeMetrics.totalHours.toFixed(1)}h`
                     : "0h"}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {timeLoading || todoLoading
+                  {timeLoading
                     ? "..."
-                    : timeMetrics && todoMetrics
-                    ? `${
-                        Math.round(timeMetrics.totalHours * 60) +
-                        (todoMetrics.totalTimeMonth || 0)
-                      } min`
+                    : timeMetrics
+                    ? `${timeMetrics.totalTimeMinutes} min`
                     : "0 min"}
                 </p>
               </div>
@@ -266,14 +259,14 @@ export const AdvancedDashboardPage: React.FC = () => {
                   {timeLoading
                     ? "..."
                     : timeMetrics
-                    ? `${timeMetrics.totalHours.toFixed(1)}h`
+                    ? `${timeMetrics.casesTimeHours.toFixed(1)}h`
                     : "0h"}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {timeLoading
                     ? "..."
                     : timeMetrics
-                    ? `${Math.round(timeMetrics.totalHours * 60)} min`
+                    ? `${Math.round(timeMetrics.casesTimeMinutes)} min`
                     : "0 min"}
                 </p>
               </div>
@@ -290,17 +283,17 @@ export const AdvancedDashboardPage: React.FC = () => {
                   Tiempo por TODOs (Este Mes)
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {todoLoading
+                  {timeLoading
                     ? "..."
-                    : todoMetrics
-                    ? `${((todoMetrics.totalTimeMonth || 0) / 60).toFixed(1)}h`
+                    : timeMetrics
+                    ? `${timeMetrics.todosTimeHours.toFixed(1)}h`
                     : "0h"}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {todoLoading
+                  {timeLoading
                     ? "..."
-                    : todoMetrics
-                    ? `${todoMetrics.totalTimeMonth || 0} min`
+                    : timeMetrics
+                    ? `${timeMetrics.todosTimeMinutes} min`
                     : "0 min"}
                 </p>
               </div>

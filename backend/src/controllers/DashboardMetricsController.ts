@@ -91,27 +91,19 @@ export class DashboardMetricsController {
         ],
       });
 
-      let timeQuery = `
-        SELECT 
-          COALESCE(SUM(cc."totalTimeMinutes"), 0) as total_time_minutes,
-          COALESCE(SUM(cc."totalTimeMinutes") / 60.0, 0) as total_hours,
-          COALESCE(AVG(cc."totalTimeMinutes"), 0) as average_time_per_case,
-          COUNT(CASE WHEN cc."isTimerActive" = true THEN 1 END) as active_timers
-        FROM case_control cc
-        WHERE 1=1
-      `;
-
+      // Construir consulta base con subconsulta para evitar duplicados
+      let baseConditions = "1=1";
       const queryParams: any[] = [];
       let paramIndex = 1;
 
       if (startDate) {
-        timeQuery += ` AND cc."assignedAt" >= $${paramIndex}`;
+        baseConditions += ` AND cc."assignedAt" >= $${paramIndex}`;
         queryParams.push(startDate);
         paramIndex++;
       }
 
       if (endDate) {
-        timeQuery += ` AND cc."assignedAt" <= $${paramIndex}`;
+        baseConditions += ` AND cc."assignedAt" <= $${paramIndex}`;
         queryParams.push(endDate);
         paramIndex++;
       }
@@ -124,19 +116,150 @@ export class DashboardMetricsController {
       );
 
       if (!canReadAllMetrics) {
-        // Solo sus propios datos
-        timeQuery += ` AND cc."userId" = $${paramIndex}`;
+        baseConditions += ` AND cc."userId" = $${paramIndex}`;
         queryParams.push(userId);
+        paramIndex++;
       }
 
-      const result = await AppDataSource.query(timeQuery, queryParams);
+      // Consulta para tiempo de casos
+      let casesTimeQuery = `
+        SELECT 
+          COALESCE(SUM(case_times.calculated_time), 0) as total_time_minutes
+        FROM (
+          SELECT 
+            cc."caseId",
+            -- Calcular tiempo dinámicamente sumando timer entries + manual entries
+            COALESCE(
+              (SELECT SUM(
+                CASE 
+                  WHEN te."endTime" IS NOT NULL AND te."startTime" IS NOT NULL 
+                  THEN EXTRACT(EPOCH FROM (te."endTime" - te."startTime")) / 60
+                  ELSE COALESCE(te."durationMinutes", 0)
+                END
+              ) FROM time_entries te WHERE te."caseControlId" = cc.id), 0
+            ) +
+            COALESCE(
+              (SELECT SUM(mte."durationMinutes") 
+               FROM manual_time_entries mte 
+               WHERE mte."caseControlId" = cc.id), 0
+            ) as calculated_time
+          FROM case_control cc
+          WHERE ${baseConditions}
+        ) case_times
+        WHERE case_times.calculated_time > 0
+      `;
+
+      // Consulta para tiempo de TODOs (usando la misma lógica de fechas si aplica)
+      let todosTimeQuery = `
+        SELECT 
+          COALESCE(SUM(
+            -- Tiempo de timer entries
+            COALESCE(
+              (SELECT SUM(
+                CASE 
+                  WHEN tte.end_time IS NOT NULL AND tte.start_time IS NOT NULL 
+                  THEN EXTRACT(EPOCH FROM (tte.end_time - tte.start_time)) / 60
+                  ELSE COALESCE(tte.duration_minutes, 0)
+                END
+              ) FROM todo_time_entries tte WHERE tte.todo_control_id = tc.id), 0
+            ) +
+            -- Tiempo de manual entries
+            COALESCE(
+              (SELECT SUM(tmte.duration_minutes) 
+               FROM todo_manual_time_entries tmte 
+               WHERE tmte.todo_control_id = tc.id), 0
+            )
+          ), 0) as total_time_minutes
+        FROM todo_control tc
+        WHERE 1=1
+      `;
+
+      // Agregar filtros de fecha para TODOs si existen
+      const todoQueryParams: any[] = [];
+      let todoParamIndex = 1;
+
+      if (startDate) {
+        todosTimeQuery += ` AND tc.assigned_at >= $${todoParamIndex}`;
+        todoQueryParams.push(startDate);
+        todoParamIndex++;
+      }
+
+      if (endDate) {
+        todosTimeQuery += ` AND tc.assigned_at <= $${todoParamIndex}`;
+        todoQueryParams.push(endDate);
+        todoParamIndex++;
+      }
+
+      if (!canReadAllMetrics) {
+        todosTimeQuery += ` AND tc.user_id = $${todoParamIndex}`;
+        todoQueryParams.push(userId);
+      }
+
+      // Consulta separada para timers activos
+      let activeTimersQuery = `
+        SELECT COUNT(*) as active_timers
+        FROM case_control cc
+        WHERE cc."isTimerActive" = true
+      `;
+
+      if (!canReadAllMetrics) {
+        activeTimersQuery += ` AND cc."userId" = $${queryParams.length}`;
+        // No necesitamos agregar el parámetro de nuevo, ya lo tenemos
+      }
+
+      console.log("Executing cases time query:", casesTimeQuery);
+      console.log("Cases query parameters:", queryParams);
+      console.log("Executing todos time query:", todosTimeQuery);
+      console.log("TODOs query parameters:", todoQueryParams);
+      console.log("Executing active timers query:", activeTimersQuery);
+
+      // Ejecutar consulta para tiempo de casos
+      const casesTimeResult = await AppDataSource.query(
+        casesTimeQuery,
+        queryParams
+      );
+
+      // Ejecutar consulta para tiempo de TODOs
+      const todosTimeResult = await AppDataSource.query(
+        todosTimeQuery,
+        todoQueryParams
+      );
+
+      // Ejecutar consulta separada para timers activos con los mismos parámetros de usuario
+      const activeTimersParams = canReadAllMetrics ? [] : [userId];
+      const activeTimersResult = await AppDataSource.query(
+        activeTimersQuery,
+        activeTimersParams
+      );
+
+      console.log("Cases time result:", casesTimeResult);
+      console.log("TODOs time result:", todosTimeResult);
+      console.log("Active timers result:", activeTimersResult);
+
+      // Calcular totales combinando casos y TODOs
+      const casesTotalMinutes = parseInt(
+        casesTimeResult[0]?.total_time_minutes || 0
+      );
+      const todosTotalMinutes = parseInt(
+        todosTimeResult[0]?.total_time_minutes || 0
+      );
+      const totalMinutes = casesTotalMinutes + todosTotalMinutes;
+      const totalHours = totalMinutes / 60.0;
 
       const now = new Date();
       const timeMetrics = {
-        totalTimeMinutes: parseInt(result[0]?.total_time_minutes || 0),
-        totalHours: parseFloat(result[0]?.total_hours || 0),
-        averageTimePerCase: parseFloat(result[0]?.average_time_per_case || 0),
-        activeTimers: parseInt(result[0]?.active_timers || 0),
+        totalTimeMinutes: totalMinutes,
+        totalHours: parseFloat(totalHours.toFixed(2)),
+        casesTimeMinutes: casesTotalMinutes,
+        casesTimeHours: parseFloat((casesTotalMinutes / 60.0).toFixed(2)),
+        todosTimeMinutes: todosTotalMinutes,
+        todosTimeHours: parseFloat((todosTotalMinutes / 60.0).toFixed(2)),
+        averageTimePerCase: casesTimeResult[0]?.total_time_minutes
+          ? parseFloat(
+              (casesTotalMinutes / (casesTimeResult.length || 1)).toFixed(2)
+            )
+          : 0,
+        activeTimers: parseInt(activeTimersResult[0]?.active_timers || 0),
         currentMonth: now.toLocaleString("es-ES", { month: "long" }),
         currentYear: now.getFullYear(),
       };
@@ -189,7 +312,23 @@ export class DashboardMetricsController {
         SELECT 
           u.id as user_id,
           u."fullName" as user_name,
-          COALESCE(SUM(cc."totalTimeMinutes"), 0) as total_time_minutes,
+          COALESCE(SUM(
+            -- Calcular tiempo dinámicamente como en Control de casos
+            COALESCE(
+              (SELECT SUM(
+                CASE 
+                  WHEN te."endTime" IS NOT NULL AND te."startTime" IS NOT NULL 
+                  THEN EXTRACT(EPOCH FROM (te."endTime" - te."startTime")) / 60
+                  ELSE COALESCE(te."durationMinutes", 0)
+                END
+              ) FROM time_entries te WHERE te."caseControlId" = cc.id), 0
+            ) +
+            COALESCE(
+              (SELECT SUM(mte."durationMinutes") 
+               FROM manual_time_entries mte 
+               WHERE mte."caseControlId" = cc.id), 0
+            )
+          ), 0) as total_time_minutes,
           COUNT(DISTINCT cc."caseId") as cases_worked
         FROM user_profiles u
         LEFT JOIN case_control cc ON u.id = cc."userId"
@@ -273,7 +412,7 @@ export class DashboardMetricsController {
         canReadAllCaseMetrics
       );
 
-      // Consulta que obtiene datos reales de los casos con JOIN a la tabla cases
+      // Consulta que obtiene datos reales de los casos con cálculo dinámico del tiempo
       let caseQuery = `
         SELECT 
           cc.id as case_id,
@@ -282,12 +421,26 @@ export class DashboardMetricsController {
           COALESCE(c."descripcion", 'Sin descripción') as description,
           COALESCE(cs.name, 'En progreso') as status,
           COALESCE(cs.color, '#3b82f6') as status_color,
-          cc."totalTimeMinutes" as total_time_minutes,
+          -- Calcular tiempo dinámicamente como en Control de casos
+          COALESCE(
+            (SELECT SUM(
+              CASE 
+                WHEN te."endTime" IS NOT NULL AND te."startTime" IS NOT NULL 
+                THEN EXTRACT(EPOCH FROM (te."endTime" - te."startTime")) / 60
+                ELSE COALESCE(te."durationMinutes", 0)
+              END
+            ) FROM time_entries te WHERE te."caseControlId" = cc.id), 0
+          ) +
+          COALESCE(
+            (SELECT SUM(mte."durationMinutes") 
+             FROM manual_time_entries mte 
+             WHERE mte."caseControlId" = cc.id), 0
+          ) as total_time_minutes,
           c."clasificacion" as complexity
         FROM case_control cc
         LEFT JOIN cases c ON cc."caseId" = c.id
         LEFT JOIN case_status_control cs ON cc."statusId" = cs.id
-        WHERE cc."totalTimeMinutes" > 0
+        WHERE 1=1
       `;
 
       const queryParams: any[] = [];
@@ -312,8 +465,28 @@ export class DashboardMetricsController {
         console.log("Usuario tiene permisos para ver todos los casos");
       }
 
+      // Agregar filtro para mostrar solo casos con tiempo calculado > 0
+      // Usamos subconsulta para filtrar casos con tiempo > 0
       caseQuery += `
-        ORDER BY cc."totalTimeMinutes" DESC
+        AND (
+          (SELECT 
+            COALESCE(
+              (SELECT SUM(
+                CASE 
+                  WHEN te."endTime" IS NOT NULL AND te."startTime" IS NOT NULL 
+                  THEN EXTRACT(EPOCH FROM (te."endTime" - te."startTime")) / 60
+                  ELSE COALESCE(te."durationMinutes", 0)
+                END
+              ) FROM time_entries te WHERE te."caseControlId" = cc.id), 0
+            ) +
+            COALESCE(
+              (SELECT SUM(mte."durationMinutes") 
+               FROM manual_time_entries mte 
+               WHERE mte."caseControlId" = cc.id), 0
+            )
+          ) > 0
+        )
+        ORDER BY total_time_minutes DESC
         LIMIT 10
       `;
 
@@ -367,7 +540,23 @@ export class DashboardMetricsController {
           cs.name as status_name,
           cs.color as status_color,
           COUNT(cc.id) as cases_count,
-          COALESCE(SUM(cc."totalTimeMinutes"), 0) as total_time_minutes
+          COALESCE(SUM(
+            -- Calcular tiempo dinámicamente como en Control de casos
+            COALESCE(
+              (SELECT SUM(
+                CASE 
+                  WHEN te."endTime" IS NOT NULL AND te."startTime" IS NOT NULL 
+                  THEN EXTRACT(EPOCH FROM (te."endTime" - te."startTime")) / 60
+                  ELSE COALESCE(te."durationMinutes", 0)
+                END
+              ) FROM time_entries te WHERE te."caseControlId" = cc.id), 0
+            ) +
+            COALESCE(
+              (SELECT SUM(mte."durationMinutes") 
+               FROM manual_time_entries mte 
+               WHERE mte."caseControlId" = cc.id), 0
+            )
+          ), 0) as total_time_minutes
         FROM case_status_control cs
         INNER JOIN case_control cc ON cs.id = cc."statusId"
         WHERE cs."isActive" = true
@@ -449,7 +638,23 @@ export class DashboardMetricsController {
           app.id as app_id,
           app.nombre as app_name,
           COUNT(DISTINCT c.id) as cases_count,
-          COALESCE(SUM(cc."totalTimeMinutes"), 0) as total_time_minutes
+          COALESCE(SUM(
+            -- Calcular tiempo dinámicamente como en Control de casos
+            COALESCE(
+              (SELECT SUM(
+                CASE 
+                  WHEN te."endTime" IS NOT NULL AND te."startTime" IS NOT NULL 
+                  THEN EXTRACT(EPOCH FROM (te."endTime" - te."startTime")) / 60
+                  ELSE COALESCE(te."durationMinutes", 0)
+                END
+              ) FROM time_entries te WHERE te."caseControlId" = cc.id), 0
+            ) +
+            COALESCE(
+              (SELECT SUM(mte."durationMinutes") 
+               FROM manual_time_entries mte 
+               WHERE mte."caseControlId" = cc.id), 0
+            )
+          ), 0) as total_time_minutes
         FROM cases c
         INNER JOIN aplicaciones app ON c."applicationId" = app.id
         LEFT JOIN case_control cc ON c.id = cc."caseId"

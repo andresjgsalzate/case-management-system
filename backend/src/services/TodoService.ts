@@ -229,12 +229,42 @@ export class TodoService {
       .getRawMany();
     console.log("TODOs by user:", todosByUser);
 
+    console.log("Calculating total time from entries...");
+    // Calcular tiempo total dinámicamente como en Control de casos
+    const totalTimeResult = await AppDataSource.query(`
+      SELECT 
+        COALESCE(SUM(
+          -- Tiempo de timer entries
+          COALESCE(
+            (SELECT SUM(
+              CASE 
+                WHEN tte."end_time" IS NOT NULL AND tte."start_time" IS NOT NULL 
+                THEN EXTRACT(EPOCH FROM (tte."end_time" - tte."start_time")) / 60
+                ELSE COALESCE(tte."duration_minutes", 0)
+              END
+            ) FROM todo_time_entries tte WHERE tte."todo_control_id" = tc.id), 0
+          ) +
+          -- Tiempo de manual entries
+          COALESCE(
+            (SELECT SUM(tmte."duration_minutes") 
+             FROM todo_manual_time_entries tmte 
+             WHERE tmte."todo_control_id" = tc.id), 0
+          )
+        ), 0) as total_time_minutes
+      FROM todo_controls tc
+    `);
+
+    const totalTimeMinutes = parseInt(
+      totalTimeResult[0]?.total_time_minutes || 0
+    );
+    console.log("Total time minutes calculated:", totalTimeMinutes);
+
     const result = {
       totalTodos,
       activeTodos,
       completedTodos,
       overdueTodos,
-      totalTimeMinutes: 0, // TODO: Calcular desde time entries
+      totalTimeMinutes, // Usar el tiempo calculado dinámicamente
       averageCompletionTime: 0, // TODO: Calcular
       todosByPriority: todosByPriority.map((item) => ({
         priorityId: item.priorityId,

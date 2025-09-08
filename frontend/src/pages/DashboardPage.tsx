@@ -257,45 +257,6 @@ export const DashboardPage: React.FC = () => {
                     Tiempo Total (Este Mes)
                   </p>
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {timeMetrics.isLoading || todoMetrics.isLoading ? (
-                      <div className="flex items-center">
-                        <LoadingSpinner />
-                        <span className="ml-2">...</span>
-                      </div>
-                    ) : timeMetrics.data && todoMetrics.data ? (
-                      `${(
-                        (timeMetrics.data.totalTimeMinutes +
-                          todoMetrics.data.totalTimeMonth) /
-                        60
-                      ).toFixed(1)}h`
-                    ) : (
-                      "0h"
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {timeMetrics.isLoading || todoMetrics.isLoading
-                      ? "..."
-                      : timeMetrics.data && todoMetrics.data
-                      ? `${
-                          timeMetrics.data.totalTimeMinutes +
-                          todoMetrics.data.totalTimeMonth
-                        } min`
-                      : "0 min"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <DocumentTextIcon className="h-8 w-8 text-blue-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Tiempo por Casos (Este Mes)
-                  </p>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
                     {timeMetrics.isLoading ? (
                       <div className="flex items-center">
                         <LoadingSpinner />
@@ -321,6 +282,38 @@ export const DashboardPage: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
+                  <DocumentTextIcon className="h-8 w-8 text-blue-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Tiempo por Casos (Este Mes)
+                  </p>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {timeMetrics.isLoading ? (
+                      <div className="flex items-center">
+                        <LoadingSpinner />
+                        <span className="ml-2">...</span>
+                      </div>
+                    ) : timeMetrics.data ? (
+                      `${timeMetrics.data.casesTimeHours.toFixed(1)}h`
+                    ) : (
+                      "0h"
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {timeMetrics.isLoading
+                      ? "..."
+                      : timeMetrics.data
+                      ? `${timeMetrics.data.casesTimeMinutes} min`
+                      : "0 min"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
                   <ListBulletIcon className="h-8 w-8 text-green-600" />
                 </div>
                 <div className="ml-4">
@@ -328,22 +321,22 @@ export const DashboardPage: React.FC = () => {
                     Tiempo por TODOs (Este Mes)
                   </p>
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {todoMetrics.isLoading ? (
+                    {timeMetrics.isLoading ? (
                       <div className="flex items-center">
                         <LoadingSpinner />
                         <span className="ml-2">...</span>
                       </div>
-                    ) : todoMetrics.data ? (
-                      `${(todoMetrics.data.totalTimeMonth / 60).toFixed(1)}h`
+                    ) : timeMetrics.data ? (
+                      `${timeMetrics.data.todosTimeHours.toFixed(1)}h`
                     ) : (
                       "0h"
                     )}
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {todoMetrics.isLoading
+                    {timeMetrics.isLoading
                       ? "..."
-                      : todoMetrics.data
-                      ? `${todoMetrics.data.totalTimeMonth} min`
+                      : timeMetrics.data
+                      ? `${timeMetrics.data.todosTimeMinutes} min`
                       : "0 min"}
                   </p>
                 </div>

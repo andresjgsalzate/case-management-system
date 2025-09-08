@@ -51,6 +51,10 @@ const metricsRequest = async <T>(
 export interface TimeMetrics {
   totalTimeMinutes: number;
   totalHours: number;
+  casesTimeMinutes: number;
+  casesTimeHours: number;
+  todosTimeMinutes: number;
+  todosTimeHours: number;
   averageTimePerCase: number;
   activeTimers: number;
   currentMonth: string;
@@ -149,6 +153,10 @@ export const dashboardMetricsService = {
       return {
         totalTimeMinutes: 0,
         totalHours: 0,
+        casesTimeMinutes: 0,
+        casesTimeHours: 0,
+        todosTimeMinutes: 0,
+        todosTimeHours: 0,
         averageTimePerCase: 0,
         activeTimers: 0,
         currentMonth: now.toLocaleString("es-ES", { month: "long" }),
@@ -226,19 +234,26 @@ export const dashboardMetricsService = {
     }
   },
 
-  // Métricas de TODOs (temporalmente retornando datos vacíos hasta implementar)
+  // Métricas de TODOs - ahora conectado al endpoint real
   async getTodoMetrics(): Promise<TodoMetrics> {
     try {
-      // TODO: Implementar endpoint de TODOs en el backend
-      console.warn("Endpoint de métricas de TODOs no implementado aún");
-      return {
-        totalTodos: 0,
-        completedTodos: 0,
-        inProgressTodos: 0,
-        overdueTodos: 0,
-        totalTimeMonth: 0,
-        totalTimeToday: 0,
+      console.log("Fetching TODO metrics...");
+      const data = await metricsRequest<any>("/todos/metrics");
+      console.log("Raw TODO metrics data from backend:", data);
+
+      // Mapear los datos del backend al formato esperado por el frontend
+      const result = {
+        totalTodos: data.totalTodos || 0,
+        completedTodos: data.completedTodos || 0,
+        inProgressTodos: data.activeTodos || 0, // activeTodos = inProgressTodos
+        overdueTodos: data.overdueTodos || 0,
+        totalTimeMonth:
+          Math.round(((data.totalTimeMinutes || 0) / 60) * 10) / 10, // Convertir a horas con 1 decimal
+        totalTimeToday: 0, // TODO: Implementar lógica para tiempo de hoy
       };
+
+      console.log("Mapped TODO metrics result:", result);
+      return result;
     } catch (error) {
       console.error("Error fetching todo metrics:", error);
       return {

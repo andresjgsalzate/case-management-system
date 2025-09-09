@@ -105,8 +105,50 @@ export class TodoService {
   }
 
   async deleteTodo(id: string): Promise<boolean> {
-    const result = await this.todoRepository.delete(id);
-    return (result.affected ?? 0) > 0;
+    try {
+      // Verificar que el TODO existe
+      const todo = await this.todoRepository.findOne({ where: { id } });
+      if (!todo) {
+        return false;
+      }
+
+      // 1. Eliminar todas las entradas de tiempo manuales asociadas
+      const manualTimeEntryRepo =
+        AppDataSource.getRepository(TodoManualTimeEntry);
+      await manualTimeEntryRepo
+        .createQueryBuilder()
+        .delete()
+        .where(
+          "todo_control_id IN (SELECT id FROM todo_control WHERE todo_id = :todoId)",
+          { todoId: id }
+        )
+        .execute();
+
+      // 2. Eliminar todas las entradas de tiempo automáticas asociadas
+      const timeEntryRepo = AppDataSource.getRepository(TodoTimeEntry);
+      await timeEntryRepo
+        .createQueryBuilder()
+        .delete()
+        .where(
+          "todo_control_id IN (SELECT id FROM todo_control WHERE todo_id = :todoId)",
+          { todoId: id }
+        )
+        .execute();
+
+      // 3. Eliminar el control del TODO
+      await this.todoControlRepository
+        .createQueryBuilder()
+        .delete()
+        .where("todo_id = :todoId", { todoId: id })
+        .execute();
+
+      // 4. Finalmente eliminar el TODO
+      const result = await this.todoRepository.delete(id);
+      return (result.affected ?? 0) > 0;
+    } catch (error) {
+      console.error("Error deleting todo and related data:", error);
+      throw error;
+    }
   }
 
   async completeTodo(id: string): Promise<TodoResponseDto | null> {

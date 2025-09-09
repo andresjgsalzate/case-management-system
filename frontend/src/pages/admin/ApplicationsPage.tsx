@@ -8,6 +8,8 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
 } from "@heroicons/react/24/outline";
+import { Modal } from "../../components/ui/Modal";
+import { Button } from "../../components/ui/Button";
 import { useToast } from "../../contexts/ToastContext";
 import {
   applicationService,
@@ -40,6 +42,21 @@ const ApplicationsPage: React.FC = () => {
   const [selectedApplication, setSelectedApplication] =
     useState<Application | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+
+  // Estado para formularios
+  const [editForm, setEditForm] = useState({
+    nombre: "",
+    descripcion: "",
+    activo: true,
+  });
+
+  const [createForm, setCreateForm] = useState({
+    nombre: "",
+    descripcion: "",
+    activo: true,
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { error: showError, success: showSuccess } = useToast();
 
@@ -115,12 +132,82 @@ const ApplicationsPage: React.FC = () => {
 
   const handleEdit = (application: Application) => {
     setSelectedApplication(application);
+    setEditForm({
+      nombre: application.nombre,
+      descripcion: application.descripcion || "",
+      activo: application.activo,
+    });
     setShowEditModal(true);
   };
 
   const handleView = (application: Application) => {
     setSelectedApplication(application);
     setShowViewModal(true);
+  };
+
+  // Manejadores para cerrar modales
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setSelectedApplication(null);
+    setEditForm({
+      nombre: "",
+      descripcion: "",
+      activo: true,
+    });
+  };
+
+  const handleCloseViewModal = () => {
+    setShowViewModal(false);
+    setSelectedApplication(null);
+  };
+
+  const handleCloseCreateModal = () => {
+    setShowCreateModal(false);
+    setCreateForm({ nombre: "", descripcion: "", activo: true });
+  };
+
+  const handleCreateApplication = async () => {
+    if (!createForm.nombre.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      await applicationService.createApplication({
+        nombre: createForm.nombre.trim(),
+        descripcion: createForm.descripcion.trim() || undefined,
+        activo: createForm.activo,
+      });
+
+      handleCloseCreateModal();
+      loadApplications();
+      showSuccess("Aplicación creada exitosamente");
+    } catch (error) {
+      console.error("Error al crear aplicación:", error);
+      showError("Error al crear aplicación");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateApplication = async () => {
+    if (!selectedApplication || !editForm.nombre.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      await applicationService.updateApplication(selectedApplication.id, {
+        nombre: editForm.nombre.trim(),
+        descripcion: editForm.descripcion.trim() || undefined,
+        activo: editForm.activo,
+      });
+
+      handleCloseEditModal();
+      loadApplications();
+      showSuccess("Aplicación actualizada exitosamente");
+    } catch (error) {
+      console.error("Error al actualizar aplicación:", error);
+      showError("Error al actualizar aplicación");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -181,13 +268,14 @@ const ApplicationsPage: React.FC = () => {
             Administra las aplicaciones de casos del sistema
           </p>
         </div>
-        <button
+        <Button
           onClick={handleCreate}
-          className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors"
+          variant="primary"
+          className="inline-flex items-center"
         >
           <PlusIcon className="w-5 h-5 mr-2" />
           Nueva Aplicación
-        </button>
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -251,11 +339,11 @@ const ApplicationsPage: React.FC = () => {
           </div>
           <div className="flex gap-2">
             <select
-              value={filters.isActive?.toString() || "all"}
+              value={filters.activo?.toString() || "all"}
               onChange={(e) =>
                 setFilters((prev: ApplicationFilters) => ({
                   ...prev,
-                  isActive:
+                  activo:
                     e.target.value === "all"
                       ? undefined
                       : e.target.value === "true",
@@ -332,12 +420,12 @@ const ApplicationsPage: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        application.isActive
+                        application.activo
                           ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
                           : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
                       }`}
                     >
-                      {application.isActive ? "Activa" : "Inactiva"}
+                      {application.activo ? "Activa" : "Inactiva"}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
@@ -453,31 +541,278 @@ const ApplicationsPage: React.FC = () => {
               no se puede deshacer.
             </p>
             <div className="flex justify-end space-x-4">
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
                 onClick={() => handleDelete(deleteConfirm)}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 Eliminar
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modales TODO: Implementar modales de crear, editar y ver */}
-      {showCreateModal && <div>TODO: Modal de crear aplicación</div>}
-      {showEditModal && selectedApplication && (
-        <div>TODO: Modal de editar aplicación</div>
-      )}
-      {showViewModal && selectedApplication && (
-        <div>TODO: Modal de ver aplicación</div>
-      )}
+      {/* Modal de Ver Aplicación */}
+      <Modal
+        isOpen={showViewModal}
+        onClose={handleCloseViewModal}
+        title="Detalles de la Aplicación"
+        size="lg"
+      >
+        {selectedApplication && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  ID
+                </label>
+                <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2">
+                  {selectedApplication.id}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Estado
+                </label>
+                <div>
+                  <span
+                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      selectedApplication.activo
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {selectedApplication.activo ? "Activa" : "Inactiva"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Nombre
+              </label>
+              <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2">
+                {selectedApplication.nombre}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Descripción
+              </label>
+              <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2 min-h-[60px]">
+                {selectedApplication.descripcion || "Sin descripción"}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Fecha de Creación
+                </label>
+                <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2">
+                  {new Date(selectedApplication.createdAt).toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Última Actualización
+                </label>
+                <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2">
+                  {new Date(selectedApplication.updatedAt).toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button variant="secondary" onClick={handleCloseViewModal}>
+                Cerrar
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  handleCloseViewModal();
+                  handleEdit(selectedApplication);
+                }}
+              >
+                Editar
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal de Editar Aplicación */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={handleCloseEditModal}
+        title="Editar Aplicación"
+        size="lg"
+      >
+        {selectedApplication && (
+          <div className="space-y-6">
+            <form className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Nombre *
+                </label>
+                <input
+                  type="text"
+                  value={editForm.nombre}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, nombre: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  placeholder="Ingrese el nombre de la aplicación"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Descripción
+                </label>
+                <textarea
+                  value={editForm.descripcion}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, descripcion: e.target.value })
+                  }
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  placeholder="Ingrese una descripción (opcional)"
+                />
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="editActivo"
+                  checked={editForm.activo}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, activo: e.target.checked })
+                  }
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label
+                  htmlFor="editActivo"
+                  className="ml-2 block text-sm text-gray-900 dark:text-gray-100"
+                >
+                  Estado activo
+                </label>
+              </div>
+            </form>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                variant="secondary"
+                onClick={handleCloseEditModal}
+                disabled={isSubmitting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleUpdateApplication}
+                disabled={
+                  isSubmitting ||
+                  !editForm.nombre.trim() ||
+                  (editForm.nombre === selectedApplication.nombre &&
+                    editForm.descripcion ===
+                      (selectedApplication.descripcion || "") &&
+                    editForm.activo === selectedApplication.activo)
+                }
+              >
+                {isSubmitting ? "Guardando..." : "Guardar Cambios"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal de Crear Aplicación */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={handleCloseCreateModal}
+        title="Crear Nueva Aplicación"
+        size="lg"
+      >
+        <div className="space-y-6">
+          <form className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Nombre *
+              </label>
+              <input
+                type="text"
+                value={createForm.nombre}
+                onChange={(e) =>
+                  setCreateForm({ ...createForm, nombre: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                placeholder="Ingrese el nombre de la aplicación"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Descripción
+              </label>
+              <textarea
+                value={createForm.descripcion}
+                onChange={(e) =>
+                  setCreateForm({ ...createForm, descripcion: e.target.value })
+                }
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                placeholder="Ingrese una descripción (opcional)"
+              />
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="createActivo"
+                checked={createForm.activo}
+                onChange={(e) =>
+                  setCreateForm({ ...createForm, activo: e.target.checked })
+                }
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label
+                htmlFor="createActivo"
+                className="ml-2 block text-sm text-gray-900 dark:text-gray-100"
+              >
+                Estado activo
+              </label>
+            </div>
+          </form>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <Button
+              variant="secondary"
+              onClick={handleCloseCreateModal}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreateApplication}
+              disabled={isSubmitting || !createForm.nombre.trim()}
+            >
+              {isSubmitting ? "Creando..." : "Crear Aplicación"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

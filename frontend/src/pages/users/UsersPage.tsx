@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Search, Users } from "lucide-react";
+import {
+  PlusIcon,
+  MagnifyingGlassIcon,
+  UsersIcon,
+} from "@heroicons/react/24/outline";
 import { User, UserFilterParams, Role } from "../../types/user";
 import { userService } from "../../services/userService";
 import {
@@ -74,6 +78,13 @@ export const UsersPage: React.FC = () => {
     setShowCreateModal(true);
   };
 
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    // Para ahora, reutilizamos el modal de editar pero en modo solo lectura
+    // TODO: Crear un modal específico para ver detalles
+    setShowEditModal(true);
+  };
+
   const handleEditUser = (user: User) => {
     setSelectedUser(user);
     setShowEditModal(true);
@@ -135,7 +146,7 @@ export const UsersPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <Users className="w-8 h-8" />
+            <UsersIcon className="w-8 h-8" />
             Gestión de Usuarios
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -147,7 +158,7 @@ export const UsersPage: React.FC = () => {
             onClick={handleCreateUser}
             className="flex items-center gap-2"
           >
-            <Plus className="w-4 h-4" />
+            <PlusIcon className="w-4 h-4" />
             Nuevo Usuario
           </Button>
         )}
@@ -159,7 +170,7 @@ export const UsersPage: React.FC = () => {
           {/* Búsqueda */}
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 placeholder="Buscar por nombre o email..."
                 className="pl-10"
@@ -235,6 +246,7 @@ export const UsersPage: React.FC = () => {
       <UserTable
         users={users}
         loading={loading}
+        onView={handleViewUser}
         onEdit={canEdit ? handleEditUser : undefined}
         onDelete={canDelete ? handleDeleteUser : undefined}
         onToggleStatus={canManageStatus ? handleToggleStatus : undefined}

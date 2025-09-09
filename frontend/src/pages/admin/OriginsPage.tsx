@@ -9,6 +9,8 @@ import {
   ArrowDownIcon,
 } from "@heroicons/react/24/outline";
 import { useToast } from "../../contexts/ToastContext";
+import { Modal } from "../../components/ui/Modal";
+import { Button } from "../../components/ui/Button";
 import {
   originService,
   type Origin,
@@ -39,6 +41,22 @@ const OriginsPage: React.FC = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedOrigin, setSelectedOrigin] = useState<Origin | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+
+  // Estado para el formulario de edición
+  const [editForm, setEditForm] = useState({
+    nombre: "",
+    descripcion: "",
+    activo: true,
+  });
+
+  // Estado para el formulario de creación
+  const [createForm, setCreateForm] = useState({
+    nombre: "",
+    descripcion: "",
+    activo: true,
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { error: showError, success: showSuccess } = useToast();
 
@@ -114,6 +132,11 @@ const OriginsPage: React.FC = () => {
 
   const handleEdit = (origin: Origin) => {
     setSelectedOrigin(origin);
+    setEditForm({
+      nombre: origin.nombre,
+      descripcion: origin.descripcion || "",
+      activo: origin.activo,
+    });
     setShowEditModal(true);
   };
 
@@ -149,6 +172,74 @@ const OriginsPage: React.FC = () => {
     }
   };
 
+  const handleUpdateOrigin = async () => {
+    if (!selectedOrigin) return;
+
+    try {
+      setIsSubmitting(true);
+
+      const response = await originService.updateOrigin(selectedOrigin.id, {
+        nombre: editForm.nombre.trim(),
+        descripcion: editForm.descripcion.trim() || undefined,
+        activo: editForm.activo,
+      });
+
+      if (response.success) {
+        showSuccess("Origen actualizado correctamente");
+        setShowEditModal(false);
+        setSelectedOrigin(null);
+        loadOrigins();
+        loadStats();
+      } else {
+        showError(response.message || "Error al actualizar origen");
+      }
+    } catch (error) {
+      showError("Error al actualizar origen");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setSelectedOrigin(null);
+    setEditForm({
+      nombre: "",
+      descripcion: "",
+      activo: true,
+    });
+  };
+
+  const handleCloseViewModal = () => {
+    setShowViewModal(false);
+    setSelectedOrigin(null);
+  };
+
+  const handleCloseCreateModal = () => {
+    setShowCreateModal(false);
+    setCreateForm({ nombre: "", descripcion: "", activo: true });
+  };
+
+  const handleCreateOrigin = async () => {
+    if (!createForm.nombre.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      await originService.createOrigin({
+        nombre: createForm.nombre.trim(),
+        descripcion: createForm.descripcion.trim() || undefined,
+        activo: createForm.activo,
+      });
+
+      handleCloseCreateModal();
+      loadOrigins();
+    } catch (error) {
+      console.error("Error al crear origen:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const getSortIcon = (field: string) => {
     if (filters.sortBy !== field) return null;
     return filters.sortOrder === "ASC" ? (
@@ -178,13 +269,14 @@ const OriginsPage: React.FC = () => {
             Administra los orígenes de casos del sistema
           </p>
         </div>
-        <button
+        <Button
           onClick={handleCreate}
-          className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors"
+          variant="primary"
+          className="inline-flex items-center"
         >
           <PlusIcon className="w-5 h-5 mr-2" />
           Nuevo Origen
-        </button>
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -450,29 +542,278 @@ const OriginsPage: React.FC = () => {
               se puede deshacer.
             </p>
             <div className="flex justify-end space-x-4">
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
                 onClick={() => handleDelete(deleteConfirm)}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 Eliminar
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modales TODO: Implementar modales de crear, editar y ver */}
-      {showCreateModal && <div>TODO: Modal de crear origen</div>}
-      {showEditModal && selectedOrigin && (
-        <div>TODO: Modal de editar origen</div>
-      )}
-      {showViewModal && selectedOrigin && <div>TODO: Modal de ver origen</div>}
+      {/* Modal de Ver Origen */}
+      <Modal
+        isOpen={showViewModal}
+        onClose={handleCloseViewModal}
+        title="Detalles del Origen"
+        size="lg"
+      >
+        {selectedOrigin && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  ID
+                </label>
+                <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2">
+                  {selectedOrigin.id}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Estado
+                </label>
+                <div>
+                  <span
+                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      selectedOrigin.activo
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {selectedOrigin.activo ? "Activo" : "Inactivo"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Nombre
+              </label>
+              <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2">
+                {selectedOrigin.nombre}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Descripción
+              </label>
+              <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2 min-h-[60px]">
+                {selectedOrigin.descripcion || "Sin descripción"}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Fecha de Creación
+                </label>
+                <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2">
+                  {new Date(selectedOrigin.createdAt).toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Última Actualización
+                </label>
+                <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2">
+                  {new Date(selectedOrigin.updatedAt).toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button variant="secondary" onClick={handleCloseViewModal}>
+                Cerrar
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  handleCloseViewModal();
+                  handleEdit(selectedOrigin);
+                }}
+              >
+                Editar
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal de Editar Origen */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={handleCloseEditModal}
+        title="Editar Origen"
+        size="lg"
+      >
+        {selectedOrigin && (
+          <div className="space-y-6">
+            <form className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Nombre *
+                </label>
+                <input
+                  type="text"
+                  value={editForm.nombre}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, nombre: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  placeholder="Ingrese el nombre del origen"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Descripción
+                </label>
+                <textarea
+                  value={editForm.descripcion}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, descripcion: e.target.value })
+                  }
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  placeholder="Ingrese una descripción (opcional)"
+                />
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="activo"
+                  checked={editForm.activo}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, activo: e.target.checked })
+                  }
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label
+                  htmlFor="activo"
+                  className="ml-2 block text-sm text-gray-900 dark:text-gray-100"
+                >
+                  Estado activo
+                </label>
+              </div>
+            </form>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                variant="secondary"
+                onClick={handleCloseEditModal}
+                disabled={isSubmitting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleUpdateOrigin}
+                disabled={
+                  isSubmitting ||
+                  !editForm.nombre.trim() ||
+                  (editForm.nombre === selectedOrigin.nombre &&
+                    editForm.descripcion ===
+                      (selectedOrigin.descripcion || "") &&
+                    editForm.activo === selectedOrigin.activo)
+                }
+              >
+                {isSubmitting ? "Guardando..." : "Guardar Cambios"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal de Crear Origen */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={handleCloseCreateModal}
+        title="Crear Nuevo Origen"
+        size="lg"
+      >
+        <div className="space-y-6">
+          <form className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Nombre *
+              </label>
+              <input
+                type="text"
+                value={createForm.nombre}
+                onChange={(e) =>
+                  setCreateForm({ ...createForm, nombre: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                placeholder="Ingrese el nombre del origen"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Descripción
+              </label>
+              <textarea
+                value={createForm.descripcion}
+                onChange={(e) =>
+                  setCreateForm({ ...createForm, descripcion: e.target.value })
+                }
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                placeholder="Ingrese una descripción (opcional)"
+              />
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="createActivo"
+                checked={createForm.activo}
+                onChange={(e) =>
+                  setCreateForm({ ...createForm, activo: e.target.checked })
+                }
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label
+                htmlFor="createActivo"
+                className="ml-2 block text-sm text-gray-900 dark:text-gray-100"
+              >
+                Estado activo
+              </label>
+            </div>
+          </form>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <Button
+              variant="secondary"
+              onClick={handleCloseCreateModal}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreateOrigin}
+              disabled={isSubmitting || !createForm.nombre.trim()}
+            >
+              {isSubmitting ? "Creando..." : "Crear Origen"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

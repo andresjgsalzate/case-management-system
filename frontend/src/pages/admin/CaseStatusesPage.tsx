@@ -9,6 +9,8 @@ import {
   ArrowDownIcon,
   Bars3Icon,
 } from "@heroicons/react/24/outline";
+import { Modal } from "../../components/ui/Modal";
+import { Button } from "../../components/ui/Button";
 import { useToast } from "../../contexts/ToastContext";
 import {
   caseStatusService,
@@ -40,6 +42,23 @@ const CaseStatusesPage: React.FC = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<CaseStatus | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+
+  // Estado para formularios
+  const [editForm, setEditForm] = useState({
+    name: "",
+    description: "",
+    color: "#3B82F6",
+    isActive: true,
+  });
+
+  const [createForm, setCreateForm] = useState({
+    name: "",
+    description: "",
+    color: "#3B82F6",
+    isActive: true,
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { error: showError, success: showSuccess } = useToast();
 
@@ -114,13 +133,97 @@ const CaseStatusesPage: React.FC = () => {
   };
 
   const handleEdit = (status: CaseStatus) => {
-    setSelectedStatus(status);
-    setShowEditModal(true);
+    handleEditWithForm(status);
   };
 
   const handleView = (status: CaseStatus) => {
     setSelectedStatus(status);
     setShowViewModal(true);
+  };
+
+  // Manejadores para cerrar modales
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setSelectedStatus(null);
+    setEditForm({
+      name: "",
+      description: "",
+      color: "#3B82F6",
+      isActive: true,
+    });
+  };
+
+  const handleCloseViewModal = () => {
+    setShowViewModal(false);
+    setSelectedStatus(null);
+  };
+
+  const handleCloseCreateModal = () => {
+    setShowCreateModal(false);
+    setCreateForm({
+      name: "",
+      description: "",
+      color: "#3B82F6",
+      isActive: true,
+    });
+  };
+
+  // Actualizar handleEdit para inicializar el formulario
+  const handleEditWithForm = (status: CaseStatus) => {
+    setSelectedStatus(status);
+    setEditForm({
+      name: status.name,
+      description: status.description || "",
+      color: status.color || "#3B82F6",
+      isActive: status.isActive,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateStatus = async () => {
+    if (!selectedStatus || !editForm.name.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      await caseStatusService.updateStatus(selectedStatus.id, {
+        name: editForm.name.trim(),
+        description: editForm.description.trim() || undefined,
+        color: editForm.color,
+        isActive: editForm.isActive,
+      });
+
+      handleCloseEditModal();
+      loadStatuses();
+      showSuccess("Estado actualizado correctamente");
+    } catch (error) {
+      console.error("Error al actualizar estado:", error);
+      showError("Error al actualizar estado");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCreateStatus = async () => {
+    if (!createForm.name.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      await caseStatusService.createStatus({
+        name: createForm.name.trim(),
+        description: createForm.description.trim() || undefined,
+        color: createForm.color,
+        isActive: createForm.isActive,
+      });
+
+      handleCloseCreateModal();
+      loadStatuses();
+      showSuccess("Estado creado correctamente");
+    } catch (error) {
+      console.error("Error al crear estado:", error);
+      showError("Error al crear estado");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -181,13 +284,14 @@ const CaseStatusesPage: React.FC = () => {
             Administra los estados de casos del sistema
           </p>
         </div>
-        <button
+        <Button
           onClick={handleCreate}
-          className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors"
+          variant="primary"
+          className="inline-flex items-center"
         >
           <PlusIcon className="w-5 h-5 mr-2" />
           Nuevo Estado
-        </button>
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -485,29 +589,356 @@ const CaseStatusesPage: React.FC = () => {
               se puede deshacer.
             </p>
             <div className="flex justify-end space-x-4">
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
                 Cancelar
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
                 onClick={() => handleDelete(deleteConfirm)}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 Eliminar
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modales TODO: Implementar modales de crear, editar y ver */}
-      {showCreateModal && <div>TODO: Modal de crear estado</div>}
-      {showEditModal && selectedStatus && (
-        <div>TODO: Modal de editar estado</div>
-      )}
-      {showViewModal && selectedStatus && <div>TODO: Modal de ver estado</div>}
+      {/* Modal de Ver Estado */}
+      <Modal
+        isOpen={showViewModal}
+        onClose={handleCloseViewModal}
+        title="Detalles del Estado"
+        size="lg"
+      >
+        {selectedStatus && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  ID
+                </label>
+                <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2">
+                  {selectedStatus.id}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Estado
+                </label>
+                <div>
+                  <span
+                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      selectedStatus.isActive
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {selectedStatus.isActive ? "Activo" : "Inactivo"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Nombre
+              </label>
+              <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2">
+                {selectedStatus.name}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Descripción
+              </label>
+              <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2 min-h-[60px]">
+                {selectedStatus.description || "Sin descripción"}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Color
+                </label>
+                <div className="flex items-center space-x-3">
+                  <div
+                    className="w-8 h-8 rounded border border-gray-300"
+                    style={{
+                      backgroundColor: selectedStatus.color || "#3B82F6",
+                    }}
+                  ></div>
+                  <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2 font-mono">
+                    {selectedStatus.color || "#3B82F6"}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Orden de Visualización
+                </label>
+                <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2">
+                  {selectedStatus.displayOrder}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Fecha de Creación
+                </label>
+                <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2">
+                  {new Date(selectedStatus.createdAt).toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Última Actualización
+                </label>
+                <p className="text-sm text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800 rounded-md px-3 py-2">
+                  {new Date(selectedStatus.updatedAt).toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button variant="secondary" onClick={handleCloseViewModal}>
+                Cerrar
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  handleCloseViewModal();
+                  handleEdit(selectedStatus);
+                }}
+              >
+                Editar
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal de Editar Estado */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={handleCloseEditModal}
+        title="Editar Estado"
+        size="lg"
+      >
+        {selectedStatus && (
+          <div className="space-y-6">
+            <form className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Nombre *
+                </label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, name: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  placeholder="Ingrese el nombre del estado"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Descripción
+                </label>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, description: e.target.value })
+                  }
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  placeholder="Ingrese una descripción (opcional)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Color
+                </label>
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="color"
+                    value={editForm.color}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, color: e.target.value })
+                    }
+                    className="h-10 w-20 border border-gray-300 rounded cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={editForm.color}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, color: e.target.value })
+                    }
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-mono"
+                    placeholder="#3B82F6"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="editActive"
+                  checked={editForm.isActive}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, isActive: e.target.checked })
+                  }
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label
+                  htmlFor="editActive"
+                  className="ml-2 block text-sm text-gray-900 dark:text-gray-100"
+                >
+                  Estado activo
+                </label>
+              </div>
+            </form>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                variant="secondary"
+                onClick={handleCloseEditModal}
+                disabled={isSubmitting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleUpdateStatus}
+                disabled={
+                  isSubmitting ||
+                  !editForm.name.trim() ||
+                  (editForm.name === selectedStatus.name &&
+                    editForm.description ===
+                      (selectedStatus.description || "") &&
+                    editForm.color === (selectedStatus.color || "#3B82F6") &&
+                    editForm.isActive === selectedStatus.isActive)
+                }
+              >
+                {isSubmitting ? "Guardando..." : "Guardar Cambios"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal de Crear Estado */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={handleCloseCreateModal}
+        title="Crear Nuevo Estado"
+        size="lg"
+      >
+        <div className="space-y-6">
+          <form className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Nombre *
+              </label>
+              <input
+                type="text"
+                value={createForm.name}
+                onChange={(e) =>
+                  setCreateForm({ ...createForm, name: e.target.value })
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                placeholder="Ingrese el nombre del estado"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Descripción
+              </label>
+              <textarea
+                value={createForm.description}
+                onChange={(e) =>
+                  setCreateForm({ ...createForm, description: e.target.value })
+                }
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                placeholder="Ingrese una descripción (opcional)"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Color
+              </label>
+              <div className="flex items-center space-x-3">
+                <input
+                  type="color"
+                  value={createForm.color}
+                  onChange={(e) =>
+                    setCreateForm({ ...createForm, color: e.target.value })
+                  }
+                  className="h-10 w-20 border border-gray-300 rounded cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={createForm.color}
+                  onChange={(e) =>
+                    setCreateForm({ ...createForm, color: e.target.value })
+                  }
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-mono"
+                  placeholder="#3B82F6"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="createActive"
+                checked={createForm.isActive}
+                onChange={(e) =>
+                  setCreateForm({ ...createForm, isActive: e.target.checked })
+                }
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label
+                htmlFor="createActive"
+                className="ml-2 block text-sm text-gray-900 dark:text-gray-100"
+              >
+                Estado activo
+              </label>
+            </div>
+          </form>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <Button
+              variant="secondary"
+              onClick={handleCloseCreateModal}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreateStatus}
+              disabled={isSubmitting || !createForm.name.trim()}
+            >
+              {isSubmitting ? "Creando..." : "Crear Estado"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

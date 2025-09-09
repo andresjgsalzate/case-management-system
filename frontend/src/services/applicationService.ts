@@ -4,7 +4,7 @@ export interface Application {
   id: number;
   nombre: string;
   descripcion?: string;
-  isActive: boolean;
+  activo: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -12,18 +12,18 @@ export interface Application {
 export interface CreateApplicationData {
   nombre: string;
   descripcion?: string;
-  isActive?: boolean;
+  activo?: boolean;
 }
 
 export interface UpdateApplicationData {
   nombre?: string;
   descripcion?: string;
-  isActive?: boolean;
+  activo?: boolean;
 }
 
 export interface ApplicationFilters {
   search?: string;
-  isActive?: boolean;
+  activo?: boolean;
   page?: number;
   limit?: number;
   sortBy?: string;

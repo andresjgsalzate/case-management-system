@@ -30,6 +30,9 @@ import { roleRoutes } from "./routes/roleRoutes";
 import metricsRoutes from "./routes/metrics.routes";
 import debugRoutes from "./routes/debug";
 import migrationRoutes from "./routes/migration.routes";
+import { originRoutes } from "./routes/originRoutes";
+import { applicationRoutes } from "./routes/applicationRoutes";
+import { caseStatusRoutes } from "./routes/caseStatusRoutes";
 
 const app = express();
 
@@ -77,6 +80,9 @@ app.use("/api/archive", archiveRoutes);
 app.use("/api/metrics", metricsRoutes);
 app.use("/api/debug", debugRoutes);
 app.use("/api/migration", migrationRoutes);
+app.use("/api/origins", originRoutes);
+app.use("/api/applications", applicationRoutes);
+app.use("/api/case-statuses", caseStatusRoutes);
 app.use("/api", permissionsRoutes);
 app.use("/api/test", testRoutes);
 app.use("/api", commonRoutes);

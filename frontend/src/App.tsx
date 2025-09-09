@@ -25,6 +25,9 @@ import TodosPage from "./pages/TodosPage";
 import ModernTodosPage from "./pages/ModernTodosPage";
 import { UnauthorizedPage } from "./pages/UnauthorizedPage";
 import { initializeAuth } from "./stores/authStore";
+import OriginsPage from "./pages/admin/OriginsPage";
+import ApplicationsPage from "./pages/admin/ApplicationsPage";
+import CaseStatusesPage from "./pages/admin/CaseStatusesPage";
 
 function App() {
   // Inicializar el estado de autenticación al cargar la aplicación
@@ -231,6 +234,39 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <PermissionsGuide />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/origins"
+              element={
+                <ProtectedRoute adminOnly>
+                  <Layout>
+                    <OriginsPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/applications"
+              element={
+                <ProtectedRoute adminOnly>
+                  <Layout>
+                    <ApplicationsPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/case-statuses"
+              element={
+                <ProtectedRoute adminOnly>
+                  <Layout>
+                    <CaseStatusesPage />
                   </Layout>
                 </ProtectedRoute>
               }

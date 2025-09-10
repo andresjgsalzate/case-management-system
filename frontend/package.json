@@ -14,6 +14,9 @@
         "build:clean": "npm run clean && npm run build"
     },
     "dependencies": {
+        "@blocknote/core": "^0.37.0",
+        "@blocknote/mantine": "^0.37.0",
+        "@blocknote/react": "^0.37.0",
         "@headlessui/react": "^1.7.17",
         "@heroicons/react": "^2.0.18",
         "@hookform/resolvers": "^3.10.0",

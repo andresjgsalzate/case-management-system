@@ -162,4 +162,8 @@ export class Note {
   @ManyToOne(() => UserProfile, { nullable: true, onDelete: "SET NULL" })
   @JoinColumn({ name: "archived_by" })
   archivedByUser?: UserProfile;
+
+  @ManyToOne(() => Note, { nullable: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "replacement_note_id" })
+  replacementNote?: Note;
 }

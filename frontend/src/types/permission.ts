@@ -118,6 +118,9 @@ export const MODULE_DISPLAY_NAMES: Record<string, string> = {
   time_entries: "⏱️ Control de Tiempo",
   documentation: "📚 Documentación",
   archive: "📦 Archivo",
+  knowledge: "📖 Base de Conocimiento",
+  knowledge_types: "📑 Tipos de Documentos",
+  knowledge_feedback: "💬 Feedback de Documentos",
   search: "🔍 Búsqueda",
 };
 

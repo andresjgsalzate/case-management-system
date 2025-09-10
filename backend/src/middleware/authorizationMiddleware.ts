@@ -15,12 +15,14 @@ export class AuthorizationMiddleware {
   private getUserWithPermissions(req: Request): UserWithPermissions | null {
     // Convertir el usuario existente al formato con permisos
     if (req.user) {
+      // Casting para acceder a las propiedades correctas del UserProfile
+      const user = req.user as any;
       return {
-        id: req.user.id,
-        email: req.user.email,
-        fullName: req.user.fullName,
-        roleId: req.user.role || "", // Usar role como roleId
-        roleName: req.user.roleName,
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        roleId: user.roleId || "", // Usar roleId correcto del UserProfile
+        roleName: user.roleName,
         teamId: undefined, // Se agregará cuando tengamos equipos
         ...req.userWithPermissions,
       };

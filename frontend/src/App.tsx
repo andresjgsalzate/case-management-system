@@ -28,6 +28,10 @@ import { initializeAuth } from "./stores/authStore";
 import OriginsPage from "./pages/admin/OriginsPage";
 import ApplicationsPage from "./pages/admin/ApplicationsPage";
 import CaseStatusesPage from "./pages/admin/CaseStatusesPage";
+// Knowledge Base imports
+import KnowledgeBase from "./pages/KnowledgeBase";
+import KnowledgeDocumentForm from "./pages/KnowledgeDocumentForm";
+import KnowledgeDocumentView from "./pages/KnowledgeDocumentView";
 
 function App() {
   // Inicializar el estado de autenticación al cargar la aplicación
@@ -179,6 +183,75 @@ function App() {
                 <ProtectedRoute requiredPermission="archive.view">
                   <Layout>
                     <ArchivePage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Knowledge Base Routes */}
+            <Route
+              path="/knowledge"
+              element={
+                <ProtectedRoute
+                  requiredPermissions={[
+                    "knowledge.read.own",
+                    "knowledge.read.team",
+                    "knowledge.read.all",
+                  ]}
+                >
+                  <Layout>
+                    <KnowledgeBase />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/knowledge/new"
+              element={
+                <ProtectedRoute
+                  requiredPermissions={[
+                    "knowledge.create.own",
+                    "knowledge.create.team",
+                    "knowledge.create.all",
+                  ]}
+                >
+                  <Layout>
+                    <KnowledgeDocumentForm />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/knowledge/:id"
+              element={
+                <ProtectedRoute
+                  requiredPermissions={[
+                    "knowledge.read.own",
+                    "knowledge.read.team",
+                    "knowledge.read.all",
+                  ]}
+                >
+                  <Layout>
+                    <KnowledgeDocumentView />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/knowledge/:id/edit"
+              element={
+                <ProtectedRoute
+                  requiredPermissions={[
+                    "knowledge.update.own",
+                    "knowledge.update.team",
+                    "knowledge.update.all",
+                  ]}
+                >
+                  <Layout>
+                    <KnowledgeDocumentForm />
                   </Layout>
                 </ProtectedRoute>
               }

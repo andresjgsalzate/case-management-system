@@ -28,6 +28,7 @@ import authPermissionRoutes from "./routes/auth";
 import { userRoutes } from "./routes/userRoutes";
 import { roleRoutes } from "./routes/roleRoutes";
 import metricsRoutes from "./routes/metrics.routes";
+import knowledgeRoutes from "./routes/knowledge-simple.routes";
 import debugRoutes from "./routes/debug";
 import migrationRoutes from "./routes/migration.routes";
 import { originRoutes } from "./routes/originRoutes";
@@ -77,6 +78,7 @@ app.use("/api/dispositions", dispositionRoutes);
 app.use("/api/todos", todoRoutes);
 app.use("/api/notes", noteRoutes);
 app.use("/api/archive", archiveRoutes);
+app.use("/api", knowledgeRoutes); // Rutas de base de conocimiento
 app.use("/api/metrics", metricsRoutes);
 app.use("/api/debug", debugRoutes);
 app.use("/api/migration", migrationRoutes);

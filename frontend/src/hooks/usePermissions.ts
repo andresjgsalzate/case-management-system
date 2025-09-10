@@ -69,6 +69,16 @@ export const SYSTEM_MODULES: ModulePermission[] = [
     icon: "ArchiveBoxIcon",
     permissions: ["archive.view"],
   },
+  {
+    name: "Base de Conocimiento",
+    href: "/knowledge",
+    icon: "BookOpenIcon",
+    permissions: [
+      "knowledge.read.own",
+      "knowledge.read.team",
+      "knowledge.read.all",
+    ],
+  },
 ];
 
 // Secciones administrativas agrupadas

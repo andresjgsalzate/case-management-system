@@ -16,6 +16,7 @@ import {
   FlagIcon,
   ShieldCheckIcon,
   ArchiveBoxIcon,
+  BookOpenIcon,
 } from "@heroicons/react/24/outline";
 import { useModulePermissions } from "../../hooks/usePermissions";
 
@@ -35,6 +36,7 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   FlagIcon,
   ShieldCheckIcon,
   ArchiveBoxIcon,
+  BookOpenIcon,
 };
 
 interface DynamicNavigationProps {
@@ -92,6 +94,11 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
         { name: "TODOs", href: "/todos", icon: "ListBulletIcon" },
         { name: "Notas", href: "/notes", icon: "DocumentDuplicateIcon" },
         { name: "Archivo", href: "/archive", icon: "ArchiveBoxIcon" },
+        {
+          name: "Base de Conocimiento",
+          href: "/knowledge",
+          icon: "BookOpenIcon",
+        },
       ]
         .filter((menuItem) => {
           // Filtrar por permisos usando allowedModules

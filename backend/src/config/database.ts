@@ -22,6 +22,13 @@ import {
   ArchivedCase,
   ArchivedTodo,
 } from "../entities";
+import { DocumentType } from "../entities/DocumentType";
+import { KnowledgeDocument } from "../entities/KnowledgeDocument";
+import { KnowledgeDocumentTag } from "../entities/KnowledgeDocumentTag";
+import { KnowledgeDocumentVersion } from "../entities/KnowledgeDocumentVersion";
+import { KnowledgeDocumentAttachment } from "../entities/KnowledgeDocumentAttachment";
+import { KnowledgeDocumentRelation } from "../entities/KnowledgeDocumentRelation";
+import { KnowledgeDocumentFeedback } from "../entities/KnowledgeDocumentFeedback";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -53,6 +60,13 @@ export const AppDataSource = new DataSource({
     RolePermission,
     ArchivedCase,
     ArchivedTodo,
+    DocumentType,
+    KnowledgeDocument,
+    KnowledgeDocumentTag,
+    KnowledgeDocumentVersion,
+    KnowledgeDocumentAttachment,
+    KnowledgeDocumentRelation,
+    KnowledgeDocumentFeedback,
   ],
   migrations: ["src/database/migrations/**/*.ts"],
   subscribers: ["src/database/subscribers/**/*.ts"],

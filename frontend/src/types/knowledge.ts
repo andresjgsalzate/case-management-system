@@ -64,11 +64,33 @@ export interface KnowledgeDocument {
   feedback?: KnowledgeDocumentFeedback[];
 }
 
+export type TagCategory =
+  | "priority"
+  | "technical"
+  | "type"
+  | "technology"
+  | "module"
+  | "custom";
+
 export interface KnowledgeDocumentTag {
   id: string;
-  documentId: string;
+  documentId?: string;
   tagName: string;
+  description?: string;
+  color: string;
+  category: TagCategory;
+  usageCount: number;
+  isActive: boolean;
+  createdBy?: string;
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTagDto {
+  tagName: string;
+  description?: string;
+  color?: string;
+  category?: TagCategory;
 }
 
 export interface KnowledgeDocumentVersion {

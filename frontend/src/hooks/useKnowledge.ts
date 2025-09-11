@@ -5,18 +5,17 @@ import {
   UseQueryOptions,
   UseMutationOptions,
 } from "@tanstack/react-query";
-import { toast } from "react-hot-toast";
-import { knowledgeApi } from "../services/knowledge.service";
+import {
+  knowledgeApi,
+  KnowledgeDocumentTagService,
+} from "../services/knowledge.service";
 import {
   KnowledgeDocument,
   KnowledgeDocumentListResponse,
   CreateKnowledgeDocumentDto,
   UpdateKnowledgeDocumentDto,
   KnowledgeDocumentQueryDto,
-  DocumentType,
-  CreateDocumentTypeDto,
   UpdateDocumentTypeDto,
-  CreateDocumentFeedbackDto,
   UpdateDocumentFeedbackDto,
 } from "../types/knowledge";
 
@@ -58,6 +57,7 @@ export const useKnowledgeDocument = (
     queryKey: knowledgeKeys.document(id),
     queryFn: () => knowledgeApi.documents.findOne(id),
     enabled: !!id,
+    staleTime: 30 * 1000, // 30 segundos - para documentos que se actualizan frecuentemente
     ...options,
   });
 };
@@ -107,12 +107,8 @@ export const useCreateKnowledgeDocument = (
 
   return useMutation({
     mutationFn: knowledgeApi.documents.create,
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: knowledgeKeys.documents() });
-      toast.success("Documento creado exitosamente");
-    },
-    onError: (error) => {
-      toast.error(`Error al crear documento: ${error.message}`);
     },
     ...options,
   });
@@ -129,18 +125,25 @@ export const useUpdateKnowledgeDocument = (
 
   return useMutation({
     mutationFn: ({ id, data }) => knowledgeApi.documents.update(id, data),
-    onSuccess: (data, variables) => {
+    onSuccess: (_, variables) => {
+      // Invalidar y refetch inmediatamente las queries relacionadas
       queryClient.invalidateQueries({
         queryKey: knowledgeKeys.document(variables.id),
+        refetchType: "active", // Solo refetch queries activas
       });
-      queryClient.invalidateQueries({ queryKey: knowledgeKeys.documents() });
+      queryClient.invalidateQueries({
+        queryKey: knowledgeKeys.documents(),
+        refetchType: "active",
+      });
       queryClient.invalidateQueries({
         queryKey: knowledgeKeys.documentVersions(variables.id),
+        refetchType: "active",
       });
-      toast.success("Documento actualizado exitosamente");
-    },
-    onError: (error) => {
-      toast.error(`Error al actualizar documento: ${error.message}`);
+
+      // Refetch explícito del documento específico
+      queryClient.refetchQueries({
+        queryKey: knowledgeKeys.document(variables.id),
+      });
     },
     ...options,
   });
@@ -159,17 +162,11 @@ export const usePublishKnowledgeDocument = () => {
       isPublished: boolean;
       changeSummary?: string;
     }) => knowledgeApi.documents.publish(id, isPublished, changeSummary),
-    onSuccess: (data, variables) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: knowledgeKeys.document(variables.id),
       });
       queryClient.invalidateQueries({ queryKey: knowledgeKeys.documents() });
-      toast.success(
-        variables.isPublished ? "Documento publicado" : "Documento despublicado"
-      );
-    },
-    onError: (error) => {
-      toast.error(`Error al publicar/despublicar documento: ${error.message}`);
     },
   });
 };
@@ -195,17 +192,11 @@ export const useArchiveKnowledgeDocument = () => {
         reason,
         replacementDocumentId
       ),
-    onSuccess: (data, variables) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: knowledgeKeys.document(variables.id),
       });
       queryClient.invalidateQueries({ queryKey: knowledgeKeys.documents() });
-      toast.success(
-        variables.isArchived ? "Documento archivado" : "Documento desarchivado"
-      );
-    },
-    onError: (error) => {
-      toast.error(`Error al archivar documento: ${error.message}`);
     },
   });
 };
@@ -218,10 +209,6 @@ export const useDeleteKnowledgeDocument = () => {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: knowledgeKeys.documents() });
       queryClient.removeQueries({ queryKey: knowledgeKeys.document(id) });
-      toast.success("Documento eliminado exitosamente");
-    },
-    onError: (error) => {
-      toast.error(`Error al eliminar documento: ${error.message}`);
     },
   });
 };
@@ -258,10 +245,6 @@ export const useCreateDocumentType = () => {
     mutationFn: knowledgeApi.types.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: knowledgeKeys.types() });
-      toast.success("Tipo de documento creado exitosamente");
-    },
-    onError: (error) => {
-      toast.error(`Error al crear tipo de documento: ${error.message}`);
     },
   });
 };
@@ -272,15 +255,11 @@ export const useUpdateDocumentType = () => {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateDocumentTypeDto }) =>
       knowledgeApi.types.update(id, data),
-    onSuccess: (data, variables) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: knowledgeKeys.type(variables.id),
       });
       queryClient.invalidateQueries({ queryKey: knowledgeKeys.types() });
-      toast.success("Tipo de documento actualizado exitosamente");
-    },
-    onError: (error) => {
-      toast.error(`Error al actualizar tipo de documento: ${error.message}`);
     },
   });
 };
@@ -293,12 +272,6 @@ export const useToggleDocumentType = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: knowledgeKeys.type(data.id) });
       queryClient.invalidateQueries({ queryKey: knowledgeKeys.types() });
-      toast.success(
-        `Tipo de documento ${data.isActive ? "activado" : "desactivado"}`
-      );
-    },
-    onError: (error) => {
-      toast.error(`Error al cambiar estado del tipo: ${error.message}`);
     },
   });
 };
@@ -311,10 +284,6 @@ export const useDeleteDocumentType = () => {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: knowledgeKeys.types() });
       queryClient.removeQueries({ queryKey: knowledgeKeys.type(id) });
-      toast.success("Tipo de documento eliminado exitosamente");
-    },
-    onError: (error) => {
-      toast.error(`Error al eliminar tipo de documento: ${error.message}`);
     },
   });
 };
@@ -341,10 +310,6 @@ export const useCreateDocumentFeedback = () => {
         queryKey: knowledgeKeys.documentStats(data.documentId),
       });
       queryClient.invalidateQueries({ queryKey: knowledgeKeys.myFeedback() });
-      toast.success("Feedback enviado exitosamente");
-    },
-    onError: (error) => {
-      toast.error(`Error al enviar feedback: ${error.message}`);
     },
   });
 };
@@ -368,10 +333,6 @@ export const useUpdateDocumentFeedback = () => {
         queryKey: knowledgeKeys.documentStats(data.documentId),
       });
       queryClient.invalidateQueries({ queryKey: knowledgeKeys.myFeedback() });
-      toast.success("Feedback actualizado exitosamente");
-    },
-    onError: (error) => {
-      toast.error(`Error al actualizar feedback: ${error.message}`);
     },
   });
 };
@@ -381,12 +342,87 @@ export const useDeleteDocumentFeedback = () => {
 
   return useMutation({
     mutationFn: knowledgeApi.feedback.remove,
-    onSuccess: (_, id) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: knowledgeKeys.all });
-      toast.success("Feedback eliminado exitosamente");
+    },
+  });
+};
+
+// Tags Hooks
+export const usePopularTags = (limit?: number) => {
+  return useQuery({
+    queryKey: ["knowledge", "tags", "popular", limit],
+    queryFn: async () => {
+      try {
+        const result = await KnowledgeDocumentTagService.getPopularTags(limit);
+        console.log(`✅ Popular tags fetched successfully:`, result);
+        return result;
+      } catch (error) {
+        console.error("🚨 Popular tags query error:", error);
+        throw error;
+      }
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutos - tiempo razonable para etiquetas
+    retry: 2, // Intentos normales
+  });
+};
+
+export const useAllTags = () => {
+  return useQuery({
+    queryKey: ["knowledge", "tags", "all"],
+    queryFn: () => {
+      return KnowledgeDocumentTagService.getAllTags();
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes - refresh more often for better UX
+  });
+};
+
+export const useKnowledgeTagDetails = (tagId: string | null) => {
+  return useQuery({
+    queryKey: ["knowledge", "tags", "details", tagId],
+    queryFn: () => {
+      if (!tagId) throw new Error("Tag ID is required");
+      return KnowledgeDocumentTagService.getTagById(tagId);
+    },
+    enabled: !!tagId,
+    staleTime: 30 * 1000, // 30 seconds for tag details
+  });
+};
+
+export const useSearchTags = (searchQuery: string) => {
+  return useQuery({
+    queryKey: ["knowledge", "tags", "search", searchQuery],
+    queryFn: async () => {
+      if (!searchQuery || searchQuery.length < 2) {
+        return [];
+      }
+      // Get all tags and filter client-side for now
+      const allTags = await KnowledgeDocumentTagService.getAllTags();
+      return allTags.filter((tag) =>
+        tag.tagName.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    },
+    enabled: searchQuery.length >= 2,
+    staleTime: 30 * 1000, // 30 seconds for search results
+  });
+};
+
+// Mutations for Knowledge Document Tags
+export const useDeleteKnowledgeTag = (options?: {
+  onSuccess?: () => void;
+  onError?: (error: any) => void;
+}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (tagId: string) => KnowledgeDocumentTagService.deleteTag(tagId),
+    onSuccess: () => {
+      // Invalidate all tag-related queries
+      queryClient.invalidateQueries({ queryKey: ["knowledge", "tags"] });
+      options?.onSuccess?.();
     },
     onError: (error) => {
-      toast.error(`Error al eliminar feedback: ${error.message}`);
+      options?.onError?.(error);
     },
   });
 };

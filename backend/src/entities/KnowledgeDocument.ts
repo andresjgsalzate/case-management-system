@@ -12,6 +12,7 @@ import {
 import { UserProfile } from "./UserProfile";
 import { DocumentType } from "./DocumentType";
 import { KnowledgeDocumentTag } from "./KnowledgeDocumentTag";
+import { KnowledgeDocumentTagRelation } from "./KnowledgeDocumentTagRelation";
 import { KnowledgeDocumentVersion } from "./KnowledgeDocumentVersion";
 import { KnowledgeDocumentAttachment } from "./KnowledgeDocumentAttachment";
 import { KnowledgeDocumentRelation } from "./KnowledgeDocumentRelation";
@@ -128,9 +129,19 @@ export class KnowledgeDocument {
   @JoinColumn({ name: "replacement_document_id" })
   replacementDocument: Promise<KnowledgeDocument>;
 
+  // Campo JSON para etiquetas (nueva estructura)
+  @Column({ name: "tags_json", type: "jsonb", default: () => "'[]'::jsonb" })
+  tagsJson: string[];
+
   // Relaciones
   @OneToMany(() => KnowledgeDocumentTag, (tag) => tag.document)
   tags: KnowledgeDocumentTag[];
+
+  @OneToMany(
+    () => KnowledgeDocumentTagRelation,
+    (relation) => relation.document
+  )
+  tagRelations: KnowledgeDocumentTagRelation[];
 
   @OneToMany(() => KnowledgeDocumentVersion, (version) => version.document)
   versions: KnowledgeDocumentVersion[];

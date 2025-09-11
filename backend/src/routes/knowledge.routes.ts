@@ -1,8 +1,9 @@
 import { Router, Request, Response } from "express";
 import { validate } from "class-validator";
 import { plainToClass } from "class-transformer";
-import AppDataSource from "../data-source";
+import { AppDataSource } from "../config/database";
 import { KnowledgeDocumentService } from "../services/knowledge-document.service";
+import { KnowledgeTagService } from "../services/knowledge-tag.service";
 import { DocumentTypeService } from "../services/document-type.service";
 import { DocumentFeedbackService } from "../services/document-feedback.service";
 import {
@@ -21,11 +22,16 @@ import {
   UpdateDocumentFeedbackDto,
 } from "../dto/document-feedback.dto";
 import { authenticateToken } from "../middleware/auth"; // Asumiendo que tienes middleware de auth
+import {
+  requirePermission,
+  requireAnyPermission,
+} from "../middleware/authorizationMiddleware";
 
 const router = Router();
 
 // Inicializar servicios
 const knowledgeDocumentService = new KnowledgeDocumentService(AppDataSource);
+const knowledgeTagService = new KnowledgeTagService(AppDataSource);
 const documentTypeService = new DocumentTypeService(AppDataSource);
 const documentFeedbackService = new DocumentFeedbackService(AppDataSource);
 
@@ -116,7 +122,7 @@ router.get(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
-      const documentId = validateParam(req.params.id, "id");
+      const documentId = validateParam(req.params.id!, "id");
       const document = await knowledgeDocumentService.findOne(documentId);
       res.json(document);
     } catch (error) {
@@ -147,9 +153,13 @@ router.put(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
+      console.log("=== UPDATE DOCUMENT DEBUG ===");
+      console.log("Request body:", JSON.stringify(req.body, null, 2));
+      console.log("Document ID:", req.params.id);
+
       const updateDto = await validateDto(UpdateKnowledgeDocumentDto, req.body);
       const userId = (req as any).user.id;
-      const documentId = validateParam(req.params.id, "id");
+      const documentId = validateParam(req.params.id!, "id");
       const document = await knowledgeDocumentService.update(
         documentId,
         updateDto,
@@ -157,6 +167,8 @@ router.put(
       );
       res.json(document);
     } catch (error) {
+      console.log("=== UPDATE ERROR ===");
+      console.log("Error details:", error);
       handleError(res, error, 400);
     }
   }
@@ -168,13 +180,18 @@ router.put(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
+      const { id } = req.params;
+      if (!id) {
+        return res.status(400).json({ message: "ID de documento requerido" });
+      }
+
       const publishDto = await validateDto(
         PublishKnowledgeDocumentDto,
         req.body
       );
       const userId = (req as any).user.id;
       const document = await knowledgeDocumentService.publish(
-        req.params.id,
+        id,
         publishDto,
         userId
       );
@@ -191,13 +208,18 @@ router.put(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
+      const { id } = req.params;
+      if (!id) {
+        return res.status(400).json({ message: "ID de documento requerido" });
+      }
+
       const archiveDto = await validateDto(
         ArchiveKnowledgeDocumentDto,
         req.body
       );
       const userId = (req as any).user.id;
       const document = await knowledgeDocumentService.archive(
-        req.params.id,
+        id,
         archiveDto,
         userId
       );
@@ -214,7 +236,12 @@ router.delete(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
-      await knowledgeDocumentService.remove(req.params.id);
+      const { id } = req.params;
+      if (!id) {
+        return res.status(400).json({ message: "ID de documento requerido" });
+      }
+
+      await knowledgeDocumentService.remove(id);
       res.status(204).send();
     } catch (error) {
       handleError(res, error, 400);
@@ -228,9 +255,12 @@ router.get(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
-      const versions = await knowledgeDocumentService.getVersions(
-        req.params.id
-      );
+      const { id } = req.params;
+      if (!id) {
+        return res.status(400).json({ message: "ID de documento requerido" });
+      }
+
+      const versions = await knowledgeDocumentService.getVersions(id);
       res.json(versions);
     } catch (error) {
       handleError(res, error, 404);
@@ -244,11 +274,23 @@ router.get(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
-      const version = await knowledgeDocumentService.getVersion(
-        req.params.id,
-        parseInt(req.params.version)
+      const { id, version } = req.params;
+      if (!id || !version) {
+        return res
+          .status(400)
+          .json({ message: "ID de documento y número de versión requeridos" });
+      }
+
+      const versionNumber = parseInt(version);
+      if (isNaN(versionNumber)) {
+        return res.status(400).json({ message: "Número de versión inválido" });
+      }
+
+      const versionData = await knowledgeDocumentService.getVersion(
+        id,
+        versionNumber
       );
-      res.json(version);
+      res.json(versionData);
     } catch (error) {
       handleError(res, error, 404);
     }
@@ -280,7 +322,7 @@ router.get(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
-      const type = await documentTypeService.findOne(req.params.id);
+      const type = await documentTypeService.findOne(req.params.id!);
       res.json(type);
     } catch (error) {
       handleError(res, error, 404);
@@ -311,7 +353,7 @@ router.put(
   async (req: Request, res: Response) => {
     try {
       const updateDto = await validateDto(UpdateDocumentTypeDto, req.body);
-      const type = await documentTypeService.update(req.params.id, updateDto);
+      const type = await documentTypeService.update(req.params.id!, updateDto);
       res.json(type);
     } catch (error) {
       handleError(res, error, 400);
@@ -325,7 +367,7 @@ router.put(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
-      const type = await documentTypeService.toggleActive(req.params.id);
+      const type = await documentTypeService.toggleActive(req.params.id!);
       res.json(type);
     } catch (error) {
       handleError(res, error, 400);
@@ -339,7 +381,7 @@ router.delete(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
-      await documentTypeService.remove(req.params.id);
+      await documentTypeService.remove(req.params.id!);
       res.status(204).send();
     } catch (error) {
       handleError(res, error, 400);
@@ -353,7 +395,7 @@ router.get(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
-      const stats = await documentTypeService.getStats(req.params.id);
+      const stats = await documentTypeService.getStats(req.params.id!);
       res.json(stats);
     } catch (error) {
       handleError(res, error, 404);
@@ -372,7 +414,7 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const feedback = await documentFeedbackService.findByDocument(
-        req.params.id
+        req.params.id!
       );
       res.json(feedback);
     } catch (error) {
@@ -406,7 +448,7 @@ router.put(
       const updateDto = await validateDto(UpdateDocumentFeedbackDto, req.body);
       const userId = (req as any).user.id;
       const feedback = await documentFeedbackService.update(
-        req.params.id,
+        req.params.id!,
         updateDto,
         userId
       );
@@ -424,7 +466,7 @@ router.delete(
   async (req: Request, res: Response) => {
     try {
       const userId = (req as any).user.id;
-      await documentFeedbackService.remove(req.params.id, userId);
+      await documentFeedbackService.remove(req.params.id!, userId);
       res.status(204).send();
     } catch (error) {
       handleError(res, error, 400);
@@ -439,7 +481,7 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const stats = await documentFeedbackService.getDocumentStats(
-        req.params.id
+        req.params.id!
       );
       res.json(stats);
     } catch (error) {
@@ -457,6 +499,176 @@ router.get(
       const userId = (req as any).user.id;
       const feedback = await documentFeedbackService.findByUser(userId);
       res.json(feedback);
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// ================================
+// KNOWLEDGE DOCUMENT TAGS ROUTES
+// ================================
+
+// POST /api/knowledge/tags - Crear una nueva etiqueta
+router.post(
+  "/knowledge/tags",
+  requirePermission("tags.create"),
+  async (req: Request, res: Response) => {
+    try {
+      const { tagName, color, category, description } = req.body;
+      const userId = (req as any).user?.id;
+
+      console.log(`[POST /knowledge/tags] Creating tag from admin panel:`, {
+        tagName,
+        color,
+        category,
+        description,
+        userId,
+      });
+
+      if (!tagName || typeof tagName !== "string" || !tagName.trim()) {
+        return res.status(400).json({
+          message: "El nombre de la etiqueta es requerido",
+        });
+      }
+
+      const normalizedTagName = tagName.trim();
+
+      // Check if tag already exists
+      const existingTag = await knowledgeTagService.findTagByName(
+        normalizedTagName
+      );
+      if (existingTag) {
+        console.log(
+          `[POST /knowledge/tags] Tag already exists:`,
+          existingTag.tagName
+        );
+        return res.json(existingTag);
+      }
+
+      // Create new tag with color and category system
+      const tag = await knowledgeTagService.createTag(
+        {
+          tagName: normalizedTagName,
+          description,
+          color,
+          category: category as any,
+        },
+        userId
+      );
+      console.log(`[POST /knowledge/tags] Created new tag:`, tag.tagName);
+      res.status(201).json(tag);
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// GET /api/knowledge/tags/:tagName - Obtener etiqueta por nombre
+router.get(
+  "/knowledge/tags/:tagName",
+  requireAnyPermission(["tags.read", "tags.manage"]),
+  async (req: Request, res: Response) => {
+    try {
+      const { tagName } = req.params;
+      if (!tagName) {
+        return res.status(400).json({
+          message: "Nombre de etiqueta requerido",
+        });
+      }
+
+      const decodedTagName = decodeURIComponent(tagName).toLowerCase();
+
+      const tag = await knowledgeTagService.findTagByName(decodedTagName);
+      if (!tag) {
+        return res.status(404).json({
+          message: "Etiqueta no encontrada",
+        });
+      }
+
+      res.json(tag);
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// GET /api/knowledge/tags - Obtener todas las etiquetas
+router.get(
+  "/knowledge/tags",
+  requireAnyPermission(["tags.read", "tags.manage"]),
+  async (req: Request, res: Response) => {
+    try {
+      const tags = await knowledgeTagService.getAllTagsWithUsage();
+      res.json(tags);
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// PUT /api/knowledge/tags/:id - Actualizar etiqueta
+router.put(
+  "/knowledge/tags/:id",
+  requirePermission("tags.update"),
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      if (!id || typeof id !== "string") {
+        return res.status(400).json({
+          message: "ID de etiqueta inválido",
+        });
+      }
+
+      const updatedTag = await knowledgeTagService.updateTag(id, updates);
+      res.json(updatedTag);
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// DELETE /api/knowledge/tags/:id - Eliminar etiqueta por ID
+router.delete(
+  "/knowledge/tags/:id",
+  requirePermission("tags.delete"),
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      if (!id || typeof id !== "string") {
+        return res.status(400).json({
+          message: "ID de etiqueta inválido",
+        });
+      }
+
+      await knowledgeTagService.deleteTag(id);
+      res.status(204).send();
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// GET /api/knowledge/tags/popular - Obtener etiquetas populares
+router.get(
+  "/knowledge/tags/popular",
+  requireAnyPermission(["tags.read", "tags.manage"]),
+  async (req: Request, res: Response) => {
+    try {
+      const { limit } = req.query;
+      const limitNumber = limit ? parseInt(limit as string, 10) : 20;
+
+      if (isNaN(limitNumber) || limitNumber < 1 || limitNumber > 100) {
+        return res.status(400).json({
+          message: "Límite debe ser un número entre 1 y 100",
+        });
+      }
+
+      const tags = await knowledgeTagService.getPopularTags(limitNumber);
+      res.json(tags);
     } catch (error) {
       handleError(res, error);
     }

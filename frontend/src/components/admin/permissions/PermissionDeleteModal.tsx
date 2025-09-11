@@ -4,7 +4,7 @@ import { Permission } from "../../../types/permission";
 import { permissionService } from "../../../services/permissionService";
 import { Button } from "../../ui/Button";
 import { Modal } from "../../ui/Modal";
-import { toast } from "react-hot-toast";
+import { useToast } from "../../../contexts/ToastContext";
 
 interface PermissionDeleteModalProps {
   permission: Permission;
@@ -17,18 +17,19 @@ export const PermissionDeleteModal: React.FC<PermissionDeleteModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { success, error: showError } = useToast();
   const [loading, setLoading] = useState(false);
 
   const handleDelete = async () => {
     try {
       setLoading(true);
       await permissionService.deletePermission(permission.id);
-      toast.success("Permiso eliminado exitosamente");
+      success("Permiso eliminado exitosamente");
       onSuccess();
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Error al eliminar el permiso";
-      toast.error(errorMessage);
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,7 @@ import { AppDataSource } from "../config/database";
 import { KnowledgeDocumentService } from "../services/knowledge-document.service";
 import { DocumentTypeService } from "../services/document-type.service";
 import { DocumentFeedbackService } from "../services/document-feedback.service";
+import { KnowledgeTagService } from "../services/knowledge-tag.service";
 import { authenticateToken } from "../middleware/auth";
 import {
   requirePermission,
@@ -18,6 +19,7 @@ router.use(authenticateToken);
 // Inicializar servicios
 const knowledgeDocumentService = new KnowledgeDocumentService();
 const documentTypeService = new DocumentTypeService();
+const knowledgeTagService = new KnowledgeTagService();
 const documentFeedbackService = new DocumentFeedbackService();
 
 // Helper para manejo de errores
@@ -74,6 +76,217 @@ router.get(
       res.json(documents);
     } catch (error) {
       handleError(res, error, 400);
+    }
+  }
+);
+
+// ================================
+// KNOWLEDGE DOCUMENT TAGS ROUTES
+// ================================
+
+// GET /api/knowledge/tags - Obtener todas las etiquetas
+router.get(
+  "/knowledge/tags",
+  requireAnyPermission(["tags.read", "tags.manage"]),
+  async (req: Request, res: Response) => {
+    try {
+      const tags = await knowledgeTagService.getAllTagsWithUsage();
+      res.json(tags);
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// GET /api/knowledge/tags/popular - Obtener etiquetas populares
+router.get(
+  "/knowledge/tags/popular",
+  requireAnyPermission(["tags.read", "tags.manage"]),
+  async (req: Request, res: Response) => {
+    try {
+      const { limit } = req.query;
+      const limitNumber = limit ? parseInt(limit as string, 10) : 20;
+
+      if (isNaN(limitNumber) || limitNumber < 1 || limitNumber > 100) {
+        return res.status(400).json({
+          message: "Límite debe ser un número entre 1 y 100",
+        });
+      }
+
+      const tags = await knowledgeTagService.getPopularTags(limitNumber);
+      res.json(tags);
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// GET /api/knowledge/tags/details/:id - Obtener información detallada de una etiqueta
+router.get(
+  "/knowledge/tags/details/:id",
+  requireAnyPermission(["tags.read", "tags.manage"]),
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        return res.status(400).json({
+          message: "ID de etiqueta es requerido",
+        });
+      }
+
+      const tag = await knowledgeTagService.getTagById(id);
+
+      if (!tag) {
+        return res.status(404).json({
+          message: "Etiqueta no encontrada",
+        });
+      }
+
+      res.json(tag);
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// GET /api/knowledge/tags/:id - Obtener etiqueta por ID con uso real
+router.get(
+  "/knowledge/tags/:id",
+  requireAnyPermission(["tags.read", "tags.manage"]),
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        return res.status(400).json({
+          message: "ID de etiqueta requerido",
+        });
+      }
+
+      const tag = await knowledgeTagService.getTagById(id);
+      if (!tag) {
+        return res.status(404).json({
+          message: "Etiqueta no encontrada",
+        });
+      }
+
+      res.json(tag);
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// GET /api/knowledge/tags/:tagName - Obtener etiqueta por nombre
+router.get(
+  "/knowledge/tags/:tagName",
+  requireAnyPermission(["tags.read", "tags.manage"]),
+  async (req: Request, res: Response) => {
+    try {
+      const { tagName } = req.params;
+      if (!tagName) {
+        return res.status(400).json({
+          message: "Nombre de etiqueta requerido",
+        });
+      }
+
+      const decodedTagName = decodeURIComponent(tagName).toLowerCase();
+
+      const tag = await knowledgeTagService.findTagByName(decodedTagName);
+      if (!tag) {
+        return res.status(404).json({
+          message: "Etiqueta no encontrada",
+        });
+      }
+
+      res.json(tag);
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// POST /api/knowledge/tags - Crear una nueva etiqueta
+router.post(
+  "/knowledge/tags",
+  requirePermission("tags.create"),
+  async (req: Request, res: Response) => {
+    try {
+      const { tagName, color, category, description } = req.body;
+      const userId = (req as any).user?.id;
+
+      if (!tagName || typeof tagName !== "string" || !tagName.trim()) {
+        return res.status(400).json({
+          message: "El nombre de la etiqueta es requerido",
+        });
+      }
+
+      const normalizedTagName = tagName.trim();
+
+      // Usar findOrCreateTag que maneja la lógica de búsqueda y creación
+      const tag = await knowledgeTagService.findOrCreateTag(
+        normalizedTagName,
+        userId
+      );
+
+      // Si se proporcionan metadatos adicionales, actualizar la etiqueta
+      if (color || category || description) {
+        const updatedTag = await knowledgeTagService.updateTag(tag.id, {
+          ...(color && { color }),
+          ...(category && { category }),
+          ...(description && { description }),
+        });
+        res.status(201).json(updatedTag);
+      } else {
+        res.status(201).json(tag);
+      }
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// PUT /api/knowledge/tags/:id - Actualizar etiqueta
+router.put(
+  "/knowledge/tags/:id",
+  requirePermission("tags.update"),
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      if (!id || typeof id !== "string") {
+        return res.status(400).json({
+          message: "ID de etiqueta inválido",
+        });
+      }
+
+      const updatedTag = await knowledgeTagService.updateTag(id, updates);
+      res.json(updatedTag);
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// DELETE /api/knowledge/tags/:id - Eliminar etiqueta por ID
+router.delete(
+  "/knowledge/tags/:id",
+  requirePermission("tags.delete"),
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      if (!id || typeof id !== "string") {
+        return res.status(400).json({
+          message: "ID de etiqueta inválido",
+        });
+      }
+
+      await knowledgeTagService.deleteTag(id);
+      res.status(204).send();
+    } catch (error) {
+      handleError(res, error);
     }
   }
 );
@@ -473,6 +686,138 @@ router.get(
       const userId = (req as any).user.id;
       const feedback = await documentFeedbackService.findByUser(userId);
       res.json(feedback);
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// ===========================================
+// RUTAS DE ETIQUETAS
+// ===========================================
+
+// POST /api/knowledge/tags - Crear una nueva etiqueta
+router.post(
+  "/knowledge/tags",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const { tagName, color, category, description } = req.body;
+      const userId = (req as any).user?.id;
+
+      if (!tagName || typeof tagName !== "string" || !tagName.trim()) {
+        return res.status(400).json({
+          message: "El nombre de la etiqueta es requerido",
+        });
+      }
+
+      const normalizedTagName = tagName.trim();
+
+      // Usar findOrCreateTag que maneja la lógica de búsqueda y creación
+      const tag = await knowledgeTagService.findOrCreateTag(
+        normalizedTagName,
+        userId
+      );
+
+      // Si se proporcionan metadatos adicionales, actualizar la etiqueta
+      if (color || category || description) {
+        const updatedTag = await knowledgeTagService.updateTag(tag.id, {
+          ...(color && { color }),
+          ...(category && { category }),
+          ...(description && { description }),
+        });
+        res.status(201).json(updatedTag);
+      } else {
+        res.status(201).json(tag);
+      }
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// GET /api/knowledge/tags/popular - Obtener etiquetas populares (debe ir ANTES de /:tagName)
+router.get(
+  "/knowledge/tags/popular",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const { limit } = req.query;
+      const limitNumber = limit ? parseInt(limit as string, 10) : 20;
+
+      if (isNaN(limitNumber) || limitNumber < 1 || limitNumber > 100) {
+        return res.status(400).json({
+          message: "Límite debe ser un número entre 1 y 100",
+        });
+      }
+
+      const tags = await knowledgeTagService.getPopularTags(limitNumber);
+      res.json(tags);
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// GET /api/knowledge/tags - Obtener todas las etiquetas
+router.get(
+  "/knowledge/tags",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const tags = await knowledgeTagService.getAllTagsWithUsage();
+      res.json(tags);
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// GET /api/knowledge/tags/:tagName - Obtener etiqueta por nombre
+router.get(
+  "/knowledge/tags/:tagName",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const { tagName } = req.params;
+      if (!tagName) {
+        return res.status(400).json({
+          message: "Nombre de etiqueta requerido",
+        });
+      }
+
+      const decodedTagName = decodeURIComponent(tagName);
+      const tag = await knowledgeTagService.findTagByName(decodedTagName);
+
+      if (!tag) {
+        return res.status(404).json({
+          message: "Etiqueta no encontrada",
+        });
+      }
+
+      res.json(tag);
+    } catch (error) {
+      handleError(res, error);
+    }
+  }
+);
+
+// DELETE /api/knowledge/tags/:id - Eliminar etiqueta por ID
+router.delete(
+  "/knowledge/tags/:id",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      if (!id || typeof id !== "string") {
+        return res.status(400).json({
+          message: "ID de etiqueta inválido",
+        });
+      }
+
+      await knowledgeTagService.deleteTag(id);
+      res.status(204).send();
     } catch (error) {
       handleError(res, error);
     }

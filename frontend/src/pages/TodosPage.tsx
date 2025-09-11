@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTodos } from "../hooks/useTodos";
-import { useToast } from "../contexts/ToastContext";
+import { useToast } from "../hooks/useNotification";
 import { useConfirmationModal } from "../hooks/useConfirmationModal";
 import { ConfirmationModal } from "../components/ui/ConfirmationModal";
 import { Button } from "../components/ui/Button";

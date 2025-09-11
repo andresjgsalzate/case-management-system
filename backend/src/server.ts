@@ -29,11 +29,15 @@ import { userRoutes } from "./routes/userRoutes";
 import { roleRoutes } from "./routes/roleRoutes";
 import metricsRoutes from "./routes/metrics.routes";
 import knowledgeRoutes from "./routes/knowledge-simple.routes";
+import knowledgeTagRoutes from "./routes/knowledge.routes";
 import debugRoutes from "./routes/debug";
 import migrationRoutes from "./routes/migration.routes";
 import { originRoutes } from "./routes/originRoutes";
 import { applicationRoutes } from "./routes/applicationRoutes";
 import { caseStatusRoutes } from "./routes/caseStatusRoutes";
+import fileUploadRoutes from "./routes/file-upload-simple.routes";
+import adminStorageRoutes from "./routes/admin-storage.routes";
+import { FileUploadService } from "./services/file-upload-simple.service";
 
 const app = express();
 
@@ -78,15 +82,10 @@ app.use("/api/dispositions", dispositionRoutes);
 app.use("/api/todos", todoRoutes);
 app.use("/api/notes", noteRoutes);
 app.use("/api/archive", archiveRoutes);
+app.use("/api/files", fileUploadRoutes); // MOVER ANTES de knowledgeRoutes
+// app.use("/api", knowledgeTagRoutes); // Rutas de etiquetas movidas a knowledge-simple.routes.ts
 app.use("/api", knowledgeRoutes); // Rutas de base de conocimiento
 app.use("/api/metrics", metricsRoutes);
-app.use("/api/debug", debugRoutes);
-app.use("/api/migration", migrationRoutes);
-app.use("/api/origins", originRoutes);
-app.use("/api/applications", applicationRoutes);
-app.use("/api/case-statuses", caseStatusRoutes);
-app.use("/api", permissionsRoutes);
-app.use("/api/test", testRoutes);
 app.use("/api", commonRoutes);
 
 // Error handling middleware (debe ir al final)
@@ -105,6 +104,10 @@ const startServer = async (): Promise<void> => {
   try {
     // Inicializar base de datos
     await initializeDatabase();
+
+    // Inicializar directorios de uploads de forma automática
+    await FileUploadService.initialize();
+    logger.info("📁 Upload directories initialized successfully");
 
     // Iniciar servidor
     app.listen(config.port, () => {

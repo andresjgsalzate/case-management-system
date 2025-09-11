@@ -8,8 +8,9 @@ import {
   ModulePermissionStructure,
   RolePermissionAssignment,
 } from "../types/permission";
+import { config } from "../config/config";
 
-const API_BASE_URL = "http://localhost:3000/api";
+const API_BASE_URL = config.api.baseUrl;
 
 interface ApiResponse<T> {
   success: boolean;

@@ -17,12 +17,13 @@ import {
   useCreateKnowledgeDocument,
 } from "../hooks/useKnowledge";
 import { KnowledgeDocument } from "../types/knowledge";
-import { toast } from "react-hot-toast";
+import { useToast } from "../hooks/useNotification";
 
 interface KnowledgeBaseProps {}
 
 const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   const navigate = useNavigate();
+  const { success, error: showError } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"created_at" | "updated_at" | "title">(
@@ -56,13 +57,13 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
       setIsModalOpen(false);
       setDocumentTitle("");
       setIsCreating(false);
-      toast.success("Documento creado exitosamente");
+      success("Documento creado exitosamente");
       // Navigate to the editor with the new document ID
       navigate(`/knowledge/${newDocument.id}/edit`);
     },
     onError: (error) => {
       setIsCreating(false);
-      toast.error(`Error al crear documento: ${error.message}`);
+      showError(`Error al crear documento: ${error.message}`);
     },
   });
 
@@ -73,7 +74,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
 
   const handleModalSubmit = () => {
     if (!documentTitle.trim()) {
-      toast.error("El título del documento es requerido");
+      showError("El título del documento es requerido");
       return;
     }
 

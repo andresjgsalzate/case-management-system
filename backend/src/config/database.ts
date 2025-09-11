@@ -29,6 +29,8 @@ import { KnowledgeDocumentVersion } from "../entities/KnowledgeDocumentVersion";
 import { KnowledgeDocumentAttachment } from "../entities/KnowledgeDocumentAttachment";
 import { KnowledgeDocumentRelation } from "../entities/KnowledgeDocumentRelation";
 import { KnowledgeDocumentFeedback } from "../entities/KnowledgeDocumentFeedback";
+import { KnowledgeTag } from "../entities/KnowledgeTag";
+import { KnowledgeDocumentTagRelation } from "../entities/KnowledgeDocumentTagRelation";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -67,6 +69,8 @@ export const AppDataSource = new DataSource({
     KnowledgeDocumentAttachment,
     KnowledgeDocumentRelation,
     KnowledgeDocumentFeedback,
+    KnowledgeTag,
+    KnowledgeDocumentTagRelation,
   ],
   migrations: ["src/database/migrations/**/*.ts"],
   subscribers: ["src/database/subscribers/**/*.ts"],

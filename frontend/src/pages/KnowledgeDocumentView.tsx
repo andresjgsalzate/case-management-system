@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeftIcon,
@@ -13,22 +13,57 @@ import {
   StarIcon,
   ArchiveBoxIcon,
   DocumentDuplicateIcon,
+  TrashIcon,
+  PaperClipIcon,
 } from "@heroicons/react/24/outline";
 import {
   useKnowledgeDocument,
   useArchiveKnowledgeDocument,
+  useDeleteKnowledgeDocument,
   useCreateDocumentFeedback,
+  knowledgeKeys,
 } from "../hooks/useKnowledge";
+import { useQueryClient } from "@tanstack/react-query";
 import BlockNoteEditor from "../components/knowledge/BlockNoteEditor";
+import AttachmentsList from "../components/AttachmentsList";
+import { ConfirmationModal } from "../components/ui/ConfirmationModal";
+import { useToast } from "../hooks/useNotification";
 
 const KnowledgeDocumentView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
+  // Modal states
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
+
+  // Notificaciones
+  const { success, error: showError } = useToast();
+  const queryClient = useQueryClient();
+
   // Queries and mutations
-  const { data: document, isLoading, error } = useKnowledgeDocument(id || "");
+  const {
+    data: document,
+    isLoading,
+    error,
+    refetch,
+  } = useKnowledgeDocument(id || "");
   const archiveMutation = useArchiveKnowledgeDocument();
+  const deleteMutation = useDeleteKnowledgeDocument();
   const feedbackMutation = useCreateDocumentFeedback();
+
+  // Force fresh data when viewing document
+  React.useEffect(() => {
+    if (id) {
+      console.log("🔄 Forcing document refetch for viewing:", id);
+      // Invalidate specific document cache to force fresh data
+      queryClient.invalidateQueries({
+        queryKey: knowledgeKeys.document(id),
+      });
+      // Also refetch immediately
+      refetch();
+    }
+  }, [id, refetch, queryClient]);
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -62,24 +97,83 @@ const KnowledgeDocumentView: React.FC = () => {
   };
 
   const handleArchive = () => {
-    if (
-      document &&
-      confirm("¿Estás seguro de que quieres archivar este documento?")
-    ) {
-      archiveMutation.mutate({
-        id: document.id,
-        isArchived: true,
-        reason: "Archivado por el usuario",
+    setShowArchiveConfirm(true);
+  };
+
+  const confirmArchive = () => {
+    if (document) {
+      archiveMutation.mutate(
+        {
+          id: document.id,
+          isArchived: true,
+          reason: "Archivado por el usuario",
+        },
+        {
+          onSuccess: () => {
+            success("Documento archivado exitosamente");
+          },
+          onError: (error: any) => {
+            showError(`Error al archivar documento: ${error.message}`);
+          },
+        }
+      );
+    }
+  };
+
+  const handleDelete = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    if (document) {
+      deleteMutation.mutate(document.id, {
+        onSuccess: () => {
+          success("Documento eliminado exitosamente");
+          navigate("/knowledge");
+        },
+        onError: (error: any) => {
+          showError(`Error al eliminar documento: ${error.message}`);
+        },
       });
+    }
+  };
+
+  const handleUnarchive = () => {
+    if (document) {
+      archiveMutation.mutate(
+        {
+          id: document.id,
+          isArchived: false,
+          reason: "Documento restaurado",
+        },
+        {
+          onSuccess: () => {
+            success("Documento restaurado exitosamente");
+          },
+          onError: (error: any) => {
+            showError(`Error al restaurar documento: ${error.message}`);
+          },
+        }
+      );
     }
   };
 
   const handleFeedback = (isHelpful: boolean) => {
     if (document) {
-      feedbackMutation.mutate({
-        documentId: document.id,
-        isHelpful,
-      });
+      feedbackMutation.mutate(
+        {
+          documentId: document.id,
+          isHelpful,
+        },
+        {
+          onSuccess: () => {
+            success("Feedback enviado exitosamente");
+          },
+          onError: (error: any) => {
+            showError(`Error al enviar feedback: ${error.message}`);
+          },
+        }
+      );
     }
   };
 
@@ -176,15 +270,31 @@ const KnowledgeDocumentView: React.FC = () => {
                 <PencilIcon className="h-5 w-5" />
               </Link>
 
-              {!document.isArchived && (
+              {!document.isArchived ? (
                 <button
                   onClick={handleArchive}
-                  className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100"
+                  className="p-2 text-gray-400 hover:text-orange-600 rounded-md hover:bg-gray-100"
                   title="Archivar documento"
                 >
                   <ArchiveBoxIcon className="h-5 w-5" />
                 </button>
+              ) : (
+                <button
+                  onClick={handleUnarchive}
+                  className="p-2 text-gray-400 hover:text-green-600 rounded-md hover:bg-gray-100"
+                  title="Restaurar documento"
+                >
+                  <ArchiveBoxIcon className="h-5 w-5 rotate-180" />
+                </button>
               )}
+
+              <button
+                onClick={handleDelete}
+                className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20"
+                title="Eliminar documento permanentemente"
+              >
+                <TrashIcon className="h-5 w-5" />
+              </button>
             </div>
           </div>
         </div>
@@ -192,7 +302,7 @@ const KnowledgeDocumentView: React.FC = () => {
         {/* Title and Status */}
         <div className="mb-4">
           <div className="flex items-start justify-between">
-            <h1 className="text-3xl font-bold text-gray-900 flex-1 mr-4">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex-1 mr-4">
               {document.title}
             </h1>
             <span
@@ -241,7 +351,7 @@ const KnowledgeDocumentView: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
         {/* Document Info Bar */}
         <div className="border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
@@ -291,7 +401,9 @@ const KnowledgeDocumentView: React.FC = () => {
 
         {/* Document Content */}
         <div className="p-6">
-          {document.jsonContent ? (
+          {document.jsonContent &&
+          Array.isArray(document.jsonContent) &&
+          document.jsonContent.length > 0 ? (
             <BlockNoteEditor
               content={document.jsonContent}
               editable={false}
@@ -310,8 +422,8 @@ const KnowledgeDocumentView: React.FC = () => {
       </div>
 
       {/* Feedback Section */}
-      <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           ¿Te resultó útil este documento?
         </h3>
 
@@ -348,6 +460,44 @@ const KnowledgeDocumentView: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Archivos adjuntos */}
+      {id && (
+        <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="p-6">
+            <div className="flex items-center mb-4">
+              <PaperClipIcon className="h-5 w-5 mr-2 text-gray-400" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Archivos adjuntos
+              </h3>
+            </div>
+            <AttachmentsList documentId={id} className="" />
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modals */}
+      <ConfirmationModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDelete}
+        title="Eliminar Documento"
+        message="¿Estás seguro de que quieres ELIMINAR PERMANENTEMENTE este documento? Esta acción no se puede deshacer. Si solo quieres ocultarlo temporalmente, considera usar la opción 'Archivar' en su lugar."
+        confirmText="Eliminar Permanentemente"
+        cancelText="Cancelar"
+        type="danger"
+      />
+
+      <ConfirmationModal
+        isOpen={showArchiveConfirm}
+        onClose={() => setShowArchiveConfirm(false)}
+        onConfirm={confirmArchive}
+        title="Archivar Documento"
+        message="¿Estás seguro de que quieres archivar este documento? El documento será movido al archivo y no aparecerá en las búsquedas, pero podrás restaurarlo más tarde."
+        confirmText="Archivar"
+        cancelText="Cancelar"
+        type="danger"
+      />
     </div>
   );
 };

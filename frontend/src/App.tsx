@@ -28,6 +28,7 @@ import { initializeAuth } from "./stores/authStore";
 import OriginsPage from "./pages/admin/OriginsPage";
 import ApplicationsPage from "./pages/admin/ApplicationsPage";
 import CaseStatusesPage from "./pages/admin/CaseStatusesPage";
+import TagsPage from "./pages/tags/TagsPage";
 // Knowledge Base imports
 import KnowledgeBase from "./pages/KnowledgeBase";
 import KnowledgeDocumentForm from "./pages/KnowledgeDocumentForm";
@@ -340,6 +341,17 @@ function App() {
                 <ProtectedRoute adminOnly>
                   <Layout>
                     <CaseStatusesPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/tags"
+              element={
+                <ProtectedRoute requiredPermission="tags.manage">
+                  <Layout>
+                    <TagsPage />
                   </Layout>
                 </ProtectedRoute>
               }

@@ -25,9 +25,10 @@ import { useConfirmationModal } from "../../hooks/useConfirmationModal";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
 import { ArchiveDetailsModal } from "../../components/archive/ArchiveDetailsModal";
 import { Button } from "../../components/ui/Button";
-import { toast } from "react-hot-toast";
+import { useToast } from "../../contexts/ToastContext";
 
 export const ArchivePage: React.FC = () => {
+  const { success, error: showError, info } = useToast();
   const [filters, setFilters] = useState<ArchiveFilters>({
     type: "all",
     showRestored: false,
@@ -107,7 +108,7 @@ export const ArchivePage: React.FC = () => {
 
     if (confirmed) {
       try {
-        toast.loading("Restaurando elemento...", { id: "restore" });
+        info("Restaurando elemento...");
 
         if (item.itemType === "case") {
           await archiveManager.restoreCase({
@@ -121,7 +122,7 @@ export const ArchivePage: React.FC = () => {
           });
         }
 
-        toast.success("Elemento restaurado exitosamente", { id: "restore" });
+        success("Elemento restaurado exitosamente");
         refetch();
       } catch (error) {
         console.error("Error restoring item:", error);
@@ -129,7 +130,7 @@ export const ArchivePage: React.FC = () => {
           error instanceof Error
             ? error.message
             : "Error al restaurar elemento";
-        toast.error(errorMessage, { id: "restore" });
+        showError(errorMessage);
       }
     }
   };
@@ -145,7 +146,7 @@ export const ArchivePage: React.FC = () => {
 
     if (confirmed) {
       try {
-        toast.loading("Eliminando elemento...", { id: "delete" });
+        info("Eliminando elemento...");
 
         if (item.itemType === "case") {
           await archiveManager.deleteCase({
@@ -159,13 +160,13 @@ export const ArchivePage: React.FC = () => {
           });
         }
 
-        toast.success("Elemento eliminado exitosamente", { id: "delete" });
+        success("Elemento eliminado exitosamente");
         refetch();
       } catch (error) {
         console.error("Error deleting item:", error);
         const errorMessage =
           error instanceof Error ? error.message : "Error al eliminar elemento";
-        toast.error(errorMessage, { id: "delete" });
+        showError(errorMessage);
       }
     }
   };

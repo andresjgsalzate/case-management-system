@@ -10,7 +10,7 @@ export default new DataSource({
   database: config.database.database,
   synchronize: false,
   logging: true,
-  entities: ["src/entities/**/*.ts"],
+  entities: [__dirname + "/entities/*.{js,ts}"],
   migrations: ["src/database/migrations/**/*.ts"],
   subscribers: ["src/database/subscribers/**/*.ts"],
 });

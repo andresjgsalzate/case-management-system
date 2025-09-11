@@ -10,7 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Modal } from "../../components/ui/Modal";
 import { Button } from "../../components/ui/Button";
-import { useToast } from "../../contexts/ToastContext";
+import { useToast } from "../../hooks/useNotification";
 import {
   applicationService,
   type Application,

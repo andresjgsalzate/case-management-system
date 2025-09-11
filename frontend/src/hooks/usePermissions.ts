@@ -138,6 +138,13 @@ export const ADMIN_SECTIONS: Array<{
         adminOnly: true,
       },
       {
+        name: "Etiquetas",
+        href: "/admin/tags",
+        icon: "TagIcon",
+        permissions: ["tags.manage", "tags.read", "tags.create", "tags.update"],
+        adminOnly: false, // No restringido solo a administradores
+      },
+      {
         name: "Estado del Sistema",
         href: "/system/status",
         icon: "CogIcon",
@@ -205,27 +212,6 @@ export const useModulePermissions = () => {
     // Filtrar módulos permitidos
     const allowedModules = SYSTEM_MODULES.filter(
       canAccessModuleWithPermissions
-    );
-
-    // Debug logging para el módulo de Archivo
-    const archiveModule = SYSTEM_MODULES.find((m) => m.href === "/archive");
-    console.log("🔍 MODULE PERMISSIONS - Archive Debug:");
-    console.log("  - Archive module found:", archiveModule);
-    console.log(
-      "  - Can access archive:",
-      archiveModule
-        ? canAccessModuleWithPermissions(archiveModule)
-        : "module not found"
-    );
-    console.log(
-      "  - Has archive.view permission:",
-      hasPermission("archive.view")
-    );
-    console.log("  - Is admin:", isAdmin);
-    console.log("  - Allowed modules count:", allowedModules.length);
-    console.log(
-      "  - Allowed modules:",
-      allowedModules.map((m) => m.name)
     );
 
     // Filtrar secciones administrativas permitidas

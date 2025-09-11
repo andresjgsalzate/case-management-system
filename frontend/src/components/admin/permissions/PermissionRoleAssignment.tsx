@@ -5,7 +5,7 @@ import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
 import { Badge } from "../../ui/Badge";
 import { Modal } from "../../ui/Modal";
-import { toast } from "react-hot-toast";
+import { useToast } from "../../../contexts/ToastContext";
 
 // Tipos temporales (estos deberían venir de types)
 interface Role {
@@ -34,6 +34,7 @@ interface Permission {
 // }
 
 export const PermissionRoleAssignment: React.FC = () => {
+  const { success, error: showError } = useToast();
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   // const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([]);
@@ -90,7 +91,7 @@ export const PermissionRoleAssignment: React.FC = () => {
         },
       ]);
     } catch (error) {
-      toast.error("Error al cargar datos");
+      showError("Error al cargar datos");
     } finally {
       setLoading(false);
     }
@@ -110,7 +111,7 @@ export const PermissionRoleAssignment: React.FC = () => {
         prev ? { ...prev, permissions: rolePerms } : null
       );
     } catch (error) {
-      toast.error("Error al cargar permisos del rol");
+      showError("Error al cargar permisos del rol");
     }
   };
 
@@ -139,13 +140,13 @@ export const PermissionRoleAssignment: React.FC = () => {
     try {
       // TODO: Implementar asignación de permisos
       // await rolePermissionService.assignPermissions(selectedRole.id, selectedPermissions);
-      toast.success(
+      success(
         `${selectedPermissions.length} permisos asignados al rol ${selectedRole.name}`
       );
       setShowAssignModal(false);
       loadRolePermissions(selectedRole.id);
     } catch (error) {
-      toast.error("Error al asignar permisos");
+      showError("Error al asignar permisos");
     }
   };
 
@@ -156,10 +157,10 @@ export const PermissionRoleAssignment: React.FC = () => {
     try {
       // TODO: Implementar revocación de permiso
       // await rolePermissionService.revokePermission(roleId, permissionId);
-      toast.success("Permiso revocado exitosamente");
+      success("Permiso revocado exitosamente");
       loadRolePermissions(roleId);
     } catch (error) {
-      toast.error("Error al revocar permiso");
+      showError("Error al revocar permiso");
     }
   };
 

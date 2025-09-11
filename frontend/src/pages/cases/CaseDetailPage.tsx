@@ -10,7 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useCases } from "../../hooks/useCases";
 import { Button } from "../../components/ui/Button";
-import { useToast } from "../../contexts/ToastContext";
+import { useToast } from "../../hooks/useNotification";
 import { useConfirmationModal } from "../../hooks/useConfirmationModal";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
 

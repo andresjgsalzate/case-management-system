@@ -1,8 +1,8 @@
 import { Repository, SelectQueryBuilder, ILike, DataSource } from "typeorm";
 import { KnowledgeDocument } from "../entities/KnowledgeDocument";
-import { KnowledgeDocumentTag } from "../entities/KnowledgeDocumentTag";
 import { KnowledgeDocumentVersion } from "../entities/KnowledgeDocumentVersion";
 import { AppDataSource } from "../config/database";
+import { KnowledgeTagService } from "./knowledge-tag.service";
 import {
   CreateKnowledgeDocumentDto,
   UpdateKnowledgeDocumentDto,
@@ -13,14 +13,14 @@ import {
 
 export class KnowledgeDocumentService {
   private knowledgeDocumentRepository: Repository<KnowledgeDocument>;
-  private tagRepository: Repository<KnowledgeDocumentTag>;
   private versionRepository: Repository<KnowledgeDocumentVersion>;
+  private knowledgeTagService: KnowledgeTagService;
 
   constructor(dataSource?: DataSource) {
     const ds = dataSource || AppDataSource;
     this.knowledgeDocumentRepository = ds.getRepository(KnowledgeDocument);
-    this.tagRepository = ds.getRepository(KnowledgeDocumentTag);
     this.versionRepository = ds.getRepository(KnowledgeDocumentVersion);
+    this.knowledgeTagService = new KnowledgeTagService(ds);
   }
 
   async create(
@@ -51,10 +51,16 @@ export class KnowledgeDocumentService {
 
     // Crear tags si existen
     if (tags && tags.length > 0) {
-      await this.updateTags(savedDocument.id, tags);
+      await this.updateTags(savedDocument.id, tags, userId);
     }
 
-    return this.findOne(savedDocument.id);
+    const result = await this.findOne(savedDocument.id);
+    if (!result) {
+      throw new Error(
+        `Document with id ${savedDocument.id} not found after creation`
+      );
+    }
+    return result;
   }
 
   async findAll(query: KnowledgeDocumentQueryDto): Promise<{
@@ -77,28 +83,56 @@ export class KnowledgeDocumentService {
       .take(limit)
       .getManyAndCount();
 
+    // Cargar las etiquetas para todos los documentos usando el nuevo sistema
+    const documentsWithTags = await Promise.all(
+      documents.map((doc) => this.loadDocumentTags(doc))
+    );
+
     return {
-      documents,
+      documents: documentsWithTags,
       total,
       page,
       totalPages: Math.ceil(total / limit),
     };
   }
 
-  async findOne(id: string): Promise<KnowledgeDocument> {
-    const document = await this.knowledgeDocumentRepository.findOne({
-      where: { id },
-      relations: ["documentType", "tags", "createdByUser", "lastEditedByUser"],
-    });
+  async findOne(id: string): Promise<KnowledgeDocument | null> {
+    try {
+      console.log(`[DEBUG] Looking for document with ID: ${id}`);
+      const document = await this.knowledgeDocumentRepository
+        .createQueryBuilder("doc")
+        .leftJoinAndSelect("doc.documentType", "documentType")
+        .leftJoinAndSelect("doc.createdByUser", "createdByUser")
+        .leftJoinAndSelect("doc.lastEditedByUser", "lastEditedByUser")
+        .leftJoinAndSelect("doc.versions", "versions")
+        .leftJoinAndSelect("versions.createdByUser", "versionCreatedBy")
+        .leftJoinAndSelect("doc.attachments", "attachments")
+        .where("doc.id = :id", { id })
+        .getOne();
 
-    if (!document) {
-      throw new Error(`Documento con ID ${id} no encontrado`);
+      if (document) {
+        console.log(`[DEBUG] Document found: ${document.title}`);
+        // Cargar etiquetas usando el método del nuevo sistema
+        const documentWithTags = await this.loadDocumentTags(document);
+        console.log(
+          `[DEBUG] Document tags loaded count: ${
+            documentWithTags.tags ? documentWithTags.tags.length : 0
+          }`
+        );
+        console.log(
+          `[DEBUG] Tags details:`,
+          JSON.stringify(documentWithTags.tags, null, 2)
+        );
+        return documentWithTags;
+      } else {
+        console.log(`[DEBUG] Document with ID ${id} not found`);
+      }
+
+      return document;
+    } catch (error) {
+      console.error("Error finding document:", error);
+      throw error;
     }
-
-    // Incrementar contador de visualizaciones
-    await this.knowledgeDocumentRepository.increment({ id }, "viewCount", 1);
-
-    return document;
   }
 
   async update(
@@ -107,6 +141,10 @@ export class KnowledgeDocumentService {
     userId: string
   ): Promise<KnowledgeDocument> {
     const document = await this.findOne(id);
+
+    if (!document) {
+      throw new Error(`Document with id ${id} not found`);
+    }
 
     if (document.isArchived) {
       throw new Error("No se puede editar un documento archivado");
@@ -127,18 +165,29 @@ export class KnowledgeDocumentService {
       );
     }
 
-    // Actualizar documento
+    // Actualizar documento - evitar actualizar relaciones anidadas
     const { tags, changeSummary, ...updateData } = updateDto;
-    Object.assign(document, updateData, { lastEditedBy: userId });
 
-    const savedDocument = await this.knowledgeDocumentRepository.save(document);
+    // Remover las relaciones anidadas para evitar que TypeORM las actualice incorrectamente
+    const documentToUpdate = {
+      ...updateData,
+      lastEditedBy: userId,
+      id: document.id,
+    };
+
+    // Usar update en lugar de save para evitar problemas con relaciones anidadas
+    await this.knowledgeDocumentRepository.update(id, documentToUpdate);
 
     // Actualizar tags si se proporcionaron
     if (tags !== undefined) {
-      await this.updateTags(id, tags);
+      await this.updateTags(id, tags, userId);
     }
 
-    return this.findOne(id);
+    const result = await this.findOne(id);
+    if (!result) {
+      throw new Error(`Document with id ${id} not found after update`);
+    }
+    return result;
   }
 
   async publish(
@@ -147,6 +196,10 @@ export class KnowledgeDocumentService {
     userId: string
   ): Promise<KnowledgeDocument> {
     const document = await this.findOne(id);
+
+    if (!document) {
+      throw new Error(`Document with id ${id} not found`);
+    }
 
     if (document.isArchived) {
       throw new Error("No se puede publicar un documento archivado");
@@ -180,6 +233,10 @@ export class KnowledgeDocumentService {
   ): Promise<KnowledgeDocument> {
     const document = await this.findOne(id);
 
+    if (!document) {
+      throw new Error(`Document with id ${id} not found`);
+    }
+
     document.isArchived = archiveDto.isArchived;
     document.archivedAt = archiveDto.isArchived ? new Date() : null;
     document.archivedBy = archiveDto.isArchived ? userId : null;
@@ -196,6 +253,9 @@ export class KnowledgeDocumentService {
 
   async remove(id: string): Promise<void> {
     const document = await this.findOne(id);
+    if (!document) {
+      throw new Error(`Document with id ${id} not found`);
+    }
     await this.knowledgeDocumentRepository.remove(document);
   }
 
@@ -245,7 +305,6 @@ export class KnowledgeDocumentService {
     return this.knowledgeDocumentRepository
       .createQueryBuilder("doc")
       .leftJoinAndSelect("doc.documentType", "type")
-      .leftJoinAndSelect("doc.tags", "tags")
       .leftJoinAndSelect("doc.createdByUser", "creator")
       .leftJoinAndSelect("doc.lastEditedByUser", "editor");
   }
@@ -331,21 +390,63 @@ export class KnowledgeDocumentService {
 
   private async updateTags(
     documentId: string,
-    tagNames: string[]
+    tagNames: string[],
+    userId?: string
   ): Promise<void> {
-    // Eliminar tags existentes
-    await this.tagRepository.delete({ documentId });
+    console.log(
+      `[updateTags] Updating tags for document ${documentId}:`,
+      tagNames
+    );
+    console.log(`[updateTags] User ID:`, userId);
 
-    // Crear nuevos tags
-    if (tagNames.length > 0) {
-      const tags = tagNames.map((tagName) =>
-        this.tagRepository.create({
-          documentId,
-          tagName: tagName.trim().toLowerCase(),
-        })
-      );
-      await this.tagRepository.save(tags);
-    }
+    // Usar el nuevo sistema de etiquetas
+    await this.knowledgeTagService.assignTagsToDocument(
+      documentId,
+      tagNames,
+      userId
+    );
+
+    console.log(
+      `[updateTags] Tags updated successfully for document ${documentId}`
+    );
+  }
+
+  /**
+   * Cargar las etiquetas de un documento usando el nuevo sistema
+   */
+  private async loadDocumentTags(
+    document: KnowledgeDocument
+  ): Promise<KnowledgeDocument> {
+    console.log(
+      "🔍 [KnowledgeDocumentService] loadDocumentTags - Loading tags for document:",
+      document.id
+    );
+
+    // Consultar las etiquetas asociadas al documento
+    const tags = await this.knowledgeTagService.getDocumentTags(document.id);
+
+    // Asignar las etiquetas al documento (manteniendo compatibilidad con el frontend)
+    (document as any).tags = tags.map((tag) => ({
+      id: tag.id,
+      tagName: tag.tagName,
+      color: tag.color,
+      category: tag.category,
+      description: tag.description,
+      isActive: tag.isActive,
+      createdBy: tag.createdBy,
+      createdAt: tag.createdAt,
+      updatedAt: tag.updatedAt,
+      // Mapear a la estructura que espera el frontend (sistema anterior)
+      documentId: document.id,
+    }));
+
+    console.log(
+      "✅ [KnowledgeDocumentService] loadDocumentTags - Loaded",
+      (document as any).tags.length,
+      "tags"
+    );
+
+    return document;
   }
 
   private async createVersion(
@@ -372,4 +473,6 @@ export class KnowledgeDocumentService {
 
     return this.versionRepository.save(version);
   }
+
+  // ================================
 }

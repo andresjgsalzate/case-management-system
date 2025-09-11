@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { PencilIcon } from "@heroicons/react/24/outline";
-import { toast } from "react-hot-toast";
+import { useToast } from "../../../contexts/ToastContext";
 import { roleService } from "../../../services/roleService";
 import { Modal } from "../../ui/Modal";
 import { Button } from "../../ui/Button";
@@ -19,6 +19,7 @@ export default function RoleEditModal({
   onSuccess,
   role,
 }: RoleEditModalProps) {
+  const { success, error: showError } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<UpdateRoleRequest>({
     name: "",
@@ -60,14 +61,12 @@ export default function RoleEditModal({
     setIsLoading(true);
     try {
       await roleService.updateRole(role.id, formData);
-      toast.success("Rol actualizado exitosamente");
+      success("Rol actualizado exitosamente");
       handleClose();
       onSuccess();
     } catch (error: any) {
       console.error("Error al actualizar rol:", error);
-      toast.error(
-        error.response?.data?.message || "Error al actualizar el rol"
-      );
+      showError(error.response?.data?.message || "Error al actualizar el rol");
     } finally {
       setIsLoading(false);
     }

@@ -6,7 +6,7 @@ import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
 import { TextArea } from "../../ui/TextArea";
 import { Modal } from "../../ui/Modal";
-import { toast } from "react-hot-toast";
+import { useToast } from "../../../contexts/ToastContext";
 
 interface PermissionEditModalProps {
   permission: Permission;
@@ -23,6 +23,7 @@ export const PermissionEditModal: React.FC<PermissionEditModalProps> = ({
   modules,
   actions,
 }) => {
+  const { success, error: showError } = useToast();
   const [formData, setFormData] = useState<UpdatePermissionRequest>({
     name: permission.name,
     module: permission.module,
@@ -73,14 +74,14 @@ export const PermissionEditModal: React.FC<PermissionEditModalProps> = ({
     try {
       setLoading(true);
       await permissionService.updatePermission(permission.id, formData);
-      toast.success("Permiso actualizado exitosamente");
+      success("Permiso actualizado exitosamente");
       onSuccess();
     } catch (error) {
       const errorMessage =
         error instanceof Error
           ? error.message
           : "Error al actualizar el permiso";
-      toast.error(errorMessage);
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }

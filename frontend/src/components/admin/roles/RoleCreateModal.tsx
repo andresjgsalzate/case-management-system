@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { PlusIcon } from "@heroicons/react/24/outline";
-import { toast } from "react-hot-toast";
+import { useToast } from "../../../contexts/ToastContext";
 import { roleService } from "../../../services/roleService";
 import { Modal } from "../../ui/Modal";
 import { Button } from "../../ui/Button";
@@ -17,6 +17,7 @@ export default function RoleCreateModal({
   onClose,
   onSuccess,
 }: RoleCreateModalProps) {
+  const { success, error: showError } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<CreateRoleRequest>({
     name: "",
@@ -45,12 +46,12 @@ export default function RoleCreateModal({
     setIsLoading(true);
     try {
       await roleService.createRole(formData);
-      toast.success("Rol creado exitosamente");
+      success("Rol creado exitosamente");
       handleClose();
       onSuccess();
     } catch (error: any) {
       console.error("Error al crear rol:", error);
-      toast.error(error.response?.data?.message || "Error al crear el rol");
+      showError(error.response?.data?.message || "Error al crear el rol");
     } finally {
       setIsLoading(false);
     }

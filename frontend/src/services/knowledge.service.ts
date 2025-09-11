@@ -6,6 +6,7 @@ import {
   UpdateKnowledgeDocumentDto,
   KnowledgeDocumentQueryDto,
   KnowledgeDocumentVersion,
+  KnowledgeDocumentTag,
   DocumentType,
   CreateDocumentTypeDto,
   UpdateDocumentTypeDto,
@@ -15,8 +16,9 @@ import {
   UpdateDocumentFeedbackDto,
   DocumentStats,
 } from "../types/knowledge";
+import { config } from "../config/config";
 
-const API_BASE_URL = "http://localhost:3000/api";
+const API_BASE_URL = config.api.baseUrl;
 
 // Configure axios defaults
 const api = axios.create({
@@ -34,6 +36,21 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Add response interceptor to handle errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error("🚨 API Error:", {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+    return Promise.reject(error);
+  }
+);
 
 // Knowledge Documents Service
 export class KnowledgeDocumentService {
@@ -199,9 +216,65 @@ export class DocumentFeedbackService {
   }
 }
 
+// Knowledge Document Tags Service
+export class KnowledgeDocumentTagService {
+  static async createTag(
+    tagName: string,
+    options?: {
+      description?: string;
+      color?: string;
+      category?: string;
+    }
+  ): Promise<KnowledgeDocumentTag> {
+    const { data } = await api.post("/knowledge/tags", {
+      tagName,
+      ...options,
+    });
+    return data;
+  }
+
+  static async findByName(
+    tagName: string
+  ): Promise<KnowledgeDocumentTag | null> {
+    try {
+      const { data } = await api.get(
+        `/knowledge/tags/${encodeURIComponent(tagName)}`
+      );
+      return data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  static async getAllTags(): Promise<KnowledgeDocumentTag[]> {
+    const { data } = await api.get("/knowledge/tags");
+    return data;
+  }
+
+  static async getTagById(id: string): Promise<KnowledgeDocumentTag> {
+    const { data } = await api.get(`/knowledge/tags/details/${id}`);
+    return data;
+  }
+
+  static async deleteTag(id: string): Promise<void> {
+    await api.delete(`/knowledge/tags/${id}`);
+  }
+
+  static async getPopularTags(limit?: number): Promise<KnowledgeDocumentTag[]> {
+    const { data } = await api.get("/knowledge/tags/popular", {
+      params: { limit },
+    });
+    return data;
+  }
+}
+
 // Export all services
 export const knowledgeApi = {
   documents: KnowledgeDocumentService,
   types: DocumentTypeService,
   feedback: DocumentFeedbackService,
+  tags: KnowledgeDocumentTagService,
 };

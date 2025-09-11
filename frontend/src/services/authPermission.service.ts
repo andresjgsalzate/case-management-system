@@ -1,7 +1,8 @@
 import { ApiResponse } from "../types/api";
 import { Permission, Role, UserPermissionsResponse } from "../types/auth";
+import { config } from "../config/config";
 
-const API_BASE_URL = "http://localhost:3000/api";
+const API_BASE_URL = config.api.baseUrl;
 
 class AuthPermissionService {
   private async makeRequest<T>(

@@ -12,9 +12,10 @@ import {
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
-import { toast } from "react-hot-toast";
+import { useToast } from "../../contexts/ToastContext";
 
 export const PermissionsPage: React.FC = () => {
+  const { success, error: showError } = useToast();
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +64,7 @@ export const PermissionsPage: React.FC = () => {
       const errorMessage =
         err instanceof Error ? err.message : "Error al cargar permisos";
       setError(errorMessage);
-      toast.error(errorMessage);
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -143,21 +144,21 @@ export const PermissionsPage: React.FC = () => {
   const handlePermissionCreated = () => {
     setShowCreateModal(false);
     loadPermissions();
-    toast.success("Permiso creado exitosamente");
+    success("Permiso creado exitosamente");
   };
 
   const handlePermissionUpdated = () => {
     setShowEditModal(false);
     setSelectedPermission(null);
     loadPermissions();
-    toast.success("Permiso actualizado exitosamente");
+    success("Permiso actualizado exitosamente");
   };
 
   const handlePermissionDeleted = () => {
     setShowDeleteModal(false);
     setSelectedPermission(null);
     loadPermissions();
-    toast.success("Permiso eliminado exitosamente");
+    success("Permiso eliminado exitosamente");
   };
 
   const clearFilters = () => {

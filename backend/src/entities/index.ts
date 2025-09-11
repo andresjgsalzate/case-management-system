@@ -23,3 +23,14 @@ export {
   ArchivedCaseClassification,
 } from "./ArchivedCase";
 export { ArchivedTodo } from "./archive/ArchivedTodo.entity";
+
+// Knowledge Base entities
+export { KnowledgeDocument } from "./KnowledgeDocument";
+export { KnowledgeDocumentAttachment } from "./KnowledgeDocumentAttachment";
+export { KnowledgeDocumentVersion } from "./KnowledgeDocumentVersion";
+export { KnowledgeDocumentFeedback } from "./KnowledgeDocumentFeedback";
+export { KnowledgeDocumentRelation } from "./KnowledgeDocumentRelation";
+export { KnowledgeTag } from "./KnowledgeTag";
+export { KnowledgeDocumentTag } from "./KnowledgeDocumentTag";
+export { KnowledgeDocumentTagRelation } from "./KnowledgeDocumentTagRelation";
+export { DocumentType } from "./DocumentType";

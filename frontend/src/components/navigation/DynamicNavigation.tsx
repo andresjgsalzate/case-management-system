@@ -17,6 +17,7 @@ import {
   ShieldCheckIcon,
   ArchiveBoxIcon,
   BookOpenIcon,
+  TagIcon,
 } from "@heroicons/react/24/outline";
 import { useModulePermissions } from "../../hooks/usePermissions";
 
@@ -37,6 +38,7 @@ const ICON_MAP: Record<string, React.ComponentType<any>> = {
   ShieldCheckIcon,
   ArchiveBoxIcon,
   BookOpenIcon,
+  TagIcon,
 };
 
 interface DynamicNavigationProps {
@@ -52,17 +54,6 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
 }) => {
   const location = useLocation();
   const { allowedModules, allowedAdminSections } = useModulePermissions();
-
-  // Debug logging
-  console.log("🔍 DYNAMIC NAVIGATION - Debug Info:");
-  console.log(
-    "  - Allowed modules:",
-    allowedModules.map((m) => ({ name: m.name, href: m.href }))
-  );
-  console.log(
-    "  - Looking for archive module:",
-    allowedModules.find((m) => m.href === "/archive")
-  );
 
   const isActive = (path: string) => {
     if (path === "/" && location.pathname === "/") return true;

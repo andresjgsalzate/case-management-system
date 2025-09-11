@@ -14,7 +14,7 @@ import { Select } from "../../components/ui/Select";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
 import { DispositionForm } from "../../components/dispositions/DispositionForm";
-import { useToast } from "../../contexts/ToastContext";
+import { useToast } from "../../hooks/useNotification";
 import { useConfirmationModal } from "../../hooks/useConfirmationModal";
 import { DispositionTable } from "../../components/dispositions/DispositionTable";
 import { DispositionMonthlyCard } from "../../components/dispositions/DispositionMonthlyCard";

@@ -3,7 +3,7 @@ import {
   ShieldCheckIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
-import { toast } from "react-hot-toast";
+import { useToast } from "../../../contexts/ToastContext";
 import { roleService } from "../../../services/roleService";
 import { Modal } from "../../ui/Modal";
 import { Button } from "../../ui/Button";
@@ -22,6 +22,7 @@ export default function RolePermissionsModal({
   onSuccess,
   role,
 }: RolePermissionsModalProps) {
+  const { success, error: showError } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [rolePermissions, setRolePermissions] = useState<string[]>([]);
@@ -155,7 +156,7 @@ export default function RolePermissionsModal({
       setPermissions(mockPermissions);
     } catch (error) {
       console.error("Error al cargar permisos:", error);
-      toast.error("Error al cargar permisos disponibles");
+      showError("Error al cargar permisos disponibles");
     }
   };
 
@@ -167,7 +168,7 @@ export default function RolePermissionsModal({
       setRolePermissions(response.data.map((p: Permission) => p.id));
     } catch (error) {
       console.error("Error al cargar permisos del rol:", error);
-      toast.error("Error al cargar permisos del rol");
+      showError("Error al cargar permisos del rol");
     }
   };
 
@@ -189,12 +190,12 @@ export default function RolePermissionsModal({
       await roleService.assignPermissions(role.id, {
         permissionIds: rolePermissions,
       });
-      toast.success("Permisos actualizados exitosamente");
+      success("Permisos actualizados exitosamente");
       handleClose();
       onSuccess();
     } catch (error: any) {
       console.error("Error al actualizar permisos:", error);
-      toast.error(
+      showError(
         error.response?.data?.message || "Error al actualizar permisos"
       );
     } finally {

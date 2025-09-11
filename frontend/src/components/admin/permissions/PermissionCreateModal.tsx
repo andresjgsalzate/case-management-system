@@ -7,7 +7,7 @@ import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
 import { TextArea } from "../../ui/TextArea";
 import { Modal } from "../../ui/Modal";
-import { toast } from "react-hot-toast";
+import { useToast } from "../../../contexts/ToastContext";
 
 interface PermissionCreateModalProps {
   onClose: () => void;
@@ -22,6 +22,7 @@ export const PermissionCreateModal: React.FC<PermissionCreateModalProps> = ({
   modules,
   actions,
 }) => {
+  const { success, error: showError } = useToast();
   const [formData, setFormData] = useState<CreatePermissionRequest>({
     name: "",
     module: "",
@@ -72,12 +73,12 @@ export const PermissionCreateModal: React.FC<PermissionCreateModalProps> = ({
     try {
       setLoading(true);
       await permissionService.createPermission(formData);
-      toast.success("Permiso creado exitosamente");
+      success("Permiso creado exitosamente");
       onSuccess();
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Error al crear el permiso";
-      toast.error(errorMessage);
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }

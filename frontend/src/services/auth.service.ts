@@ -32,7 +32,10 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-const API_BASE_URL = "http://localhost:3000/api";
+// Importar configuración centralizada
+import { config } from "../config/config";
+
+const API_BASE_URL = config.api.baseUrl;
 
 class AuthService {
   async login(loginData: LoginRequest): Promise<AuthResponse> {

@@ -16,6 +16,7 @@ import {
   CogIcon,
   ChevronDownIcon,
   ArchiveBoxIcon,
+  TagIcon,
 } from "@heroicons/react/24/outline";
 
 interface NavigationItem {
@@ -76,6 +77,12 @@ const navigation: NavigationItem[] = [
       { name: "Asignación por Rol", href: "/permissions/role-assignment" },
       { name: "Guía de Permisos", href: "/permissions/guide" },
     ],
+  },
+  {
+    name: "Etiquetas",
+    href: "/admin/tags",
+    icon: TagIcon,
+    requiredPermission: "tags.manage",
   },
 ];
 

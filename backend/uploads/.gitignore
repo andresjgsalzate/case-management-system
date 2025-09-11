@@ -1,0 +1,6 @@
+# Archivos de uploads
+# Este directorio contiene los archivos subidos por los usuarios
+# No incluir en el control de versiones por seguridad y tamaño
+
+*
+!.gitignore

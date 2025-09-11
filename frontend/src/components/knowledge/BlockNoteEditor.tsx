@@ -1,6 +1,8 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useCallback, useMemo } from "react";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
+import { insertOrUpdateBlock } from "@blocknote/core";
+import { useTheme } from "../../providers/ThemeProvider";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 
@@ -11,6 +13,7 @@ interface BlockNoteEditorProps {
   placeholder?: string;
   editable?: boolean;
   className?: string;
+  documentId?: string; // Para habilitar la carga de archivos
 }
 
 const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
@@ -20,10 +23,238 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
   placeholder = "Comienza a escribir...",
   editable = true,
   className = "",
+  documentId,
 }) => {
-  // Create the BlockNote editor
+  const { isDark } = useTheme();
+
+  // Validate and prepare content
+  const validContent = React.useMemo(() => {
+    if (!content) return undefined;
+
+    // If it's already a valid array of blocks, use it
+    if (Array.isArray(content) && content.length > 0) {
+      // Filter out invalid blocks like 'doc' type
+      const validBlocks = content.filter(
+        (block: any) =>
+          block.type &&
+          block.type !== "doc" &&
+          [
+            "paragraph",
+            "heading",
+            "bulletListItem",
+            "numberedListItem",
+            "codeBlock",
+            "table",
+            "file",
+            "image",
+            "video",
+            "audio",
+          ].includes(block.type)
+      );
+      return validBlocks.length > 0 ? validBlocks : undefined;
+    }
+
+    // If it's a single object that might be a block, validate it
+    if (typeof content === "object" && content.type) {
+      // Skip 'doc' type blocks that are not valid BlockNote blocks
+      if (content.type === "doc") {
+        // If it has content array, extract the blocks
+        if (content.content && Array.isArray(content.content)) {
+          const validBlocks = content.content.filter(
+            (block: any) =>
+              block.type &&
+              block.type !== "doc" &&
+              [
+                "paragraph",
+                "heading",
+                "bulletListItem",
+                "numberedListItem",
+                "codeBlock",
+                "table",
+                "file",
+                "image",
+                "video",
+                "audio",
+              ].includes(block.type)
+          );
+          return validBlocks.length > 0 ? validBlocks : undefined;
+        }
+        return undefined;
+      }
+      return [content];
+    }
+
+    // If it's a string, create a simple paragraph block
+    if (typeof content === "string" && content.trim()) {
+      return [
+        {
+          id: "initial",
+          type: "paragraph",
+          content: [{ type: "text", text: content }],
+        },
+      ];
+    }
+
+    return undefined;
+  }, [content]);
+
+  // Create file upload handler for BlockNote - Basado en el sistema antiguo exitoso
+  const handleFileUpload = useCallback(
+    async (file: File): Promise<string> => {
+      console.log("🔧 [BlockNote] Upload iniciado:", {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        documentId,
+      });
+
+      // Validar que tengamos un documentId válido
+      if (!documentId || documentId.trim() === "") {
+        console.warn("⚠️ [BlockNote] Sin documentId - creando URL temporal");
+        // Crear URL temporal como fallback (igual que en el sistema antiguo)
+        const tempUrl = URL.createObjectURL(file);
+        return tempUrl;
+      }
+
+      try {
+        // Crear FormData para el upload
+        const formData = new FormData();
+        formData.append("files", file);
+
+        console.log("📡 [BlockNote] Enviando archivo al servidor...");
+
+        // Realizar upload usando fetch directamente al API del backend
+        const response = await fetch(
+          `/api/files/knowledge/upload/${documentId}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: formData,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `Upload falló: ${response.status} ${response.statusText}`
+          );
+        }
+
+        const result = await response.json();
+        console.log("📄 [BlockNote] Respuesta del servidor:", result);
+
+        if (result.uploaded && result.uploaded.length > 0) {
+          const uploadedFile = result.uploaded[0];
+
+          // Extraer el nombre del archivo físico de la URL de descarga
+          // La URL viene como: /api/files/knowledge/download/hashprefijo_nombreOriginal.ext
+          const downloadUrlParts = uploadedFile.downloadUrl.split("/");
+          const physicalFileName =
+            downloadUrlParts[downloadUrlParts.length - 1];
+
+          // Obtener token para la URL de visualización
+          const token = localStorage.getItem("token");
+
+          // Usar el endpoint de visualización con token como query parameter para autenticación
+          const fileUrl = `${
+            window.location.origin
+          }/api/files/knowledge/view/${physicalFileName}?token=${encodeURIComponent(
+            token || ""
+          )}`;
+
+          console.log("✅ [BlockNote] Upload exitoso, URL:", fileUrl);
+
+          // Retornar solo la URL como string (patrón del sistema antiguo)
+          return fileUrl;
+        } else {
+          console.error(
+            "❌ [BlockNote] No se encontraron archivos en la respuesta"
+          );
+          throw new Error("No se pudo obtener URL del archivo subido");
+        }
+      } catch (error) {
+        console.error("❌ [BlockNote] Error en upload:", error);
+
+        // Fallback a URL temporal en caso de error (igual que en el sistema antiguo)
+        console.warn("⚠️ [BlockNote] Usando URL temporal como fallback");
+        const tempUrl = URL.createObjectURL(file);
+        return tempUrl;
+      }
+    },
+    [documentId]
+  );
+
+  // Función para procesar contenido y añadir tokens a las URLs de imágenes
+  const processContentWithTokens = useCallback((content: any[]) => {
+    if (!content || !Array.isArray(content)) {
+      return content;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      return content;
+    }
+
+    return content.map((block) => {
+      if (block.type === "image" && block.props?.url) {
+        // Si la URL es de nuestro sistema y no tiene token, añadirlo
+        if (
+          block.props.url.includes("/api/files/knowledge/view/") &&
+          !block.props.url.includes("token=")
+        ) {
+          const separator = block.props.url.includes("?") ? "&" : "?";
+          const newUrl = `${
+            block.props.url
+          }${separator}token=${encodeURIComponent(token)}`;
+
+          return {
+            ...block,
+            props: {
+              ...block.props,
+              url: newUrl,
+            },
+          };
+        }
+      }
+      return block;
+    });
+  }, []);
+
+  // Procesar el contenido para añadir tokens a las imágenes existentes
+  const processedContent = useMemo(() => {
+    return processContentWithTokens(validContent);
+  }, [validContent, processContentWithTokens]);
+
+  // Create the BlockNote editor with upload support - Configuración basada en el sistema antiguo
   const editor = useCreateBlockNote({
-    initialContent: content,
+    initialContent: processedContent, // Usar contenido procesado con tokens
+    uploadFile: documentId ? handleFileUpload : undefined, // Solo habilitar si hay documentId
+    // Configuración de code blocks (del sistema antiguo)
+    ...(editable && {
+      codeBlock: {
+        indentLineWithTab: true,
+        defaultLanguage: "typescript",
+        supportedLanguages: {
+          typescript: { name: "TypeScript", aliases: ["ts"] },
+          javascript: { name: "JavaScript", aliases: ["js"] },
+          python: { name: "Python", aliases: ["py"] },
+          java: { name: "Java" },
+          sql: { name: "SQL" },
+          html: { name: "HTML" },
+          css: { name: "CSS" },
+          json: { name: "JSON" },
+          markdown: { name: "Markdown", aliases: ["md"] },
+        },
+      },
+      // Configuración de tablas (solo en modo editable)
+      tables: {
+        cellBackgroundColor: true,
+        cellTextColor: true,
+        headers: true,
+        splitCells: true,
+      },
+    }),
   });
 
   // Handle content changes
@@ -51,31 +282,34 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
     onContentChange?.(textContent);
   }, [editor, onChange, onContentChange]);
 
-  // Reactive theme detection
-  const [isDark, setIsDark] = useState(() =>
-    document.documentElement.classList.contains("dark")
-  );
-
+  // Update editor content when content prop changes
   useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    });
+    if (editor && processedContent) {
+      // Only update if the content is different from current editor content
+      const currentContent = editor.document;
+      const contentChanged =
+        JSON.stringify(currentContent) !== JSON.stringify(processedContent);
 
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
+      if (contentChanged) {
+        editor.replaceBlocks(editor.document, processedContent);
+      }
+    }
+  }, [editor, processedContent]);
 
   return (
-    <div className={`blocknote-editor ${className}`}>
+    <div
+      className={`blocknote-editor ${className}`}
+      data-theme={isDark ? "dark" : "light"}
+    >
       <BlockNoteView
         editor={editor}
         editable={editable}
         onChange={handleChange}
         theme={isDark ? "dark" : "light"}
+        slashMenu={true} // Habilitar el slash menu explícitamente
+        formattingToolbar={true}
+        linkToolbar={true}
+        sideMenu={true}
       />
 
       <style
@@ -103,15 +337,22 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
           }
           
           /* Custom styling for dark mode */
-          .dark .blocknote-editor .ProseMirror {
+          .dark .blocknote-editor .ProseMirror,
+          .blocknote-editor[data-theme="dark"] .ProseMirror {
             background-color: #374151;
             border-color: #4b5563;
             color: #f9fafb;
           }
           
-          .dark .blocknote-editor .ProseMirror:focus {
+          .dark .blocknote-editor .ProseMirror:focus,
+          .blocknote-editor[data-theme="dark"] .ProseMirror:focus {
             border-color: #3b82f6;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+          }
+          
+          .dark .blocknote-editor .ProseMirror p.is-empty::before,
+          .blocknote-editor[data-theme="dark"] .ProseMirror p.is-empty::before {
+            color: #6b7280;
           }
           
           /* Toolbar styling */
@@ -122,7 +363,8 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
             box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
           }
           
-          .dark .blocknote-editor .bn-toolbar {
+          .dark .blocknote-editor .bn-toolbar,
+          .blocknote-editor[data-theme="dark"] .bn-toolbar {
             background-color: #374151;
             border-color: #4b5563;
           }
@@ -150,7 +392,8 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
             background-color: #f3f4f6;
           }
           
-          .dark .blocknote-editor .bn-button:hover {
+          .dark .blocknote-editor .bn-button:hover,
+          .blocknote-editor[data-theme="dark"] .bn-button:hover {
             background-color: #4b5563;
           }
         `,

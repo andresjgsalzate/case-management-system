@@ -177,8 +177,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
           relative border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer
           ${
             isDragging
-              ? "border-blue-500 bg-blue-50"
-              : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+              ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+              : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/50"
           }
         `}
         onDragOver={handleDragOver}
@@ -197,7 +197,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
         <div className="text-center">
           <svg
-            className="mx-auto h-12 w-12 text-gray-400"
+            className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500"
             stroke="currentColor"
             fill="none"
             viewBox="0 0 48 48"
@@ -210,22 +210,22 @@ const FileUpload: React.FC<FileUploadProps> = ({
             />
           </svg>
           <div className="mt-4">
-            <p className="text-lg font-medium text-gray-900">
+            <p className="text-lg font-medium text-gray-900 dark:text-gray-100">
               {isDragging
                 ? "Suelta los archivos aquí"
                 : "Arrastra archivos aquí"}
             </p>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
               o{" "}
-              <span className="text-blue-600 underline">
+              <span className="text-blue-600 dark:text-blue-400 underline">
                 haz clic para seleccionar archivos
               </span>
             </p>
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Máximo {maxFiles} archivos • {formatFileSize(maxFileSize)} por
               archivo
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Formatos: imágenes, documentos, hojas de cálculo, presentaciones,
               videos, audio, archivos comprimidos
             </p>
@@ -237,12 +237,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
       {selectedFiles.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium text-gray-900">
+            <h4 className="font-medium text-gray-900 dark:text-gray-100">
               Archivos seleccionados ({selectedFiles.length})
             </h4>
             <button
               onClick={clearSelection}
-              className="text-sm text-gray-500 hover:text-gray-700"
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             >
               Limpiar selección
             </button>
@@ -252,15 +252,15 @@ const FileUpload: React.FC<FileUploadProps> = ({
             {selectedFiles.map((file, index) => (
               <div
                 key={`${file.name}-${index}`}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
               >
                 <div className="flex items-center space-x-3">
                   <div className="text-2xl">📁</div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900 truncate max-w-xs">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-xs">
                       {file.name}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {formatFileSize(file.size)}
                     </p>
                   </div>
@@ -268,7 +268,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
                 <button
                   onClick={() => removeSelectedFile(index)}
-                  className="p-1 text-red-600 hover:text-red-800 rounded-full hover:bg-red-50"
+                  className="p-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30"
                   title="Remover archivo"
                 >
                   <svg
@@ -294,14 +294,14 @@ const FileUpload: React.FC<FileUploadProps> = ({
             <button
               onClick={clearSelection}
               disabled={uploadFiles.isPending}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               onClick={handleUpload}
               disabled={uploadFiles.isPending}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-700 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
               {uploadFiles.isPending ? (
                 <>

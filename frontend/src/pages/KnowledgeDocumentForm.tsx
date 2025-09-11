@@ -690,8 +690,8 @@ const KnowledgeDocumentForm: React.FC = () => {
                     {showAttachments && (
                       <div className="space-y-6">
                         {/* Componente para subir archivos */}
-                        <div className="bg-gray-50 rounded-lg p-6">
-                          <h4 className="text-md font-medium text-gray-800 mb-4">
+                        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+                          <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-4">
                             Subir nuevos archivos
                           </h4>
                           <FileUpload
@@ -707,12 +707,12 @@ const KnowledgeDocumentForm: React.FC = () => {
 
                         {/* Lista de archivos adjuntos existentes */}
                         <div>
-                          <h4 className="text-md font-medium text-gray-800 mb-4">
+                          <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-4">
                             Archivos existentes
                           </h4>
                           <AttachmentsList
                             documentId={id}
-                            className="bg-white rounded-lg border p-4"
+                            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4"
                           />
                         </div>
                       </div>

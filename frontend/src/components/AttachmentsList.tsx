@@ -53,10 +53,13 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
   if (isLoading) {
     return (
       <div className={`${className} animate-pulse`}>
-        <div className="h-6 bg-gray-200 rounded w-32 mb-4"></div>
+        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-4"></div>
         <div className="space-y-2">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-12 bg-gray-100 rounded"></div>
+            <div
+              key={i}
+              className="h-12 bg-gray-100 dark:bg-gray-700 rounded"
+            ></div>
           ))}
         </div>
       </div>
@@ -65,7 +68,7 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
 
   if (error) {
     return (
-      <div className={`${className} text-red-600`}>
+      <div className={`${className} text-red-600 dark:text-red-400`}>
         <p>
           Error cargando archivos adjuntos:{" "}
           {error instanceof Error ? error.message : "Error desconocido"}
@@ -76,7 +79,7 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
 
   if (!attachments || attachments.length === 0) {
     return (
-      <div className={`${className} text-gray-500`}>
+      <div className={`${className} text-gray-500 dark:text-gray-400`}>
         <p>No hay archivos adjuntos</p>
       </div>
     );
@@ -85,7 +88,7 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
   return (
     <>
       <div className={className}>
-        <h3 className="text-lg font-semibold mb-4 text-gray-800">
+        <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">
           Archivos adjuntos ({attachments.length})
         </h3>
 
@@ -93,17 +96,17 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
           {attachments.map((attachment) => (
             <div
               key={attachment.id}
-              className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               <div className="flex items-center space-x-3 flex-1 min-w-0">
                 <div className="text-2xl">
                   {getFileIcon(attachment.fileType)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                     {attachment.fileName}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {formatFileSize(attachment.fileSize)} •{" "}
                     {new Date(attachment.createdAt).toLocaleDateString()}
                   </p>
@@ -114,7 +117,7 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
                 {/* Botón de vista previa/descarga */}
                 <button
                   onClick={() => handlePreviewFile(attachment)}
-                  className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-full transition-colors"
+                  className="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
                   title={
                     isImageFile(attachment.mimeType)
                       ? "Vista previa"
@@ -162,7 +165,7 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
                 <a
                   href={getDownloadUrl(attachment.downloadUrl)}
                   download={attachment.fileName}
-                  className="p-2 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-full transition-colors"
+                  className="p-2 text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-full transition-colors"
                   title="Descargar"
                 >
                   <svg
@@ -184,7 +187,7 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
                 <button
                   onClick={() => handleDeleteFile(attachment.id)}
                   disabled={deletingFile === attachment.id}
-                  className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Eliminar archivo"
                 >
                   {deletingFile === attachment.id ? (

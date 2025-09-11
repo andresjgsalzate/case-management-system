@@ -223,7 +223,7 @@ export class FileUploadService {
   private getAttachmentRepository() {
     if (!this.attachmentRepository) {
       this.attachmentRepository = dataSource.getRepository(
-        KnowledgeDocumentAttachment
+        "KnowledgeDocumentAttachment"
       );
     }
     return this.attachmentRepository;
@@ -489,7 +489,10 @@ export class FileUploadService {
     knowledgeDocumentId: string
   ): Promise<KnowledgeDocumentAttachment[]> {
     try {
-      console.log("🔍 Buscando archivos para documentId:", knowledgeDocumentId);
+      console.log(
+        "� [ATTACHMENTS SERVICE] Searching attachments for documentId:",
+        knowledgeDocumentId
+      );
 
       const attachments = await this.getAttachmentRepository().find({
         where: { documentId: knowledgeDocumentId },
@@ -497,58 +500,128 @@ export class FileUploadService {
         order: { createdAt: "DESC" },
       });
 
-      console.log(`📁 Encontrados ${attachments.length} archivos adjuntos`);
-      attachments.forEach((att: KnowledgeDocumentAttachment) => {
-        console.log(`  - ${att.fileName} (${att.fileSize} bytes)`);
-      });
+      console.log(
+        `� [ATTACHMENTS SERVICE] Found ${attachments.length} attachments for document ${knowledgeDocumentId}`
+      );
+
+      if (attachments.length > 0) {
+        attachments.forEach((att: KnowledgeDocumentAttachment) => {
+          console.log(`📄 [ATTACHMENTS SERVICE] Attachment: ${att.fileName}`, {
+            id: att.id,
+            fileName: att.fileName,
+            filePath: att.filePath,
+            fileSize: att.fileSize,
+            mimeType: att.mimeType,
+            fileExists: require("fs").existsSync(att.filePath),
+          });
+        });
+      } else {
+        console.log(
+          "📭 [ATTACHMENTS SERVICE] No attachments found for document"
+        );
+      }
 
       return attachments;
     } catch (error) {
-      console.error("❌ Error obteniendo archivos adjuntos:", error);
+      console.error(
+        "💥 [ATTACHMENTS SERVICE] Error obteniendo archivos adjuntos:",
+        {
+          documentId: knowledgeDocumentId,
+          error: error instanceof Error ? error.message : "Unknown error",
+          stack: error instanceof Error ? error.stack : undefined,
+        }
+      );
       // Si la entidad no se encuentra, devolver array vacío en lugar de error
       return [];
     }
   }
 
   /**
-   * Obtiene un archivo específico para descarga usando SQL directo
+   * Obtiene un archivo específico para descarga usando el repositorio
    */
   async getFileForDownload(
     fileName: string
   ): Promise<{ filePath: string; originalName: string; mimeType: string }> {
-    console.log("🔍 DEBUG - Buscando archivo que termine con:", fileName);
+    console.log("� [FILE SERVICE] Searching for file ending with:", fileName);
 
-    // Usar consulta SQL directa en lugar del repositorio
-    const result = await dataSource.manager.query(
-      `SELECT id, file_name, file_path, mime_type 
-       FROM knowledge_document_attachments 
-       WHERE file_path LIKE $1`,
-      [`%${fileName}`]
-    );
-
-    console.log(
-      "🔍 DEBUG - Resultado de búsqueda SQL:",
-      result.length > 0 ? "ENCONTRADO" : "NO ENCONTRADO"
-    );
-
-    if (result.length === 0) {
-      throw new Error("Archivo no encontrado");
-    }
-
-    const attachment = result[0];
-
-    // Verificar que el archivo existe físicamente
     try {
-      await fs.access(attachment.file_path);
-    } catch (error) {
-      throw new Error("Archivo no disponible");
-    }
+      // Verificar y asegurar conexión antes de la consulta
+      if (!dataSource.isInitialized) {
+        console.log(
+          "⚠️ [FILE SERVICE] DataSource not initialized, initializing..."
+        );
+        await dataSource.initialize();
+      }
 
-    return {
-      filePath: attachment.file_path,
-      originalName: attachment.file_name,
-      mimeType: attachment.mime_type,
-    };
+      // Usar EntityManager que maneja conexiones automáticamente
+      const query = `
+        SELECT id, file_name as "fileName", file_path as "filePath", mime_type as "mimeType"
+        FROM knowledge_document_attachments 
+        WHERE file_path LIKE $1
+      `;
+
+      const attachments = await dataSource.manager.query(query, [
+        `%${fileName}`,
+      ]);
+
+      console.log("📊 [FILE SERVICE] EntityManager query results:", {
+        fileName,
+        resultsFound: attachments.length,
+        results:
+          attachments.length > 0
+            ? attachments.map((att: any) => ({
+                id: att.id,
+                fileName: att.fileName,
+                filePath: att.filePath,
+                mimeType: att.mimeType,
+              }))
+            : [],
+      });
+
+      if (attachments.length === 0) {
+        console.error(
+          "❌ [FILE SERVICE] No database record found for file:",
+          fileName
+        );
+        throw new Error("Archivo no encontrado");
+      }
+
+      const attachment = attachments[0];
+      console.log("📄 [FILE SERVICE] Found attachment record:", {
+        id: attachment.id,
+        fileName: attachment.fileName,
+        filePath: attachment.filePath,
+        mimeType: attachment.mimeType,
+      });
+
+      // Verificar que el archivo existe físicamente
+      try {
+        await fs.access(attachment.filePath);
+        console.log(
+          "✅ [FILE SERVICE] File exists on filesystem:",
+          attachment.filePath
+        );
+      } catch (error) {
+        console.error("❌ [FILE SERVICE] File not found on filesystem:", {
+          filePath: attachment.filePath,
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+        throw new Error("Archivo no disponible");
+      }
+
+      return {
+        filePath: attachment.filePath,
+        originalName: attachment.fileName,
+        mimeType: attachment.mimeType,
+      };
+    } catch (error) {
+      console.error("💥 [FILE SERVICE] Error in getFileForDownload:", {
+        fileName,
+        error: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
+    }
   }
 
   /**

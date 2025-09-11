@@ -61,19 +61,43 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     try {
       const { fileName } = req.params;
-      console.log("🔍 DEBUG - Buscando archivo:", fileName);
+      const { token } = req.query;
+
+      console.log("� [FILE VIEW] Attempting to view file:", {
+        fileName,
+        hasToken: !!token,
+        userAgent: req.get("User-Agent"),
+        ip: req.ip,
+        userId: req.user?.id,
+      });
 
       if (!fileName) {
+        console.error("❌ [FILE VIEW] No filename provided");
         return res.status(400).json({ error: "Nombre del archivo requerido" });
       }
 
+      console.log(
+        "🔍 [FILE VIEW] Calling fileUploadService.getFileForDownload..."
+      );
       const fileInfo = await fileUploadService.getFileForDownload(fileName);
-      console.log("✅ DEBUG - Archivo encontrado:", fileInfo.filePath);
+
+      console.log("📁 [FILE VIEW] File info retrieved:", {
+        filePath: fileInfo.filePath,
+        mimeType: fileInfo.mimeType,
+        originalName: fileInfo.originalName,
+        exists: fs.existsSync(fileInfo.filePath),
+      });
 
       // Verificar que el archivo existe
       if (!fs.existsSync(fileInfo.filePath)) {
+        console.error(
+          "❌ [FILE VIEW] File not found on filesystem:",
+          fileInfo.filePath
+        );
         return res.status(404).json({ error: "Archivo no encontrado" });
       }
+
+      console.log("✅ [FILE VIEW] Sending file to client");
 
       // Configurar headers para visualización
       res.setHeader("Content-Type", fileInfo.mimeType);
@@ -85,7 +109,12 @@ router.get(
       // Enviar el archivo para visualización
       res.sendFile(path.resolve(fileInfo.filePath));
     } catch (error) {
-      console.error("Error visualizando archivo:", error);
+      console.error("💥 [FILE VIEW] Error visualizando archivo:", {
+        error: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+        fileName: req.params.fileName,
+      });
+
       if (error instanceof Error && error.message === "Archivo no encontrado") {
         return res.status(404).json({ error: "Archivo no encontrado" });
       }
@@ -171,13 +200,35 @@ router.get(
     try {
       const { documentId } = req.params;
 
+      console.log(
+        `📎 [ATTACHMENTS] Getting attachments for document: ${documentId}`
+      );
+
       if (!documentId) {
+        console.error("❌ [ATTACHMENTS] No document ID provided");
         return res.status(400).json({ error: "ID del documento requerido" });
       }
 
       const attachments = await fileUploadService.getDocumentAttachments(
         documentId
       );
+
+      console.log(
+        `📊 [ATTACHMENTS] Found ${attachments.length} attachments for document ${documentId}`
+      );
+
+      if (attachments.length > 0) {
+        console.log(
+          `📎 [ATTACHMENTS] Attachments details:`,
+          attachments.map((att) => ({
+            id: att.id,
+            fileName: att.fileName,
+            filePath: att.filePath,
+            mimeType: att.mimeType,
+            fileSize: att.fileSize,
+          }))
+        );
+      }
 
       res.status(200).json({
         attachments: attachments.map((attachment) => ({
@@ -194,7 +245,11 @@ router.get(
         })),
       });
     } catch (error) {
-      console.error("Error obteniendo archivos adjuntos:", error);
+      console.error("💥 [ATTACHMENTS] Error obteniendo archivos adjuntos:", {
+        documentId: req.params.documentId,
+        error: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       res.status(500).json({
         error: "Error interno del servidor",
         message: error instanceof Error ? error.message : "Error desconocido",

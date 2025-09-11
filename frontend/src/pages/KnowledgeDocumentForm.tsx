@@ -97,8 +97,7 @@ const KnowledgeDocumentForm: React.FC = () => {
   } = useAllTags(); // Cambiado de usePopularTags(15) a useAllTags()
 
   // Sistema de predicción de tags
-  const { data: predictiveTags, isLoading: searchLoading } =
-    useSearchTags(tagInput);
+  const { data: predictiveTags } = useSearchTags(tagInput);
 
   // Effect para cerrar dropdown al hacer clic fuera
   React.useEffect(() => {
@@ -117,30 +116,15 @@ const KnowledgeDocumentForm: React.FC = () => {
     }
   }, []);
 
-  // Debug logs
+  // Only log important errors
   React.useEffect(() => {
-    console.log("🏷️ Popular tags data:", popularTags);
-    console.log("🏷️ Tags loading:", tagsLoading);
-    console.log("🏷️ Tags error:", tagsError);
     if (tagsError) {
       console.error("🚨 Tags error details:", {
         message: tagsError.message,
         error: tagsError,
       });
     }
-    console.log("🏷️ Show suggested tags:", showSuggestedTags);
-    console.log("🔍 Tag input:", tagInput);
-    console.log("🔍 Predictive tags:", predictiveTags);
-    console.log("🔍 Search loading:", searchLoading);
-  }, [
-    popularTags,
-    tagsLoading,
-    tagsError,
-    showSuggestedTags,
-    tagInput,
-    predictiveTags,
-    searchLoading,
-  ]);
+  }, [tagsError]);
 
   // Auto-show popular tags when they load (but respect user's choice to hide them)
   React.useEffect(() => {
@@ -155,12 +139,33 @@ const KnowledgeDocumentForm: React.FC = () => {
     }
   }, [popularTags, tags.length, showSuggestedTags, userHidTags]);
 
-  // Load document data if editing
+  // Load document data if editing - WITH ENHANCED DEBUGGING FOR ATTACHMENTS
   useEffect(() => {
-    if (document) {
-      console.log("📄 Loading document for editing:", document);
-      console.log("📄 Document jsonContent:", document.jsonContent);
-      console.log("📄 Document content:", document.content);
+    if (document && isEditing) {
+      console.log("📄 [EDIT MODE] Loading document:", {
+        id: document.id,
+        title: document.title,
+        hasJsonContent: !!document.jsonContent,
+        jsonContentLength: document.jsonContent?.length || 0,
+        hasAttachments: (document.attachments?.length || 0) > 0,
+        attachmentsCount: document.attachments?.length || 0,
+      });
+
+      // Log detailed attachment info for debugging the 500 error
+      if (document.attachments && document.attachments.length > 0) {
+        console.log(
+          "� [EDIT MODE] Document attachments:",
+          document.attachments.map((att) => ({
+            id: att.id,
+            fileName: att.fileName,
+            mimeType: att.mimeType,
+            fileSize: att.fileSize,
+            uploadedBy: att.uploadedBy,
+          }))
+        );
+      } else {
+        console.log("📎 [EDIT MODE] No attachments found");
+      }
 
       setTitle(document.title);
       setJsonContent(document.jsonContent);
@@ -174,10 +179,10 @@ const KnowledgeDocumentForm: React.FC = () => {
         document.tags?.map((tag) =>
           typeof tag === "string" ? tag : tag.tagName
         ) || [];
-      console.log("🏷️ Document tags being set:", documentTags);
+      console.log("🏷️ [EDIT MODE] Document tags being set:", documentTags);
       setTags(documentTags);
     }
-  }, [document]);
+  }, [document, isEditing]);
 
   const handleContentChange = (content: any) => {
     setJsonContent(content);
@@ -540,16 +545,6 @@ const KnowledgeDocumentForm: React.FC = () => {
                           )
                           .slice(0, 12);
 
-                        console.log("🔍 Current document tags:", tags);
-                        console.log(
-                          "🔍 All popular tags:",
-                          popularTags?.map((t: any) => t.tagName)
-                        );
-                        console.log(
-                          "🔍 Filtered tags to show:",
-                          filteredTags?.map((t: any) => t.tagName)
-                        );
-
                         return filteredTags?.map(
                           (tag: KnowledgeDocumentTag) => (
                             <button
@@ -697,8 +692,7 @@ const KnowledgeDocumentForm: React.FC = () => {
                           <FileUpload
                             documentId={id}
                             onUploadComplete={() => {
-                              // Podrías agregar alguna lógica adicional aquí si es necesario
-                              console.log("✅ Archivo subido completado");
+                              // Refresh attachments list after upload
                             }}
                             maxFiles={10}
                             maxFileSize={50 * 1024 * 1024} // 50MB

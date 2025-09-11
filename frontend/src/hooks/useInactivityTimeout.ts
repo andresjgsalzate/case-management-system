@@ -76,9 +76,7 @@ export const useInactivityTimeout = ({
       logout();
     }, timeoutTime);
 
-    console.log(
-      `⏰ Timer de inactividad reiniciado: ${timeoutDuration} minutos`
-    );
+    // Timer reiniciado silenciosamente
   }, [
     timeoutDuration,
     warningDuration,

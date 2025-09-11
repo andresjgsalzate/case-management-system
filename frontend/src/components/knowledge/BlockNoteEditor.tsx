@@ -291,10 +291,36 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
         JSON.stringify(currentContent) !== JSON.stringify(processedContent);
 
       if (contentChanged) {
+        console.log("📝 [EDIT MODE] BlockNote editor updating content:", {
+          blocksCount: processedContent.length,
+          hasImages: processedContent.some(
+            (block: any) => block.type === "image"
+          ),
+          hasFiles: processedContent.some(
+            (block: any) => block.type === "file"
+          ),
+          documentId,
+        });
+
+        // Log image and file blocks specifically for debugging attachment issues
+        const mediaBlocks = processedContent.filter(
+          (block: any) => block.type === "image" || block.type === "file"
+        );
+        if (mediaBlocks.length > 0) {
+          console.log(
+            "🖼️ [EDIT MODE] Media blocks in content:",
+            mediaBlocks.map((block: any) => ({
+              type: block.type,
+              props: block.props,
+              url: block.props?.url || block.props?.src,
+            }))
+          );
+        }
+
         editor.replaceBlocks(editor.document, processedContent);
       }
     }
-  }, [editor, processedContent]);
+  }, [editor, processedContent, documentId]);
 
   return (
     <div

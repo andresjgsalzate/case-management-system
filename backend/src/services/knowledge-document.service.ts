@@ -98,7 +98,7 @@ export class KnowledgeDocumentService {
 
   async findOne(id: string): Promise<KnowledgeDocument | null> {
     try {
-      console.log(`[DEBUG] Looking for document with ID: ${id}`);
+      console.log(`📄 [EDIT MODE] Looking for document with ID: ${id}`);
       const document = await this.knowledgeDocumentRepository
         .createQueryBuilder("doc")
         .leftJoinAndSelect("doc.documentType", "documentType")
@@ -111,21 +111,39 @@ export class KnowledgeDocumentService {
         .getOne();
 
       if (document) {
-        console.log(`[DEBUG] Document found: ${document.title}`);
+        console.log(
+          `📄 [EDIT MODE] Document found: ${document.title}, attachments: ${
+            document.attachments?.length || 0
+          }`
+        );
         // Cargar etiquetas usando el método del nuevo sistema
         const documentWithTags = await this.loadDocumentTags(document);
         console.log(
-          `[DEBUG] Document tags loaded count: ${
+          `🏷️ [EDIT MODE] Document tags loaded count: ${
             documentWithTags.tags ? documentWithTags.tags.length : 0
           }`
         );
-        console.log(
-          `[DEBUG] Tags details:`,
-          JSON.stringify(documentWithTags.tags, null, 2)
-        );
+
+        // Log attachment details for debugging
+        if (
+          documentWithTags.attachments &&
+          documentWithTags.attachments.length > 0
+        ) {
+          console.log(
+            `📎 [EDIT MODE] Document attachments:`,
+            documentWithTags.attachments.map((att) => ({
+              id: att.id,
+              fileName: att.fileName,
+              filePath: att.filePath,
+              mimeType: att.mimeType,
+              fileSize: att.fileSize,
+            }))
+          );
+        }
+
         return documentWithTags;
       } else {
-        console.log(`[DEBUG] Document with ID ${id} not found`);
+        console.log(`❌ [EDIT MODE] Document with ID ${id} not found`);
       }
 
       return document;

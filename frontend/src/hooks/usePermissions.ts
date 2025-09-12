@@ -145,6 +145,18 @@ export const ADMIN_SECTIONS: Array<{
         adminOnly: false, // No restringido solo a administradores
       },
       {
+        name: "Tipos de Documento",
+        href: "/admin/document-types",
+        icon: "DocumentTextIcon",
+        permissions: [
+          "document_types.manage",
+          "document_types.read",
+          "document_types.create",
+          "document_types.update",
+        ],
+        adminOnly: false, // No restringido solo a administradores
+      },
+      {
         name: "Estado del Sistema",
         href: "/system/status",
         icon: "CogIcon",

@@ -29,6 +29,7 @@ import OriginsPage from "./pages/admin/OriginsPage";
 import ApplicationsPage from "./pages/admin/ApplicationsPage";
 import CaseStatusesPage from "./pages/admin/CaseStatusesPage";
 import TagsPage from "./pages/tags/TagsPage";
+import DocumentTypesPage from "./pages/document-types/DocumentTypesPage";
 // Knowledge Base imports
 import KnowledgeBase from "./pages/KnowledgeBase";
 import KnowledgeDocumentForm from "./pages/KnowledgeDocumentForm";
@@ -352,6 +353,17 @@ function App() {
                 <ProtectedRoute requiredPermission="tags.manage">
                   <Layout>
                     <TagsPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/document-types"
+              element={
+                <ProtectedRoute requiredPermission="document_types.manage">
+                  <Layout>
+                    <DocumentTypesPage />
                   </Layout>
                 </ProtectedRoute>
               }

@@ -88,6 +88,12 @@ app.use("/api", knowledgeRoutes); // Rutas de base de conocimiento
 app.use("/api/metrics", metricsRoutes);
 app.use("/api", commonRoutes);
 
+// Rutas administrativas
+app.use("/api/case-statuses", caseStatusRoutes);
+app.use("/api/applications", applicationRoutes);
+app.use("/api/origins", originRoutes);
+app.use("/api", permissionsRoutes);
+
 // Error handling middleware (debe ir al final)
 app.use(errorHandler);
 

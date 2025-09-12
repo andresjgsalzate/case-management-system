@@ -108,21 +108,29 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [isCollapsed, userManuallyToggled]);
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
       {/* Sidebar */}
       <div
         ref={menuRef}
         className={`${
           isCollapsed ? "w-16" : "w-64"
-        } flex-shrink-0 transition-all duration-300 ease-in-out`}
+        } flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden`}
       >
-        <div className="flex flex-col h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-hidden">
           {/* Header con logo como botón de colapso */}
-          <div className="flex-shrink-0 flex items-center px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div
+            className={`flex-shrink-0 flex items-center ${
+              isCollapsed ? "px-1 justify-center" : "px-4"
+            } py-4 border-b border-gray-200 dark:border-gray-700 overflow-hidden`}
+          >
             <Button
               onClick={toggleCollapse}
               variant="ghost"
-              className="flex items-center w-full -mx-2 px-2 py-1"
+              className={`flex items-center ${
+                isCollapsed
+                  ? "p-1 w-12 h-12 justify-center rounded-lg focus:ring-0 focus:ring-offset-0"
+                  : "w-full px-2 py-1 rounded-lg focus:ring-0 focus:ring-offset-0"
+              } transition-colors duration-200`}
               title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
             >
               <ChartBarIcon className="h-8 w-8 text-blue-600 dark:text-blue-400 flex-shrink-0" />
@@ -135,7 +143,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           {/* Navigation */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
             <DynamicNavigation
               isCollapsed={isCollapsed}
               openDropdowns={openDropdowns}
@@ -144,14 +152,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           {/* User Section */}
-          <div className="border-t border-gray-200 dark:border-gray-700">
-            <div className="relative p-4">
+          <div className="border-t border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div
+              className={`relative ${
+                isCollapsed ? "p-2" : "p-4"
+              } overflow-hidden`}
+            >
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className={`w-full ${
-                  isCollapsed ? "justify-center" : "justify-between"
+                  isCollapsed
+                    ? "justify-center p-1 w-12 h-12 focus:ring-0 focus:ring-offset-0 mx-auto"
+                    : "justify-between focus:ring-0 focus:ring-offset-0"
                 }`}
                 title={isCollapsed ? user?.fullName || "Usuario" : undefined}
               >
@@ -221,7 +235,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           {/* Theme Toggle & Version - Centradas */}
-          <div className="border-t border-gray-200 dark:border-gray-700 p-4 space-y-2">
+          <div
+            className={`border-t border-gray-200 dark:border-gray-700 ${
+              isCollapsed ? "p-2" : "p-4"
+            } space-y-2 overflow-hidden`}
+          >
             <div
               className={`${
                 isCollapsed
@@ -230,7 +248,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               }`}
             >
               <ThemeToggle isCollapsed={isCollapsed} />
-              <VersionDisplay />
+              {!isCollapsed && <VersionDisplay />}
             </div>
           </div>
         </div>

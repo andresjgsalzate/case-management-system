@@ -70,7 +70,11 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
   };
 
   return (
-    <nav className="px-4 py-4 space-y-2">
+    <nav
+      className={`py-4 space-y-2 ${
+        isCollapsed ? "px-1" : "px-4"
+      } overflow-hidden`}
+    >
       {/* Navegación básica - Orden específico solicitado */}
       {[
         { name: "Dashboard", href: "/", icon: "HomeIcon" },
@@ -101,14 +105,22 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
             <Link
               key={item.name}
               to={item.href}
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+              className={`flex items-center ${
+                isCollapsed
+                  ? "justify-center p-2 w-12 h-12 mx-auto"
+                  : "px-3 py-2"
+              } text-sm font-medium rounded-md transition-colors duration-200 focus:ring-0 focus:ring-offset-0 ${
                 isActive(item.href)
                   ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
                   : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
               title={isCollapsed ? item.name : undefined}
             >
-              <Icon className="h-5 w-5 flex-shrink-0" />
+              <Icon
+                className={`${
+                  isCollapsed ? "h-5 w-5" : "h-5 w-5"
+                } flex-shrink-0`}
+              />
               {!isCollapsed && <span className="ml-3">{item.name}</span>}
             </Link>
           );
@@ -128,16 +140,19 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
         if (isCollapsed) {
           // En modo colapsado, mostrar solo el icono principal
           return (
-            <div key={section.id} className="relative group">
+            <div
+              key={section.id}
+              className="relative group flex justify-center"
+            >
               <button
-                className={`w-full flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+                className={`w-12 h-12 flex items-center justify-center p-2 text-sm font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-0 focus:ring-offset-0 ${
                   sectionActive
                     ? "bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400"
                     : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
                 title={section.title}
               >
-                <SectionIcon className="h-6 w-6" />
+                <SectionIcon className="h-5 w-5 flex-shrink-0" />
               </button>
 
               {/* Tooltip con items para modo colapsado */}

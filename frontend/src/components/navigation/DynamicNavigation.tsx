@@ -84,12 +84,12 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
         },
         { name: "TODOs", href: "/todos", icon: "ListBulletIcon" },
         { name: "Notas", href: "/notes", icon: "DocumentDuplicateIcon" },
-        { name: "Archivo", href: "/archive", icon: "ArchiveBoxIcon" },
         {
           name: "Base de Conocimiento",
           href: "/knowledge",
           icon: "BookOpenIcon",
         },
+        { name: "Archivo", href: "/archive", icon: "ArchiveBoxIcon" },
       ]
         .filter((menuItem) => {
           // Filtrar por permisos usando allowedModules

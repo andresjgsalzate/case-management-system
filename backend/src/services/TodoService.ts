@@ -25,7 +25,6 @@ export class TodoService {
   }
 
   async getAllTodos(filters?: TodoFiltersDto): Promise<TodoResponseDto[]> {
-
     try {
       // Primero probar sin JOINs para ver si ese es el problema
       const simpleTodos = await this.todoRepository.find();
@@ -49,7 +48,6 @@ export class TodoService {
   }
 
   async getTodoById(id: string): Promise<TodoResponseDto | null> {
-
     const todo = await this.todoRepository
       .createQueryBuilder("todo")
       .leftJoinAndSelect("todo.priority", "priority")
@@ -62,16 +60,9 @@ export class TodoService {
       .getOne();
 
     if (todo) {
-        `getTodoById: Found TODO ${id}, controls count: ${
-          todo.controls?.length || 0
-        }`
-      );
       if (todo.controls && todo.controls.length > 0) {
         const firstControl = todo.controls[0]!;
-          `getTodoById: First control - id: ${firstControl.id}, isTimerActive: ${firstControl.isTimerActive}`
-        );
       }
-    } else {
     }
 
     return todo ? this.mapToResponseDto(todo) : null;
@@ -167,7 +158,6 @@ export class TodoService {
   }
 
   async getTodoMetrics(): Promise<TodoMetricsDto> {
-
     const totalTodos = await this.todoRepository.count();
 
     const activeTodos = await this.todoRepository.count({
@@ -323,7 +313,6 @@ export class TodoService {
   }
 
   private mapToResponseDto(todo: Todo): TodoResponseDto {
-
     return {
       id: todo.id,
       title: todo.title,
@@ -411,7 +400,6 @@ export class TodoService {
 
       // Si no existe control, crearlo
       if (!todoControl) {
-
         // Obtener estado PENDIENTE por defecto
         const { CaseStatusControl } = require("../entities/CaseStatusControl");
         const statusRepository = AppDataSource.getRepository(CaseStatusControl);
@@ -456,9 +444,6 @@ export class TodoService {
       todoControl.totalTimeMinutes += data.durationMinutes;
       await this.todoControlRepository.save(todoControl);
 
-        `Manual time entry added: ${data.durationMinutes} minutes for TODO ${todoId}`
-      );
-
       return {
         id: savedEntry.id,
         todoControlId: savedEntry.todoControlId,
@@ -490,7 +475,6 @@ export class TodoService {
 
       // Si no existe control, crearlo
       if (!todoControl) {
-
         // Obtener estado PENDIENTE por defecto
         const { CaseStatusControl } = require("../entities/CaseStatusControl");
         const statusRepository = AppDataSource.getRepository(CaseStatusControl);
@@ -612,7 +596,6 @@ export class TodoService {
         await this.todoControlRepository.save(control);
       }
 
-
       return {
         id: updatedEntry.id,
         todoControlId: updatedEntry.todoControlId,
@@ -668,7 +651,6 @@ export class TodoService {
     userId: string
   ): Promise<TodoResponseDto | null> {
     try {
-
       // Buscar o crear control del TODO
       let control = await this.todoControlRepository.findOne({
         where: { todoId, userId },
@@ -740,7 +722,6 @@ export class TodoService {
     userId: string
   ): Promise<TodoResponseDto | null> {
     try {
-
       const control = await this.todoControlRepository.findOne({
         where: { todoId, userId },
       });
@@ -796,7 +777,6 @@ export class TodoService {
 
   async getTimeEntries(todoId: string): Promise<any[]> {
     try {
-
       const { TodoTimeEntry } = require("../entities/TodoTimeEntry");
       const {
         TodoManualTimeEntry,

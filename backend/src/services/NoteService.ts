@@ -23,6 +23,10 @@ export class NoteService {
   ): Promise<NoteResponseDto[]> {
     const queryBuilder = this.noteRepository
       .createQueryBuilder("note")
+      .leftJoinAndSelect("note.case", "case")
+      .leftJoinAndSelect("note.createdByUser", "createdByUser")
+      .leftJoinAndSelect("note.assignedToUser", "assignedToUser")
+      .leftJoinAndSelect("note.archivedByUser", "archivedByUser")
       .where("(note.createdBy = :userId OR note.assignedTo = :userId)", {
         userId,
       });

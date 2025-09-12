@@ -11,6 +11,7 @@ import {
   useCreateNote,
   useUpdateNote,
   useDeleteNote,
+  useToggleArchiveNote,
 } from "../../hooks/useNotes";
 import { NoteCard } from "../../components/notes/NoteCard";
 import { NoteFormModal } from "../../components/notes/NoteFormModal";
@@ -43,6 +44,7 @@ export const NotesPage: React.FC = () => {
   const createNoteMutation = useCreateNote();
   const updateNoteMutation = useUpdateNote();
   const deleteNoteMutation = useDeleteNote();
+  const toggleArchiveMutation = useToggleArchiveNote();
 
   const { success, error: showErrorToast } = useToast();
   const { confirmDelete, modalState, modalHandlers } = useConfirmationModal();
@@ -134,6 +136,34 @@ export const NotesPage: React.FC = () => {
     } catch (error) {
       console.error("Error deleting note:", error);
       showErrorToast("Error al eliminar la nota");
+    }
+  };
+
+  const handleArchiveNote = async (note: Note) => {
+    try {
+      await toggleArchiveMutation.mutateAsync(note.id);
+      success(
+        note.isArchived
+          ? "Nota desarchivada exitosamente"
+          : "Nota archivada exitosamente"
+      );
+    } catch (error) {
+      console.error("Error archiving note:", error);
+      showErrorToast(
+        "Error al " +
+          (note.isArchived ? "desarchivar" : "archivar") +
+          " la nota"
+      );
+    }
+  };
+
+  const handleUnarchiveNote = async (note: Note) => {
+    try {
+      await toggleArchiveMutation.mutateAsync(note.id);
+      success("Nota desarchivada exitosamente");
+    } catch (error) {
+      console.error("Error unarchiving note:", error);
+      showErrorToast("Error al desarchivar la nota");
     }
   };
 
@@ -424,8 +454,8 @@ export const NotesPage: React.FC = () => {
               note={note}
               onEdit={handleEditNote}
               onDelete={handleDeleteNote}
-              onArchive={(note) => console.log("Archive note:", note)}
-              onUnarchive={(note) => console.log("Unarchive note:", note)}
+              onArchive={handleArchiveNote}
+              onUnarchive={handleUnarchiveNote}
               currentUserId={undefined}
               canEdit={true}
               canDelete={true}

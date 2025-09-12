@@ -66,15 +66,22 @@ export class NoteController {
       console.log("Creating note for user:", userId);
       console.log("Note data:", req.body);
 
-      // Crear DTO básico sin validación por ahora
+      // Crear DTO completo con todos los campos
       const createNoteDto: CreateNoteDto = {
         title: req.body.title,
         content: req.body.content,
+        noteType: req.body.noteType,
+        priority: req.body.priority,
+        difficultyLevel: req.body.difficultyLevel,
         tags: req.body.tags || [],
         caseId: req.body.caseId,
         assignedTo: req.body.assignedTo,
         isImportant: req.body.isImportant || false,
+        isTemplate: req.body.isTemplate || false,
         reminderDate: req.body.reminderDate,
+        prerequisites: req.body.prerequisites,
+        complexityNotes: req.body.complexityNotes,
+        estimatedSolutionTime: req.body.estimatedSolutionTime,
       };
 
       const note = await this.noteService.createNote(createNoteDto, userId);
@@ -131,8 +138,19 @@ export class NoteController {
       console.log("Updating note:", noteId, "for user:", userId);
 
       const updateNoteDto: UpdateNoteDto = {
-        ...req.body,
-        id: noteId,
+        title: req.body.title,
+        content: req.body.content,
+        noteType: req.body.noteType,
+        priority: req.body.priority,
+        difficultyLevel: req.body.difficultyLevel,
+        tags: req.body.tags,
+        assignedTo: req.body.assignedTo,
+        isImportant: req.body.isImportant,
+        isTemplate: req.body.isTemplate,
+        reminderDate: req.body.reminderDate,
+        prerequisites: req.body.prerequisites,
+        complexityNotes: req.body.complexityNotes,
+        estimatedSolutionTime: req.body.estimatedSolutionTime,
       };
 
       const note = await this.noteService.updateNote(

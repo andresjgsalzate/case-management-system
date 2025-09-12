@@ -75,36 +75,38 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     >
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">
                 {note.title}
               </h3>
               {note.isImportant && (
-                <ExclamationTriangleSolid className="h-5 w-5 text-red-500" />
+                <ExclamationTriangleSolid className="h-5 w-5 text-red-500 flex-shrink-0" />
               )}
               {note.isArchived && (
-                <ArchiveBoxIcon className="h-5 w-5 text-gray-400" />
+                <ArchiveBoxIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
               )}
             </div>
 
             {/* Metadata */}
-            <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-500 dark:text-gray-400">
               <div className="flex items-center gap-1">
-                <UserIcon className="h-4 w-4" />
-                <span>
+                <UserIcon className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">
                   {note.createdByUser?.fullName ||
                     note.createdByUser?.email ||
                     "Usuario desconocido"}
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <ClockIcon className="h-4 w-4" />
-                <span>{formatDate(note.createdAt)}</span>
+                <ClockIcon className="h-4 w-4 flex-shrink-0" />
+                <span className="whitespace-nowrap">
+                  {formatDate(note.createdAt)}
+                </span>
               </div>
               {note.updatedAt !== note.createdAt && (
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-400 whitespace-nowrap">
                   Editado {formatDate(note.updatedAt)}
                 </span>
               )}
@@ -112,16 +114,16 @@ export const NoteCard: React.FC<NoteCardProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {canUserEdit && (
               <Button
                 onClick={() => onEdit(note)}
                 variant="ghost"
                 size="xs"
-                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 title="Editar nota"
               >
-                <PencilIcon className="h-4 w-4" />
+                <PencilIcon className="h-3.5 w-3.5" />
               </Button>
             )}
 
@@ -132,13 +134,13 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                 }
                 variant="ghost"
                 size="xs"
-                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 title={note.isArchived ? "Desarchivar nota" : "Archivar nota"}
               >
                 {note.isArchived ? (
-                  <ArchiveBoxXMarkIcon className="h-4 w-4" />
+                  <ArchiveBoxXMarkIcon className="h-3.5 w-3.5" />
                 ) : (
-                  <ArchiveBoxIcon className="h-4 w-4" />
+                  <ArchiveBoxIcon className="h-3.5 w-3.5" />
                 )}
               </Button>
             )}
@@ -148,10 +150,10 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                 onClick={() => onDelete(note)}
                 variant="ghost"
                 size="xs"
-                className="p-1 text-gray-400 hover:text-red-500"
+                className="p-1.5 text-gray-400 hover:text-red-500"
                 title="Eliminar nota"
               >
-                <TrashIcon className="h-4 w-4" />
+                <TrashIcon className="h-3.5 w-3.5" />
               </Button>
             )}
           </div>

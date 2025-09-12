@@ -7,6 +7,10 @@ import { ThemeProvider } from "./providers/ThemeProvider";
 import App from "./App.tsx";
 import "./index.css";
 
+// Polyfill for Buffer in browser environment
+import { Buffer } from "buffer";
+(window as any).Buffer = Buffer;
+
 // Configuración de React Query
 const queryClient = new QueryClient({
   defaultOptions: {

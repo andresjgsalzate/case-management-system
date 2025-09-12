@@ -98,7 +98,8 @@ export class KnowledgeDocumentService {
 
   async findOne(id: string): Promise<KnowledgeDocument | null> {
     try {
-      console.log(`📄 [EDIT MODE] Looking for document with ID: ${id}`);
+      console.log(`� [FIND ONE] Buscando documento con ID: ${id}`);
+      console.log(`�📄 [EDIT MODE] Looking for document with ID: ${id}`);
       const document = await this.knowledgeDocumentRepository
         .createQueryBuilder("doc")
         .leftJoinAndSelect("doc.documentType", "documentType")
@@ -116,6 +117,25 @@ export class KnowledgeDocumentService {
             document.attachments?.length || 0
           }`
         );
+
+        // Resolver relaciones lazy manualmente
+        const documentType = await document.documentType;
+        const createdByUser = await document.createdByUser;
+        const lastEditedByUser = await document.lastEditedByUser;
+
+        // Debug: Verificar relaciones después de resolver
+        console.log(`🔍 [DEBUG BACKEND] Document relations resolved:`, {
+          hasDocumentType: !!documentType,
+          documentTypeName: documentType?.name,
+          hasCreatedByUser: !!createdByUser,
+          createdByUserName: createdByUser?.fullName,
+        });
+
+        // Asignar las relaciones resueltas al documento
+        (document as any).documentType = documentType;
+        (document as any).createdByUser = createdByUser;
+        (document as any).lastEditedByUser = lastEditedByUser;
+
         // Cargar etiquetas usando el método del nuevo sistema
         const documentWithTags = await this.loadDocumentTags(document);
         console.log(
@@ -140,6 +160,20 @@ export class KnowledgeDocumentService {
             }))
           );
         }
+
+        // Debug: Log final document before sending to frontend
+        console.log(
+          "📤 [DEBUG BACKEND] Final document being sent to frontend:",
+          {
+            id: documentWithTags.id,
+            title: documentWithTags.title,
+            hasDocumentType: !!(documentWithTags as any).documentType,
+            hasCreatedByUser: !!(documentWithTags as any).createdByUser,
+            documentTypeValue: (documentWithTags as any).documentType,
+            createdByUserValue: (documentWithTags as any).createdByUser,
+            allKeys: Object.keys(documentWithTags),
+          }
+        );
 
         return documentWithTags;
       } else {

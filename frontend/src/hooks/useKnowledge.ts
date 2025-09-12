@@ -314,6 +314,31 @@ export const useCreateDocumentFeedback = () => {
   });
 };
 
+export const useCheckUserFeedback = (documentId: string) => {
+  return useQuery({
+    queryKey: ["feedback", "check", documentId],
+    queryFn: async () => {
+      try {
+        return await knowledgeApi.feedback.checkUserFeedback(documentId);
+      } catch (error: any) {
+        // Si es 404, significa que no hay feedback, devolver estado por defecto
+        if (error.response?.status === 404) {
+          return { hasFeedback: false, feedback: null };
+        }
+        throw error;
+      }
+    },
+    enabled: !!documentId,
+    retry: (failureCount, error: any) => {
+      // No reintentar si es 404
+      if (error.response?.status === 404) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+  });
+};
+
 export const useUpdateDocumentFeedback = () => {
   const queryClient = useQueryClient();
 

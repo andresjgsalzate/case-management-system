@@ -11,6 +11,9 @@ export default defineConfig({
       "@/shared": path.resolve(__dirname, "../shared"),
     },
   },
+  define: {
+    global: "globalThis",
+  },
   server: {
     port: 5173,
     host: true,

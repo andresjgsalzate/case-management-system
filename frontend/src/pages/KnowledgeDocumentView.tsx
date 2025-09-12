@@ -21,6 +21,7 @@ import {
   useArchiveKnowledgeDocument,
   useDeleteKnowledgeDocument,
   useCreateDocumentFeedback,
+  useCheckUserFeedback,
   knowledgeKeys,
 } from "../hooks/useKnowledge";
 import { useQueryClient } from "@tanstack/react-query";
@@ -28,6 +29,7 @@ import BlockNoteEditor from "../components/knowledge/BlockNoteEditor";
 import AttachmentsList from "../components/AttachmentsList";
 import { ConfirmationModal } from "../components/ui/ConfirmationModal";
 import { useToast } from "../hooks/useNotification";
+import type { KnowledgeDocumentPDF } from "../types/pdf";
 
 const KnowledgeDocumentView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,6 +53,9 @@ const KnowledgeDocumentView: React.FC = () => {
   const archiveMutation = useArchiveKnowledgeDocument();
   const deleteMutation = useDeleteKnowledgeDocument();
   const feedbackMutation = useCreateDocumentFeedback();
+
+  // Check if user has already provided feedback
+  const { data: feedbackCheck } = useCheckUserFeedback(id || "");
 
   // Force fresh data when viewing document
   React.useEffect(() => {
@@ -159,21 +164,48 @@ const KnowledgeDocumentView: React.FC = () => {
   };
 
   const handleFeedback = (isHelpful: boolean) => {
-    if (document) {
-      feedbackMutation.mutate(
-        {
-          documentId: document.id,
-          isHelpful,
-        },
-        {
-          onSuccess: () => {
-            success("Feedback enviado exitosamente");
-          },
-          onError: (error: any) => {
-            showError(`Error al enviar feedback: ${error.message}`);
-          },
-        }
+    // Check if user has already provided feedback
+    if (feedbackCheck?.hasFeedback) {
+      showError(
+        "Ya has proporcionado feedback para este documento. Solo se permite un feedback por documento."
       );
+      return;
+    }
+
+    if (document) {
+      const feedbackData = {
+        documentId: document.id,
+        isHelpful,
+      };
+      console.log("Enviando feedback:", feedbackData);
+      feedbackMutation.mutate(feedbackData, {
+        onSuccess: () => {
+          success("Feedback enviado exitosamente");
+          // Invalidate the feedback check query to update the UI
+          queryClient.invalidateQueries({
+            queryKey: ["feedback", "check", document.id],
+          });
+        },
+        onError: (error: any) => {
+          // Handle specific error when feedback already exists
+          if (
+            error.response?.status === 400 &&
+            error.response?.data?.message?.includes(
+              "Ya has proporcionado feedback"
+            )
+          ) {
+            showError(
+              "Ya has proporcionado feedback para este documento. Solo se permite un feedback por documento."
+            );
+          } else {
+            showError(
+              `Error al enviar feedback: ${
+                error.message || "Error desconocido"
+              }`
+            );
+          }
+        },
+      });
     }
   };
 
@@ -194,6 +226,64 @@ const KnowledgeDocumentView: React.FC = () => {
         },
       });
     }
+  };
+
+  // Función para convertir documento al formato PDF
+  const convertToPDFFormat = (doc: any): KnowledgeDocumentPDF => {
+    // Usar las propiedades correctas que envía el backend
+    const documentType = doc.__documentType__ || doc.documentType;
+    const createdByUser = doc.__createdByUser__ || doc.createdByUser;
+
+    return {
+      id: doc.id,
+      title: doc.title || "Documento Sin Título",
+      content: doc.jsonContent || [],
+      document_type: documentType
+        ? {
+            name: documentType.name,
+            code: documentType.code || documentType.name.toLowerCase(),
+          }
+        : undefined,
+      priority: doc.priority,
+      difficulty_level: doc.difficultyLevel,
+      is_published: doc.isPublished,
+      view_count: doc.viewCount,
+      version: doc.version || 1,
+      tags:
+        doc.tags?.map((tag: any) => ({
+          id: tag.id || `tag-${Math.random()}`,
+          tag_name: tag.tagName || tag.name || tag.tag_name,
+          color: tag.color || "#6B7280",
+        })) || [],
+      attachments:
+        doc.attachments?.map((attachment: any) => ({
+          id: attachment.id,
+          file_name:
+            attachment.fileName || attachment.file_name || attachment.name,
+          file_path:
+            attachment.filePath || attachment.file_path || attachment.path,
+          file_type: attachment.fileType || attachment.file_type || "document",
+          mime_type:
+            attachment.mimeType ||
+            attachment.mime_type ||
+            "application/octet-stream",
+          file_size:
+            attachment.fileSize || attachment.file_size || attachment.size || 0,
+          is_embedded: attachment.isEmbedded || attachment.is_embedded || false,
+          created_at:
+            attachment.createdAt ||
+            attachment.created_at ||
+            new Date().toISOString(),
+        })) || [],
+      created_at: doc.createdAt,
+      updated_at: doc.updatedAt,
+      createdByUser: createdByUser
+        ? {
+            fullName: createdByUser.fullName,
+            email: createdByUser.email,
+          }
+        : undefined,
+    };
   };
 
   if (isLoading) {
@@ -260,6 +350,40 @@ const KnowledgeDocumentView: React.FC = () => {
                 title="Duplicar documento"
               >
                 <DocumentDuplicateIcon className="h-5 w-5" />
+              </button>
+
+              {/* Botón Exportar PDF */}
+              <button
+                onClick={() => {
+                  console.log(
+                    "🚀 [PDF EXPORT] Generando PDF - ejecutando convertToPDFFormat"
+                  );
+                  const pdfDocument = convertToPDFFormat(document);
+                  // Aquí llamaremos directamente al servicio de PDF
+                  import("../services/pdfExportService").then(
+                    ({ downloadPDF }) => {
+                      downloadPDF(pdfDocument, {
+                        fileName: `${document.title || "documento"}.pdf`,
+                      });
+                    }
+                  );
+                }}
+                className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100"
+                title="Exportar a PDF"
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
               </button>
 
               <Link
@@ -428,23 +552,46 @@ const KnowledgeDocumentView: React.FC = () => {
         </h3>
 
         <div className="flex items-center space-x-4 mb-4">
-          <button
-            onClick={() => handleFeedback(true)}
-            disabled={feedbackMutation.isPending}
-            className="flex items-center px-4 py-2 text-sm font-medium text-green-700 bg-green-100 rounded-md hover:bg-green-200 transition-colors"
-          >
-            <HandThumbUpIcon className="h-5 w-5 mr-2" />
-            Sí, útil ({document.helpfulCount})
-          </button>
+          {feedbackCheck?.hasFeedback ? (
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center px-4 py-2 text-sm font-medium text-gray-500 bg-gray-100 rounded-md">
+                {feedbackCheck.feedback?.isHelpful ? (
+                  <>
+                    <HandThumbUpIcon className="h-5 w-5 mr-2 text-green-600" />
+                    Tu feedback: Útil
+                  </>
+                ) : (
+                  <>
+                    <HandThumbDownIcon className="h-5 w-5 mr-2 text-red-600" />
+                    Tu feedback: No útil
+                  </>
+                )}
+              </div>
+              <span className="text-sm text-gray-500">
+                Ya has proporcionado feedback para este documento
+              </span>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={() => handleFeedback(true)}
+                disabled={feedbackMutation.isPending}
+                className="flex items-center px-4 py-2 text-sm font-medium text-green-700 bg-green-100 rounded-md hover:bg-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <HandThumbUpIcon className="h-5 w-5 mr-2" />
+                Sí, útil ({document.helpfulCount})
+              </button>
 
-          <button
-            onClick={() => handleFeedback(false)}
-            disabled={feedbackMutation.isPending}
-            className="flex items-center px-4 py-2 text-sm font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors"
-          >
-            <HandThumbDownIcon className="h-5 w-5 mr-2" />
-            No, no útil ({document.notHelpfulCount})
-          </button>
+              <button
+                onClick={() => handleFeedback(false)}
+                disabled={feedbackMutation.isPending}
+                className="flex items-center px-4 py-2 text-sm font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <HandThumbDownIcon className="h-5 w-5 mr-2" />
+                No, no útil ({document.notHelpfulCount})
+              </button>
+            </>
+          )}
         </div>
 
         <div className="text-sm text-gray-600">
@@ -471,7 +618,7 @@ const KnowledgeDocumentView: React.FC = () => {
                 Archivos adjuntos
               </h3>
             </div>
-            <AttachmentsList documentId={id} className="" />
+            <AttachmentsList documentId={id} className="" readOnly={true} />
           </div>
         </div>
       )}

@@ -78,6 +78,19 @@ export class DocumentFeedbackService {
     });
   }
 
+  async findUserFeedback(
+    documentId: string,
+    userId: string
+  ): Promise<KnowledgeDocumentFeedback | null> {
+    return this.feedbackRepository.findOne({
+      where: {
+        documentId,
+        userId,
+      },
+      relations: ["document", "user"],
+    });
+  }
+
   async findByUser(userId: string): Promise<KnowledgeDocumentFeedback[]> {
     return this.feedbackRepository.find({
       where: { userId },

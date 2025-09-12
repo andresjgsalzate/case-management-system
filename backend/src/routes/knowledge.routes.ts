@@ -423,6 +423,33 @@ router.get(
   }
 );
 
+// GET /api/feedback/check/:documentId - Verificar si el usuario ya ha dado feedback
+router.get(
+  "/feedback/check/:documentId",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      console.log(
+        `📋 Checking feedback for document: ${req.params.documentId}`
+      );
+      const userId = (req as any).user.id;
+      const documentId = req.params.documentId!;
+      const feedback = await documentFeedbackService.findUserFeedback(
+        documentId,
+        userId
+      );
+      console.log(`📋 Feedback found: ${!!feedback}`);
+      res.json({
+        hasFeedback: !!feedback,
+        feedback: feedback || null,
+      });
+    } catch (error) {
+      console.error(`📋 Error checking feedback:`, error);
+      handleError(res, error, 400);
+    }
+  }
+);
+
 // POST /api/feedback - Crear feedback
 router.post(
   "/feedback",

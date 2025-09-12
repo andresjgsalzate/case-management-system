@@ -380,7 +380,6 @@ export const usePopularTags = (limit?: number) => {
     queryFn: async () => {
       try {
         const result = await KnowledgeDocumentTagService.getPopularTags(limit);
-        console.log(`✅ Popular tags fetched successfully:`, result);
         return result;
       } catch (error) {
         console.error("🚨 Popular tags query error:", error);

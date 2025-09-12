@@ -237,9 +237,7 @@ export const dashboardMetricsService = {
   // Métricas de TODOs - ahora conectado al endpoint real
   async getTodoMetrics(): Promise<TodoMetrics> {
     try {
-      console.log("Fetching TODO metrics...");
       const data = await metricsRequest<any>("/todos/metrics");
-      console.log("Raw TODO metrics data from backend:", data);
 
       // Mapear los datos del backend al formato esperado por el frontend
       const result = {
@@ -252,7 +250,6 @@ export const dashboardMetricsService = {
         totalTimeToday: 0, // TODO: Implementar lógica para tiempo de hoy
       };
 
-      console.log("Mapped TODO metrics result:", result);
       return result;
     } catch (error) {
       console.error("Error fetching todo metrics:", error);

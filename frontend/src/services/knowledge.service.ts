@@ -202,9 +202,7 @@ export class DocumentFeedbackService {
     hasFeedback: boolean;
     feedback: KnowledgeDocumentFeedback | null;
   }> {
-    console.log(`📋 Checking feedback for document: ${documentId}`);
     const { data } = await api.get(`/feedback/check/${documentId}`);
-    console.log(`📋 Feedback check response:`, data);
     return data;
   }
 

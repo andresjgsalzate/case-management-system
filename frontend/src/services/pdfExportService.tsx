@@ -1033,7 +1033,6 @@ const preprocessDocumentWithSyntaxHighlighting = async (
   document: KnowledgeDocumentPDF
 ): Promise<KnowledgeDocumentPDF> => {
   try {
-    console.log(
       "🎨 [PDF] Iniciando preprocesamiento con syntax highlighting..."
     );
 
@@ -1076,7 +1075,6 @@ const preprocessDocumentWithSyntaxHighlighting = async (
       })
     );
 
-    console.log("✅ [PDF] Preprocesamiento completado");
 
     return {
       ...document,
@@ -1116,12 +1114,10 @@ const PDFDocumentComponent: React.FC<PDFDocumentProps> = ({
   );
 
   // Debug: Log de los adjuntos filtrados
-  console.log(
     "📎 [PDF DEBUG] Adjuntos documentales encontrados:",
     documentAttachments.length
   );
   documentAttachments.forEach((att: any, idx: number) => {
-    console.log(`📄 [PDF DEBUG] Adjunto ${idx + 1}:`, {
       fileName: att.file_name || att.fileName || att.name,
       fileType: att.file_type || att.fileType,
       mimeType: att.mime_type || att.mimeType,
@@ -1141,7 +1137,6 @@ const PDFDocumentComponent: React.FC<PDFDocumentProps> = ({
   const tagFontSize = getTagFontSize((document.tags || []).length);
 
   // Debug: Log de información del documento
-  console.log("📋 [PDF DEBUG] Información del documento:", {
     createdByUser: document.createdByUser,
     documentType: document.document_type,
     priority: document.priority,
@@ -1291,7 +1286,6 @@ const PDFDocumentComponent: React.FC<PDFDocumentProps> = ({
           <View style={styles.attachmentsSection}>
             {documentAttachments.map((attachment: any, index: number) => {
               // Debug: Log del attachment para diagnosticar
-              console.log(`[PDF DEBUG] Attachment ${index}:`, attachment);
 
               const fileName =
                 attachment.file_name ||
@@ -1356,14 +1350,12 @@ export const downloadPDF = async (
   options: PDFExportOptions = {}
 ): Promise<void> => {
   try {
-    console.log("📄 [PDF] Iniciando generación PDF con syntax highlighting...");
 
     // Preprocesar documento con syntax highlighting
     const preprocessedDocument = await preprocessDocumentWithSyntaxHighlighting(
       document
     );
 
-    console.log("🔄 [PDF] Generando blob PDF...");
 
     // Generar PDF
     const blob = await pdf(
@@ -1377,7 +1369,6 @@ export const downloadPDF = async (
         ? `${preprocessedDocument.title}.pdf`
         : "documento.pdf");
 
-    console.log("✅ [PDF] PDF generado correctamente:", filename);
 
     // Descargar
     saveAs(blob, filename);
@@ -1424,7 +1415,6 @@ export const getPDFPreview = async (
   document: KnowledgeDocumentPDF
 ): Promise<string> => {
   try {
-    console.log(
       "👁️ [PDF Preview] Generando vista previa con syntax highlighting..."
     );
 

@@ -6,6 +6,9 @@ export type RelationType = "related" | "replaces" | "prerequisite" | "follows";
 
 export type FileType = "image" | "document" | "spreadsheet" | "other";
 
+// Import User type
+import { User } from "./user";
+
 export interface DocumentType {
   id: string;
   code: string;
@@ -62,6 +65,10 @@ export interface KnowledgeDocument {
   versions?: KnowledgeDocumentVersion[];
   attachments?: KnowledgeDocumentAttachment[];
   feedback?: KnowledgeDocumentFeedback[];
+
+  // Special backend-loaded properties (with lazy loading)
+  __createdByUser__?: User;
+  __documentType__?: DocumentType;
 }
 
 export type TagCategory =

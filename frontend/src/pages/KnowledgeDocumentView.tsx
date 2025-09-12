@@ -60,7 +60,6 @@ const KnowledgeDocumentView: React.FC = () => {
   // Force fresh data when viewing document
   React.useEffect(() => {
     if (id) {
-      console.log("🔄 Forcing document refetch for viewing:", id);
       // Invalidate specific document cache to force fresh data
       queryClient.invalidateQueries({
         queryKey: knowledgeKeys.document(id),
@@ -98,7 +97,6 @@ const KnowledgeDocumentView: React.FC = () => {
   // Handle actions
   const handleToggleFavorite = () => {
     // TODO: Implement favorite functionality
-    console.log("Toggle favorite not implemented yet");
   };
 
   const handleArchive = () => {
@@ -177,7 +175,6 @@ const KnowledgeDocumentView: React.FC = () => {
         documentId: document.id,
         isHelpful,
       };
-      console.log("Enviando feedback:", feedbackData);
       feedbackMutation.mutate(feedbackData, {
         onSuccess: () => {
           success("Feedback enviado exitosamente");
@@ -355,9 +352,6 @@ const KnowledgeDocumentView: React.FC = () => {
               {/* Botón Exportar PDF */}
               <button
                 onClick={() => {
-                  console.log(
-                    "🚀 [PDF EXPORT] Generando PDF - ejecutando convertToPDFFormat"
-                  );
                   const pdfDocument = convertToPDFFormat(document);
                   // Aquí llamaremos directamente al servicio de PDF
                   import("../services/pdfExportService").then(
@@ -439,16 +433,19 @@ const KnowledgeDocumentView: React.FC = () => {
 
         {/* Metadata */}
         <div className="flex flex-wrap items-center gap-6 text-sm text-gray-600">
-          {document.documentType && (
+          {document.__documentType__ && (
             <div className="flex items-center">
               <FolderIcon className="h-4 w-4 mr-1" />
-              {document.documentType.name}
+              {document.__documentType__.name}
             </div>
           )}
 
           <div className="flex items-center">
             <UserIcon className="h-4 w-4 mr-1" />
-            Creado por Usuario
+            Creado por{" "}
+            {document.__createdByUser__?.fullName ||
+              document.__createdByUser__?.email ||
+              "Usuario desconocido"}
           </div>
 
           <div className="flex items-center">

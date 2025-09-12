@@ -157,7 +157,6 @@ export class ArchiveServiceExpress {
   ): Promise<void> {
     try {
       // Mock implementation for now
-      console.log(`Deleted archived ${type} with id: ${archivedId}`);
     } catch (error: any) {
       console.error("Error deleting archived item:", error);
       throw new Error(`Error eliminando elemento archivado: ${error.message}`);

@@ -153,10 +153,6 @@ router.put(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
-      console.log("=== UPDATE DOCUMENT DEBUG ===");
-      console.log("Request body:", JSON.stringify(req.body, null, 2));
-      console.log("Document ID:", req.params.id);
-
       const updateDto = await validateDto(UpdateKnowledgeDocumentDto, req.body);
       const userId = (req as any).user.id;
       const documentId = validateParam(req.params.id!, "id");
@@ -167,8 +163,6 @@ router.put(
       );
       res.json(document);
     } catch (error) {
-      console.log("=== UPDATE ERROR ===");
-      console.log("Error details:", error);
       handleError(res, error, 400);
     }
   }
@@ -429,16 +423,12 @@ router.get(
   authenticateToken,
   async (req: Request, res: Response) => {
     try {
-      console.log(
-        `📋 Checking feedback for document: ${req.params.documentId}`
-      );
       const userId = (req as any).user.id;
       const documentId = req.params.documentId!;
       const feedback = await documentFeedbackService.findUserFeedback(
         documentId,
         userId
       );
-      console.log(`📋 Feedback found: ${!!feedback}`);
       res.json({
         hasFeedback: !!feedback,
         feedback: feedback || null,
@@ -545,14 +535,6 @@ router.post(
       const { tagName, color, category, description } = req.body;
       const userId = (req as any).user?.id;
 
-      console.log(`[POST /knowledge/tags] Creating tag from admin panel:`, {
-        tagName,
-        color,
-        category,
-        description,
-        userId,
-      });
-
       if (!tagName || typeof tagName !== "string" || !tagName.trim()) {
         return res.status(400).json({
           message: "El nombre de la etiqueta es requerido",
@@ -566,10 +548,6 @@ router.post(
         normalizedTagName
       );
       if (existingTag) {
-        console.log(
-          `[POST /knowledge/tags] Tag already exists:`,
-          existingTag.tagName
-        );
         return res.json(existingTag);
       }
 
@@ -583,7 +561,6 @@ router.post(
         },
         userId
       );
-      console.log(`[POST /knowledge/tags] Created new tag:`, tag.tagName);
       res.status(201).json(tag);
     } catch (error) {
       handleError(res, error);

@@ -22,14 +22,11 @@ class ArchiveApi {
    * Obtener estadísticas del archivo
    */
   async getArchiveStats(): Promise<ArchiveStats> {
-    console.log("🔍 getArchiveStats - Llamando a:", `${this.baseUrl}/stats`);
 
     const response = await authService.authenticatedRequest<ArchiveStats>(
       `${this.baseUrl}/stats`
     );
 
-    console.log("🔍 getArchiveStats - Response:", response);
-    console.log("🔍 getArchiveStats - Data:", response.data);
 
     if (!response.data) {
       throw new Error("Failed to load archive stats");
@@ -250,15 +247,11 @@ class ArchiveApi {
     const url = `${this.baseUrl}/items${
       params.toString() ? `?${params.toString()}` : ""
     }`;
-    console.log("🔍 getArchivedItems - URL:", url);
-    console.log("🔍 getArchivedItems - Filters:", filters);
 
     const response = await authService.authenticatedRequest<ArchivedItem[]>(
       url
     );
 
-    console.log("🔍 getArchivedItems - Response:", response);
-    console.log("🔍 getArchivedItems - Data:", response.data);
 
     return response.data || [];
   }
@@ -396,7 +389,6 @@ class ArchiveApi {
     caseId: string | number,
     reason?: string
   ): Promise<ArchivedCase> {
-    console.log("Llamando a archiveCaseById:", { caseId, reason });
 
     try {
       const response = await authService.authenticatedRequest<{
@@ -408,7 +400,6 @@ class ArchiveApi {
         body: JSON.stringify({ reason }),
       });
 
-      console.log("Respuesta de archiveCaseById:", response);
 
       if (!response.data?.data && !response.data) {
         console.error("Estructura de respuesta inesperada:", response);

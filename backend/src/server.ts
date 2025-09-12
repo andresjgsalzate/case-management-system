@@ -35,6 +35,7 @@ import migrationRoutes from "./routes/migration.routes";
 import { originRoutes } from "./routes/originRoutes";
 import { applicationRoutes } from "./routes/applicationRoutes";
 import { caseStatusRoutes } from "./routes/caseStatusRoutes";
+import { todoPriorityRoutes } from "./routes/todoPriorityRoutes";
 import fileUploadRoutes from "./routes/file-upload-simple.routes";
 import adminStorageRoutes from "./routes/admin-storage.routes";
 import { FileUploadService } from "./services/file-upload-simple.service";
@@ -92,6 +93,7 @@ app.use("/api", commonRoutes);
 app.use("/api/case-statuses", caseStatusRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/origins", originRoutes);
+app.use("/api/admin/todo-priorities", todoPriorityRoutes);
 app.use("/api", permissionsRoutes);
 
 // Error handling middleware (debe ir al final)

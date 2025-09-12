@@ -157,6 +157,13 @@ export const ADMIN_SECTIONS: Array<{
         adminOnly: false, // No restringido solo a administradores
       },
       {
+        name: "Prioridades de Tareas",
+        href: "/admin/todo-priorities",
+        icon: "FlagIcon",
+        permissions: ["todos.crear.all", "todos.editar.all", "todos.admin.all"],
+        adminOnly: false, // No restringido solo a administradores
+      },
+      {
         name: "Estado del Sistema",
         href: "/system/status",
         icon: "CogIcon",
@@ -360,5 +367,33 @@ export const useScopePermissions = () => {
 
   return {
     checkScopePermission,
+  };
+};
+
+export const usePermissions = () => {
+  const { user } = useAuth();
+
+  const hasPermission = (permissionKey: string): boolean => {
+    if (!user) return false;
+
+    // Si es superadmin, tiene todos los permisos
+    if (user.roleName === "superadmin") {
+      return true;
+    }
+
+    // Para simplificar, por ahora asumimos que algunos roles tienen permisos
+    // TODO: Implementar sistema completo de permisos cuando esté disponible
+    const allowedRoles = ["admin", "superadmin"];
+
+    // Verificar permisos específicos basados en el tipo
+    if (permissionKey.includes("todos") || permissionKey.includes("admin")) {
+      return allowedRoles.includes(user.roleName);
+    }
+
+    return allowedRoles.includes(user.roleName);
+  };
+
+  return {
+    hasPermission,
   };
 };

@@ -236,17 +236,17 @@ export const PermissionTable: React.FC<PermissionTableProps> = ({
                       onClick={() => onEdit(permission)}
                       size="sm"
                       variant="ghost"
-                      className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
+                      className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
                     >
-                      <Edit className="h-4 w-4" />
+                      <Edit className="w-4 h-4" />
                     </Button>
                     <Button
                       onClick={() => onDelete(permission)}
                       size="sm"
                       variant="ghost"
-                      className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                      className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </td>

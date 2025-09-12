@@ -306,24 +306,24 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handleEditPermission(permission)}
-                            className="mr-2 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() =>
-                              handleDeletePermission(permission.id)
-                            }
-                            className="dark:bg-red-600 dark:hover:bg-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center justify-end space-x-2">
+                            <button
+                              onClick={() => handleEditPermission(permission)}
+                              className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
+                              title="Editar permiso"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleDeletePermission(permission.id)
+                              }
+                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                              title="Eliminar permiso"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

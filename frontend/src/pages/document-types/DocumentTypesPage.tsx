@@ -5,7 +5,8 @@ import {
   PlusIcon,
   PencilIcon,
   TrashIcon,
-  EyeIcon,
+  ShieldCheckIcon,
+  ShieldExclamationIcon,
 } from "@heroicons/react/24/outline";
 import { useToast } from "../../hooks/useNotification";
 import { Button } from "../../components/ui/Button";
@@ -460,30 +461,36 @@ export default function DocumentTypesPage() {
                         <div className="flex items-center justify-end space-x-2">
                           <button
                             onClick={() => handleToggleStatus(documentType)}
-                            className={`p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 ${
+                            className={
                               documentType.isActive
-                                ? "text-orange-600 hover:text-orange-900"
-                                : "text-green-600 hover:text-green-900"
-                            }`}
+                                ? "text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                : "text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                            }
                             title={
-                              documentType.isActive ? "Desactivar" : "Activar"
+                              documentType.isActive
+                                ? "Desactivar tipo de documento"
+                                : "Activar tipo de documento"
                             }
                           >
-                            <EyeIcon className="h-4 w-4" />
+                            {documentType.isActive ? (
+                              <ShieldExclamationIcon className="w-4 h-4" />
+                            ) : (
+                              <ShieldCheckIcon className="w-4 h-4" />
+                            )}
                           </button>
                           <button
                             onClick={() => handleEditClick(documentType)}
-                            className="text-blue-600 hover:text-blue-900 p-1"
+                            className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
                             title="Editar tipo de documento"
                           >
-                            <PencilIcon className="h-4 w-4" />
+                            <PencilIcon className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteClick(documentType)}
-                            className="text-red-600 hover:text-red-900 p-1"
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                             title="Eliminar tipo de documento"
                           >
-                            <TrashIcon className="h-4 w-4" />
+                            <TrashIcon className="w-4 h-4" />
                           </button>
                         </div>
                       </td>

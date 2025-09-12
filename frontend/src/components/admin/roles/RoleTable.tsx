@@ -3,6 +3,7 @@ import {
   PencilIcon,
   TrashIcon,
   ShieldCheckIcon,
+  ShieldExclamationIcon,
   DocumentDuplicateIcon,
   EyeIcon,
   EyeSlashIcon,
@@ -58,6 +59,11 @@ export default function RoleTable({
 
   const handleClone = (role: Role) => {
     setCloneModal({ isOpen: true, role });
+  };
+
+  const handleToggleStatus = (role: Role) => {
+    // TODO: Implementar función de toggle status
+    console.log(`Toggle status for role: ${role.name}`);
   };
 
   const closeModals = () => {
@@ -225,19 +231,35 @@ export default function RoleTable({
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end space-x-2">
                       <button
+                        onClick={() => handleToggleStatus(role)}
+                        className={
+                          role.isActive
+                            ? "text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            : "text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                        }
+                        title={role.isActive ? "Desactivar rol" : "Activar rol"}
+                      >
+                        {role.isActive ? (
+                          <ShieldExclamationIcon className="w-4 h-4" />
+                        ) : (
+                          <ShieldCheckIcon className="w-4 h-4" />
+                        )}
+                      </button>
+
+                      <button
                         onClick={() => handleClone(role)}
-                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors p-1 rounded"
+                        className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 transition-colors p-1 rounded"
                         title="Clonar rol"
                       >
-                        <DocumentDuplicateIcon className="h-4 w-4" />
+                        <DocumentDuplicateIcon className="w-4 h-4" />
                       </button>
 
                       <button
                         onClick={() => handleEdit(role)}
-                        className="text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300 transition-colors p-1 rounded"
+                        className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 transition-colors p-1 rounded"
                         title="Editar rol"
                       >
-                        <PencilIcon className="h-4 w-4" />
+                        <PencilIcon className="w-4 h-4" />
                       </button>
 
                       <button
@@ -245,7 +267,7 @@ export default function RoleTable({
                         className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors p-1 rounded"
                         title="Eliminar rol"
                       >
-                        <TrashIcon className="h-4 w-4" />
+                        <TrashIcon className="w-4 h-4" />
                       </button>
                     </div>
                   </td>

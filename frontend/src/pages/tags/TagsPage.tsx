@@ -443,20 +443,20 @@ export default function TagsPage() {
                           </button>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center justify-end space-x-2">
                             <button
                               onClick={() => handleEditClick(tag)}
-                              className="text-blue-600 hover:text-blue-900 p-1"
+                              className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
                               title="Editar etiqueta"
                             >
-                              <PencilIcon className="h-4 w-4" />
+                              <PencilIcon className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteClick(tag)}
-                              className="text-red-600 hover:text-red-900 p-1"
+                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                               title="Eliminar etiqueta"
                             >
-                              <TrashIcon className="h-4 w-4" />
+                              <TrashIcon className="w-4 h-4" />
                             </button>
                           </div>
                         </td>

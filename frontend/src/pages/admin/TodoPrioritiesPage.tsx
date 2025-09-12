@@ -521,9 +521,9 @@ export const TodoPrioritiesPage: React.FC = () => {
                         }
                       >
                         {priority.isActive ? (
-                          <ShieldExclamationIcon className="w-5 h-5" />
+                          <ShieldExclamationIcon className="w-4 h-4" />
                         ) : (
-                          <ShieldCheckIcon className="w-5 h-5" />
+                          <ShieldCheckIcon className="w-4 h-4" />
                         )}
                       </button>
                       {canEdit && (
@@ -532,7 +532,7 @@ export const TodoPrioritiesPage: React.FC = () => {
                           className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
                           title="Editar prioridad"
                         >
-                          <PencilIcon className="w-5 h-5" />
+                          <PencilIcon className="w-4 h-4" />
                         </button>
                       )}
                       {canDelete && (
@@ -541,7 +541,7 @@ export const TodoPrioritiesPage: React.FC = () => {
                           className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                           title="Eliminar prioridad"
                         >
-                          <TrashIcon className="w-5 h-5" />
+                          <TrashIcon className="w-4 h-4" />
                         </button>
                       )}
                     </div>

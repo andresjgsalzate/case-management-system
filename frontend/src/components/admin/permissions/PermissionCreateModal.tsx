@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Plus } from "lucide-react";
+import { ActionIcon } from "../../ui/ActionIcons";
 import { CreatePermissionRequest } from "../../../types/permission";
 import { permissionService } from "../../../services/permissionService";
 import { Button } from "../../ui/Button";
@@ -180,8 +180,8 @@ export const PermissionCreateModal: React.FC<PermissionCreateModalProps> = ({
               variant="ghost"
               className="text-purple-600 hover:text-purple-700"
             >
-              <Plus className="h-4 w-4 mr-1" />
-              Generar
+              <ActionIcon action="add" size="sm" className="mr-1" />
+              Crear Permiso
             </Button>
           </div>
           <Input

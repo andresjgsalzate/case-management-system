@@ -7,6 +7,7 @@ import { type Origin, type Application } from "../../types/case";
 import { PageWrapper } from "../../components/layout/PageWrapper";
 import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
 import { Button } from "../../components/ui/Button";
+import { ActionIcon } from "../../components/ui/ActionIcons";
 import { calcularPuntuacion, clasificarCaso } from "../../utils/caseUtils";
 
 export const NewCasePage: React.FC = () => {
@@ -197,17 +198,7 @@ export const NewCasePage: React.FC = () => {
         <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-md p-4">
           <div className="flex">
             <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-red-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              <ActionIcon action="error" size="md" color="danger" />
             </div>
             <div className="ml-3">
               <p className="text-sm text-red-800 dark:text-red-200">{error}</p>

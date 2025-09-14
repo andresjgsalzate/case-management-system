@@ -1,10 +1,6 @@
 import React from "react";
 import { useServerStatus } from "../../hooks/useServerStatus";
-import {
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  ArrowPathIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "./ActionIcons";
 
 interface ServerStatusIndicatorProps {
   position?: "top-right" | "bottom-right" | "top-left" | "bottom-left";
@@ -42,9 +38,9 @@ export const ServerStatusIndicator: React.FC<ServerStatusIndicatorProps> = ({
           title={`Servidor ${isOnline ? "Online" : "Offline"}`}
         >
           {isOnline ? (
-            <CheckCircleIcon className="h-4 w-4 text-green-600" />
+            <ActionIcon action="success" size="sm" color="success" />
           ) : (
-            <ExclamationTriangleIcon className="h-4 w-4 text-red-600" />
+            <ActionIcon action="warning" size="sm" color="danger" />
           )}
 
           <span className="text-sm font-medium">
@@ -61,7 +57,7 @@ export const ServerStatusIndicator: React.FC<ServerStatusIndicatorProps> = ({
             className="ml-1 p-1 rounded-md hover:bg-white/50 transition-colors"
             title="Verificar estado del servidor"
           >
-            <ArrowPathIcon className="h-3 w-3" />
+            <ActionIcon action="loading" size="xs" />
           </button>
         </div>
 

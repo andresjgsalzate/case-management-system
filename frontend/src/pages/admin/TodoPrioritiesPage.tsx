@@ -1,17 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  PlusIcon,
-  AdjustmentsHorizontalIcon,
-  ChartBarIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  PencilIcon,
-  TrashIcon,
-  EyeIcon,
-  ShieldExclamationIcon,
-  ShieldCheckIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../components/ui/ActionIcons";
 import { useToast } from "../../hooks/useToast";
 // import { usePermissions } from "../../hooks/usePermissions"; // Temporalmente comentado
 import todoPriorityService from "../../services/todoPriorityService";
@@ -298,7 +286,7 @@ export const TodoPrioritiesPage: React.FC = () => {
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <ChartBarIcon className="h-6 w-6 text-gray-400 dark:text-gray-500" />
+                <ActionIcon action="analytics" size="md" color="gray" />
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
@@ -318,7 +306,7 @@ export const TodoPrioritiesPage: React.FC = () => {
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <CheckCircleIcon className="h-6 w-6 text-green-400" />
+                <ActionIcon action="success" size="md" color="green" />
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
@@ -338,7 +326,7 @@ export const TodoPrioritiesPage: React.FC = () => {
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <XCircleIcon className="h-6 w-6 text-red-400" />
+                <ActionIcon action="error" size="md" color="red" />
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
@@ -368,7 +356,7 @@ export const TodoPrioritiesPage: React.FC = () => {
         {canCreate && (
           <div className="mt-4 flex md:mt-0 md:ml-4">
             <Button variant="primary" size="md" onClick={handleCreate}>
-              <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+              <ActionIcon action="add" size="sm" color="primary" />
               Nueva Prioridad
             </Button>
           </div>
@@ -421,7 +409,7 @@ export const TodoPrioritiesPage: React.FC = () => {
 
             <div className="sm:col-span-2 flex items-end space-x-3">
               <Button variant="ghost" size="md" onClick={clearFilters}>
-                <AdjustmentsHorizontalIcon className="-ml-0.5 mr-2 h-4 w-4" />
+                <ActionIcon action="filter" size="sm" color="gray" />
                 Limpiar Filtros
               </Button>
             </div>
@@ -435,7 +423,7 @@ export const TodoPrioritiesPage: React.FC = () => {
           <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 dark:border-red-500 p-4 mb-4">
             <div className="flex">
               <div className="flex-shrink-0">
-                <ExclamationTriangleIcon className="h-5 w-5 text-red-400 dark:text-red-300" />
+                <ActionIcon action="warning" size="sm" color="red" />
               </div>
               <div className="ml-3">
                 <p className="text-sm text-red-700 dark:text-red-200">
@@ -448,7 +436,7 @@ export const TodoPrioritiesPage: React.FC = () => {
 
         {priorities.length === 0 ? (
           <div className="text-center py-12">
-            <ExclamationTriangleIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+            <ActionIcon action="warning" size="xl" color="gray" />
             <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
               No hay prioridades
             </h3>
@@ -464,7 +452,7 @@ export const TodoPrioritiesPage: React.FC = () => {
                   onClick={handleCreate}
                   className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
-                  <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                  <ActionIcon action="add" size="sm" color="primary" />
                   Nueva Prioridad
                 </button>
               </div>
@@ -521,9 +509,17 @@ export const TodoPrioritiesPage: React.FC = () => {
                         }
                       >
                         {priority.isActive ? (
-                          <ShieldExclamationIcon className="w-4 h-4" />
+                          <ActionIcon
+                            action="deactivate"
+                            size="sm"
+                            color="red"
+                          />
                         ) : (
-                          <ShieldCheckIcon className="w-4 h-4" />
+                          <ActionIcon
+                            action="activate"
+                            size="sm"
+                            color="green"
+                          />
                         )}
                       </button>
                       {canEdit && (
@@ -532,7 +528,7 @@ export const TodoPrioritiesPage: React.FC = () => {
                           className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
                           title="Editar prioridad"
                         >
-                          <PencilIcon className="w-4 h-4" />
+                          <ActionIcon action="edit" size="sm" color="orange" />
                         </button>
                       )}
                       {canDelete && (
@@ -541,7 +537,7 @@ export const TodoPrioritiesPage: React.FC = () => {
                           className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                           title="Eliminar prioridad"
                         >
-                          <TrashIcon className="w-4 h-4" />
+                          <ActionIcon action="delete" size="sm" color="red" />
                         </button>
                       )}
                     </div>

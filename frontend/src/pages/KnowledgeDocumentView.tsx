@@ -1,21 +1,6 @@
 import React, { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import {
-  ArrowLeftIcon,
-  PencilIcon,
-  EyeIcon,
-  TagIcon,
-  FolderIcon,
-  ClockIcon,
-  UserIcon,
-  HandThumbUpIcon,
-  HandThumbDownIcon,
-  StarIcon,
-  ArchiveBoxIcon,
-  DocumentDuplicateIcon,
-  TrashIcon,
-  PaperClipIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../components/ui/ActionIcons";
 import {
   useKnowledgeDocument,
   useArchiveKnowledgeDocument,
@@ -302,7 +287,7 @@ const KnowledgeDocumentView: React.FC = () => {
             to="/knowledge"
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
           >
-            <ArrowLeftIcon className="h-4 w-4 mr-2" />
+            <ActionIcon action="back" size="sm" color="gray" />
             Volver a Base de Conocimiento
           </Link>
         </div>
@@ -321,13 +306,13 @@ const KnowledgeDocumentView: React.FC = () => {
             onClick={() => navigate("/knowledge")}
             className="p-2 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
           >
-            <ArrowLeftIcon className="h-5 w-5" />
+            <ActionIcon action="back" size="sm" color="gray" />
           </button>
 
           <div className="flex items-center space-x-2">
             {/* View Count */}
             <div className="flex items-center text-sm text-gray-500">
-              <EyeIcon className="h-4 w-4 mr-1" />
+              <ActionIcon action="view" size="sm" color="gray" />
               {document.viewCount} visualizaciones
             </div>
 
@@ -338,7 +323,7 @@ const KnowledgeDocumentView: React.FC = () => {
                 className="p-2 text-gray-400 hover:text-yellow-500 rounded-md hover:bg-gray-100"
                 title="Agregar a favoritos"
               >
-                <StarIcon className="h-5 w-5" />
+                <ActionIcon action="favorite" size="sm" color="yellow" />
               </button>
 
               <button
@@ -346,7 +331,7 @@ const KnowledgeDocumentView: React.FC = () => {
                 className="p-2 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
                 title="Duplicar documento"
               >
-                <DocumentDuplicateIcon className="h-5 w-5" />
+                <ActionIcon action="duplicate" size="sm" color="gray" />
               </button>
 
               {/* Botón Exportar PDF */}
@@ -385,7 +370,7 @@ const KnowledgeDocumentView: React.FC = () => {
                 className="p-2 text-gray-400 hover:text-blue-600 rounded-md hover:bg-gray-100"
                 title="Editar documento"
               >
-                <PencilIcon className="h-5 w-5" />
+                <ActionIcon action="edit" size="sm" color="blue" />
               </Link>
 
               {!document.isArchived ? (
@@ -394,7 +379,7 @@ const KnowledgeDocumentView: React.FC = () => {
                   className="p-2 text-gray-400 hover:text-orange-600 rounded-md hover:bg-gray-100"
                   title="Archivar documento"
                 >
-                  <ArchiveBoxIcon className="h-5 w-5" />
+                  <ActionIcon action="archive" size="sm" color="orange" />
                 </button>
               ) : (
                 <button
@@ -402,7 +387,7 @@ const KnowledgeDocumentView: React.FC = () => {
                   className="p-2 text-gray-400 hover:text-green-600 rounded-md hover:bg-gray-100"
                   title="Restaurar documento"
                 >
-                  <ArchiveBoxIcon className="h-5 w-5 rotate-180" />
+                  <ActionIcon action="archive" size="sm" color="green" />
                 </button>
               )}
 
@@ -411,7 +396,7 @@ const KnowledgeDocumentView: React.FC = () => {
                 className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20"
                 title="Eliminar documento permanentemente"
               >
-                <TrashIcon className="h-5 w-5" />
+                <ActionIcon action="delete" size="sm" color="red" />
               </button>
             </div>
           </div>
@@ -435,13 +420,13 @@ const KnowledgeDocumentView: React.FC = () => {
         <div className="flex flex-wrap items-center gap-6 text-sm text-gray-600">
           {document.__documentType__ && (
             <div className="flex items-center">
-              <FolderIcon className="h-4 w-4 mr-1" />
+              <ActionIcon action="folder" size="sm" color="gray" />
               {document.__documentType__.name}
             </div>
           )}
 
           <div className="flex items-center">
-            <UserIcon className="h-4 w-4 mr-1" />
+            <ActionIcon action="user" size="sm" color="gray" />
             Creado por{" "}
             {document.__createdByUser__?.fullName ||
               document.__createdByUser__?.email ||
@@ -449,13 +434,13 @@ const KnowledgeDocumentView: React.FC = () => {
           </div>
 
           <div className="flex items-center">
-            <ClockIcon className="h-4 w-4 mr-1" />
+            <ActionIcon action="time" size="sm" color="gray" />
             Actualizado {formatDate(document.updatedAt)}
           </div>
 
           {document.tags && document.tags.length > 0 && (
             <div className="flex items-center">
-              <TagIcon className="h-4 w-4 mr-1" />
+              <ActionIcon action="tag" size="sm" color="gray" />
               <div className="flex flex-wrap gap-1">
                 {document.tags.map((tag, index) => (
                   <span
@@ -554,12 +539,12 @@ const KnowledgeDocumentView: React.FC = () => {
               <div className="flex items-center px-4 py-2 text-sm font-medium text-gray-500 bg-gray-100 rounded-md">
                 {feedbackCheck.feedback?.isHelpful ? (
                   <>
-                    <HandThumbUpIcon className="h-5 w-5 mr-2 text-green-600" />
+                    <ActionIcon action="thumbUp" size="sm" color="green" />
                     Tu feedback: Útil
                   </>
                 ) : (
                   <>
-                    <HandThumbDownIcon className="h-5 w-5 mr-2 text-red-600" />
+                    <ActionIcon action="thumbDown" size="sm" color="red" />
                     Tu feedback: No útil
                   </>
                 )}
@@ -575,7 +560,7 @@ const KnowledgeDocumentView: React.FC = () => {
                 disabled={feedbackMutation.isPending}
                 className="flex items-center px-4 py-2 text-sm font-medium text-green-700 bg-green-100 rounded-md hover:bg-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <HandThumbUpIcon className="h-5 w-5 mr-2" />
+                <ActionIcon action="thumbUp" size="sm" color="gray" />
                 Sí, útil ({document.helpfulCount})
               </button>
 
@@ -584,7 +569,7 @@ const KnowledgeDocumentView: React.FC = () => {
                 disabled={feedbackMutation.isPending}
                 className="flex items-center px-4 py-2 text-sm font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <HandThumbDownIcon className="h-5 w-5 mr-2" />
+                <ActionIcon action="thumbDown" size="sm" color="gray" />
                 No, no útil ({document.notHelpfulCount})
               </button>
             </>
@@ -610,7 +595,7 @@ const KnowledgeDocumentView: React.FC = () => {
         <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="p-6">
             <div className="flex items-center mb-4">
-              <PaperClipIcon className="h-5 w-5 mr-2 text-gray-400" />
+              <ActionIcon action="attachment" size="sm" color="gray" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Archivos adjuntos
               </h3>

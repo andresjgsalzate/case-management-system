@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Download, FileText, Loader2, AlertCircle } from "lucide-react";
+import { ActionIcon } from "../ui/ActionIcons";
 import {
   downloadPDF,
   createFallbackPDF,
@@ -116,9 +116,9 @@ export const PDFExportButton: React.FC<PDFExportButtonProps> = ({
       return (
         <>
           {isExporting ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <ActionIcon action="loading" size="sm" className="animate-spin" />
           ) : (
-            <Download className="h-4 w-4" />
+            <ActionIcon action="download" size="sm" />
           )}
         </>
       );
@@ -127,9 +127,9 @@ export const PDFExportButton: React.FC<PDFExportButtonProps> = ({
     return (
       <>
         {isExporting ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <ActionIcon action="loading" size="sm" className="animate-spin" />
         ) : (
-          <FileText className="h-4 w-4" />
+          <ActionIcon action="document" size="sm" />
         )}
         <span>{isExporting ? "Generando PDF..." : "Exportar PDF"}</span>
       </>
@@ -152,7 +152,12 @@ export const PDFExportButton: React.FC<PDFExportButtonProps> = ({
         <div className="absolute top-full left-0 mt-2 z-50 max-w-xs">
           <div className="bg-red-50 border border-red-200 rounded-lg p-3 shadow-lg">
             <div className="flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+              <ActionIcon
+                action="error"
+                size="sm"
+                color="danger"
+                className="flex-shrink-0 mt-0.5"
+              />
               <div>
                 <p className="text-sm font-medium text-red-800">
                   Error al exportar

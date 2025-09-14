@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Users, Shield, ArrowRight, Plus } from "lucide-react";
+import { ActionIcon } from "../../ui/ActionIcons";
 import { Button } from "../../ui/Button";
 import { Input } from "../../ui/Input";
 import { Select } from "../../ui/Select";
@@ -184,7 +184,7 @@ export const PermissionRoleAssignment: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center space-x-3">
-        <Users className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+        <ActionIcon action="user" size="lg" color="purple" />
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             Asignación de Permisos por Rol
@@ -227,7 +227,7 @@ export const PermissionRoleAssignment: React.FC = () => {
                     <Badge variant={role.isActive ? "success" : "danger"}>
                       {role.isActive ? "Activo" : "Inactivo"}
                     </Badge>
-                    <ArrowRight className="h-4 w-4 text-gray-400" />
+                    <ActionIcon action="arrowRight" size="sm" color="neutral" />
                   </div>
                 </div>
               </div>
@@ -250,7 +250,7 @@ export const PermissionRoleAssignment: React.FC = () => {
                   size="sm"
                   className="bg-purple-600 hover:bg-purple-700 text-white"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <ActionIcon action="add" size="sm" className="mr-2" />
                   Asignar Permisos
                 </Button>
               )}
@@ -288,7 +288,12 @@ export const PermissionRoleAssignment: React.FC = () => {
                   ))
                 ) : (
                   <div className="text-center py-8">
-                    <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <ActionIcon
+                      action="shield"
+                      size="xl"
+                      color="neutral"
+                      className="mx-auto mb-4"
+                    />
                     <p className="text-gray-500 dark:text-gray-400">
                       Este rol no tiene permisos asignados
                     </p>
@@ -297,7 +302,12 @@ export const PermissionRoleAssignment: React.FC = () => {
               </div>
             ) : (
               <div className="text-center py-8">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <ActionIcon
+                  action="user"
+                  size="xl"
+                  color="neutral"
+                  className="mx-auto mb-4"
+                />
                 <p className="text-gray-500 dark:text-gray-400">
                   Selecciona un rol para ver sus permisos
                 </p>

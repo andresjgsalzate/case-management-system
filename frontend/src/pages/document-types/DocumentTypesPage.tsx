@@ -1,13 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import {
-  ChevronUpIcon,
-  ChevronDownIcon,
-  PlusIcon,
-  PencilIcon,
-  TrashIcon,
-  ShieldCheckIcon,
-  ShieldExclamationIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../components/ui/ActionIcons";
 import { useToast } from "../../hooks/useNotification";
 import { Button } from "../../components/ui/Button";
 import { DocumentTypeService } from "../../services/knowledge.service";
@@ -157,9 +149,9 @@ export default function DocumentTypesPage() {
   const getSortIcon = (field: typeof sortBy) => {
     if (sortBy !== field) return null;
     return sortOrder === "asc" ? (
-      <ChevronUpIcon className="h-4 w-4" />
+      <ActionIcon action="chevronUp" size="sm" />
     ) : (
-      <ChevronDownIcon className="h-4 w-4" />
+      <ActionIcon action="dropdown" size="sm" />
     );
   };
 
@@ -178,7 +170,7 @@ export default function DocumentTypesPage() {
           onClick={() => setShowCreateModal(true)}
           className="flex items-center"
         >
-          <PlusIcon className="h-4 w-4 mr-2" />
+          <ActionIcon action="add" size="sm" className="mr-2" />
           Nuevo Tipo
         </Button>
       </div>
@@ -473,9 +465,9 @@ export default function DocumentTypesPage() {
                             }
                           >
                             {documentType.isActive ? (
-                              <ShieldExclamationIcon className="w-4 h-4" />
+                              <ActionIcon action="deactivate" size="sm" />
                             ) : (
-                              <ShieldCheckIcon className="w-4 h-4" />
+                              <ActionIcon action="activate" size="sm" />
                             )}
                           </button>
                           <button
@@ -483,14 +475,14 @@ export default function DocumentTypesPage() {
                             className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
                             title="Editar tipo de documento"
                           >
-                            <PencilIcon className="w-4 h-4" />
+                            <ActionIcon action="edit" size="sm" />
                           </button>
                           <button
                             onClick={() => handleDeleteClick(documentType)}
                             className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                             title="Eliminar tipo de documento"
                           >
-                            <TrashIcon className="w-4 h-4" />
+                            <ActionIcon action="delete" size="sm" />
                           </button>
                         </div>
                       </td>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../ui/ActionIcons";
 import todoPriorityService, {
   TodoPriority,
 } from "../../../services/todoPriorityService";
@@ -62,7 +62,7 @@ export const TodoPriorityDeleteModal: React.FC<
       <div className="p-6">
         <div className="flex items-center space-x-3 mb-4">
           <div className="flex-shrink-0">
-            <ExclamationTriangleIcon className="h-8 w-8 text-red-500" />
+            <ActionIcon action="warning" size="lg" color="danger" />
           </div>
           <div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">

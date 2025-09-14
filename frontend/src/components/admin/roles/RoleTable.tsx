@@ -1,14 +1,5 @@
 import { useState } from "react";
-import {
-  PencilIcon,
-  TrashIcon,
-  ShieldCheckIcon,
-  ShieldExclamationIcon,
-  DocumentDuplicateIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  UsersIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../ui/ActionIcons";
 import type { Role } from "../../../types/role";
 import RoleEditModal from "./RoleEditModal";
 import RoleDeleteModal from "./RoleDeleteModal";
@@ -96,7 +87,12 @@ export default function RoleTable({
     return (
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="p-12 text-center">
-          <ShieldCheckIcon className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+          <ActionIcon
+            action="shield"
+            size="xl"
+            className="mx-auto mb-4"
+            color="neutral"
+          />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             No hay roles
           </h3>
@@ -153,12 +149,10 @@ export default function RoleTable({
                             : "bg-gray-100 dark:bg-gray-700"
                         }`}
                       >
-                        <ShieldCheckIcon
-                          className={`h-5 w-5 ${
-                            role.isActive
-                              ? "text-green-600 dark:text-green-400"
-                              : "text-gray-400 dark:text-gray-500"
-                          }`}
+                        <ActionIcon
+                          action="shield"
+                          size="sm"
+                          color={role.isActive ? "success" : "neutral"}
                         />
                       </div>
                       <div>
@@ -198,12 +192,20 @@ export default function RoleTable({
                     >
                       {role.isActive ? (
                         <>
-                          <EyeIcon className="h-3 w-3 mr-1" />
+                          <ActionIcon
+                            action="view"
+                            size="xs"
+                            className="mr-1"
+                          />
                           Activo
                         </>
                       ) : (
                         <>
-                          <EyeSlashIcon className="h-3 w-3 mr-1" />
+                          <ActionIcon
+                            action="hide"
+                            size="xs"
+                            className="mr-1"
+                          />
                           Inactivo
                         </>
                       )}
@@ -212,14 +214,24 @@ export default function RoleTable({
 
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900 dark:text-white">
-                      <UsersIcon className="h-4 w-4 mr-1 text-gray-400 dark:text-gray-500" />
+                      <ActionIcon
+                        action="user"
+                        size="sm"
+                        className="mr-1"
+                        color="neutral"
+                      />
                       {role.userCount || 0}
                     </div>
                   </td>
 
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900 dark:text-white">
-                      <ShieldCheckIcon className="h-4 w-4 mr-1 text-gray-400 dark:text-gray-500" />
+                      <ActionIcon
+                        action="shield"
+                        size="sm"
+                        className="mr-1"
+                        color="neutral"
+                      />
                       {role.permissionCount || 0}
                     </div>
                   </td>
@@ -240,9 +252,9 @@ export default function RoleTable({
                         title={role.isActive ? "Desactivar rol" : "Activar rol"}
                       >
                         {role.isActive ? (
-                          <ShieldExclamationIcon className="w-4 h-4" />
+                          <ActionIcon action="warning" size="sm" />
                         ) : (
-                          <ShieldCheckIcon className="w-4 h-4" />
+                          <ActionIcon action="shield" size="sm" />
                         )}
                       </button>
 
@@ -251,7 +263,7 @@ export default function RoleTable({
                         className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 transition-colors p-1 rounded"
                         title="Clonar rol"
                       >
-                        <DocumentDuplicateIcon className="w-4 h-4" />
+                        <ActionIcon action="duplicate" size="sm" />
                       </button>
 
                       <button
@@ -259,7 +271,7 @@ export default function RoleTable({
                         className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 transition-colors p-1 rounded"
                         title="Editar rol"
                       >
-                        <PencilIcon className="w-4 h-4" />
+                        <ActionIcon action="edit" size="sm" />
                       </button>
 
                       <button
@@ -267,7 +279,7 @@ export default function RoleTable({
                         className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors p-1 rounded"
                         title="Eliminar rol"
                       >
-                        <TrashIcon className="w-4 h-4" />
+                        <ActionIcon action="delete" size="sm" />
                       </button>
                     </div>
                   </td>

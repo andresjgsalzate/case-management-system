@@ -1,12 +1,5 @@
 import React, { useState } from "react";
-import {
-  PlusIcon,
-  CalendarIcon,
-  FunnelIcon,
-  ArrowDownTrayIcon,
-  TableCellsIcon,
-  Squares2X2Icon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../components/ui/ActionIcons";
 import { PageWrapper } from "../../components/layout/PageWrapper";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -226,7 +219,7 @@ export const DispositionsPage: React.FC = () => {
               onClick={() => setViewMode("cards")}
               className="flex items-center"
             >
-              <Squares2X2Icon className="h-4 w-4 mr-1" />
+              <ActionIcon action="grid" size="sm" className="mr-1" />
               Tarjetas
             </Button>
             <Button
@@ -235,7 +228,7 @@ export const DispositionsPage: React.FC = () => {
               onClick={() => setViewMode("table")}
               className="flex items-center"
             >
-              <TableCellsIcon className="h-4 w-4 mr-1" />
+              <ActionIcon action="table" size="sm" className="mr-1" />
               Tabla
             </Button>
           </div>
@@ -246,7 +239,7 @@ export const DispositionsPage: React.FC = () => {
             className="flex items-center"
             disabled={!dispositionsQuery.data?.length}
           >
-            <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+            <ActionIcon action="download" size="sm" className="mr-2" />
             Exportar Todo
           </Button>
 
@@ -254,7 +247,7 @@ export const DispositionsPage: React.FC = () => {
             onClick={handleCreateDisposition}
             className="flex items-center"
           >
-            <PlusIcon className="h-4 w-4 mr-2" />
+            <ActionIcon action="add" size="sm" className="mr-2" />
             Nueva Disposición
           </Button>
         </div>
@@ -263,7 +256,7 @@ export const DispositionsPage: React.FC = () => {
       {/* Filtros */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center gap-2 mb-4">
-          <FunnelIcon className="h-5 w-5 text-gray-400" />
+          <ActionIcon action="filter" size="lg" color="gray" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white">
             Filtros
           </h3>
@@ -356,7 +349,12 @@ export const DispositionsPage: React.FC = () => {
           </div>
         ) : (
           <div className="text-center py-12">
-            <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <ActionIcon
+              action="calendar"
+              size="xl"
+              color="gray"
+              className="mx-auto mb-4"
+            />
             <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-300">
               {searchTerm || filters.applicationId
                 ? "No se encontraron resultados"
@@ -373,7 +371,7 @@ export const DispositionsPage: React.FC = () => {
                   onClick={handleCreateDisposition}
                   className="flex items-center"
                 >
-                  <PlusIcon className="h-4 w-4 mr-2" />
+                  <ActionIcon action="add" size="sm" className="mr-2" />
                   Crear Primera Disposición
                 </Button>
               </div>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../ui/ActionIcons";
 import { useToast } from "../../../contexts/ToastContext";
 import { roleService } from "../../../services/roleService";
 import { Modal } from "../../ui/Modal";
@@ -195,7 +195,7 @@ export default function RoleCreateModal({
               </>
             ) : (
               <>
-                <PlusIcon className="h-4 w-4 mr-1" />
+                <ActionIcon action="add" size="sm" className="mr-1" />
                 Crear Rol
               </>
             )}

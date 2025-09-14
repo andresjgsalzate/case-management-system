@@ -1,11 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import {
-  ChartBarIcon,
-  UserIcon,
-  ArrowRightOnRectangleIcon,
-  Cog6ToothIcon,
-  ChevronDownIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../ui/ActionIcons";
 import { useAuth } from "../../contexts/AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
 import { VersionDisplay } from "./VersionDisplay";
@@ -133,7 +127,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               } transition-colors duration-200`}
               title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
             >
-              <ChartBarIcon className="h-8 w-8 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+              <ActionIcon
+                action="dashboard"
+                size="xl"
+                color="blue"
+                className="flex-shrink-0"
+              />
               {!isCollapsed && (
                 <h1 className="ml-3 text-lg font-bold text-gray-900 dark:text-white">
                   Gestión de Casos
@@ -170,7 +169,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 title={isCollapsed ? user?.fullName || "Usuario" : undefined}
               >
                 <div className="flex items-center">
-                  <UserIcon className="h-5 w-5 flex-shrink-0" />
+                  <ActionIcon
+                    action="user"
+                    size="md"
+                    color="gray"
+                    className="flex-shrink-0"
+                  />
                   {!isCollapsed && (
                     <div className="ml-3 text-left">
                       <div className="font-medium">
@@ -183,8 +187,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   )}
                 </div>
                 {!isCollapsed && (
-                  <ChevronDownIcon
-                    className={`h-4 w-4 transform transition-transform ${
+                  <ActionIcon
+                    action="dropdown"
+                    size="sm"
+                    color="gray"
+                    className={`transform transition-transform ${
                       showUserMenu ? "rotate-180" : ""
                     }`}
                   />
@@ -204,8 +211,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       }}
                       className="w-full justify-start"
                     >
-                      <UserIcon className="h-4 w-4 mr-3" />
-                      Mi Perfil
+                      <ActionIcon action="user" size="sm" color="gray" />
+                      <span className="ml-3">Mi Perfil</span>
                     </Button>
                     <Button
                       variant="ghost"
@@ -216,8 +223,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       }}
                       className="w-full justify-start"
                     >
-                      <Cog6ToothIcon className="h-4 w-4 mr-3" />
-                      Configuración
+                      <ActionIcon action="settings" size="sm" color="gray" />
+                      <span className="ml-3">Configuración</span>
                     </Button>
                     <Button
                       variant="danger"
@@ -225,8 +232,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       onClick={handleSignOut}
                       className="w-full justify-start"
                     >
-                      <ArrowRightOnRectangleIcon className="h-4 w-4 mr-3" />
-                      Cerrar Sesión
+                      <ActionIcon action="logout" size="sm" color="red" />
+                      <span className="ml-3">Cerrar Sesión</span>
                     </Button>
                   </div>
                 </div>

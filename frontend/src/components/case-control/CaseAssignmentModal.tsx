@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { ActionIcon } from "../ui/ActionIcons";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Select } from "../ui/Select";
@@ -150,7 +150,12 @@ export const CaseAssignmentModal: React.FC<CaseAssignmentModalProps> = ({
             Buscar Caso
           </label>
           <div className="relative">
-            <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <ActionIcon
+              action="search"
+              size="sm"
+              className="absolute left-3 top-1/2 transform -translate-y-1/2"
+              color="neutral"
+            />
             <Input
               placeholder="Buscar por número de caso o descripción..."
               value={searchTerm}

@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  UserGroupIcon,
-  ShieldCheckIcon,
-  EyeIcon,
-  EyeSlashIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../ui/ActionIcons";
 import { roleService } from "../../../services/roleService";
 import type { RoleStats } from "../../../types/role";
 
@@ -63,7 +58,7 @@ export default function RoleStatsCards() {
       id: "total",
       label: "Total de Roles",
       value: stats?.totalRoles || 0,
-      icon: UserGroupIcon,
+      icon: "user",
       color: "text-blue-600",
       bgColor: "bg-blue-50",
       borderColor: "border-blue-100",
@@ -72,7 +67,7 @@ export default function RoleStatsCards() {
       id: "active",
       label: "Roles Activos",
       value: stats?.activeRoles || 0,
-      icon: EyeIcon,
+      icon: "view",
       color: "text-green-600",
       bgColor: "bg-green-50",
       borderColor: "border-green-100",
@@ -81,7 +76,7 @@ export default function RoleStatsCards() {
       id: "inactive",
       label: "Roles Inactivos",
       value: stats?.inactiveRoles || 0,
-      icon: EyeSlashIcon,
+      icon: "hide",
       color: "text-gray-600",
       bgColor: "bg-gray-50",
       borderColor: "border-gray-100",
@@ -90,7 +85,7 @@ export default function RoleStatsCards() {
       id: "withPerms",
       label: "Roles Configurados",
       value: (stats as any)?.rolesWithMostPermissions?.length || 0,
-      icon: ShieldCheckIcon,
+      icon: "shield",
       color: "text-purple-600",
       bgColor: "bg-purple-50",
       borderColor: "border-purple-100",
@@ -100,8 +95,6 @@ export default function RoleStatsCards() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       {statsCards.map((card) => {
-        const IconComponent = card.icon;
-
         return (
           <div
             key={card.id}
@@ -109,7 +102,11 @@ export default function RoleStatsCards() {
           >
             <div className="flex items-center justify-between mb-3">
               <div className={`p-2 rounded-lg ${card.bgColor}`}>
-                <IconComponent className={`h-5 w-5 ${card.color}`} />
+                <ActionIcon
+                  action={card.icon as any}
+                  size="sm"
+                  className={card.color}
+                />
               </div>
               <button
                 onClick={loadStats}

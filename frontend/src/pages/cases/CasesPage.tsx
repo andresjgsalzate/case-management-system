@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  PlusIcon,
-  DocumentArrowDownIcon,
-  MagnifyingGlassIcon,
-  PencilIcon,
-  TrashIcon,
-  EyeIcon,
-} from "@heroicons/react/24/outline";
+  AddIcon,
+  SearchIcon,
+  EditIcon,
+  DeleteIcon,
+  ViewIcon,
+  ActionIcon,
+} from "../../components/ui/ActionIcons";
 import {
   caseService,
   origensApi,
@@ -214,9 +214,9 @@ export const CasesPage: React.FC = () => {
             />
             <Link
               to="/cases/new"
-              className="btn-base btn-primary btn-sm flex items-center gap-2 link-btn"
+              className="btn-base btn-primary btn-sm flex items-center justify-center gap-2 link-btn min-w-[140px]"
             >
-              <PlusIcon className="h-5 w-5" />
+              <AddIcon size="sm" />
               Nuevo Caso
             </Link>
           </div>
@@ -227,13 +227,15 @@ export const CasesPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Búsqueda */}
             <div className="relative">
-              <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                <SearchIcon size="sm" color="neutral" />
+              </div>
               <input
                 type="text"
                 placeholder="Buscar por número de caso..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
             </div>
 
@@ -289,10 +291,15 @@ export const CasesPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <DocumentArrowDownIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <div className="flex-shrink-0 p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                <ActionIcon
+                  action="document"
+                  size="lg"
+                  color="blue"
+                  title="Total de casos"
+                />
               </div>
-              <div className="ml-4">
+              <div className="ml-4 flex-1">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   Total de Casos
                 </p>
@@ -305,10 +312,15 @@ export const CasesPage: React.FC = () => {
 
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                <DocumentArrowDownIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <div className="flex-shrink-0 p-3 bg-green-100 dark:bg-green-900 rounded-lg">
+                <ActionIcon
+                  action="check"
+                  size="lg"
+                  color="green"
+                  title="Casos activos"
+                />
               </div>
-              <div className="ml-4">
+              <div className="ml-4 flex-1">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   Casos Activos
                 </p>
@@ -321,10 +333,15 @@ export const CasesPage: React.FC = () => {
 
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
-                <DocumentArrowDownIcon className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+              <div className="flex-shrink-0 p-3 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
+                <ActionIcon
+                  action="warning"
+                  size="lg"
+                  color="yellow"
+                  title="Casos de alta complejidad"
+                />
               </div>
-              <div className="ml-4">
+              <div className="ml-4 flex-1">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   Alta Complejidad
                 </p>
@@ -340,10 +357,15 @@ export const CasesPage: React.FC = () => {
 
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-red-100 dark:bg-red-900 rounded-lg">
-                <DocumentArrowDownIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
+              <div className="flex-shrink-0 p-3 bg-red-100 dark:bg-red-900 rounded-lg">
+                <ActionIcon
+                  action="filter"
+                  size="lg"
+                  color="red"
+                  title="Casos filtrados"
+                />
               </div>
-              <div className="ml-4">
+              <div className="ml-4 flex-1">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                   Filtrados
                 </p>
@@ -453,18 +475,18 @@ export const CasesPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
+                        <div className="flex items-center justify-end space-x-3">
                           <Link
                             to={`/cases/view/${caso.id}`}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200"
                           >
-                            <EyeIcon className="h-4 w-4" />
+                            <ViewIcon size="sm" title="Ver detalles del caso" />
                           </Link>
                           <Link
                             to={`/cases/edit/${caso.id}`}
-                            className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors duration-200"
                           >
-                            <PencilIcon className="h-4 w-4" />
+                            <EditIcon size="sm" title="Editar caso" />
                           </Link>
                           <button
                             onClick={() =>
@@ -474,9 +496,9 @@ export const CasesPage: React.FC = () => {
                                 caseNumber: caso.numeroCaso,
                               })
                             }
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200"
                           >
-                            <TrashIcon className="h-4 w-4" />
+                            <DeleteIcon size="sm" title="Eliminar caso" />
                           </button>
                         </div>
                       </td>

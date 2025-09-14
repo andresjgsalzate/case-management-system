@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { PencilIcon } from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../ui/ActionIcons";
 import { useToast } from "../../../contexts/ToastContext";
 import { tagService } from "../../../services/tagService";
 import { Modal } from "../../ui/Modal";
@@ -381,8 +381,8 @@ export default function TagEditModal({
               </>
             ) : (
               <>
-                <PencilIcon className="h-4 w-4 mr-2" />
-                Actualizar Etiqueta
+                <ActionIcon action="edit" size="sm" className="mr-2" />
+                Guardar Cambios
               </>
             )}
           </Button>

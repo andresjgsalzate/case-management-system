@@ -3,14 +3,7 @@ import { Modal } from "../ui/Modal";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Note, NoteType, NotePriority } from "../../types/note.types";
-import {
-  FlagIcon,
-  CalendarIcon,
-  ClockIcon,
-  TagIcon,
-  DocumentTextIcon,
-  InformationCircleIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../ui/ActionIcons";
 
 interface NoteFormModalProps {
   isOpen: boolean;
@@ -176,7 +169,7 @@ export const NoteFormModal: React.FC<NoteFormModalProps> = ({
         {/* Información Básica */}
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-            <DocumentTextIcon className="h-5 w-5 mr-2" />
+            <ActionIcon action="document" size="sm" className="mr-2" />
             Información Básica
           </h3>
 
@@ -248,7 +241,7 @@ export const NoteFormModal: React.FC<NoteFormModalProps> = ({
         {/* Configuración y Metadatos */}
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
-            <InformationCircleIcon className="h-5 w-5 mr-2" />
+            <ActionIcon action="info" size="sm" className="mr-2" />
             Configuración y Metadatos
           </h3>
 
@@ -290,7 +283,7 @@ export const NoteFormModal: React.FC<NoteFormModalProps> = ({
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <TagIcon className="h-4 w-4 inline mr-1" />
+                <ActionIcon action="tag" size="sm" className="inline mr-1" />
                 Etiquetas (separadas por comas)
               </label>
               <Input
@@ -304,7 +297,11 @@ export const NoteFormModal: React.FC<NoteFormModalProps> = ({
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <CalendarIcon className="h-4 w-4 inline mr-1" />
+                <ActionIcon
+                  action="calendar"
+                  size="sm"
+                  className="inline mr-1"
+                />
                 Fecha de Recordatorio
               </label>
               <Input
@@ -359,7 +356,7 @@ export const NoteFormModal: React.FC<NoteFormModalProps> = ({
                 htmlFor="isImportant"
                 className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
               >
-                <FlagIcon className="h-4 w-4 inline mr-1" />
+                <ActionIcon action="flag" size="sm" className="inline mr-1" />
                 Marcar como importante
               </label>
             </div>
@@ -376,7 +373,7 @@ export const NoteFormModal: React.FC<NoteFormModalProps> = ({
                 htmlFor="isTemplate"
                 className="ml-2 block text-sm text-gray-700 dark:text-gray-300"
               >
-                <ClockIcon className="h-4 w-4 inline mr-1" />
+                <ActionIcon action="time" size="sm" className="inline mr-1" />
                 Usar como plantilla
               </label>
             </div>

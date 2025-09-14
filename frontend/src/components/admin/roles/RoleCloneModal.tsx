@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { DocumentDuplicateIcon } from "@heroicons/react/24/outline";
+import React, { useState } from "react";
 import { useToast } from "../../../contexts/ToastContext";
 import { roleService } from "../../../services/roleService";
 import { Modal } from "../../ui/Modal";
@@ -61,12 +60,7 @@ export default function RoleCloneModal({
   if (!role) return null;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title="Clonar Rol"
-      icon={<DocumentDuplicateIcon className="h-6 w-6" />}
-    >
+    <Modal isOpen={isOpen} onClose={handleClose} title="Clonar Rol">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <p className="text-sm text-gray-600 mb-4">

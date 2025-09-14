@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from "react";
-import {
-  ClockIcon,
-  PlusIcon,
-  CalendarIcon,
-  TrashIcon,
-} from "@heroicons/react/24/outline";
 import Modal from "../ui/Modal";
+import { ActionIcon } from "../ui/ActionIcons";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { useTodos } from "../../hooks/useTodos";
@@ -294,7 +289,7 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
             variant="secondary"
             size="sm"
           >
-            <PlusIcon className="h-4 w-4 mr-2" />
+            <ActionIcon action="add" size="sm" className="mr-2" />
             Agregar Tiempo Manual
           </Button>
         </div>
@@ -408,7 +403,7 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
                         className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg"
                       >
                         <div className="flex items-center space-x-3">
-                          <ClockIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                          <ActionIcon action="time" size="md" color="success" />
                           <div>
                             <div className="font-medium text-gray-900 dark:text-white">
                               {formatTimeDetailed(entry.durationMinutes || 0)}
@@ -430,7 +425,7 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
                             className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 p-1"
                             title="Eliminar entrada de tiempo"
                           >
-                            <TrashIcon className="h-4 w-4" />
+                            <ActionIcon action="delete" size="sm" />
                           </Button>
                         </div>
                       </div>
@@ -452,7 +447,11 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
                         className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg"
                       >
                         <div className="flex items-center space-x-3">
-                          <CalendarIcon className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                          <ActionIcon
+                            action="calendar"
+                            size="md"
+                            color="warning"
+                          />
                           <div>
                             <div className="font-medium text-gray-900 dark:text-white">
                               {formatTimeDetailed(entry.durationMinutes)}
@@ -469,7 +468,7 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
                           size="xs"
                           className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 p-1"
                         >
-                          <TrashIcon className="h-4 w-4" />
+                          <ActionIcon action="delete" size="sm" />
                         </Button>
                       </div>
                     ))}
@@ -479,7 +478,11 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
 
               {timeEntries.length === 0 && manualTimeEntries.length === 0 && (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <ClockIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <ActionIcon
+                    action="time"
+                    size="xl"
+                    className="mx-auto mb-4 opacity-50"
+                  />
                   <p>No hay entradas de tiempo registradas</p>
                 </div>
               )}

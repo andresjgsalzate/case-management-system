@@ -1,13 +1,5 @@
 import React from "react";
-import {
-  Edit,
-  Trash2,
-  Shield,
-  Users,
-  Copy,
-  Settings,
-  Calendar,
-} from "lucide-react";
+import { ActionIcon } from "../ui/ActionIcons";
 import { Role } from "../../types/role";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
@@ -109,7 +101,12 @@ export const RoleTable: React.FC<RoleTableProps> = ({
               <tr>
                 <td colSpan={7} className="px-6 py-12 text-center">
                   <div className="flex flex-col items-center">
-                    <Shield className="w-12 h-12 text-gray-400 mb-4" />
+                    <ActionIcon
+                      action="shield"
+                      size="xl"
+                      color="neutral"
+                      className="mb-4"
+                    />
                     <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
                       No se encontraron roles
                     </p>
@@ -136,12 +133,14 @@ export const RoleTable: React.FC<RoleTableProps> = ({
                               : "bg-purple-100 dark:bg-purple-900/20"
                           }`}
                         >
-                          <Shield
-                            className={`w-5 h-5 ${
+                          <ActionIcon
+                            action="shield"
+                            size="sm"
+                            className={
                               isSystemRole(role.name)
                                 ? "text-blue-600 dark:text-blue-400"
                                 : "text-purple-600 dark:text-purple-400"
-                            }`}
+                            }
                           />
                         </div>
                       </div>
@@ -186,7 +185,12 @@ export const RoleTable: React.FC<RoleTableProps> = ({
                   {/* Permisos */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900 dark:text-gray-100">
-                      <Settings className="w-4 h-4 mr-1 text-gray-400" />
+                      <ActionIcon
+                        action="settings"
+                        size="sm"
+                        color="neutral"
+                        className="mr-1"
+                      />
                       {role.permissions?.length || 0} permisos
                     </div>
                   </td>
@@ -194,7 +198,12 @@ export const RoleTable: React.FC<RoleTableProps> = ({
                   {/* Usuarios */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900 dark:text-gray-100">
-                      <Users className="w-4 h-4 mr-1 text-gray-400" />
+                      <ActionIcon
+                        action="user"
+                        size="sm"
+                        color="neutral"
+                        className="mr-1"
+                      />
                       {role.userCount || 0} usuarios
                     </div>
                   </td>
@@ -202,7 +211,11 @@ export const RoleTable: React.FC<RoleTableProps> = ({
                   {/* Fecha de creación */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                      <Calendar className="w-3 h-3 mr-1" />
+                      <ActionIcon
+                        action="calendar"
+                        size="xs"
+                        className="mr-1"
+                      />
                       {formatDate(role.createdAt)}
                     </div>
                   </td>
@@ -218,7 +231,7 @@ export const RoleTable: React.FC<RoleTableProps> = ({
                           className="text-blue-600 hover:text-blue-900"
                           title="Editar rol"
                         >
-                          <Edit className="w-4 h-4" />
+                          <ActionIcon action="edit" size="sm" />
                         </Button>
                       )}
 
@@ -230,7 +243,7 @@ export const RoleTable: React.FC<RoleTableProps> = ({
                           className="text-purple-600 hover:text-purple-900"
                           title="Gestionar permisos"
                         >
-                          <Settings className="w-4 h-4" />
+                          <ActionIcon action="settings" size="sm" />
                         </Button>
                       )}
 
@@ -242,7 +255,7 @@ export const RoleTable: React.FC<RoleTableProps> = ({
                           className="text-green-600 hover:text-green-900"
                           title="Clonar rol"
                         >
-                          <Copy className="w-4 h-4" />
+                          <ActionIcon action="duplicate" size="sm" />
                         </Button>
                       )}
 
@@ -254,7 +267,7 @@ export const RoleTable: React.FC<RoleTableProps> = ({
                           className="text-red-600 hover:text-red-900"
                           title="Eliminar rol"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <ActionIcon action="delete" size="sm" />
                         </Button>
                       )}
                     </div>

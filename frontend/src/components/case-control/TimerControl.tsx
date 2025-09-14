@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from "react";
-import {
-  PlayIcon,
-  PauseIcon,
-  StopIcon,
-  ClockIcon,
-} from "@heroicons/react/24/outline";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Button } from "../ui/Button";
+import { ActionIcon } from "../ui/ActionIcons";
 
 interface TimerControlProps {
   isActive: boolean;
@@ -63,7 +58,7 @@ export const TimerControl: React.FC<TimerControlProps> = ({
       {/* Tiempo transcurrido */}
       {isActive && (
         <div className="flex items-center text-sm font-mono bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-md">
-          <ClockIcon className="h-4 w-4 mr-1" />
+          <ActionIcon action="time" size="sm" className="mr-1" />
           {getElapsedTime()}
         </div>
       )}
@@ -78,7 +73,7 @@ export const TimerControl: React.FC<TimerControlProps> = ({
             size="sm"
             title="Iniciar timer"
           >
-            <PlayIcon className="h-4 w-4" />
+            <ActionIcon action="play" size="sm" />
           </Button>
         ) : (
           <>
@@ -89,7 +84,7 @@ export const TimerControl: React.FC<TimerControlProps> = ({
               size="sm"
               title="Pausar timer"
             >
-              <PauseIcon className="h-4 w-4" />
+              <ActionIcon action="pause" size="sm" />
             </Button>
 
             <Button
@@ -99,7 +94,7 @@ export const TimerControl: React.FC<TimerControlProps> = ({
               size="sm"
               title="Detener timer"
             >
-              <StopIcon className="h-4 w-4" />
+              <ActionIcon action="stop" size="sm" />
             </Button>
           </>
         )}

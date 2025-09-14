@@ -1,15 +1,5 @@
 import React from "react";
-import {
-  PencilIcon,
-  TrashIcon,
-  ArchiveBoxIcon,
-  ArchiveBoxXMarkIcon,
-  ClockIcon,
-  TagIcon,
-  UserIcon,
-  DocumentTextIcon,
-} from "@heroicons/react/24/outline";
-import { ExclamationTriangleIcon as ExclamationTriangleSolid } from "@heroicons/react/24/solid";
+import { ActionIcon } from "../ui/ActionIcons";
 import { Note } from "../../types/note.types";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -82,17 +72,27 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                 {note.title}
               </h3>
               {note.isImportant && (
-                <ExclamationTriangleSolid className="h-5 w-5 text-red-500 flex-shrink-0" />
+                <ActionIcon
+                  action="warning"
+                  size="sm"
+                  color="danger"
+                  className="flex-shrink-0"
+                />
               )}
               {note.isArchived && (
-                <ArchiveBoxIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                <ActionIcon
+                  action="archive"
+                  size="sm"
+                  color="neutral"
+                  className="flex-shrink-0"
+                />
               )}
             </div>
 
             {/* Metadata */}
             <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-500 dark:text-gray-400">
               <div className="flex items-center gap-1">
-                <UserIcon className="h-4 w-4 flex-shrink-0" />
+                <ActionIcon action="user" size="sm" className="flex-shrink-0" />
                 <span className="truncate">
                   {note.createdByUser?.fullName ||
                     note.createdByUser?.email ||
@@ -100,7 +100,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <ClockIcon className="h-4 w-4 flex-shrink-0" />
+                <ActionIcon action="time" size="sm" className="flex-shrink-0" />
                 <span className="whitespace-nowrap">
                   {formatDate(note.createdAt)}
                 </span>
@@ -123,7 +123,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                 className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 title="Editar nota"
               >
-                <PencilIcon className="h-3.5 w-3.5" />
+                <ActionIcon action="edit" size="xs" />
               </Button>
             )}
 
@@ -138,9 +138,9 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                 title={note.isArchived ? "Desarchivar nota" : "Archivar nota"}
               >
                 {note.isArchived ? (
-                  <ArchiveBoxXMarkIcon className="h-3.5 w-3.5" />
+                  <ActionIcon action="restore" size="xs" />
                 ) : (
-                  <ArchiveBoxIcon className="h-3.5 w-3.5" />
+                  <ActionIcon action="archive" size="xs" />
                 )}
               </Button>
             )}
@@ -153,7 +153,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                 className="p-1.5 text-gray-400 hover:text-red-500"
                 title="Eliminar nota"
               >
-                <TrashIcon className="h-3.5 w-3.5" />
+                <ActionIcon action="delete" size="xs" />
               </Button>
             )}
           </div>
@@ -172,7 +172,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         {/* Case Info */}
         {note.case && (
           <div className="flex items-center gap-2 mb-4 p-2 bg-gray-50 dark:bg-gray-700 rounded">
-            <DocumentTextIcon className="h-4 w-4 text-gray-500" />
+            <ActionIcon action="document" size="sm" color="neutral" />
             <span className="text-sm text-gray-600 dark:text-gray-400">
               Caso: <span className="font-medium">{note.case.numeroCaso}</span>
               {note.case.descripcion && <span> - {note.case.descripcion}</span>}
@@ -183,7 +183,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         {/* Assigned User */}
         {note.assignedToUser && note.assignedToUser.id !== note.createdBy && (
           <div className="flex items-center gap-2 mb-4">
-            <UserIcon className="h-4 w-4 text-gray-500" />
+            <ActionIcon action="user" size="sm" color="neutral" />
             <span className="text-sm text-gray-600 dark:text-gray-400">
               Asignado a:{" "}
               <span className="font-medium">
@@ -202,7 +202,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                 : "bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
             }`}
           >
-            <ClockIcon className="h-4 w-4" />
+            <ActionIcon action="time" size="sm" />
             <span className="text-sm">
               Recordatorio: {formatReminderDate(note.reminderDate)}
               {isReminderActive(note.reminderDate) && (
@@ -225,7 +225,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
                 key={index}
                 className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
               >
-                <TagIcon className="h-3 w-3 mr-1" />
+                <ActionIcon action="tag" size="xs" className="mr-1" />
                 {tag}
               </span>
             ))}
@@ -237,7 +237,7 @@ export const NoteCard: React.FC<NoteCardProps> = ({
       {note.isArchived && note.archivedAt && (
         <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700 rounded-b-lg border-t border-gray-200 dark:border-gray-600">
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <ArchiveBoxIcon className="h-4 w-4" />
+            <ActionIcon action="archive" size="sm" />
             <span>
               Archivado {formatDate(note.archivedAt)}
               {note.archivedByUser && (

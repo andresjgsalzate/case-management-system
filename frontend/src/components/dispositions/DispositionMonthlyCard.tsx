@@ -1,5 +1,5 @@
 import React from "react";
-import { CalendarIcon, ArrowDownTrayIcon } from "@heroicons/react/24/outline";
+import { ActionIcon } from "../ui/ActionIcons";
 import { Button } from "../ui/Button";
 import type { DispositionMensual } from "../../services/dispositionApi";
 
@@ -27,7 +27,7 @@ export const DispositionMonthlyCard: React.FC<DispositionMonthlyCardProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
-              <CalendarIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <ActionIcon action="calendar" size="lg" color="primary" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -47,7 +47,7 @@ export const DispositionMonthlyCard: React.FC<DispositionMonthlyCardProps> = ({
               onClick={handleExport}
               className="flex items-center space-x-2"
             >
-              <ArrowDownTrayIcon className="h-4 w-4" />
+              <ActionIcon action="download" size="sm" />
               <span>Exportar</span>
             </Button>
           )}
@@ -103,7 +103,12 @@ export const DispositionMonthlyCard: React.FC<DispositionMonthlyCardProps> = ({
         </div>
       ) : (
         <div className="text-center py-8">
-          <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
+          <ActionIcon
+            action="calendar"
+            size="xl"
+            color="neutral"
+            className="mx-auto"
+          />
           <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-300">
             Sin disposiciones
           </h3>

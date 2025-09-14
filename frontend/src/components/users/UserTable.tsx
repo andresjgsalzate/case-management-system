@@ -1,14 +1,5 @@
 import React from "react";
-import {
-  PencilIcon,
-  TrashIcon,
-  EyeIcon,
-  ShieldCheckIcon,
-  ShieldExclamationIcon,
-  CalendarIcon,
-  EnvelopeIcon,
-  KeyIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../ui/ActionIcons";
 import { User } from "../../types/user";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
@@ -143,7 +134,11 @@ export const UserTable: React.FC<UserTableProps> = ({
                           {user.fullName}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-                          <EnvelopeIcon className="w-3 h-3 mr-1" />
+                          <ActionIcon
+                            action="email"
+                            size="xs"
+                            className="mr-1"
+                          />
                           {user.email}
                         </div>
                       </div>
@@ -162,14 +157,24 @@ export const UserTable: React.FC<UserTableProps> = ({
                     <div className="flex items-center">
                       {user.isActive ? (
                         <>
-                          <ShieldCheckIcon className="w-4 h-4 text-green-500 mr-2" />
+                          <ActionIcon
+                            action="check"
+                            size="sm"
+                            color="success"
+                            className="mr-2"
+                          />
                           <span className="text-green-800 dark:text-green-400 text-sm">
                             Activo
                           </span>
                         </>
                       ) : (
                         <>
-                          <ShieldExclamationIcon className="w-4 h-4 text-red-500 mr-2" />
+                          <ActionIcon
+                            action="warning"
+                            size="sm"
+                            color="danger"
+                            className="mr-2"
+                          />
                           <span className="text-red-800 dark:text-red-400 text-sm">
                             Inactivo
                           </span>
@@ -182,7 +187,11 @@ export const UserTable: React.FC<UserTableProps> = ({
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {user.lastLoginAt ? (
                       <div className="flex items-center">
-                        <CalendarIcon className="w-3 h-3 mr-1" />
+                        <ActionIcon
+                          action="calendar"
+                          size="xs"
+                          className="mr-1"
+                        />
                         {formatDate(user.lastLoginAt)}
                       </div>
                     ) : (
@@ -193,7 +202,11 @@ export const UserTable: React.FC<UserTableProps> = ({
                   {/* Creado */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     <div className="flex items-center">
-                      <CalendarIcon className="w-3 h-3 mr-1" />
+                      <ActionIcon
+                        action="calendar"
+                        size="xs"
+                        className="mr-1"
+                      />
                       {formatDate(user.createdAt)}
                     </div>
                   </td>
@@ -207,7 +220,7 @@ export const UserTable: React.FC<UserTableProps> = ({
                           className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                           title="Ver detalles"
                         >
-                          <EyeIcon className="w-4 h-4" />
+                          <ActionIcon action="view" size="sm" />
                         </button>
                       )}
 
@@ -217,7 +230,7 @@ export const UserTable: React.FC<UserTableProps> = ({
                           className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
                           title="Editar"
                         >
-                          <PencilIcon className="w-4 h-4" />
+                          <ActionIcon action="edit" size="sm" />
                         </button>
                       )}
 
@@ -227,7 +240,7 @@ export const UserTable: React.FC<UserTableProps> = ({
                           className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
                           title="Cambiar contraseña"
                         >
-                          <KeyIcon className="w-4 h-4" />
+                          <ActionIcon action="changePassword" size="sm" />
                         </button>
                       )}
 
@@ -246,9 +259,9 @@ export const UserTable: React.FC<UserTableProps> = ({
                           }
                         >
                           {user.isActive ? (
-                            <ShieldExclamationIcon className="w-4 h-4" />
+                            <ActionIcon action="warning" size="sm" />
                           ) : (
-                            <ShieldCheckIcon className="w-4 h-4" />
+                            <ActionIcon action="check" size="sm" />
                           )}
                         </button>
                       )}
@@ -259,7 +272,7 @@ export const UserTable: React.FC<UserTableProps> = ({
                           className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                           title="Eliminar"
                         >
-                          <TrashIcon className="w-4 h-4" />
+                          <ActionIcon action="delete" size="sm" />
                         </button>
                       )}
                     </div>

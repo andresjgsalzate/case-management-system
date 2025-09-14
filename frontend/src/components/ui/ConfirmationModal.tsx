@@ -1,9 +1,5 @@
 import React from "react";
-import {
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  InformationCircleIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "./ActionIcons";
 import { Modal } from "./Modal";
 import { Button } from "./Button";
 
@@ -31,11 +27,11 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   const getIcon = () => {
     switch (type) {
       case "danger":
-        return <ExclamationTriangleIcon className="h-6 w-6 text-red-600" />;
+        return <ActionIcon action="warning" size="lg" color="red" />;
       case "success":
-        return <CheckCircleIcon className="h-6 w-6 text-green-600" />;
+        return <ActionIcon action="success" size="lg" color="green" />;
       default:
-        return <InformationCircleIcon className="h-6 w-6 text-blue-600" />;
+        return <ActionIcon action="info" size="lg" color="blue" />;
     }
   };
 

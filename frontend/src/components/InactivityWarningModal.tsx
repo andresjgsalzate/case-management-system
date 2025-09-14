@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Modal } from "./ui/Modal";
 import { Button } from "./ui/Button";
-import {
-  ExclamationTriangleIcon,
-  ClockIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "./ui/ActionIcons";
 
 interface InactivityWarningModalProps {
   isOpen: boolean;
@@ -50,7 +47,7 @@ export const InactivityWarningModal: React.FC<InactivityWarningModalProps> = ({
     >
       <div className="flex items-start space-x-4">
         <div className="flex-shrink-0">
-          <ExclamationTriangleIcon className="h-10 w-10 text-yellow-500" />
+          <ActionIcon action="warning" size="xl" color="warning" />
         </div>
 
         <div className="flex-1">
@@ -65,7 +62,7 @@ export const InactivityWarningModal: React.FC<InactivityWarningModalProps> = ({
             </p>
 
             <div className="flex items-center space-x-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-              <ClockIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+              <ActionIcon action="time" size="sm" color="warning" />
               <span className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
                 Tiempo restante:{" "}
                 <span className="font-bold">

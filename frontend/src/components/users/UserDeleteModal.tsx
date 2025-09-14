@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { AlertTriangle, Trash2, User } from "lucide-react";
+import { ActionIcon } from "../ui/ActionIcons";
 import { User as UserType } from "../../types/user";
 import { userService } from "../../services/userService";
 import { Modal } from "../ui/Modal";
@@ -58,7 +58,7 @@ export const UserDeleteModal: React.FC<UserDeleteModalProps> = ({
         {/* Icono de advertencia */}
         <div className="flex items-center justify-center">
           <div className="bg-red-100 dark:bg-red-900/20 rounded-full p-3">
-            <AlertTriangle className="w-8 h-8 text-red-600 dark:text-red-400" />
+            <ActionIcon action="warning" size="lg" color="danger" />
           </div>
         </div>
 
@@ -77,7 +77,7 @@ export const UserDeleteModal: React.FC<UserDeleteModalProps> = ({
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
           <div className="flex items-start space-x-3">
             <div className="bg-gray-200 dark:bg-gray-700 rounded-full p-2">
-              <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <ActionIcon action="user" size="sm" color="neutral" />
             </div>
             <div className="flex-1 min-w-0">
               <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -166,7 +166,7 @@ export const UserDeleteModal: React.FC<UserDeleteModalProps> = ({
             }`}
           >
             {loading && <LoadingSpinner size="sm" />}
-            <Trash2 className="w-4 h-4" />
+            <ActionIcon action="delete" size="sm" />
             Eliminar Usuario
           </Button>
         </div>

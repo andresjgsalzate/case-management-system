@@ -1,13 +1,6 @@
 import React, { useState } from "react";
 import { useServerStatus } from "../../hooks/useServerStatus";
-import {
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  ArrowPathIcon,
-  ServerIcon,
-  ClockIcon,
-  CpuChipIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../components/ui/ActionIcons";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 
@@ -61,8 +54,10 @@ export const SystemStatusPage: React.FC = () => {
           disabled={isChecking}
           className="flex items-center gap-2"
         >
-          <ArrowPathIcon
-            className={`h-4 w-4 ${isChecking ? "animate-spin" : ""}`}
+          <ActionIcon
+            action="loading"
+            size="sm"
+            className={isChecking ? "animate-spin" : ""}
           />
           {isChecking ? "Verificando..." : "Verificar Estado"}
         </Button>
@@ -79,9 +74,9 @@ export const SystemStatusPage: React.FC = () => {
             }`}
           >
             {isOnline ? (
-              <CheckCircleIcon className="h-8 w-8 text-green-600 dark:text-green-400" />
+              <ActionIcon action="success" size="xl" color="green" />
             ) : (
-              <ExclamationTriangleIcon className="h-8 w-8 text-red-600 dark:text-red-400" />
+              <ActionIcon action="warning" size="xl" color="red" />
             )}
           </div>
 
@@ -125,7 +120,7 @@ export const SystemStatusPage: React.FC = () => {
           {/* Información del Sistema */}
           <Card className="p-6">
             <div className="flex items-center gap-3 mb-4">
-              <ServerIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <ActionIcon action="server" size="lg" color="blue" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Información del Sistema
               </h3>
@@ -173,7 +168,7 @@ export const SystemStatusPage: React.FC = () => {
           {/* Métricas de Rendimiento */}
           <Card className="p-6">
             <div className="flex items-center gap-3 mb-4">
-              <CpuChipIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              <ActionIcon action="cpu" size="lg" color="purple" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Rendimiento
               </h3>
@@ -242,7 +237,7 @@ export const SystemStatusPage: React.FC = () => {
       {/* Estado de Conexión */}
       <Card className="p-6">
         <div className="flex items-center gap-3 mb-4">
-          <ClockIcon className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+          <ActionIcon action="time" size="lg" color="orange" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
             Estado de Conexión
           </h3>

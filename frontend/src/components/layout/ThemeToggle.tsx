@@ -1,5 +1,5 @@
 import React from "react";
-import { SunIcon, MoonIcon } from "@heroicons/react/24/outline";
+import { ThemeSunIcon, ThemeMoonIcon } from "../ui/ActionIcons";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Button } from "../ui/Button";
 
@@ -26,14 +26,14 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
     >
       {isDark ? (
         <>
-          <SunIcon className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+          <ThemeSunIcon size="md" color="yellow" className="flex-shrink-0" />
           {!isCollapsed && showLabel && (
             <span className="ml-3">Modo Claro</span>
           )}
         </>
       ) : (
         <>
-          <MoonIcon className="h-5 w-5 text-gray-600 dark:text-gray-400 flex-shrink-0" />
+          <ThemeMoonIcon size="md" className="flex-shrink-0" />
           {!isCollapsed && showLabel && (
             <span className="ml-3">Modo Oscuro</span>
           )}

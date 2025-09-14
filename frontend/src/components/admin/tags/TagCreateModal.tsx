@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../ui/ActionIcons";
 import { useToast } from "../../../contexts/ToastContext";
 import { tagService } from "../../../services/tagService";
 import { Modal } from "../../ui/Modal";
@@ -130,7 +130,9 @@ export default function TagCreateModal({
             maxLength={50}
           />
           {errors.tagName && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.tagName}</p>
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+              {errors.tagName}
+            </p>
           )}
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             {formData.tagName.length}/50 caracteres
@@ -159,7 +161,9 @@ export default function TagCreateModal({
               }));
             }}
             className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white ${
-              errors.category ? "border-red-300 dark:border-red-500" : "border-gray-300 dark:border-gray-600"
+              errors.category
+                ? "border-red-300 dark:border-red-500"
+                : "border-gray-300 dark:border-gray-600"
             }`}
             disabled={isLoading}
           >
@@ -170,7 +174,9 @@ export default function TagCreateModal({
             ))}
           </select>
           {errors.category && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.category}</p>
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+              {errors.category}
+            </p>
           )}
         </div>
 
@@ -221,14 +227,18 @@ export default function TagCreateModal({
             onChange={(e) => handleInputChange("description", e.target.value)}
             rows={3}
             className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white ${
-              errors.description ? "border-red-300 dark:border-red-500" : "border-gray-300 dark:border-gray-600"
+              errors.description
+                ? "border-red-300 dark:border-red-500"
+                : "border-gray-300 dark:border-gray-600"
             }`}
             placeholder="Descripción opcional de la etiqueta"
             disabled={isLoading}
             maxLength={200}
           />
           {errors.description && (
-            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.description}</p>
+            <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+              {errors.description}
+            </p>
           )}
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             {(formData.description || "").length}/200 caracteres
@@ -303,7 +313,7 @@ export default function TagCreateModal({
               </>
             ) : (
               <>
-                <PlusIcon className="h-4 w-4 mr-2" />
+                <ActionIcon action="add" size="sm" className="mr-2" />
                 Crear Etiqueta
               </>
             )}

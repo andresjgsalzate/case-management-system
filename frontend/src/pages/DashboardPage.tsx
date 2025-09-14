@@ -1,13 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import {
-  DocumentTextIcon,
-  ExclamationTriangleIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  ComputerDesktopIcon,
-  ListBulletIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../components/ui/ActionIcons";
 import { useAuth } from "../contexts/AuthContext";
 import { useCases } from "../hooks/useCases";
 import { useDashboardMetrics } from "../hooks/useDashboardMetrics";
@@ -170,7 +163,7 @@ export const DashboardPage: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <DocumentTextIcon className="h-8 w-8 text-blue-600" />
+                  <ActionIcon action="document" size="xl" color="blue" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -186,7 +179,7 @@ export const DashboardPage: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <CheckCircleIcon className="h-8 w-8 text-green-600" />
+                  <ActionIcon action="check" size="xl" color="green" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -202,7 +195,7 @@ export const DashboardPage: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <ClockIcon className="h-8 w-8 text-yellow-600" />
+                  <ActionIcon action="time" size="xl" color="yellow" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -218,7 +211,7 @@ export const DashboardPage: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <ExclamationTriangleIcon className="h-8 w-8 text-red-600" />
+                  <ActionIcon action="warning" size="xl" color="red" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -250,7 +243,7 @@ export const DashboardPage: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <ClockIcon className="h-8 w-8 text-purple-600" />
+                  <ActionIcon action="time" size="xl" color="purple" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -282,7 +275,7 @@ export const DashboardPage: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <DocumentTextIcon className="h-8 w-8 text-blue-600" />
+                  <ActionIcon action="document" size="xl" color="blue" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -314,7 +307,7 @@ export const DashboardPage: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <ListBulletIcon className="h-8 w-8 text-green-600" />
+                  <ActionIcon action="list" size="xl" color="green" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -346,7 +339,7 @@ export const DashboardPage: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <ComputerDesktopIcon className="h-8 w-8 text-emerald-600" />
+                  <ActionIcon action="desktop" size="xl" color="green" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -379,7 +372,7 @@ export const DashboardPage: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <ListBulletIcon className="h-8 w-8 text-blue-600" />
+                  <ActionIcon action="list" size="xl" color="blue" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -402,7 +395,7 @@ export const DashboardPage: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <ClockIcon className="h-8 w-8 text-yellow-600" />
+                  <ActionIcon action="time" size="xl" color="yellow" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -425,7 +418,7 @@ export const DashboardPage: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <CheckCircleIcon className="h-8 w-8 text-green-600" />
+                  <ActionIcon action="check" size="xl" color="green" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -448,7 +441,7 @@ export const DashboardPage: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <ExclamationTriangleIcon className="h-8 w-8 text-red-600" />
+                  <ActionIcon action="warning" size="xl" color="red" />
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -819,19 +812,11 @@ export const DashboardPage: React.FC = () => {
                           <div className="py-8">
                             <div className="flex flex-col items-center">
                               <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                                <svg
-                                  className="w-8 h-8 text-gray-400"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                  />
-                                </svg>
+                                <ActionIcon
+                                  action="time"
+                                  size="xl"
+                                  className="text-gray-400"
+                                />
                               </div>
                               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                                 No hay casos con tiempo registrado

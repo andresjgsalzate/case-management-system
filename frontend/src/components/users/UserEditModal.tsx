@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User as UserIcon, Mail, UserCheck } from "lucide-react";
+import { ActionIcon } from "../ui/ActionIcons";
 import { User, UpdateUserRequest, Role } from "../../types/user";
 import { userService } from "../../services/userService";
 import { Modal } from "../ui/Modal";
@@ -141,7 +141,7 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
         {/* Nombre completo */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            <UserIcon className="w-4 h-4 inline mr-2" />
+            <ActionIcon action="user" size="sm" className="inline mr-2" />
             Nombre Completo
           </label>
           <Input
@@ -157,7 +157,7 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
         {/* Email */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            <Mail className="w-4 h-4 inline mr-2" />
+            <ActionIcon action="email" size="sm" className="inline mr-2" />
             Email
           </label>
           <Input
@@ -173,7 +173,7 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
         {/* Rol */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            <UserCheck className="w-4 h-4 inline mr-2" />
+            <ActionIcon action="shield" size="sm" className="inline mr-2" />
             Rol
           </label>
           {loadingRoles ? (

@@ -1,9 +1,5 @@
 import React, { useState } from "react";
-import {
-  PlusIcon,
-  ChartBarIcon,
-  ArchiveBoxIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../components/ui/ActionIcons";
 import { Note, NoteFilters } from "../../types/note.types";
 import {
   useNotes,
@@ -235,7 +231,7 @@ export const NotesPage: React.FC = () => {
           </div>
           <div className="mt-4 sm:mt-0">
             <Button onClick={() => setShowForm(true)} variant="primary">
-              <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+              <ActionIcon action="add" size="sm" color="primary" />
               Nueva Nota
             </Button>
           </div>
@@ -253,7 +249,7 @@ export const NotesPage: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ChartBarIcon className="h-6 w-6 text-gray-400 dark:text-gray-500" />
+                    <ActionIcon action="analytics" size="md" color="gray" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -278,7 +274,7 @@ export const NotesPage: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ChartBarIcon className="h-6 w-6 text-blue-400" />
+                    <ActionIcon action="analytics" size="md" color="blue" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -303,7 +299,7 @@ export const NotesPage: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ChartBarIcon className="h-6 w-6 text-purple-400" />
+                    <ActionIcon action="analytics" size="md" color="purple" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -328,7 +324,7 @@ export const NotesPage: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ChartBarIcon className="h-6 w-6 text-red-400" />
+                    <ActionIcon action="analytics" size="md" color="red" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -353,7 +349,7 @@ export const NotesPage: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ChartBarIcon className="h-6 w-6 text-yellow-400" />
+                    <ActionIcon action="analytics" size="md" color="yellow" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -378,7 +374,7 @@ export const NotesPage: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ArchiveBoxIcon className="h-6 w-6 text-gray-400 dark:text-gray-500" />
+                    <ActionIcon action="archive" size="md" color="gray" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -467,8 +463,8 @@ export const NotesPage: React.FC = () => {
         {/* Empty state */}
         {notes.length === 0 && (
           <div className="text-center py-12">
-            <div className="mx-auto h-24 w-24 text-gray-400 dark:text-gray-500">
-              <ChartBarIcon className="h-24 w-24" />
+            <div className="mx-auto mb-4">
+              <ActionIcon action="analytics" size="xl" color="gray" />
             </div>
             <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
               No hay notas
@@ -478,7 +474,7 @@ export const NotesPage: React.FC = () => {
             </p>
             <div className="mt-6">
               <Button onClick={() => setShowForm(true)} variant="primary">
-                <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                <ActionIcon action="add" size="sm" color="primary" />
                 Nueva Nota
               </Button>
             </div>

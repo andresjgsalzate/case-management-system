@@ -1,17 +1,5 @@
 import React, { useState, useMemo } from "react";
-import {
-  ArchiveBoxIcon,
-  ArrowPathIcon,
-  EyeIcon,
-  CalendarIcon,
-  DocumentArrowDownIcon,
-  XMarkIcon,
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  ClipboardDocumentListIcon,
-  ClockIcon,
-  UserIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../components/ui/ActionIcons";
 import { useArchiveData, useArchiveManager } from "../../hooks/useArchive";
 import {
   ArchiveFilters,
@@ -217,7 +205,7 @@ export const ArchivePage: React.FC = () => {
             variant="ghost"
             className="flex items-center space-x-2"
           >
-            <FunnelIcon className="w-4 h-4" />
+            <ActionIcon action="filter" size="sm" color="gray" />
             <span>Filtros</span>
           </Button>
           <Button
@@ -225,7 +213,7 @@ export const ArchivePage: React.FC = () => {
             variant="secondary"
             className="flex items-center space-x-2"
           >
-            <ArrowPathIcon className="w-4 h-4" />
+            <ActionIcon action="loading" size="sm" color="gray" />
             <span>Actualizar</span>
           </Button>
         </div>
@@ -237,7 +225,7 @@ export const ArchivePage: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <ArchiveBoxIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <ActionIcon action="archive" size="md" color="blue" />
               </div>
               <div className="ml-4">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -253,7 +241,7 @@ export const ArchivePage: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
             <div className="flex items-center">
               <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                <DocumentArrowDownIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
+                <ActionIcon action="download" size="md" color="green" />
               </div>
               <div className="ml-4">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -269,7 +257,7 @@ export const ArchivePage: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
             <div className="flex items-center">
               <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
-                <CalendarIcon className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                <ActionIcon action="calendar" size="md" color="yellow" />
               </div>
               <div className="ml-4">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -287,7 +275,7 @@ export const ArchivePage: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
             <div className="flex items-center">
               <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                <ArchiveBoxIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                <ActionIcon action="archive" size="md" color="purple" />
               </div>
               <div className="ml-4">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -303,7 +291,7 @@ export const ArchivePage: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
             <div className="flex items-center">
               <div className="p-2 bg-indigo-100 dark:bg-indigo-900 rounded-lg">
-                <ArrowPathIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                <ActionIcon action="loading" size="md" color="primary" />
               </div>
               <div className="ml-4">
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -324,7 +312,7 @@ export const ArchivePage: React.FC = () => {
         <div className="flex items-center space-x-4 mb-4">
           <div className="flex-1">
             <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <ActionIcon action="search" size="sm" color="gray" />
               <input
                 type="text"
                 placeholder="Buscar en archivo..."
@@ -473,9 +461,17 @@ export const ArchivePage: React.FC = () => {
                           }`}
                         >
                           {item.itemType === "case" ? (
-                            <DocumentArrowDownIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            <ActionIcon
+                              action="download"
+                              size="sm"
+                              color="blue"
+                            />
                           ) : (
-                            <ArchiveBoxIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            <ActionIcon
+                              action="archive"
+                              size="sm"
+                              color="green"
+                            />
                           )}
                         </div>
                         <span className="ml-2 text-sm font-medium text-gray-900 dark:text-white">
@@ -520,7 +516,7 @@ export const ArchivePage: React.FC = () => {
                           className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
                           title="Ver detalles"
                         >
-                          <EyeIcon className="w-4 h-4" />
+                          <ActionIcon action="view" size="sm" color="blue" />
                         </Button>
                         {!item.isRestored && (
                           <Button
@@ -530,7 +526,11 @@ export const ArchivePage: React.FC = () => {
                             className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200"
                             title="Restaurar"
                           >
-                            <ArrowPathIcon className="w-4 h-4" />
+                            <ActionIcon
+                              action="loading"
+                              size="sm"
+                              color="green"
+                            />
                           </Button>
                         )}
                         <Button
@@ -540,7 +540,7 @@ export const ArchivePage: React.FC = () => {
                           className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200"
                           title="Eliminar permanentemente"
                         >
-                          <XMarkIcon className="w-4 h-4" />
+                          <ActionIcon action="close" size="sm" color="red" />
                         </Button>
                       </div>
                     </td>
@@ -581,7 +581,7 @@ export const ArchivePage: React.FC = () => {
                   size="xs"
                   className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 >
-                  <XMarkIcon className="h-6 w-6" />
+                  <ActionIcon action="close" size="md" color="gray" />
                 </Button>
               </div>
 
@@ -599,9 +599,17 @@ export const ArchivePage: React.FC = () => {
                         }`}
                       >
                         {selectedItem.itemType === "case" ? (
-                          <DocumentArrowDownIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                          <ActionIcon
+                            action="download"
+                            size="md"
+                            color="blue"
+                          />
                         ) : (
-                          <ClipboardDocumentListIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
+                          <ActionIcon
+                            action="document"
+                            size="md"
+                            color="green"
+                          />
                         )}
                       </div>
                       <div className="flex-1">
@@ -713,7 +721,11 @@ export const ArchivePage: React.FC = () => {
                                 Fecha de Archivo
                               </dt>
                               <dd className="mt-1 text-sm text-gray-900 dark:text-white flex items-center">
-                                <CalendarIcon className="w-4 h-4 mr-2 text-gray-400" />
+                                <ActionIcon
+                                  action="calendar"
+                                  size="sm"
+                                  color="gray"
+                                />
                                 {new Date(
                                   selectedItem.archivedAt
                                 ).toLocaleString("es-ES", {
@@ -731,7 +743,11 @@ export const ArchivePage: React.FC = () => {
                                 Archivado por
                               </dt>
                               <dd className="mt-1 text-sm text-gray-900 dark:text-white flex items-center">
-                                <UserIcon className="w-4 h-4 mr-2 text-gray-400" />
+                                <ActionIcon
+                                  action="user"
+                                  size="sm"
+                                  color="gray"
+                                />
                                 {selectedItem.archivedByUser?.fullName ||
                                   selectedItem.archivedByUser?.email ||
                                   selectedItem.archivedBy}
@@ -744,7 +760,11 @@ export const ArchivePage: React.FC = () => {
                               </dt>
                               <dd className="mt-1 text-sm text-gray-900 dark:text-white">
                                 <div className="flex items-center mb-2">
-                                  <ClockIcon className="w-4 h-4 mr-2 text-gray-400" />
+                                  <ActionIcon
+                                    action="time"
+                                    size="sm"
+                                    color="gray"
+                                  />
                                   <span className="font-medium">
                                     {selectedItem.totalTimeMinutes
                                       ? `${Math.floor(

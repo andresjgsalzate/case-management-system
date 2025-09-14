@@ -1,8 +1,5 @@
 import { useState } from "react";
-import {
-  TrashIcon,
-  ExclamationTriangleIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../ui/ActionIcons";
 import { useToast } from "../../../contexts/ToastContext";
 import { roleService } from "../../../services/roleService";
 import { Modal } from "../../ui/Modal";
@@ -45,11 +42,13 @@ export default function RoleDeleteModal({
   if (!role) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Eliminar Rol" maxWidth="md">
+    <Modal isOpen={isOpen} onClose={onClose} title="Eliminar Rol">
       <div className="space-y-4">
         <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full">
-          <ExclamationTriangleIcon
-            className="w-6 h-6 text-red-600"
+          <ActionIcon
+            action="warning"
+            size="md"
+            color="danger"
             aria-hidden="true"
           />
         </div>
@@ -66,7 +65,7 @@ export default function RoleDeleteModal({
 
         <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
           <div className="flex">
-            <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" />
+            <ActionIcon action="warning" size="sm" color="warning" />
             <div className="ml-3">
               <h4 className="text-sm font-medium text-yellow-800">
                 Advertencia

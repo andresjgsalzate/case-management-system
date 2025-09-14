@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  ArrowLeftIcon,
-  TagIcon,
-  XMarkIcon,
-  PaperClipIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../components/ui/ActionIcons";
 import {
   useCreateKnowledgeDocument,
   useUpdateKnowledgeDocument,
@@ -51,6 +46,7 @@ const KnowledgeDocumentForm: React.FC = () => {
   const [userHidTags, setUserHidTags] = useState(false); // Track if user manually hid tags
   const [showPredictiveTags, setShowPredictiveTags] = useState(false);
   const [showAttachments, setShowAttachments] = useState(false); // Para mostrar/ocultar sección de archivos
+  const [showAllPopular, setShowAllPopular] = useState(false); // Para mostrar/ocultar etiquetas populares
 
   // Notificaciones
   const { success, error: showError } = useToast();
@@ -312,8 +308,8 @@ const KnowledgeDocumentForm: React.FC = () => {
                 onClick={() => navigate("/knowledge")}
                 className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
-                <ArrowLeftIcon className="h-5 w-5" />
-                <span>Volver a Base de Conocimiento</span>
+                <ActionIcon action="back" size="sm" className="mr-2" />
+                Volver
               </button>
             </div>
             <div className="flex items-center space-x-3">
@@ -433,7 +429,12 @@ const KnowledgeDocumentForm: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
-                <TagIcon className="h-5 w-5 mr-2 text-blue-600 dark:text-blue-400" />
+                <ActionIcon
+                  action="tag"
+                  size="lg"
+                  color="blue"
+                  className="mr-2"
+                />
                 Etiquetas
               </h3>
             </div>
@@ -449,13 +450,10 @@ const KnowledgeDocumentForm: React.FC = () => {
                       !showSuggestedTags && (
                         <button
                           type="button"
-                          onClick={() => {
-                            setShowSuggestedTags(true);
-                            setUserHidTags(false); // Reset the flag when user wants to see tags again
-                          }}
-                          className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 flex items-center gap-1"
+                          className="text-blue-600 dark:text-blue-400 hover:underline text-sm flex items-center"
+                          onClick={() => setShowAllPopular(!showAllPopular)}
                         >
-                          <TagIcon className="w-3 h-3" />
+                          <ActionIcon action="tag" size="xs" />
                           Ver {popularTags.length} etiquetas disponibles
                         </button>
                       )}
@@ -558,7 +556,7 @@ const KnowledgeDocumentForm: React.FC = () => {
                                 border: `1px solid ${tag.color}40`,
                               }}
                             >
-                              <TagIcon className="w-3 h-3" />
+                              <ActionIcon action="tag" size="xs" />
                               {tag.tagName}
                               <span className="ml-1 text-xs opacity-70">
                                 ({tag.usageCount})
@@ -601,7 +599,7 @@ const KnowledgeDocumentForm: React.FC = () => {
                               border: `1px solid ${color}40`,
                             }}
                           >
-                            <TagIcon className="w-3 h-3" />
+                            <ActionIcon action="tag" size="xs" />
                             {tag}
                             {tagInfo?.category && (
                               <span className="text-xs opacity-70 ml-1">
@@ -614,7 +612,7 @@ const KnowledgeDocumentForm: React.FC = () => {
                               className="ml-1 hover:opacity-80 transition-opacity"
                               style={{ color: color }}
                             >
-                              <XMarkIcon className="h-3 w-3" />
+                              <ActionIcon action="close" size="xs" />
                             </button>
                           </span>
                         );
@@ -669,7 +667,11 @@ const KnowledgeDocumentForm: React.FC = () => {
                   <div className="border-t pt-6">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-medium text-gray-900 flex items-center">
-                        <PaperClipIcon className="h-5 w-5 mr-2" />
+                        <ActionIcon
+                          action="attachment"
+                          size="lg"
+                          className="mr-2"
+                        />
                         Archivos adjuntos
                       </h3>
                       <Button

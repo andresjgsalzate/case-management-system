@@ -1,13 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import {
-  DocumentTextIcon,
-  ExclamationTriangleIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  ComputerDesktopIcon,
-  ListBulletIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../components/ui/ActionIcons";
 import {
   useTimeMetrics,
   useUserTimeMetrics,
@@ -144,7 +137,7 @@ export const AdvancedDashboardPage: React.FC = () => {
         <div className="card p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <DocumentTextIcon className="h-8 w-8 text-blue-600" />
+              <ActionIcon action="document" size="xl" color="blue" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -160,7 +153,7 @@ export const AdvancedDashboardPage: React.FC = () => {
         <div className="card p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <CheckCircleIcon className="h-8 w-8 text-green-600" />
+              <ActionIcon action="check" size="xl" color="green" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -176,7 +169,7 @@ export const AdvancedDashboardPage: React.FC = () => {
         <div className="card p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <ClockIcon className="h-8 w-8 text-yellow-600" />
+              <ActionIcon action="time" size="xl" color="yellow" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -192,7 +185,7 @@ export const AdvancedDashboardPage: React.FC = () => {
         <div className="card p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <ExclamationTriangleIcon className="h-8 w-8 text-red-600" />
+              <ActionIcon action="warning" size="lg" color="danger" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -222,7 +215,7 @@ export const AdvancedDashboardPage: React.FC = () => {
           <div className="card p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <ClockIcon className="h-8 w-8 text-purple-600" />
+                <ActionIcon action="time" size="lg" color="purple" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -249,7 +242,7 @@ export const AdvancedDashboardPage: React.FC = () => {
           <div className="card p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <DocumentTextIcon className="h-8 w-8 text-blue-600" />
+                <ActionIcon action="document" size="lg" color="blue" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -276,7 +269,7 @@ export const AdvancedDashboardPage: React.FC = () => {
           <div className="card p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <ListBulletIcon className="h-8 w-8 text-green-600" />
+                <ActionIcon action="list" size="lg" color="success" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -303,7 +296,7 @@ export const AdvancedDashboardPage: React.FC = () => {
           <div className="card p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <ComputerDesktopIcon className="h-8 w-8 text-emerald-600" />
+                <ActionIcon action="desktop" size="lg" color="green" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -331,7 +324,7 @@ export const AdvancedDashboardPage: React.FC = () => {
           <div className="card p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <ListBulletIcon className="h-8 w-8 text-blue-600" />
+                <ActionIcon action="list" size="lg" color="blue" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -347,7 +340,7 @@ export const AdvancedDashboardPage: React.FC = () => {
           <div className="card p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <ClockIcon className="h-8 w-8 text-yellow-600" />
+                <ActionIcon action="time" size="lg" color="yellow" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -363,7 +356,7 @@ export const AdvancedDashboardPage: React.FC = () => {
           <div className="card p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <CheckCircleIcon className="h-8 w-8 text-green-600" />
+                <ActionIcon action="check" size="lg" color="success" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -379,7 +372,7 @@ export const AdvancedDashboardPage: React.FC = () => {
           <div className="card p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <ExclamationTriangleIcon className="h-8 w-8 text-red-600" />
+                <ActionIcon action="warning" size="lg" color="danger" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">

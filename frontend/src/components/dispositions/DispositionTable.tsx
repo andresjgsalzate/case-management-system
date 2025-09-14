@@ -1,5 +1,5 @@
 import React from "react";
-import { PencilIcon, TrashIcon, EyeIcon } from "@heroicons/react/24/outline";
+import { EditIcon, DeleteIcon, ViewIcon } from "../ui/ActionIcons";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 import { Button } from "../ui/Button";
 import { formatDateLocal } from "../../utils/dateUtils";
@@ -121,7 +121,7 @@ export const DispositionTable: React.FC<DispositionTableProps> = ({
                       onClick={() => onView(disposition)}
                       title="Ver detalles"
                     >
-                      <EyeIcon className="h-4 w-4" />
+                      <ViewIcon size="sm" />
                     </Button>
                   )}
                   {canEdit && (
@@ -131,7 +131,7 @@ export const DispositionTable: React.FC<DispositionTableProps> = ({
                       onClick={() => onEdit(disposition)}
                       title="Editar"
                     >
-                      <PencilIcon className="h-4 w-4" />
+                      <EditIcon size="sm" />
                     </Button>
                   )}
                   {canDelete && (
@@ -142,7 +142,7 @@ export const DispositionTable: React.FC<DispositionTableProps> = ({
                       title="Eliminar"
                       className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                     >
-                      <TrashIcon className="h-4 w-4" />
+                      <DeleteIcon size="sm" />
                     </Button>
                   )}
                 </div>

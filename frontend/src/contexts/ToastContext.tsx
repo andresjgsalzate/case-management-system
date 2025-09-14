@@ -1,11 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
-import {
-  CheckCircleIcon,
-  XCircleIcon,
-  InformationCircleIcon,
-  ExclamationTriangleIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../components/ui/ActionIcons";
 import { Button } from "../components/ui/Button";
 
 export type ToastType = "success" | "error" | "info" | "warning";
@@ -39,20 +34,16 @@ export const useToast = () => {
 };
 
 const ToastIcon: React.FC<{ type: ToastType }> = ({ type }) => {
-  const className = "h-5 w-5";
-
   switch (type) {
     case "success":
-      return <CheckCircleIcon className={`${className} text-green-500`} />;
+      return <ActionIcon action="success" size="md" color="green" />;
     case "error":
-      return <XCircleIcon className={`${className} text-red-500`} />;
+      return <ActionIcon action="error" size="md" color="red" />;
     case "warning":
-      return (
-        <ExclamationTriangleIcon className={`${className} text-yellow-500`} />
-      );
+      return <ActionIcon action="warning" size="md" color="yellow" />;
     case "info":
     default:
-      return <InformationCircleIcon className={`${className} text-blue-500`} />;
+      return <ActionIcon action="info" size="md" color="blue" />;
   }
 };
 
@@ -112,7 +103,7 @@ const ToastItem: React.FC<{ toast: Toast; onRemove: (id: string) => void }> = ({
               onClick={() => onRemove(toast.id)}
             >
               <span className="sr-only">Cerrar</span>
-              <XCircleIcon className="h-5 w-5" />
+              <ActionIcon action="close" size="md" />
             </Button>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { ActionIcon } from "../../ui/ActionIcons";
 import { Permission } from "../../../types/permission";
 import { permissionService } from "../../../services/permissionService";
 import { Button } from "../../ui/Button";
@@ -41,7 +41,7 @@ export const PermissionDeleteModal: React.FC<PermissionDeleteModalProps> = ({
         <div className="flex items-start space-x-4">
           <div className="flex-shrink-0">
             <div className="bg-red-100 dark:bg-red-900/20 p-3 rounded-full">
-              <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
+              <ActionIcon action="warning" size="md" color="danger" />
             </div>
           </div>
           <div className="flex-1">

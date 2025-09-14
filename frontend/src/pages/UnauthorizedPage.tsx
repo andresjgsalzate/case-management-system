@@ -1,11 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  ExclamationTriangleIcon,
-  ShieldExclamationIcon,
-  HomeIcon,
-  ArrowLeftIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../components/ui/ActionIcons";
 import { Button } from "../components/ui/Button";
 
 export const UnauthorizedPage: React.FC = () => {
@@ -22,7 +17,7 @@ export const UnauthorizedPage: React.FC = () => {
           <div className="text-center">
             {/* Icono de advertencia */}
             <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-100 dark:bg-red-900/20 mb-6">
-              <ShieldExclamationIcon className="h-10 w-10 text-red-600 dark:text-red-400" />
+              <ActionIcon action="deactivate" size="xl" color="red" />
             </div>
 
             {/* Título */}
@@ -39,7 +34,7 @@ export const UnauthorizedPage: React.FC = () => {
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-4 mb-6">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" />
+                  <ActionIcon action="warning" size="md" color="yellow" />
                 </div>
                 <div className="ml-3">
                   <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
@@ -65,7 +60,7 @@ export const UnauthorizedPage: React.FC = () => {
             {/* Botones de acción */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button onClick={handleGoBack} variant="secondary">
-                <ArrowLeftIcon className="h-4 w-4 mr-2" />
+                <ActionIcon action="back" size="sm" className="mr-2" />
                 Volver atrás
               </Button>
 
@@ -73,7 +68,7 @@ export const UnauthorizedPage: React.FC = () => {
                 to="/"
                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
               >
-                <HomeIcon className="h-4 w-4 mr-2" />
+                <ActionIcon action="home" size="sm" className="mr-2" />
                 Ir al inicio
               </Link>
             </div>

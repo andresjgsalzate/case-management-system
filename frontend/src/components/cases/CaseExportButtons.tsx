@@ -1,5 +1,5 @@
 import React from "react";
-import { DocumentArrowDownIcon } from "@heroicons/react/24/outline";
+import { ExportIcon } from "../ui/ActionIcons";
 import { Button } from "../ui/Button";
 import { useCaseExport } from "../../hooks/useCaseExport";
 import { Case } from "../../services/api";
@@ -53,7 +53,7 @@ export const CaseExportButtons: React.FC<CaseExportButtonsProps> = ({
             : "No hay casos para exportar"
         }
       >
-        <DocumentArrowDownIcon className="h-4 w-4" />
+        <ExportIcon size="sm" />
         {isExporting ? "Exportando..." : "CSV"}
       </Button>
 
@@ -68,7 +68,7 @@ export const CaseExportButtons: React.FC<CaseExportButtonsProps> = ({
             : "No hay casos para exportar"
         }
       >
-        <DocumentArrowDownIcon className="h-4 w-4" />
+        <ExportIcon size="sm" />
         {isExporting ? "Exportando..." : "Excel"}
       </Button>
     </div>

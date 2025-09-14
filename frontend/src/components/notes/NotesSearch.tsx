@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  MagnifyingGlassIcon,
-  XMarkIcon,
-  AdjustmentsHorizontalIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../ui/ActionIcons";
 import { NoteFilters } from "../../types/note.types";
 import { Button } from "../ui/Button";
 
@@ -94,7 +90,12 @@ export const NotesSearch: React.FC<NotesSearchProps> = ({
         {/* Search Bar */}
         <div className="flex gap-2 mb-4">
           <div className="relative flex-1">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <ActionIcon
+              action="search"
+              size="sm"
+              className="absolute left-3 top-1/2 transform -translate-y-1/2"
+              color="neutral"
+            />
             <input
               type="text"
               value={filters.search || ""}
@@ -111,7 +112,7 @@ export const NotesSearch: React.FC<NotesSearchProps> = ({
             size="sm"
             title="Filtros avanzados"
           >
-            <AdjustmentsHorizontalIcon className="h-4 w-4" />
+            <ActionIcon action="filter" size="sm" />
           </Button>
           <Button type="submit" variant="primary">
             Buscar
@@ -123,7 +124,7 @@ export const NotesSearch: React.FC<NotesSearchProps> = ({
               size="sm"
               title="Limpiar filtros"
             >
-              <XMarkIcon className="h-4 w-4" />
+              <ActionIcon action="close" size="sm" />
             </Button>
           )}
         </div>

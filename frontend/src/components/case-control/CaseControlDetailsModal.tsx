@@ -1,15 +1,9 @@
 import React, { useState } from "react";
-import {
-  ClockIcon,
-  PlusIcon,
-  CalendarIcon,
-  TrashIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
 import { Modal } from "../ui/Modal";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { ConfirmationModal } from "../ui/ConfirmationModal";
+import { ActionIcon } from "../ui/ActionIcons";
 import { useToast } from "../../contexts/ToastContext";
 import { useConfirmationModal } from "../../hooks/useConfirmationModal";
 import { CaseControl } from "../../types/caseControl";
@@ -182,7 +176,7 @@ export const CaseControlDetailsModal: React.FC<
         {/* Resumen de Tiempo Total */}
         <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
-            <ClockIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <ActionIcon action="time" size="md" color="info" />
             <h4 className="font-medium text-blue-900 dark:text-blue-100">
               Tiempo Total Registrado
             </h4>
@@ -223,7 +217,7 @@ export const CaseControlDetailsModal: React.FC<
             size="sm"
             className="flex items-center gap-2"
           >
-            <PlusIcon className="h-4 w-4" />
+            <ActionIcon action="add" size="sm" />
             Agregar Tiempo Manual
           </Button>
         </div>
@@ -239,7 +233,7 @@ export const CaseControlDetailsModal: React.FC<
                 onClick={() => setShowManualTimeForm(false)}
                 className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
               >
-                <XMarkIcon className="h-5 w-5" />
+                <ActionIcon action="close" size="md" />
               </button>
             </div>
 
@@ -322,7 +316,7 @@ export const CaseControlDetailsModal: React.FC<
           {timeEntries.length > 0 && (
             <div>
               <h5 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                <ClockIcon className="h-4 w-4" />
+                <ActionIcon action="time" size="sm" />
                 Entradas de Timer ({timeEntries.length})
               </h5>
               <div className="space-y-2">
@@ -334,7 +328,7 @@ export const CaseControlDetailsModal: React.FC<
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
-                          <CalendarIcon className="h-4 w-4" />
+                          <ActionIcon action="calendar" size="sm" />
                           {formatDate(entry.startTime || entry.start_time)}
                         </div>
                         <div className="text-sm">
@@ -389,7 +383,7 @@ export const CaseControlDetailsModal: React.FC<
                         className="text-red-400 hover:text-red-600 ml-2"
                         title="Eliminar entrada"
                       >
-                        <TrashIcon className="h-4 w-4" />
+                        <ActionIcon action="delete" size="sm" />
                       </button>
                     </div>
                   </div>
@@ -402,7 +396,7 @@ export const CaseControlDetailsModal: React.FC<
           {manualTimeEntries.length > 0 && (
             <div>
               <h5 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                <PlusIcon className="h-4 w-4" />
+                <ActionIcon action="add" size="sm" />
                 Entradas Manuales ({manualTimeEntries.length})
               </h5>
               <div className="space-y-2">
@@ -414,7 +408,7 @@ export const CaseControlDetailsModal: React.FC<
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-1">
-                          <CalendarIcon className="h-4 w-4" />
+                          <ActionIcon action="calendar" size="sm" />
                           {formatDate(entry.date)}
                         </div>
                         <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
@@ -430,7 +424,7 @@ export const CaseControlDetailsModal: React.FC<
                         className="text-red-400 hover:text-red-600 ml-2"
                         title="Eliminar entrada"
                       >
-                        <TrashIcon className="h-4 w-4" />
+                        <ActionIcon action="delete" size="sm" />
                       </button>
                     </div>
                   </div>
@@ -441,7 +435,12 @@ export const CaseControlDetailsModal: React.FC<
 
           {timeEntries.length === 0 && manualTimeEntries.length === 0 && (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <ClockIcon className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+              <ActionIcon
+                action="time"
+                size="xl"
+                color="neutral"
+                className="mx-auto mb-3"
+              />
               <p>No hay registros de tiempo para este caso.</p>
               <p className="text-sm">
                 Inicia el timer o agrega tiempo manualmente.

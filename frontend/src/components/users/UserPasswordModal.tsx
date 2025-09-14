@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Key, Eye, EyeOff, Shield } from "lucide-react";
+import { ActionIcon } from "../ui/ActionIcons";
 import { User } from "../../types/user";
 import { userService } from "../../services/userService";
 import { Modal } from "../ui/Modal";
@@ -134,7 +134,7 @@ export const UserPasswordModal: React.FC<UserPasswordModalProps> = ({
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
           <div className="flex items-center space-x-3">
             <div className="bg-blue-100 dark:bg-blue-800 rounded-full p-2">
-              <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <ActionIcon action="shield" size="sm" color="primary" />
             </div>
             <div>
               <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">
@@ -150,7 +150,11 @@ export const UserPasswordModal: React.FC<UserPasswordModalProps> = ({
         {/* Nueva contraseña */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            <Key className="w-4 h-4 inline mr-2" />
+            <ActionIcon
+              action="changePassword"
+              size="sm"
+              className="inline mr-2"
+            />
             Nueva Contraseña
           </label>
           <div className="relative">
@@ -168,9 +172,9 @@ export const UserPasswordModal: React.FC<UserPasswordModalProps> = ({
               onClick={() => togglePasswordVisibility("newPassword")}
             >
               {showPasswords.newPassword ? (
-                <EyeOff className="h-4 w-4 text-gray-400" />
+                <ActionIcon action="hide" size="sm" color="neutral" />
               ) : (
-                <Eye className="h-4 w-4 text-gray-400" />
+                <ActionIcon action="view" size="sm" color="neutral" />
               )}
             </button>
           </div>
@@ -208,8 +212,12 @@ export const UserPasswordModal: React.FC<UserPasswordModalProps> = ({
         {/* Confirmar contraseña */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            <Key className="w-4 h-4 inline mr-2" />
-            Confirmar Nueva Contraseña
+            <ActionIcon
+              action="changePassword"
+              size="sm"
+              className="inline mr-2"
+            />
+            Confirmar Contraseña
           </label>
           <div className="relative">
             <Input
@@ -228,9 +236,9 @@ export const UserPasswordModal: React.FC<UserPasswordModalProps> = ({
               onClick={() => togglePasswordVisibility("confirmPassword")}
             >
               {showPasswords.confirmPassword ? (
-                <EyeOff className="h-4 w-4 text-gray-400" />
+                <ActionIcon action="hide" size="sm" color="neutral" />
               ) : (
-                <Eye className="h-4 w-4 text-gray-400" />
+                <ActionIcon action="view" size="sm" color="neutral" />
               )}
             </button>
           </div>
@@ -310,7 +318,7 @@ export const UserPasswordModal: React.FC<UserPasswordModalProps> = ({
             className="flex items-center gap-2"
           >
             {loading && <LoadingSpinner size="sm" />}
-            <Key className="w-4 h-4" />
+            <ActionIcon action="changePassword" size="sm" />
             Cambiar Contraseña
           </Button>
         </div>

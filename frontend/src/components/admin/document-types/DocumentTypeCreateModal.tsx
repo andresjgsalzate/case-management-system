@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useToast } from "../../../hooks/useNotification";
 import { Modal } from "../../ui/Modal";
 import { Button } from "../../ui/Button";
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../ui/ActionIcons";
 import { DocumentTypeService } from "../../../services/knowledge.service";
 import type { CreateDocumentTypeDto } from "../../../types/knowledge";
 
@@ -456,7 +456,7 @@ export default function DocumentTypeCreateModal({
               </>
             ) : (
               <>
-                <PlusIcon className="h-4 w-4 mr-2" />
+                <ActionIcon action="add" size="sm" color="primary" />
                 Crear Tipo de Documento
               </>
             )}

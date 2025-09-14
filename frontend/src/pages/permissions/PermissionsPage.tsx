@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Search, ShieldCheck, Filter } from "lucide-react";
+import { ActionIcon } from "../../components/ui/ActionIcons";
 import { Permission, PermissionFilterParams } from "../../types/permission";
 import { permissionService } from "../../services/permissionService";
 import {
@@ -183,7 +183,7 @@ export const PermissionsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <ShieldCheck className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+          <ActionIcon action="shield" size="xl" color="purple" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               Gestión de Permisos
@@ -197,7 +197,7 @@ export const PermissionsPage: React.FC = () => {
           onClick={handleCreatePermission}
           className="bg-purple-600 hover:bg-purple-700 text-white"
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <ActionIcon action="add" size="sm" className="mr-2" />
           Nuevo Permiso
         </Button>
       </div>
@@ -209,7 +209,7 @@ export const PermissionsPage: React.FC = () => {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <Filter className="h-5 w-5 text-gray-500" />
+            <ActionIcon action="filter" size="lg" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
               Filtros de Búsqueda
             </h3>
@@ -227,7 +227,7 @@ export const PermissionsPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           <div className="lg:col-span-2 relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-gray-400" />
+              <ActionIcon action="search" size="sm" />
             </div>
             <Input
               type="text"

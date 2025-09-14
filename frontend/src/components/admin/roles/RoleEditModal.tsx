@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { PencilIcon } from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../ui/ActionIcons";
 import { useToast } from "../../../contexts/ToastContext";
 import { roleService } from "../../../services/roleService";
 import { Modal } from "../../ui/Modal";
@@ -224,7 +224,7 @@ export default function RoleEditModal({
               </>
             ) : (
               <>
-                <PencilIcon className="h-4 w-4 mr-1" />
+                <ActionIcon action="edit" size="sm" className="mr-1" />
                 Guardar Cambios
               </>
             )}

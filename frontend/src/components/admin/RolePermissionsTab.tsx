@@ -4,16 +4,7 @@ import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
 import { Badge } from "../../components/ui/Badge";
-import {
-  Search,
-  RefreshCw,
-  CheckCircle,
-  XCircle,
-  Lock,
-  Globe,
-  Users,
-  Shield,
-} from "lucide-react";
+import { ActionIcon } from "../../components/ui/ActionIcons";
 import { authPermissionService } from "../../services/authPermission.service";
 import { roleService } from "../../services/roleService";
 import { Permission, Role } from "../../types/auth";
@@ -245,13 +236,13 @@ const RolePermissionsTab: React.FC = () => {
   const getScopeIcon = (scope: string) => {
     switch (scope.toLowerCase()) {
       case "global":
-        return <Globe className="w-3 h-3" />;
+        return <ActionIcon action="globe" size="xs" />;
       case "own":
-        return <Lock className="w-3 h-3" />;
+        return <ActionIcon action="lock" size="xs" />;
       case "department":
-        return <Users className="w-3 h-3" />;
+        return <ActionIcon action="users" size="xs" />;
       default:
-        return <Shield className="w-3 h-3" />;
+        return <ActionIcon action="shield" size="xs" />;
     }
   };
 
@@ -303,7 +294,7 @@ const RolePermissionsTab: React.FC = () => {
             size="sm"
             className="mt-7"
           >
-            <RefreshCw className="w-4 h-4 mr-2" />
+            <ActionIcon action="loading" size="sm" className="mr-2" />
             Actualizar
           </Button>
         </div>
@@ -317,7 +308,11 @@ const RolePermissionsTab: React.FC = () => {
             <Button onClick={handleSave} disabled={isSaving}>
               {isSaving ? (
                 <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  <ActionIcon
+                    action="loading"
+                    size="sm"
+                    className="mr-2 animate-spin"
+                  />
                   Guardando...
                 </>
               ) : (
@@ -338,7 +333,11 @@ const RolePermissionsTab: React.FC = () => {
                   Buscar
                 </label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <ActionIcon
+                    action="search"
+                    size="sm"
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  />
                   <Input
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -427,12 +426,20 @@ const RolePermissionsTab: React.FC = () => {
                         >
                           {allSelected ? (
                             <>
-                              <XCircle className="w-4 h-4 mr-1" />
+                              <ActionIcon
+                                action="error"
+                                size="sm"
+                                className="mr-1"
+                              />
                               Deseleccionar Todo
                             </>
                           ) : (
                             <>
-                              <CheckCircle className="w-4 h-4 mr-1" />
+                              <ActionIcon
+                                action="success"
+                                size="sm"
+                                className="mr-1"
+                              />
                               Seleccionar Todo
                             </>
                           )}

@@ -1,44 +1,26 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-  HomeIcon,
-  DocumentTextIcon,
-  PlusIcon,
-  ChartBarIcon,
-  UsersIcon,
-  ChevronDownIcon,
-  ClockIcon,
-  WrenchScrewdriverIcon,
-  ListBulletIcon,
-  DocumentDuplicateIcon,
-  CogIcon,
-  BuildingOfficeIcon,
-  FlagIcon,
-  ShieldCheckIcon,
-  ArchiveBoxIcon,
-  BookOpenIcon,
-  TagIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../ui/ActionIcons";
 import { useModulePermissions } from "../../hooks/usePermissions";
 
-// Mapeo de iconos por nombre
-const ICON_MAP: Record<string, React.ComponentType<any>> = {
-  HomeIcon,
-  DocumentTextIcon,
-  PlusIcon,
-  ChartBarIcon,
-  UsersIcon,
-  ClockIcon,
-  WrenchScrewdriverIcon,
-  ListBulletIcon,
-  DocumentDuplicateIcon,
-  CogIcon,
-  BuildingOfficeIcon,
-  FlagIcon,
-  ShieldCheckIcon,
-  ArchiveBoxIcon,
-  BookOpenIcon,
-  TagIcon,
+// Mapeo de iconos por nombre a actions de ActionIcon
+const ICON_ACTION_MAP: Record<string, string> = {
+  HomeIcon: "home",
+  DocumentTextIcon: "document",
+  PlusIcon: "add",
+  ChartBarIcon: "dashboard",
+  UsersIcon: "user",
+  ClockIcon: "time",
+  WrenchScrewdriverIcon: "tool",
+  ListBulletIcon: "list",
+  DocumentDuplicateIcon: "duplicate",
+  CogIcon: "settings",
+  BuildingOfficeIcon: "building",
+  FlagIcon: "flag",
+  ShieldCheckIcon: "shield",
+  ArchiveBoxIcon: "archive",
+  BookOpenIcon: "book",
+  TagIcon: "tag",
 };
 
 interface DynamicNavigationProps {
@@ -65,8 +47,8 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
     return items.some((item) => isActive(item.href));
   };
 
-  const getIcon = (iconName: string) => {
-    return ICON_MAP[iconName] || HomeIcon;
+  const getIconAction = (iconName: string) => {
+    return ICON_ACTION_MAP[iconName] || "home";
   };
 
   return (
@@ -100,7 +82,7 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
           return allowedModules.some((module) => module.href === menuItem.href);
         })
         .map((item) => {
-          const Icon = getIcon(item.icon);
+          const iconAction = getIconAction(item.icon);
           return (
             <Link
               key={item.name}
@@ -116,10 +98,10 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
               }`}
               title={isCollapsed ? item.name : undefined}
             >
-              <Icon
-                className={`${
-                  isCollapsed ? "h-5 w-5" : "h-5 w-5"
-                } flex-shrink-0`}
+              <ActionIcon
+                action={iconAction as any}
+                size="sm"
+                className="flex-shrink-0"
               />
               {!isCollapsed && <span className="ml-3">{item.name}</span>}
             </Link>
@@ -133,7 +115,7 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
 
       {/* Secciones administrativas */}
       {allowedAdminSections.map((section) => {
-        const SectionIcon = getIcon(section.icon);
+        const sectionIconAction = getIconAction(section.icon);
         const sectionActive = isDropdownActive(section.items);
         const isOpen = openDropdowns.has(section.id);
 
@@ -152,7 +134,11 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
                 }`}
                 title={section.title}
               >
-                <SectionIcon className="h-5 w-5 flex-shrink-0" />
+                <ActionIcon
+                  action={sectionIconAction as any}
+                  size="sm"
+                  className="flex-shrink-0"
+                />
               </button>
 
               {/* Tooltip con items para modo colapsado */}
@@ -161,7 +147,7 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
                   {section.title}
                 </div>
                 {section.items.map((item) => {
-                  const ItemIcon = getIcon(item.icon);
+                  const itemIconAction = getIconAction(item.icon);
                   return (
                     <Link
                       key={item.name}
@@ -172,7 +158,11 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
                           : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       }`}
                     >
-                      <ItemIcon className="h-4 w-4 mr-3" />
+                      <ActionIcon
+                        action={itemIconAction as any}
+                        size="sm"
+                        className="mr-3"
+                      />
                       {item.name}
                     </Link>
                   );
@@ -193,11 +183,17 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
               }`}
             >
               <div className="flex items-center">
-                <SectionIcon className="h-5 w-5 mr-3" />
+                <ActionIcon
+                  action={sectionIconAction as any}
+                  size="sm"
+                  className="mr-3"
+                />
                 {section.title}
               </div>
-              <ChevronDownIcon
-                className={`h-4 w-4 transform transition-transform ${
+              <ActionIcon
+                action="dropdown"
+                size="sm"
+                className={`transform transition-transform ${
                   isOpen ? "rotate-180" : ""
                 }`}
               />
@@ -207,7 +203,7 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
             {isOpen && (
               <div className="ml-6 space-y-1">
                 {section.items.map((item) => {
-                  const ItemIcon = getIcon(item.icon);
+                  const submenuIconAction = getIconAction(item.icon);
                   return (
                     <Link
                       key={item.name}
@@ -218,7 +214,11 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
                           : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       }`}
                     >
-                      <ItemIcon className="h-4 w-4 mr-3" />
+                      <ActionIcon
+                        action={submenuIconAction as any}
+                        size="sm"
+                        className="mr-3"
+                      />
                       {item.name}
                     </Link>
                   );

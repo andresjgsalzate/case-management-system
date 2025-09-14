@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  ShieldCheckIcon,
-  MagnifyingGlassIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../ui/ActionIcons";
 import { useToast } from "../../../contexts/ToastContext";
 import { roleService } from "../../../services/roleService";
 import { Modal } from "../../ui/Modal";
@@ -243,7 +240,11 @@ export default function RolePermissionsModal({
         <div className="flex gap-4">
           {/* Búsqueda */}
           <div className="flex-1 relative">
-            <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+            <ActionIcon
+              action="search"
+              size="sm"
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500"
+            />
             <input
               type="text"
               placeholder="Buscar permisos..."
@@ -283,7 +284,12 @@ export default function RolePermissionsModal({
         <div className="divide-y divide-gray-200 dark:divide-gray-600">
           {filteredPermissions.length === 0 ? (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-              <ShieldCheckIcon className="h-12 w-12 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+              <ActionIcon
+                action="shield"
+                size="xl"
+                className="mx-auto mb-4"
+                color="neutral"
+              />
               <p>No se encontraron permisos</p>
               <p className="text-sm">Ajusta los filtros de búsqueda</p>
             </div>
@@ -361,7 +367,7 @@ export default function RolePermissionsModal({
             </>
           ) : (
             <>
-              <ShieldCheckIcon className="h-4 w-4 mr-1" />
+              <ActionIcon action="shield" size="sm" className="mr-1" />
               Guardar Permisos
             </>
           )}

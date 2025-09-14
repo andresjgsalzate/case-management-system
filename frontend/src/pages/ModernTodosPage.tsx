@@ -9,14 +9,7 @@ import {
   Todo,
   TodoFilters,
 } from "../types/todo.types";
-import {
-  PlusIcon,
-  FunnelIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  ExclamationTriangleIcon,
-  DocumentChartBarIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../components/ui/ActionIcons";
 
 const ModernTodosPage: React.FC = () => {
   const {
@@ -131,21 +124,21 @@ const ModernTodosPage: React.FC = () => {
             </div>
             <div className="flex space-x-4">
               <Button onClick={generateReport} variant="secondary">
-                <DocumentChartBarIcon className="h-4 w-4 mr-2" />
+                <ActionIcon action="analytics" size="sm" color="secondary" />
                 Reporte
               </Button>
               <Button
                 onClick={() => setShowFilters(!showFilters)}
                 variant="secondary"
               >
-                <FunnelIcon className="h-4 w-4 mr-2" />
+                <ActionIcon action="filter" size="sm" color="secondary" />
                 Filtros
               </Button>
               <Button
                 onClick={() => setShowCreateModal(true)}
                 variant="primary"
               >
-                <PlusIcon className="h-4 w-4 mr-2" />
+                <ActionIcon action="add" size="sm" color="neutral" />
                 Nuevo TODO
               </Button>
             </div>
@@ -157,7 +150,7 @@ const ModernTodosPage: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <CheckCircleIcon className="h-6 w-6 text-gray-400" />
+                    <ActionIcon action="check" size="lg" color="gray" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -177,7 +170,7 @@ const ModernTodosPage: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ClockIcon className="h-6 w-6 text-blue-400" />
+                    <ActionIcon action="time" size="lg" color="blue" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -197,7 +190,7 @@ const ModernTodosPage: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <CheckCircleIcon className="h-6 w-6 text-green-400" />
+                    <ActionIcon action="check" size="lg" color="green" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -217,7 +210,7 @@ const ModernTodosPage: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ExclamationTriangleIcon className="h-6 w-6 text-red-400" />
+                    <ActionIcon action="warning" size="lg" color="red" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -325,7 +318,7 @@ const ModernTodosPage: React.FC = () => {
         {/* TODOs Grid */}
         {todos.length === 0 ? (
           <div className="text-center py-12">
-            <CheckCircleIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <ActionIcon action="check" size="xl" color="gray" />
             <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
               No hay TODOs
             </h3>
@@ -340,7 +333,7 @@ const ModernTodosPage: React.FC = () => {
                   onClick={() => setShowCreateModal(true)}
                   variant="primary"
                 >
-                  <PlusIcon className="h-4 w-4 mr-2" />
+                  <ActionIcon action="add" size="sm" color="neutral" />
                   Crear TODO
                 </Button>
               </div>

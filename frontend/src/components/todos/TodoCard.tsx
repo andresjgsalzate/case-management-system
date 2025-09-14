@@ -1,20 +1,8 @@
 import React, { useState, useEffect } from "react";
-import {
-  ClockIcon,
-  PlayIcon,
-  PauseIcon,
-  CheckIcon,
-  UserIcon,
-  CalendarIcon,
-  ExclamationTriangleIcon,
-  EyeIcon,
-  PencilIcon,
-  TrashIcon,
-  ArchiveBoxIcon,
-} from "@heroicons/react/24/outline";
 import { Todo } from "../../types/todo.types";
 import { TodoTimeModal } from "./TodoTimeModal";
 import { Button } from "../ui/Button";
+import { ActionIcon } from "../ui/ActionIcons";
 import { useToast } from "../../contexts/ToastContext";
 import { useConfirmationModal } from "../../hooks/useConfirmationModal";
 import { ConfirmationModal } from "../ui/ConfirmationModal";
@@ -227,7 +215,7 @@ export const TodoCard: React.FC<TodoCardProps> = ({
           {/* Usuario asignado */}
           {todo.assignedUser && (
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-              <UserIcon className="w-4 h-4 mr-2" />
+              <ActionIcon action="user" size="sm" className="mr-2" />
               <span>
                 {todo.assignedUser.fullName || todo.assignedUser.email}
               </span>
@@ -243,10 +231,15 @@ export const TodoCard: React.FC<TodoCardProps> = ({
                   : "text-gray-600 dark:text-gray-400"
               }`}
             >
-              <CalendarIcon className="w-4 h-4 mr-2" />
+              <ActionIcon action="calendar" size="sm" className="mr-2" />
               <span>{formatDate(todo.dueDate)}</span>
               {isOverdue() && (
-                <ExclamationTriangleIcon className="w-4 h-4 ml-1 text-red-500" />
+                <ActionIcon
+                  action="warning"
+                  size="sm"
+                  color="danger"
+                  className="ml-1"
+                />
               )}
             </div>
           )}
@@ -254,7 +247,7 @@ export const TodoCard: React.FC<TodoCardProps> = ({
           {/* Tiempo */}
           {todo.control && (
             <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-              <ClockIcon className="w-4 h-4 mr-2" />
+              <ActionIcon action="time" size="sm" className="mr-2" />
               <span>
                 {formatTime(todo.control.totalTimeMinutes || 0)}
                 {todo.estimatedMinutes && todo.estimatedMinutes > 0 && (
@@ -286,7 +279,7 @@ export const TodoCard: React.FC<TodoCardProps> = ({
                       variant="secondary"
                       size="sm"
                     >
-                      <PauseIcon className="w-4 h-4 mr-1" />
+                      <ActionIcon action="pause" size="sm" className="mr-1" />
                       Pausar
                     </Button>
                   ) : (
@@ -295,7 +288,7 @@ export const TodoCard: React.FC<TodoCardProps> = ({
                       variant="secondary"
                       size="sm"
                     >
-                      <PlayIcon className="w-4 h-4 mr-1" />
+                      <ActionIcon action="play" size="sm" className="mr-1" />
                       Reanudar
                     </Button>
                   )}
@@ -305,7 +298,7 @@ export const TodoCard: React.FC<TodoCardProps> = ({
               {/* Complete Button */}
               {todo.control && !todo.isCompleted && (
                 <Button onClick={handleComplete} variant="success" size="sm">
-                  <CheckIcon className="w-4 h-4 mr-1" />
+                  <ActionIcon action="check" size="sm" className="mr-1" />
                   Completar
                 </Button>
               )}
@@ -318,7 +311,7 @@ export const TodoCard: React.FC<TodoCardProps> = ({
                   size="sm"
                   className="inline-flex items-center"
                 >
-                  <PlayIcon className="w-4 h-4 mr-1" />
+                  <ActionIcon action="play" size="sm" className="mr-1" />
                   Comenzar
                 </Button>
               )}
@@ -334,7 +327,7 @@ export const TodoCard: React.FC<TodoCardProps> = ({
                 className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-1"
                 title="Ver detalles de tiempo"
               >
-                <EyeIcon className="w-4 h-4" />
+                <ActionIcon action="view" size="sm" />
               </Button>
 
               {/* Editar */}
@@ -346,7 +339,7 @@ export const TodoCard: React.FC<TodoCardProps> = ({
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1"
                   title="Editar TODO"
                 >
-                  <PencilIcon className="w-4 h-4" />
+                  <ActionIcon action="edit" size="sm" />
                 </Button>
               )}
 
@@ -359,7 +352,7 @@ export const TodoCard: React.FC<TodoCardProps> = ({
                   className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1"
                   title="Eliminar TODO"
                 >
-                  <TrashIcon className="w-4 h-4" />
+                  <ActionIcon action="delete" size="sm" />
                 </Button>
               )}
 
@@ -372,7 +365,7 @@ export const TodoCard: React.FC<TodoCardProps> = ({
                   className="text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 p-1"
                   title="Archivar TODO"
                 >
-                  <ArchiveBoxIcon className="w-4 h-4" />
+                  <ActionIcon action="archive" size="sm" />
                 </Button>
               )}
             </div>

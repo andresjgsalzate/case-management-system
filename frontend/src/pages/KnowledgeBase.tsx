@@ -1,16 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  BookOpenIcon,
-  PlusIcon,
-  MagnifyingGlassIcon,
-  FolderIcon,
-  DocumentTextIcon,
-  ClockIcon,
-  UserIcon,
-  TagIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../components/ui/ActionIcons";
 import {
   useKnowledgeDocuments,
   useDocumentTypes,
@@ -177,7 +167,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
-              <BookOpenIcon className="h-8 w-8 mr-3 text-blue-600 dark:text-blue-400" />
+              <ActionIcon action="folder" size="lg" color="blue" />
               Base de Conocimiento
             </h1>
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
@@ -190,7 +180,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
               onClick={handleCreateDocument}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
             >
-              <PlusIcon className="h-4 w-4 mr-2" />
+              <ActionIcon action="add" size="sm" color="primary" />
               Nuevo Documento
             </button>
           </div>
@@ -203,7 +193,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
         <div className="md:col-span-2">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+              <ActionIcon action="search" size="sm" color="gray" />
             </div>
             <input
               type="text"
@@ -274,7 +264,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
-                      <DocumentTextIcon className="h-8 w-8 text-blue-500 dark:text-blue-400" />
+                      <ActionIcon action="document" size="lg" color="blue" />
                     </div>
                     <div className="ml-3">
                       <div className="flex items-center space-x-2">
@@ -317,14 +307,14 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                   <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                     {doc.documentType && (
                       <div className="flex items-center">
-                        <FolderIcon className="h-4 w-4 mr-1" />
+                        <ActionIcon action="folder" size="sm" color="gray" />
                         {doc.documentType.name}
                       </div>
                     )}
 
                     {doc.tags && doc.tags.length > 0 && (
                       <div className="flex items-center">
-                        <TagIcon className="h-4 w-4 mr-1" />
+                        <ActionIcon action="tag" size="sm" color="gray" />
                         {doc.tags
                           .slice(0, 2)
                           .map((tag) => tag.tagName)
@@ -338,12 +328,12 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                 {/* Footer */}
                 <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-100 dark:border-gray-700">
                   <div className="flex items-center">
-                    <UserIcon className="h-4 w-4 mr-1" />
+                    <ActionIcon action="user" size="sm" color="gray" />
                     Autor
                   </div>
 
                   <div className="flex items-center">
-                    <ClockIcon className="h-4 w-4 mr-1" />
+                    <ActionIcon action="time" size="sm" color="gray" />
                     {formatDate(doc.updatedAt)}
                   </div>
                 </div>
@@ -353,7 +343,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
         </div>
       ) : (
         <div className="text-center py-12">
-          <BookOpenIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" />
+          <ActionIcon action="folder" size="xl" color="gray" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             No se encontraron documentos
           </h3>
@@ -368,7 +358,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
               onClick={handleCreateDocument}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400 dark:focus:ring-offset-gray-800"
             >
-              <PlusIcon className="h-4 w-4 mr-2" />
+              <ActionIcon action="add" size="sm" color="primary" />
               Crear Primer Documento
             </button>
           )}
@@ -389,7 +379,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                   onClick={handleModalCancel}
                   className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                 >
-                  <XMarkIcon className="h-6 w-6" />
+                  <ActionIcon action="close" size="md" color="gray" />
                 </button>
               </div>
 

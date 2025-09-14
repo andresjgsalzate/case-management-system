@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Shield, Plus, Search, Filter, BarChart3 } from "lucide-react";
+import { ActionIcon } from "../../components/ui/ActionIcons";
 import { Role, RoleFilterParams } from "../../types/role";
 import { roleService } from "../../services/roleService";
 import RoleTable from "../../components/admin/roles/RoleTable";
@@ -159,7 +159,7 @@ export const RolesPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <Shield className="w-8 h-8" />
+            <ActionIcon action="shield" size="lg" />
             Gestión de Roles
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -172,7 +172,7 @@ export const RolesPage: React.FC = () => {
             onClick={() => setShowStats(!showStats)}
             className="flex items-center gap-2"
           >
-            <BarChart3 className="w-4 h-4" />
+            <ActionIcon action="analytics" size="sm" />
             {showStats ? "Ocultar" : "Mostrar"} Estadísticas
           </Button>
           {canCreate && (
@@ -180,7 +180,7 @@ export const RolesPage: React.FC = () => {
               onClick={handleCreateRole}
               className="flex items-center gap-2"
             >
-              <Plus className="w-4 h-4" />
+              <ActionIcon action="add" size="sm" />
               Nuevo Rol
             </Button>
           )}
@@ -196,7 +196,11 @@ export const RolesPage: React.FC = () => {
           {/* Búsqueda */}
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <ActionIcon
+                action="search"
+                size="sm"
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              />
               <Input
                 type="text"
                 placeholder="Buscar por nombre o descripción..."
@@ -248,7 +252,7 @@ export const RolesPage: React.FC = () => {
             className="flex items-center gap-2 whitespace-nowrap"
             onClick={handleRefresh}
           >
-            <Filter className="w-4 h-4" />
+            <ActionIcon action="filter" size="sm" />
             Actualizar
           </Button>
         </div>

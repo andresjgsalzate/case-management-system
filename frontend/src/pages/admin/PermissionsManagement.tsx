@@ -6,7 +6,7 @@ import { Label } from "../../components/ui/label";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
 import { Select } from "../../components/ui/Select";
-import { Trash2, Edit, Plus, Shield, Settings, Key } from "lucide-react";
+import { ActionIcon } from "../../components/ui/ActionIcons";
 import { authPermissionService } from "../../services/authPermission.service";
 import { Permission } from "../../types/auth";
 import { useToast as useToastContext } from "../../contexts/ToastContext";
@@ -166,7 +166,7 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200"
               }`}
             >
-              <Shield className="h-4 w-4 inline mr-2" />
+              <ActionIcon action="shield" size="sm" className="inline mr-2" />
               Permisos
             </button>
             <button
@@ -177,7 +177,11 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200"
               }`}
             >
-              <Key className="h-4 w-4 inline mr-2" />
+              <ActionIcon
+                action="changePassword"
+                size="sm"
+                className="inline mr-2"
+              />
               Asignar Permisos
             </button>
             <button
@@ -188,7 +192,7 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200"
               }`}
             >
-              <Settings className="h-4 w-4 inline mr-2" />
+              <ActionIcon action="settings" size="sm" className="inline mr-2" />
               Guía
             </button>
           </nav>
@@ -218,7 +222,7 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
                 }}
                 className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <ActionIcon action="add" size="sm" className="mr-2" />
                 Nuevo Permiso
               </Button>
             </div>
@@ -312,7 +316,7 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
                               className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
                               title="Editar permiso"
                             >
-                              <Edit className="w-4 h-4" />
+                              <ActionIcon action="edit" size="sm" />
                             </button>
                             <button
                               onClick={() =>
@@ -321,7 +325,7 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
                               className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                               title="Eliminar permiso"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <ActionIcon action="delete" size="sm" />
                             </button>
                           </div>
                         </td>

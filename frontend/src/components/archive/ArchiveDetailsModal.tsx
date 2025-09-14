@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  DocumentArrowDownIcon,
-  ClipboardDocumentListIcon,
-  CalendarIcon,
-  ClockIcon,
-  UserIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../ui/ActionIcons";
 import { Modal } from "../ui/Modal";
 import { ArchivedItem } from "../../types/archive.types";
 
@@ -40,9 +34,9 @@ export const ArchiveDetailsModal: React.FC<ArchiveDetailsModalProps> = ({
             }`}
           >
             {item.itemType === "case" ? (
-              <DocumentArrowDownIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <ActionIcon action="report" size="lg" color="blue" />
             ) : (
-              <ClipboardDocumentListIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
+              <ActionIcon action="clipboard" size="lg" color="green" />
             )}
           </div>
           <div className="flex-1">
@@ -128,7 +122,12 @@ export const ArchiveDetailsModal: React.FC<ArchiveDetailsModalProps> = ({
                       Archivado por
                     </dt>
                     <dd className="mt-1 flex items-center text-sm text-gray-900 dark:text-white">
-                      <UserIcon className="w-4 h-4 mr-1 text-gray-400" />
+                      <ActionIcon
+                        action="user"
+                        size="sm"
+                        className="mr-1"
+                        color="neutral"
+                      />
                       {item.archivedByUser.fullName ||
                         item.archivedByUser.email}
                     </dd>
@@ -149,7 +148,12 @@ export const ArchiveDetailsModal: React.FC<ArchiveDetailsModalProps> = ({
                     Fecha de Archivo
                   </dt>
                   <dd className="mt-1 flex items-center text-sm text-gray-900 dark:text-white">
-                    <CalendarIcon className="w-4 h-4 mr-1 text-gray-400" />
+                    <ActionIcon
+                      action="calendar"
+                      size="sm"
+                      className="mr-1"
+                      color="neutral"
+                    />
                     {new Date(item.archivedAt).toLocaleString("es-ES")}
                   </dd>
                 </div>
@@ -163,7 +167,12 @@ export const ArchiveDetailsModal: React.FC<ArchiveDetailsModalProps> = ({
                   </h4>
                   <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                     <div className="flex items-center">
-                      <ClockIcon className="w-4 h-4 mr-2 text-gray-400" />
+                      <ActionIcon
+                        action="time"
+                        size="sm"
+                        className="mr-2"
+                        color="neutral"
+                      />
                       <dt className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mr-2">
                         Tiempo Total:
                       </dt>

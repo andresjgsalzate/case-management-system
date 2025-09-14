@@ -1,14 +1,5 @@
 import React from "react";
-import {
-  Edit,
-  Trash2,
-  Shield,
-  ChevronLeft,
-  ChevronRight,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-} from "lucide-react";
+import { ActionIcon } from "../../ui/ActionIcons";
 import { Permission } from "../../../types/permission";
 import { Button } from "../../ui/Button";
 import { Badge } from "../../ui/Badge";
@@ -52,12 +43,17 @@ export const PermissionTable: React.FC<PermissionTableProps> = ({
 
   const getSortIcon = (field: string) => {
     if (sortField !== field) {
-      return <ArrowUpDown className="h-4 w-4 text-gray-400" />;
+      return <ActionIcon action="chevronUp" size="sm" color="neutral" />;
     }
     return sortOrder === "ASC" ? (
-      <ArrowUp className="h-4 w-4 text-purple-600" />
+      <ActionIcon action="chevronUp" size="sm" color="purple" />
     ) : (
-      <ArrowDown className="h-4 w-4 text-purple-600" />
+      <ActionIcon
+        action="chevronUp"
+        size="sm"
+        color="purple"
+        style={{ transform: "rotate(180deg)" }}
+      />
     );
   };
 
@@ -94,7 +90,12 @@ export const PermissionTable: React.FC<PermissionTableProps> = ({
     return (
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="p-8 text-center">
-          <Shield className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <ActionIcon
+            action="shield"
+            size="xl"
+            color="danger"
+            className="mx-auto mb-4"
+          />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             Error al cargar permisos
           </h3>
@@ -108,7 +109,12 @@ export const PermissionTable: React.FC<PermissionTableProps> = ({
     return (
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="p-8 text-center">
-          <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <ActionIcon
+            action="shield"
+            size="xl"
+            color="neutral"
+            className="mx-auto mb-4"
+          />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             No hay permisos
           </h3>
@@ -238,7 +244,7 @@ export const PermissionTable: React.FC<PermissionTableProps> = ({
                       variant="ghost"
                       className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
                     >
-                      <Edit className="w-4 h-4" />
+                      <ActionIcon action="edit" size="sm" />
                     </Button>
                     <Button
                       onClick={() => onDelete(permission)}
@@ -246,7 +252,7 @@ export const PermissionTable: React.FC<PermissionTableProps> = ({
                       variant="ghost"
                       className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <ActionIcon action="delete" size="sm" />
                     </Button>
                   </div>
                 </td>
@@ -301,7 +307,11 @@ export const PermissionTable: React.FC<PermissionTableProps> = ({
                     size="sm"
                     className="relative inline-flex items-center px-2 py-2 rounded-l-md"
                   >
-                    <ChevronLeft className="h-5 w-5" />
+                    <ActionIcon
+                      action="chevronUp"
+                      size="sm"
+                      style={{ transform: "rotate(-90deg)" }}
+                    />
                   </Button>
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map(
                     (page) => (
@@ -323,7 +333,11 @@ export const PermissionTable: React.FC<PermissionTableProps> = ({
                     size="sm"
                     className="relative inline-flex items-center px-2 py-2 rounded-r-md"
                   >
-                    <ChevronRight className="h-5 w-5" />
+                    <ActionIcon
+                      action="chevronUp"
+                      size="sm"
+                      style={{ transform: "rotate(90deg)" }}
+                    />
                   </Button>
                 </nav>
               </div>

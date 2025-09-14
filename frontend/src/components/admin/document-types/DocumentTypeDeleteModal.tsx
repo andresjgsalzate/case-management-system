@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "../../../hooks/useNotification";
 import { Modal } from "../../ui/Modal";
 import { Button } from "../../ui/Button";
-import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../ui/ActionIcons";
 import { DocumentTypeService } from "../../../services/knowledge.service";
 import type { DocumentType, DocumentTypeStats } from "../../../types/knowledge";
 
@@ -87,10 +87,7 @@ export default function DocumentTypeDeleteModal({
       <div className="space-y-6">
         {/* Warning Icon */}
         <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 dark:bg-red-900/20 rounded-full">
-          <ExclamationTriangleIcon
-            className="w-6 h-6 text-red-600 dark:text-red-400"
-            aria-hidden="true"
-          />
+          <ActionIcon action="warning" size="md" color="red" />
         </div>
 
         {/* Confirmation Message */}
@@ -219,7 +216,7 @@ export default function DocumentTypeDeleteModal({
         {!isLoadingData && stats && stats.totalDocuments > 0 && (
           <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-md p-4">
             <div className="flex">
-              <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" />
+              <ActionIcon action="warning" size="sm" color="yellow" />
               <div className="ml-3">
                 <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
                   Advertencia

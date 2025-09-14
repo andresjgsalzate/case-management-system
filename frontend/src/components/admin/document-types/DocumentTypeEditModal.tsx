@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "../../../hooks/useNotification";
 import { Modal } from "../../ui/Modal";
 import { Button } from "../../ui/Button";
-import { PencilIcon } from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../ui/ActionIcons";
 import { DocumentTypeService } from "../../../services/knowledge.service";
 import type {
   DocumentType,
@@ -526,7 +526,7 @@ export default function DocumentTypeEditModal({
               </>
             ) : (
               <>
-                <PencilIcon className="h-4 w-4 mr-2" />
+                <ActionIcon action="edit" size="sm" color="orange" />
                 Actualizar Tipo de Documento
               </>
             )}

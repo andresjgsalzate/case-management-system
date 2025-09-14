@@ -1,10 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import {
-  BellIcon,
-  ChevronDownIcon,
-  SunIcon,
-  MoonIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../ui/ActionIcons";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Button } from "../ui/Button";
 
@@ -45,15 +40,15 @@ export const Header = () => {
             >
               <span className="sr-only">Toggle theme</span>
               {isDark ? (
-                <SunIcon className="h-6 w-6" aria-hidden="true" />
+                <ActionIcon action="sun" size="lg" color="yellow" />
               ) : (
-                <MoonIcon className="h-6 w-6" aria-hidden="true" />
+                <ActionIcon action="moon" size="lg" color="blue" />
               )}
             </Button>
 
             <Button variant="ghost" size="sm" className="-m-2.5 p-2.5">
               <span className="sr-only">View notifications</span>
-              <BellIcon className="h-6 w-6" aria-hidden="true" />
+              <ActionIcon action="notification" size="lg" color="yellow" />
             </Button>
 
             {/* Separator */}
@@ -83,11 +78,13 @@ export const Header = () => {
                   >
                     Usuario
                   </span>
-                  <ChevronDownIcon
-                    className={`ml-2 h-5 w-5 text-gray-400 dark:text-gray-300 transition-transform ${
+                  <ActionIcon
+                    action="dropdown"
+                    size="md"
+                    color="gray"
+                    className={`ml-2 transition-transform ${
                       dropdownOpen ? "rotate-180" : ""
                     }`}
-                    aria-hidden="true"
                   />
                 </span>
               </Button>

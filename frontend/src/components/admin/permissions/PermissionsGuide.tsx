@@ -1,18 +1,5 @@
 import React from "react";
-import {
-  Shield,
-  Users,
-  Database,
-  Settings,
-  Lock,
-  Unlock,
-  Eye,
-  Edit,
-  Trash2,
-  UserCheck,
-  AlertCircle,
-  CheckCircle,
-} from "lucide-react";
+import { ActionIcon } from "../../ui/ActionIcons";
 
 export const PermissionsGuide: React.FC = () => {
   const permissionStructure = [
@@ -59,21 +46,21 @@ export const PermissionsGuide: React.FC = () => {
       name: "own",
       description: "Solo recursos propios",
       color: "blue",
-      icon: Lock,
+      icon: "lock",
       example: "Un usuario solo puede ver sus propios casos",
     },
     {
       name: "team",
       description: "Recursos del equipo",
       color: "yellow",
-      icon: Users,
+      icon: "user",
       example: "Un supervisor puede ver casos de su equipo",
     },
     {
       name: "all",
       description: "Todos los recursos",
       color: "green",
-      icon: Unlock,
+      icon: "unlock",
       example: "Un administrador puede ver todos los casos",
     },
   ];
@@ -178,7 +165,6 @@ export const PermissionsGuide: React.FC = () => {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {scopes.map((scope) => {
-            const IconComponent = scope.icon;
             return (
               <div
                 key={scope.name}
@@ -187,7 +173,7 @@ export const PermissionsGuide: React.FC = () => {
                 )}`}
               >
                 <div className="flex items-center space-x-2 mb-2">
-                  <IconComponent className="h-5 w-5" />
+                  <ActionIcon action={scope.icon as any} size="sm" />
                   <h3 className="font-medium">{scope.name}</h3>
                 </div>
                 <p className="text-sm mb-3">{scope.description}</p>
@@ -203,7 +189,12 @@ export const PermissionsGuide: React.FC = () => {
       {/* Módulos y Acciones */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <Database className="h-5 w-5 mr-2 text-purple-600" />
+          <ActionIcon
+            action="folder"
+            size="sm"
+            color="purple"
+            className="mr-2"
+          />
           Módulos y Acciones Disponibles
         </h2>
         <div className="space-y-6">

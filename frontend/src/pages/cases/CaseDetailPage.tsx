@@ -1,13 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import {
-  ArrowLeftIcon,
-  PencilIcon,
-  TrashIcon,
-  DocumentIcon,
-  CalendarIcon,
-  UserIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../components/ui/ActionIcons";
 import { useCases } from "../../hooks/useCases";
 import { Button } from "../../components/ui/Button";
 import { useToast } from "../../hooks/useNotification";
@@ -106,7 +99,7 @@ export const CaseDetailPage = () => {
               {error.message}
             </p>
             <Button onClick={() => navigate("/cases")} variant="primary">
-              <ArrowLeftIcon className="-ml-1 mr-2 h-5 w-5" />
+              <ActionIcon action="back" size="lg" className="-ml-1 mr-2" />
               Volver a Casos
             </Button>
           </div>
@@ -127,7 +120,7 @@ export const CaseDetailPage = () => {
               El caso con ID "{id}" no existe.
             </p>
             <Button onClick={() => navigate("/cases")} variant="primary">
-              <ArrowLeftIcon className="-ml-1 mr-2 h-5 w-5" />
+              <ActionIcon action="back" size="lg" className="-ml-1 mr-2" />
               Volver a Casos
             </Button>
           </div>
@@ -144,7 +137,7 @@ export const CaseDetailPage = () => {
             to="/cases"
             className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           >
-            <ArrowLeftIcon className="-ml-1 mr-1 h-5 w-5" aria-hidden="true" />
+            <ActionIcon action="back" size="lg" className="-ml-1 mr-1" />
             Volver a Casos
           </Link>
         </div>
@@ -157,11 +150,21 @@ export const CaseDetailPage = () => {
             </h2>
             <div className="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:space-x-6">
               <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
-                <CalendarIcon className="mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500" />
+                <ActionIcon
+                  action="calendar"
+                  size="lg"
+                  color="gray"
+                  className="mr-1.5"
+                />
                 Creado: {new Date(caso.createdAt).toLocaleDateString()}
               </div>
               <div className="mt-2 flex items-center text-sm text-gray-500 dark:text-gray-400">
-                <UserIcon className="mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500" />
+                <ActionIcon
+                  action="user"
+                  size="lg"
+                  color="gray"
+                  className="mr-1.5"
+                />
                 {caso.assignedTo
                   ? `Asignado a: ${
                       caso.assignedTo.fullName || caso.assignedTo.email
@@ -176,14 +179,14 @@ export const CaseDetailPage = () => {
                 variant="secondary"
                 onClick={() => setIsEditing(!isEditing)}
               >
-                <PencilIcon className="-ml-1 mr-2 h-5 w-5" />
+                <ActionIcon action="edit" size="lg" className="-ml-1 mr-2" />
                 Editar
               </Button>
             </span>
 
             <span className="ml-3 hidden sm:block">
               <Button variant="danger" onClick={handleDelete}>
-                <TrashIcon className="-ml-1 mr-2 h-5 w-5" />
+                <ActionIcon action="delete" size="lg" className="-ml-1 mr-2" />
                 Eliminar
               </Button>
             </span>
@@ -301,7 +304,11 @@ export const CaseDetailPage = () => {
                 <dl className="space-y-3">
                   <div>
                     <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center">
-                      <DocumentIcon className="h-4 w-4 mr-1" />
+                      <ActionIcon
+                        action="document"
+                        size="sm"
+                        className="mr-1"
+                      />
                       Fecha de creación
                     </dt>
                     <dd className="mt-1 text-sm text-gray-900 dark:text-white">

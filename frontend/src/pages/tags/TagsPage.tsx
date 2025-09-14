@@ -1,14 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  TagIcon,
-  PlusIcon,
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  PencilIcon,
-  TrashIcon,
-  EyeIcon,
-  EyeSlashIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../components/ui/ActionIcons";
 import { useToast } from "../../contexts/ToastContext";
 import { tagService } from "../../services/tagService";
 import { Modal } from "../../components/ui/Modal";
@@ -162,7 +153,12 @@ export default function TagsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
-                <TagIcon className="h-8 w-8 mr-3 text-blue-600 dark:text-blue-400" />
+                <ActionIcon
+                  action="tag"
+                  size="xl"
+                  color="blue"
+                  className="mr-3"
+                />
                 Gestión de Etiquetas
               </h1>
               <p className="text-gray-600 dark:text-gray-300 mt-2">
@@ -174,7 +170,7 @@ export default function TagsPage() {
               variant="primary"
               className="flex items-center"
             >
-              <PlusIcon className="h-5 w-5 mr-2" />
+              <ActionIcon action="add" size="lg" className="mr-2" />
               Nueva Etiqueta
             </Button>
           </div>
@@ -185,7 +181,12 @@ export default function TagsPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-                <TagIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <ActionIcon
+                  action="tag"
+                  size="lg"
+                  color="blue"
+                  title="Total de etiquetas"
+                />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
@@ -201,7 +202,12 @@ export default function TagsPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg">
-                <EyeIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
+                <ActionIcon
+                  action="view"
+                  size="lg"
+                  color="green"
+                  title="Etiquetas activas"
+                />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
@@ -217,7 +223,12 @@ export default function TagsPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="p-2 bg-red-100 dark:bg-red-900/50 rounded-lg">
-                <EyeSlashIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
+                <ActionIcon
+                  action="hide"
+                  size="lg"
+                  color="red"
+                  title="Etiquetas inactivas"
+                />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
@@ -233,7 +244,12 @@ export default function TagsPage() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
-                <FunnelIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <ActionIcon
+                  action="filter"
+                  size="lg"
+                  color="purple"
+                  title="Categorías disponibles"
+                />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
@@ -254,7 +270,9 @@ export default function TagsPage() {
               {/* Search */}
               <div className="flex-1 max-w-md">
                 <div className="relative">
-                  <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                    <ActionIcon action="search" size="md" color="neutral" />
+                  </span>
                   <input
                     type="text"
                     placeholder="Buscar etiquetas..."
@@ -271,7 +289,7 @@ export default function TagsPage() {
                 variant="secondary"
                 className="flex items-center"
               >
-                <FunnelIcon className="h-5 w-5 mr-2" />
+                <ActionIcon action="filter" size="md" className="mr-2" />
                 Filtros
               </Button>
             </div>
@@ -363,7 +381,11 @@ export default function TagsPage() {
                       colSpan={6}
                       className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                     >
-                      <TagIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" />
+                      <ActionIcon
+                        action="tag"
+                        size="xl"
+                        className="mx-auto mb-4 text-gray-400 dark:text-gray-500"
+                      />
                       <p className="text-lg font-medium">
                         No se encontraron etiquetas
                       </p>
@@ -431,12 +453,20 @@ export default function TagsPage() {
                           >
                             {tag.isActive ? (
                               <>
-                                <EyeIcon className="w-3 h-3 mr-1" />
+                                <ActionIcon
+                                  action="view"
+                                  size="sm"
+                                  className="mr-1"
+                                />
                                 Activa
                               </>
                             ) : (
                               <>
-                                <EyeSlashIcon className="w-3 h-3 mr-1" />
+                                <ActionIcon
+                                  action="hide"
+                                  size="sm"
+                                  className="mr-1"
+                                />
                                 Inactiva
                               </>
                             )}
@@ -449,14 +479,14 @@ export default function TagsPage() {
                               className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
                               title="Editar etiqueta"
                             >
-                              <PencilIcon className="w-4 h-4" />
+                              <ActionIcon action="edit" size="md" />
                             </button>
                             <button
                               onClick={() => handleDeleteClick(tag)}
                               className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                               title="Eliminar etiqueta"
                             >
-                              <TrashIcon className="w-4 h-4" />
+                              <ActionIcon action="delete" size="md" />
                             </button>
                           </div>
                         </td>

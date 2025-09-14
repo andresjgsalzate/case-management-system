@@ -1,20 +1,11 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  ClockIcon,
-  EyeIcon,
-  UserIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
-  DocumentChartBarIcon,
-  AdjustmentsHorizontalIcon,
-  ArchiveBoxIcon,
-} from "@heroicons/react/24/outline";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Select } from "../ui/Select";
+import { ActionIcon } from "../ui/ActionIcons";
 import { TimerControl } from "./TimerControl";
 import { CaseControlDetailsModal } from "./CaseControlDetailsModal";
 import { CaseAssignmentModal } from "./CaseAssignmentModal";
@@ -340,7 +331,7 @@ export const CaseControlPage: React.FC = () => {
             className="flex items-center"
             onClick={handleGenerateReport}
           >
-            <DocumentChartBarIcon className="h-4 w-4 mr-2" />
+            <ActionIcon action="report" size="sm" className="mr-2" />
             Reportes
           </Button>
 
@@ -348,7 +339,7 @@ export const CaseControlPage: React.FC = () => {
             onClick={() => setShowAssignModal(true)}
             className="flex items-center gap-2"
           >
-            <PlusIcon className="h-4 w-4" />
+            <ActionIcon action="add" size="sm" />
             Asignar Caso
           </Button>
         </div>
@@ -358,7 +349,12 @@ export const CaseControlPage: React.FC = () => {
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
         <div className="flex items-center space-x-4">
           <div className="flex items-center">
-            <AdjustmentsHorizontalIcon className="h-5 w-5 text-gray-400 mr-2" />
+            <ActionIcon
+              action="settings"
+              size="md"
+              color="neutral"
+              className="mr-2"
+            />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Filtros:
             </span>
@@ -366,7 +362,12 @@ export const CaseControlPage: React.FC = () => {
 
           {/* Búsqueda por número de caso */}
           <div className="relative">
-            <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <ActionIcon
+              action="search"
+              size="md"
+              color="neutral"
+              className="absolute left-3 top-1/2 transform -translate-y-1/2"
+            />
             <Input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -422,7 +423,12 @@ export const CaseControlPage: React.FC = () => {
       <div className="grid gap-4">
         {filteredControls.length === 0 ? (
           <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-            <ClockIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <ActionIcon
+              action="time"
+              size="xl"
+              color="neutral"
+              className="mx-auto mb-4"
+            />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               {searchTerm || selectedStatus
                 ? "No se encontraron casos"
@@ -478,12 +484,12 @@ export const CaseControlPage: React.FC = () => {
 
                   <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-gray-400">
                     <div className="flex items-center">
-                      <ClockIcon className="h-4 w-4 mr-1" />
+                      <ActionIcon action="time" size="sm" className="mr-1" />
                       <span>Total: {formatTime(control.totalTimeMinutes)}</span>
                     </div>
 
                     <div className="flex items-center">
-                      <UserIcon className="h-4 w-4 mr-1" />
+                      <ActionIcon action="user" size="sm" className="mr-1" />
                       <span>
                         Asignado a:{" "}
                         {control.user?.fullName || "Usuario desconocido"}
@@ -550,7 +556,7 @@ export const CaseControlPage: React.FC = () => {
                       setShowTimeModal(true);
                     }}
                   >
-                    <EyeIcon className="h-4 w-4" />
+                    <ActionIcon action="view" size="sm" />
                   </Button>
 
                   {/* Botón archivar caso - solo si está terminado */}
@@ -563,7 +569,7 @@ export const CaseControlPage: React.FC = () => {
                       disabled={isArchiving}
                       title="Archivar caso"
                     >
-                      <ArchiveBoxIcon className="h-4 w-4" />
+                      <ActionIcon action="archive" size="sm" />
                     </Button>
                   )}
                 </div>

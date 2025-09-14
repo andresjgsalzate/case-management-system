@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  PlusIcon,
-  MagnifyingGlassIcon,
-  UsersIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../components/ui/ActionIcons";
 import { User, UserFilterParams, Role } from "../../types/user";
 import { userService } from "../../services/userService";
 import {
@@ -146,7 +142,7 @@ export const UsersPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <UsersIcon className="w-8 h-8" />
+            <ActionIcon action="users" size="xl" color="blue" />
             Gestión de Usuarios
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -158,7 +154,7 @@ export const UsersPage: React.FC = () => {
             onClick={handleCreateUser}
             className="flex items-center gap-2"
           >
-            <PlusIcon className="w-4 h-4" />
+            <ActionIcon action="add" size="sm" color="neutral" />
             Nuevo Usuario
           </Button>
         )}
@@ -170,7 +166,12 @@ export const UsersPage: React.FC = () => {
           {/* Búsqueda */}
           <div className="flex-1">
             <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <ActionIcon
+                action="search"
+                size="sm"
+                color="gray"
+                className="absolute left-3 top-1/2 transform -translate-y-1/2"
+              />
               <Input
                 placeholder="Buscar por nombre o email..."
                 className="pl-10"

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User, Mail, Lock, UserCheck } from "lucide-react";
+import { ActionIcon } from "../ui/ActionIcons";
 import { CreateUserRequest, Role } from "../../types/user";
 import { userService } from "../../services/userService";
 import { Modal } from "../ui/Modal";
@@ -118,7 +118,7 @@ export const UserCreateModal: React.FC<UserCreateModalProps> = ({
         {/* Nombre completo */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            <User className="w-4 h-4 inline mr-2" />
+            <ActionIcon action="user" size="sm" className="inline mr-2" />
             Nombre Completo
           </label>
           <Input
@@ -134,7 +134,7 @@ export const UserCreateModal: React.FC<UserCreateModalProps> = ({
         {/* Email */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            <Mail className="w-4 h-4 inline mr-2" />
+            <ActionIcon action="email" size="sm" className="inline mr-2" />
             Email
           </label>
           <Input
@@ -150,7 +150,7 @@ export const UserCreateModal: React.FC<UserCreateModalProps> = ({
         {/* Contraseña */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            <Lock className="w-4 h-4 inline mr-2" />
+            <ActionIcon action="lock" size="sm" className="inline mr-2" />
             Contraseña
           </label>
           <Input
@@ -166,7 +166,7 @@ export const UserCreateModal: React.FC<UserCreateModalProps> = ({
         {/* Rol */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            <UserCheck className="w-4 h-4 inline mr-2" />
+            <ActionIcon action="check" size="sm" className="inline mr-2" />
             Rol
           </label>
           {loadingRoles ? (

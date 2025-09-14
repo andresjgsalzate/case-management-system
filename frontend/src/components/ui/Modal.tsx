@@ -1,5 +1,5 @@
 import React from "react";
-import { XMarkIcon } from "@heroicons/react/24/outline";
+import { CloseIcon } from "./ActionIcons";
 
 interface ModalProps {
   isOpen: boolean;
@@ -49,7 +49,7 @@ export const Modal: React.FC<ModalProps> = ({
                 onClick={onClose}
                 className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
               >
-                <XMarkIcon className="h-6 w-6" />
+                <CloseIcon size="lg" />
               </button>
             </div>
           )}

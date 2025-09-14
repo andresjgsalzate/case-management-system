@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  PlusIcon,
-  PencilIcon,
-  TrashIcon,
-  MagnifyingGlassIcon,
-  EyeIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../../components/ui/ActionIcons";
 import { Modal } from "../../components/ui/Modal";
 import { Button } from "../../components/ui/Button";
 import { useToast } from "../../hooks/useNotification";
@@ -242,9 +234,9 @@ const ApplicationsPage: React.FC = () => {
   const getSortIcon = (field: string) => {
     if (filters.sortBy !== field) return null;
     return filters.sortOrder === "ASC" ? (
-      <ArrowUpIcon className="w-4 h-4" />
+      <ActionIcon action="sortUp" size="sm" />
     ) : (
-      <ArrowDownIcon className="w-4 h-4" />
+      <ActionIcon action="sortDown" size="sm" />
     );
   };
 
@@ -273,7 +265,7 @@ const ApplicationsPage: React.FC = () => {
           variant="primary"
           className="inline-flex items-center"
         >
-          <PlusIcon className="w-5 h-5 mr-2" />
+          <ActionIcon action="add" size="lg" className="mr-2" />
           Nueva Aplicación
         </Button>
       </div>
@@ -328,7 +320,12 @@ const ApplicationsPage: React.FC = () => {
       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow space-y-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <ActionIcon
+              action="search"
+              size="lg"
+              color="gray"
+              className="absolute left-3 top-1/2 transform -translate-y-1/2"
+            />
             <input
               type="text"
               placeholder="Buscar aplicaciones..."
@@ -438,21 +435,21 @@ const ApplicationsPage: React.FC = () => {
                         className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                         title="Ver detalles"
                       >
-                        <EyeIcon className="w-4 h-4" />
+                        <ActionIcon action="view" size="sm" color="blue" />
                       </button>
                       <button
                         onClick={() => handleEdit(application)}
                         className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
                         title="Editar"
                       >
-                        <PencilIcon className="w-4 h-4" />
+                        <ActionIcon action="edit" size="sm" color="orange" />
                       </button>
                       <button
                         onClick={() => setDeleteConfirm(application.id)}
                         className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                         title="Eliminar"
                       >
-                        <TrashIcon className="w-4 h-4" />
+                        <ActionIcon action="delete" size="sm" color="red" />
                       </button>
                     </div>
                   </td>

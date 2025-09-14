@@ -4,14 +4,7 @@ import {
   useModulePermissions,
   useFeaturePermissions,
 } from "../hooks/usePermissions";
-import {
-  InformationCircleIcon,
-  ChevronDownIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  EyeIcon,
-  EyeSlashIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "./ui/ActionIcons";
 import { Button } from "./ui/Button";
 
 interface PermissionIndicatorProps {
@@ -46,7 +39,7 @@ export const PermissionIndicator: React.FC<PermissionIndicatorProps> = ({
         className="fixed bottom-4 right-4 p-2 rounded-full shadow-lg z-50"
         title="Mostrar información de permisos"
       >
-        <EyeIcon className="h-5 w-5" />
+        <ActionIcon action="view" size="md" color="blue" />
       </Button>
     );
   }
@@ -71,7 +64,7 @@ export const PermissionIndicator: React.FC<PermissionIndicatorProps> = ({
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-center space-x-2">
-            <InformationCircleIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+            <ActionIcon action="info" size="md" color="info" />
             <span className="text-sm font-medium text-gray-900 dark:text-white">
               Permisos Usuario
             </span>
@@ -87,11 +80,14 @@ export const PermissionIndicator: React.FC<PermissionIndicatorProps> = ({
               className="p-1"
               title="Ocultar"
             >
-              <EyeSlashIcon className="h-4 w-4 text-gray-500" />
+              <ActionIcon action="hide" size="sm" color="neutral" />
             </Button>
-            <ChevronDownIcon
-              className={`h-4 w-4 text-gray-500 transition-transform ${
-                isExpanded ? "rotate-180" : ""
+            <ActionIcon
+              action="chevronUp"
+              size="sm"
+              color="neutral"
+              className={`transition-transform ${
+                isExpanded ? "" : "rotate-180"
               }`}
             />
           </div>
@@ -138,7 +134,7 @@ export const PermissionIndicator: React.FC<PermissionIndicatorProps> = ({
                     key={module.name}
                     className="flex items-center space-x-2 text-sm"
                   >
-                    <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                    <ActionIcon action="check" size="sm" color="success" />
                     <span className="text-gray-700 dark:text-gray-300">
                       {module.name}
                     </span>
@@ -162,7 +158,7 @@ export const PermissionIndicator: React.FC<PermissionIndicatorProps> = ({
                   {allowedAdminSections.map((section) => (
                     <div key={section.id} className="space-y-1">
                       <div className="flex items-center space-x-2 text-sm">
-                        <CheckCircleIcon className="h-4 w-4 text-orange-500" />
+                        <ActionIcon action="check" size="sm" color="warning" />
                         <span className="text-gray-700 dark:text-gray-300 font-medium">
                           {section.title}
                         </span>
@@ -198,9 +194,9 @@ export const PermissionIndicator: React.FC<PermissionIndicatorProps> = ({
                       className="flex items-center space-x-2 text-xs"
                     >
                       {hasAccess ? (
-                        <CheckCircleIcon className="h-3 w-3 text-green-500" />
+                        <ActionIcon action="check" size="xs" color="success" />
                       ) : (
-                        <XCircleIcon className="h-3 w-3 text-red-500" />
+                        <ActionIcon action="close" size="xs" color="danger" />
                       )}
                       <code className="text-gray-600 dark:text-gray-400">
                         {permission}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { XMarkIcon } from "@heroicons/react/24/outline";
+import { CloseIcon } from "../ui/ActionIcons";
 import { Modal } from "../ui/Modal";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -272,7 +272,7 @@ export const DispositionForm: React.FC<DispositionFormProps> = ({
                   size="xs"
                   className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 p-1"
                 >
-                  <XMarkIcon className="h-4 w-4" />
+                  <CloseIcon size="sm" />
                 </Button>
               </div>
             </div>

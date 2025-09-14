@@ -3,74 +3,60 @@ import { NavLink } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { Modal } from "../ui/Modal";
 import { Button } from "../ui/Button";
-import {
-  HomeIcon,
-  DocumentTextIcon,
-  PlusIcon,
-  ClockIcon,
-  UsersIcon,
-  ShieldCheckIcon,
-  XMarkIcon,
-  Bars3Icon,
-  CheckCircleIcon,
-  CogIcon,
-  ChevronDownIcon,
-  ArchiveBoxIcon,
-  TagIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon, ActionType } from "../ui/ActionIcons";
 
 interface NavigationItem {
   name: string;
   href: string;
-  icon: any;
+  icon: ActionType;
   subItems?: { name: string; href: string }[];
   requiredPermission?: string;
   requiredModule?: string;
 }
 
 const navigation: NavigationItem[] = [
-  { name: "Dashboard", href: "/", icon: HomeIcon },
+  { name: "Dashboard", href: "/", icon: "home" },
   {
     name: "Casos",
     href: "/cases",
-    icon: DocumentTextIcon,
+    icon: "document",
     requiredModule: "casos",
   },
   {
     name: "Nuevo Caso",
     href: "/cases/new",
-    icon: PlusIcon,
+    icon: "add",
     requiredPermission: "casos.crear.all",
   },
   {
     name: "Control de Casos",
     href: "/case-control",
-    icon: ClockIcon,
+    icon: "time",
     requiredModule: "casos",
   },
   {
     name: "TODOs",
     href: "/todos",
-    icon: CheckCircleIcon,
+    icon: "success",
     requiredModule: "todos",
   },
-  { name: "Archivo", href: "/archive", icon: ArchiveBoxIcon }, // Sin restricciones de permisos por ahora
+  { name: "Archivo", href: "/archive", icon: "archive" }, // Sin restricciones de permisos por ahora
   {
     name: "Usuarios",
     href: "/users",
-    icon: UsersIcon,
+    icon: "users",
     requiredPermission: "usuarios.ver.all",
   },
   {
     name: "Roles",
     href: "/roles",
-    icon: ShieldCheckIcon,
+    icon: "activate",
     requiredPermission: "roles:view:all",
   },
   {
     name: "Permisos",
     href: "/permissions",
-    icon: CogIcon,
+    icon: "settings",
     requiredPermission: "permissions.read_all",
     subItems: [
       { name: "Gestión de Permisos", href: "/permissions" },
@@ -81,7 +67,7 @@ const navigation: NavigationItem[] = [
   {
     name: "Etiquetas",
     href: "/admin/tags",
-    icon: TagIcon,
+    icon: "tag",
     requiredPermission: "tags.manage",
   },
 ];
@@ -118,10 +104,7 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
           )
         }
       >
-        <item.icon
-          className={classNames("h-6 w-6 shrink-0")}
-          aria-hidden="true"
-        />
+        <ActionIcon action={item.icon} size="lg" className="shrink-0" />
         {item.name}
       </NavLink>
     );
@@ -138,15 +121,14 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
         )}
       >
         <div className="flex items-center gap-x-3">
-          <item.icon
-            className={classNames("h-6 w-6 shrink-0")}
-            aria-hidden="true"
-          />
+          <ActionIcon action={item.icon} size="lg" className="shrink-0" />
           {item.name}
         </div>
-        <ChevronDownIcon
+        <ActionIcon
+          action="dropdown"
+          size="sm"
           className={classNames(
-            "h-4 w-4 transition-transform",
+            "transition-transform",
             isExpanded ? "rotate-180" : ""
           )}
         />
@@ -259,7 +241,7 @@ export const Sidebar = () => {
               size="sm"
               onClick={() => setSidebarOpen(false)}
             >
-              <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+              <ActionIcon action="close" size="lg" />
             </Button>
           </div>
 
@@ -316,7 +298,7 @@ export const Sidebar = () => {
           onClick={() => setSidebarOpen(true)}
         >
           <span className="sr-only">Open sidebar</span>
-          <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+          <ActionIcon action="menu" size="lg" />
         </Button>
       </div>
     </>

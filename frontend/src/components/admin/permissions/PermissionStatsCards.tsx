@@ -1,6 +1,6 @@
 import React from "react";
 import { Permission } from "../../../types/permission";
-import { BarChart3, Users, Shield, Activity } from "lucide-react";
+import { ActionIcon } from "../../ui/ActionIcons";
 
 interface PermissionStatsCardsProps {
   permissions: Permission[];
@@ -21,28 +21,28 @@ export const PermissionStatsCards: React.FC<PermissionStatsCardsProps> = ({
     {
       title: "Total Permisos",
       value: total,
-      icon: Shield,
+      icon: "shield",
       color: "blue",
       description: "Permisos en el sistema",
     },
     {
       title: "Permisos Activos",
       value: activePermissions,
-      icon: Activity,
+      icon: "activity",
       color: "green",
       description: "Permisos habilitados",
     },
     {
       title: "Módulos",
       value: modules,
-      icon: BarChart3,
+      icon: "chart",
       color: "purple",
       description: "Módulos con permisos",
     },
     {
       title: "Acciones",
       value: actions,
-      icon: Users,
+      icon: "user",
       color: "orange",
       description: "Tipos de acciones",
     },
@@ -64,7 +64,6 @@ export const PermissionStatsCards: React.FC<PermissionStatsCardsProps> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {stats.map((stat, index) => {
-        const IconComponent = stat.icon;
         return (
           <div
             key={index}
@@ -83,7 +82,7 @@ export const PermissionStatsCards: React.FC<PermissionStatsCardsProps> = ({
                 </p>
               </div>
               <div className={`p-3 rounded-lg ${getColorClasses(stat.color)}`}>
-                <IconComponent className="h-6 w-6" />
+                <ActionIcon action={stat.icon as any} size="md" />
               </div>
             </div>
           </div>

@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  PlusIcon,
-  TagIcon,
-  ClockIcon,
-  UserIcon,
-  DocumentTextIcon,
-} from "@heroicons/react/24/outline";
+import { ActionIcon } from "../ui/ActionIcons";
 import { Modal } from "../ui/Modal";
 import { Button } from "../ui/Button";
 import { NoteFormData } from "../../types/note.types";
@@ -199,7 +193,7 @@ export const NoteForm: React.FC<NoteFormProps> = ({
         {/* Tags */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            <TagIcon className="h-4 w-4 inline mr-1" />
+            <ActionIcon action="tag" size="sm" className="inline mr-1" />
             Etiquetas
           </label>
           <div className="flex gap-2 mb-2">
@@ -214,7 +208,7 @@ export const NoteForm: React.FC<NoteFormProps> = ({
               placeholder="Agregar etiqueta"
             />
             <Button onClick={handleAddTag} variant="primary" size="sm">
-              <PlusIcon className="h-4 w-4" />
+              <ActionIcon action="add" size="sm" />
             </Button>
           </div>
           {formData.tags.length > 0 && (
@@ -241,7 +235,7 @@ export const NoteForm: React.FC<NoteFormProps> = ({
         {/* Case Selection */}
         <div className="relative">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            <DocumentTextIcon className="h-4 w-4 inline mr-1" />
+            <ActionIcon action="document" size="sm" className="inline mr-1" />
             Caso Asociado
           </label>
           <input
@@ -276,7 +270,7 @@ export const NoteForm: React.FC<NoteFormProps> = ({
         {/* Assigned User */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            <UserIcon className="h-4 w-4 inline mr-1" />
+            <ActionIcon action="user" size="sm" className="inline mr-1" />
             Asignar a Usuario
           </label>
           <select
@@ -298,7 +292,7 @@ export const NoteForm: React.FC<NoteFormProps> = ({
         {/* Reminder Date */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            <ClockIcon className="h-4 w-4 inline mr-1" />
+            <ActionIcon action="time" size="sm" className="inline mr-1" />
             Recordatorio
           </label>
           <div className="grid grid-cols-2 gap-4">

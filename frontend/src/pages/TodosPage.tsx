@@ -13,13 +13,7 @@ import {
   Todo,
   TodoFilters,
 } from "../types/todo.types";
-import {
-  PlusIcon,
-  FunnelIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  ExclamationTriangleIcon,
-} from "@heroicons/react/24/outline";
+import { AddIcon, FilterIcon, ActionIcon } from "../components/ui/ActionIcons";
 
 const TodosPage: React.FC = () => {
   const {
@@ -152,14 +146,14 @@ const TodosPage: React.FC = () => {
                 onClick={() => setShowFilters(!showFilters)}
                 variant="secondary"
               >
-                <FunnelIcon className="h-4 w-4 mr-2" />
+                <FilterIcon size="sm" className="mr-2" />
                 Filtros
               </Button>
               <Button
                 onClick={() => setShowCreateModal(true)}
                 variant="primary"
               >
-                <PlusIcon className="h-4 w-4 mr-2" />
+                <AddIcon size="sm" className="mr-2" />
                 Nuevo TODO
               </Button>
             </div>
@@ -171,7 +165,7 @@ const TodosPage: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <CheckCircleIcon className="h-6 w-6 text-gray-400" />
+                    <ActionIcon action="success" size="lg" color="neutral" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -191,7 +185,7 @@ const TodosPage: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ClockIcon className="h-6 w-6 text-blue-400" />
+                    <ActionIcon action="time" size="lg" color="blue" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -211,7 +205,7 @@ const TodosPage: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <CheckCircleIcon className="h-6 w-6 text-green-400" />
+                    <ActionIcon action="success" size="lg" color="green" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -231,7 +225,7 @@ const TodosPage: React.FC = () => {
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ExclamationTriangleIcon className="h-6 w-6 text-red-400" />
+                    <ActionIcon action="warning" size="lg" color="red" />
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
@@ -339,7 +333,12 @@ const TodosPage: React.FC = () => {
         <div className="space-y-4">
           {todos.length === 0 ? (
             <div className="text-center py-12 bg-white shadow rounded-md">
-              <CheckCircleIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <ActionIcon
+                action="success"
+                size="xl"
+                color="neutral"
+                className="mx-auto"
+              />
               <h3 className="mt-2 text-sm font-medium text-gray-900">
                 No hay TODOs
               </h3>
@@ -354,7 +353,7 @@ const TodosPage: React.FC = () => {
                     onClick={() => setShowCreateModal(true)}
                     variant="primary"
                   >
-                    <PlusIcon className="h-4 w-4 mr-2" />
+                    <AddIcon size="sm" className="mr-2" />
                     Crear TODO
                   </Button>
                 </div>

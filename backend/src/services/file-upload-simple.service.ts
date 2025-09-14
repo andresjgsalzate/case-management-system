@@ -223,7 +223,7 @@ export class FileUploadService {
   private getAttachmentRepository() {
     if (!this.attachmentRepository) {
       this.attachmentRepository = dataSource.getRepository(
-        "KnowledgeDocumentAttachment"
+        KnowledgeDocumentAttachment
       );
     }
     return this.attachmentRepository;

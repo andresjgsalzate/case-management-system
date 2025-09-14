@@ -39,7 +39,7 @@ export default function RoleCloneModal({
 
     setIsLoading(true);
     try {
-      await roleService.cloneRole(role!.id, newRoleName);
+      await roleService.cloneRole(role!.id, { newName: newRoleName });
       success("Rol clonado exitosamente");
       handleClose();
       onSuccess();

@@ -1,5 +1,17 @@
 import React from "react";
 import { ActionIcon } from "../../ui/ActionIcons";
+import {
+  Shield,
+  Database,
+  UserCheck,
+  Users,
+  Settings,
+  Eye,
+  CheckCircle,
+  Edit,
+  Trash2,
+  AlertCircle,
+} from "lucide-react";
 
 export const PermissionsGuide: React.FC = () => {
   const permissionStructure = [

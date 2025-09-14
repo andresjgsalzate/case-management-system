@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { ActionIcon } from "../../components/ui/ActionIcons";
 import { useToast } from "../../contexts/ToastContext";
 import { tagService } from "../../services/tagService";
-import { Modal } from "../../components/ui/Modal";
 import { Button } from "../../components/ui/Button";
 import type { Tag, TagFilters, TagCategory } from "../../types/tag";
 import { TAG_CATEGORIES } from "../../types/tag";

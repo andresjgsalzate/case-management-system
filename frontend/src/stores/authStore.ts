@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { authService } from "../services/auth.service";
 import { authPermissionService } from "../services/authPermission.service";
+import { securityService } from "../services/security.service";
 import { Permission } from "../types/auth";
 
 interface User {
@@ -40,6 +41,7 @@ interface AuthState {
   refreshTokens: () => Promise<void>;
   getCurrentUser: () => Promise<void>;
   clearError: () => void;
+  initializeFromSecurityService: () => Promise<void>;
 
   // Permisos dinámicos
   loadUserPermissions: () => Promise<void>;
@@ -73,9 +75,10 @@ export const useAuthStore = create<AuthState>()(
           if (response.success && response.data) {
             const { user, token, refreshToken } = response.data;
 
-            // Guardar en localStorage
-            localStorage.setItem("token", token);
-            localStorage.setItem("refreshToken", refreshToken);
+            // Usar SecurityService para almacenamiento seguro
+            securityService.storeTokens(token, refreshToken, 3600); // 1 hora por defecto
+
+            // Solo guardar datos del usuario (no tokens)
             localStorage.setItem("user", JSON.stringify(user));
 
             set({
@@ -152,9 +155,10 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        // Usar SecurityService para limpiar sesión de forma segura
+        securityService.clearSession();
+
         // Limpiar localStorage
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
         localStorage.removeItem("user");
 
         set({
@@ -230,6 +234,51 @@ export const useAuthStore = create<AuthState>()(
 
       clearError: () => {
         set({ error: null });
+      },
+
+      // Inicializar desde SecurityService
+      initializeFromSecurityService: async () => {
+        try {
+          const tokens = securityService.getValidTokens();
+          const userString = localStorage.getItem("user");
+
+          if (tokens && userString) {
+            const user = JSON.parse(userString);
+
+            set({
+              user,
+              token: tokens.token,
+              refreshToken: tokens.refreshToken,
+              isAuthenticated: true,
+              error: null,
+            });
+
+            console.log("🔄 Store inicializado desde SecurityService");
+
+            // Cargar permisos
+            await get().loadUserPermissions();
+          } else {
+            // No hay sesión válida, limpiar estado
+            set({
+              user: null,
+              token: null,
+              refreshToken: null,
+              isAuthenticated: false,
+              userPermissions: [],
+              userModules: [],
+              permissionsLoaded: false,
+            });
+          }
+        } catch (error) {
+          console.error("Error inicializando desde SecurityService:", error);
+          set({
+            user: null,
+            token: null,
+            refreshToken: null,
+            isAuthenticated: false,
+            error: "Error de inicialización",
+          });
+        }
       },
 
       // Cargar permisos del usuario desde el backend

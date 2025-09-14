@@ -1,8 +1,8 @@
 import React, { useEffect, useCallback, useMemo } from "react";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
-import { insertOrUpdateBlock } from "@blocknote/core";
 import { useTheme } from "../../providers/ThemeProvider";
+import { securityService } from "../../services/security.service";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 
@@ -117,6 +117,12 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
       }
 
       try {
+        // Obtener token desde SecurityService
+        const tokens = securityService.getValidTokens();
+        if (!tokens) {
+          throw new Error("No hay sesión válida para subir archivo");
+        }
+
         // Crear FormData para el upload
         const formData = new FormData();
         formData.append("files", file);
@@ -129,7 +135,7 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
           {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${tokens.token}`,
             },
             body: formData,
           }
@@ -153,14 +159,20 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
           const physicalFileName =
             downloadUrlParts[downloadUrlParts.length - 1];
 
-          // Obtener token para la URL de visualización
-          const token = localStorage.getItem("token");
+          // Obtener token desde SecurityService
+          const tokens = securityService.getValidTokens();
+          const token = tokens?.token;
+
+          if (!token) {
+            console.warn("⚠️ [BlockNote] No hay token válido disponible");
+            throw new Error("No hay sesión válida para cargar archivo");
+          }
 
           // Usar el endpoint de visualización con token como query parameter para autenticación
           const fileUrl = `${
             window.location.origin
           }/api/files/knowledge/view/${physicalFileName}?token=${encodeURIComponent(
-            token || ""
+            token
           )}`;
 
           console.log("✅ [BlockNote] Upload exitoso, URL:", fileUrl);
@@ -185,28 +197,49 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
     [documentId]
   );
 
-  // Función para procesar contenido y añadir tokens a las URLs de imágenes
+  // Función para procesar contenido y añadir/actualizar tokens a las URLs de imágenes
   const processContentWithTokens = useCallback((content: any[]) => {
     if (!content || !Array.isArray(content)) {
       return content;
     }
 
-    const token = localStorage.getItem("token");
-    if (!token) {
+    const tokens = securityService.getValidTokens();
+    if (!tokens) {
       return content;
     }
 
     return content.map((block) => {
       if (block.type === "image" && block.props?.url) {
-        // Si la URL es de nuestro sistema y no tiene token, añadirlo
-        if (
-          block.props.url.includes("/api/files/knowledge/view/") &&
-          !block.props.url.includes("token=")
-        ) {
-          const separator = block.props.url.includes("?") ? "&" : "?";
-          const newUrl = `${
-            block.props.url
-          }${separator}token=${encodeURIComponent(token)}`;
+        // Si la URL es de nuestro sistema, actualizar o añadir el token
+        if (block.props.url.includes("/api/files/knowledge/view/")) {
+          let newUrl = block.props.url;
+
+          // Si ya tiene un token, eliminarlo primero
+          if (newUrl.includes("token=")) {
+            const urlParts = newUrl.split("?");
+            const baseUrl = urlParts[0];
+            const queryParams = urlParts[1] || "";
+
+            // Filtrar el parámetro token existente
+            const params = new URLSearchParams(queryParams);
+            params.delete("token");
+
+            // Reconstruir la URL sin el token anterior
+            newUrl = params.toString()
+              ? `${baseUrl}?${params.toString()}`
+              : baseUrl;
+          }
+
+          // Añadir el token actual válido
+          const separator = newUrl.includes("?") ? "&" : "?";
+          newUrl = `${newUrl}${separator}token=${encodeURIComponent(
+            tokens.token
+          )}`;
+
+          console.log("🔄 [TOKEN REFRESH] Actualizando token en imagen:", {
+            oldUrl: block.props.url.substring(0, 80) + "...",
+            newUrl: newUrl.substring(0, 80) + "...",
+          });
 
           return {
             ...block,
@@ -223,8 +256,19 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
 
   // Procesar el contenido para añadir tokens a las imágenes existentes
   const processedContent = useMemo(() => {
+    const tokens = securityService.getValidTokens();
+    const currentToken = tokens?.token;
+    console.log("🔄 [TOKEN CHECK] Procesando contenido con token:", {
+      hasToken: !!currentToken,
+      tokenPreview: currentToken?.substring(0, 20) + "...",
+      validContentBlocks: validContent?.length || 0,
+    });
     return processContentWithTokens(validContent);
-  }, [validContent, processContentWithTokens]);
+  }, [
+    validContent,
+    processContentWithTokens,
+    securityService.getValidTokens()?.token,
+  ]);
 
   // Create the BlockNote editor with upload support - Configuración basada en el sistema antiguo
   const editor = useCreateBlockNote({
@@ -321,6 +365,33 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
       }
     }
   }, [editor, processedContent, documentId]);
+
+  // Efecto para refrescar tokens periódicamente (cada 5 minutos)
+  useEffect(() => {
+    if (!editor || !documentId) return;
+
+    const refreshTokens = () => {
+      console.log(
+        "🔄 [TOKEN REFRESH] Verificando y actualizando tokens en imágenes..."
+      );
+
+      const currentBlocks = editor.document;
+      const updatedBlocks = processContentWithTokens(currentBlocks);
+
+      // Solo actualizar si realmente cambió algo
+      const hasChanges =
+        JSON.stringify(currentBlocks) !== JSON.stringify(updatedBlocks);
+      if (hasChanges) {
+        console.log("✅ [TOKEN REFRESH] Tokens actualizados en el editor");
+        editor.replaceBlocks(editor.document, updatedBlocks);
+      }
+    };
+
+    // Refrescar inmediatamente y luego cada 5 minutos
+    const interval = setInterval(refreshTokens, 5 * 60 * 1000); // 5 minutos
+
+    return () => clearInterval(interval);
+  }, [editor, documentId, processContentWithTokens]);
 
   return (
     <div

@@ -101,9 +101,9 @@ const DocumentHeader: React.FC<{ document: KnowledgeDocumentPDF }> = ({
 /**
  * Ejemplo de integración en menú desplegable
  */
-const DocumentActionsMenu: React.FC<{ document: KnowledgeDocumentPDF }> = ({
-  document,
-}) => {
+export const DocumentActionsMenu: React.FC<{
+  document: KnowledgeDocumentPDF;
+}> = ({ document }) => {
   const [isOpen, setIsOpen] = React.useState(false);
 
   return (

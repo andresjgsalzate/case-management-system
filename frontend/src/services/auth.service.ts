@@ -34,10 +34,23 @@ interface ApiResponse<T> {
 
 // Importar configuración centralizada
 import { config } from "../config/config";
+import { securityService } from "./security.service";
 
 const API_BASE_URL = config.api.baseUrl;
 
 class AuthService {
+  constructor() {
+    // Configurar callbacks del SecurityService
+    securityService.onSessionExpire(() => {
+      this.handleSessionExpired();
+    });
+
+    securityService.onTokenRefresh((_newToken: string) => {
+      // Token actualizado automáticamente por SecurityService
+      console.log("Token actualizado automáticamente");
+    });
+  }
+
   async login(loginData: LoginRequest): Promise<AuthResponse> {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
@@ -103,34 +116,34 @@ class AuthService {
     url: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    const token = localStorage.getItem("token");
+    const tokens = securityService.getValidTokens();
+
+    if (!tokens) {
+      throw new Error("No valid session");
+    }
 
     const response = await fetch(`${API_BASE_URL}${url}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
+        Authorization: `Bearer ${tokens.token}`,
         ...options.headers,
       },
     });
 
     if (response.status === 401) {
       // Token expirado, intentar renovar
-      const refreshToken = localStorage.getItem("refreshToken");
-      if (refreshToken) {
-        try {
-          const refreshResponse = await this.refreshToken(refreshToken);
-          if (refreshResponse.success && refreshResponse.data) {
-            localStorage.setItem("token", refreshResponse.data.token);
-            // Reintentar la petición original
-            return this.authenticatedRequest(url, options);
-          }
-        } catch (error) {
-          // Error al renovar token, limpiar localStorage y redirigir a login
-          localStorage.removeItem("token");
-          localStorage.removeItem("refreshToken");
-          throw new Error("Session expired");
+      try {
+        const refreshResponse = await this.refreshToken(tokens.refreshToken);
+        if (refreshResponse.success && refreshResponse.data) {
+          securityService.updateTokens(refreshResponse.data.token);
+          // Reintentar la petición original
+          return this.authenticatedRequest(url, options);
         }
+      } catch (error) {
+        // Error al renovar token, limpiar sesión
+        this.handleSessionExpired();
+        throw new Error("Session expired");
       }
     }
 
@@ -139,6 +152,46 @@ class AuthService {
     }
 
     return await response.json();
+  }
+
+  /**
+   * Maneja la expiración de sesión
+   */
+  private handleSessionExpired(): void {
+    securityService.clearSession();
+
+    // Limpiar también localStorage legacy si existe
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+
+    // Redirigir al login
+    window.location.href = "/auth/login";
+
+    console.log("🚨 Sesión expirada - Redirigiendo al login");
+  }
+
+  /**
+   * Obtiene el token actual de forma segura
+   */
+  public getCurrentToken(): string | null {
+    const tokens = securityService.getValidTokens();
+    return tokens?.token || null;
+  }
+
+  /**
+   * Verifica si hay una sesión válida
+   */
+  public hasValidSession(): boolean {
+    return securityService.hasValidSession();
+  }
+
+  /**
+   * Cierra la sesión de forma segura
+   */
+  public logout(): void {
+    securityService.clearSession();
+    this.handleSessionExpired();
   }
 }
 

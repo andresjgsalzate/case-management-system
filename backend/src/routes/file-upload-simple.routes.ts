@@ -17,33 +17,118 @@ const router = Router();
 const flexibleAuth = async (req: Request, res: Response, next: any) => {
   try {
     let token = null;
+    let tokenSource = "none";
+    let headerToken = null;
+    let queryToken = null;
 
-    // Intentar obtener token del header Authorization
+    // Extraer ambos tokens
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith("Bearer ")) {
-      token = authHeader.substring(7);
+      headerToken = authHeader.substring(7);
     }
 
-    // Si no hay token en header, intentar obtenerlo del query parameter
-    if (!token && req.query.token) {
-      token = req.query.token as string;
+    if (req.query.token) {
+      queryToken = req.query.token as string;
+    }
+
+    // PRIORIDAD 1: Intentar header primero (más confiable)
+    if (headerToken) {
+      token = headerToken;
+      tokenSource = "header";
+      console.log(
+        "🔑 [FLEXIBLE AUTH] Token from header:",
+        token?.substring(0, 20) + "..."
+      );
+    }
+    // PRIORIDAD 2: Si no hay header, usar query
+    else if (queryToken) {
+      token = queryToken;
+      tokenSource = "query";
+      console.log(
+        "🔑 [FLEXIBLE AUTH] Token from query:",
+        token?.substring(0, 20) + "..."
+      );
     }
 
     if (!token) {
+      console.error("❌ [FLEXIBLE AUTH] No token provided");
       return res.status(401).json({ error: "Access token required" });
     }
 
     // Verificar el token
     const jwtSecret = process.env.JWT_SECRET || "fallback-secret-key";
-    const decoded = jwt.verify(token, jwtSecret) as any;
+    console.log(
+      "🔍 [FLEXIBLE AUTH] Verifying token with secret:",
+      jwtSecret?.substring(0, 10) + "..."
+    );
 
-    (req as any).user = {
-      id: decoded.userId, // Mapear userId a id
-      userId: decoded.userId, // Mantener userId también
-      ...decoded,
-    };
-    next();
+    try {
+      const decoded = jwt.verify(token, jwtSecret) as any;
+      console.log("✅ [FLEXIBLE AUTH] Token decoded successfully:", {
+        userId: decoded.userId,
+        exp: decoded.exp,
+        iat: decoded.iat,
+        source: tokenSource,
+      });
+
+      (req as any).user = {
+        id: decoded.userId, // Mapear userId a id
+        userId: decoded.userId, // Mantener userId también
+        ...decoded,
+      };
+      next();
+    } catch (tokenError: any) {
+      // Manejo inteligente de tokens expirados
+      console.log("💥 [FLEXIBLE AUTH] Error verifying token:", {
+        error: tokenError.message,
+        source: tokenSource,
+        hasHeaderFallback: !!headerToken,
+        hasQueryFallback: !!queryToken,
+      });
+
+      // Si el token actual falló y tenemos un token alternativo, intentarlo
+      let fallbackToken = null;
+      let fallbackSource = "none";
+
+      if (tokenSource === "query" && headerToken) {
+        fallbackToken = headerToken;
+        fallbackSource = "header-fallback";
+      } else if (tokenSource === "header" && queryToken) {
+        fallbackToken = queryToken;
+        fallbackSource = "query-fallback";
+      }
+
+      if (fallbackToken) {
+        try {
+          console.log(
+            `🔄 [FLEXIBLE AUTH] Trying fallback token from ${fallbackSource}...`
+          );
+          const decoded = jwt.verify(fallbackToken, jwtSecret) as any;
+          console.log("✅ [FLEXIBLE AUTH] Fallback token valid:", {
+            userId: decoded.userId,
+            source: fallbackSource,
+          });
+
+          (req as any).user = {
+            id: decoded.userId,
+            userId: decoded.userId,
+            ...decoded,
+          };
+          return next();
+        } catch (fallbackError: any) {
+          console.log("💥 [FLEXIBLE AUTH] Fallback token also failed:", {
+            error: fallbackError.message,
+          });
+        }
+      }
+
+      throw tokenError;
+    }
   } catch (error) {
+    console.error("💥 [FLEXIBLE AUTH] Error verifying token:", {
+      error: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return res.status(403).json({ error: "Invalid or expired token" });
   }
 };

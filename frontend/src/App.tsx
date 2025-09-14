@@ -1,5 +1,4 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useEffect } from "react";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
@@ -24,31 +23,24 @@ import PermissionsManagement from "./pages/admin/PermissionsManagement";
 import TodosPage from "./pages/TodosPage";
 import ModernTodosPage from "./pages/ModernTodosPage";
 import { UnauthorizedPage } from "./pages/UnauthorizedPage";
-import { initializeAuth } from "./stores/authStore";
 import OriginsPage from "./pages/admin/OriginsPage";
 import ApplicationsPage from "./pages/admin/ApplicationsPage";
 import CaseStatusesPage from "./pages/admin/CaseStatusesPage";
 import TagsPage from "./pages/tags/TagsPage";
 import DocumentTypesPage from "./pages/document-types/DocumentTypesPage";
 import { TodoPrioritiesPage } from "./pages/admin/TodoPrioritiesPage";
+import { SecurityDebugPage } from "./pages/admin/SecurityDebugPage";
 // Knowledge Base imports
 import KnowledgeBase from "./pages/KnowledgeBase";
 import KnowledgeDocumentForm from "./pages/KnowledgeDocumentForm";
 import KnowledgeDocumentView from "./pages/KnowledgeDocumentView";
+// Security imports
+import { useSecureAuth } from "./hooks/useSecureAuth";
+import { SessionTimeoutWarning } from "./components/SessionTimeoutWarning";
 
 function App() {
-  // Inicializar el estado de autenticación al cargar la aplicación
-  useEffect(() => {
-    const initApp = async () => {
-      try {
-        await initializeAuth();
-      } catch (error) {
-        console.error("Error inicializando la aplicación:", error);
-      }
-    };
-
-    initApp();
-  }, []);
+  // Inicializar el sistema de seguridad
+  useSecureAuth();
 
   return (
     <ThemeProvider>
@@ -391,7 +383,19 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route
+              path="/admin/security-debug"
+              element={
+                <ProtectedRoute requiredPermission="system.admin_all">
+                  <Layout>
+                    <SecurityDebugPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
           </Routes>
+          <SessionTimeoutWarning />
         </ToastProvider>
       </AuthProvider>
     </ThemeProvider>

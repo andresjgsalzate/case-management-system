@@ -101,13 +101,6 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
   // Create file upload handler for BlockNote - Basado en el sistema antiguo exitoso
   const handleFileUpload = useCallback(
     async (file: File): Promise<string> => {
-      console.log("🔧 [BlockNote] Upload iniciado:", {
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-        documentId,
-      });
-
       // Validar que tengamos un documentId válido
       if (!documentId || documentId.trim() === "") {
         console.warn("⚠️ [BlockNote] Sin documentId - creando URL temporal");
@@ -126,8 +119,6 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
         // Crear FormData para el upload
         const formData = new FormData();
         formData.append("files", file);
-
-        console.log("📡 [BlockNote] Enviando archivo al servidor...");
 
         // Realizar upload usando fetch directamente al API del backend
         const response = await fetch(
@@ -148,7 +139,6 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
         }
 
         const result = await response.json();
-        console.log("📄 [BlockNote] Respuesta del servidor:", result);
 
         if (result.uploaded && result.uploaded.length > 0) {
           const uploadedFile = result.uploaded[0];
@@ -174,8 +164,6 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
           }/api/files/knowledge/view/${physicalFileName}?token=${encodeURIComponent(
             token
           )}`;
-
-          console.log("✅ [BlockNote] Upload exitoso, URL:", fileUrl);
 
           // Retornar solo la URL como string (patrón del sistema antiguo)
           return fileUrl;
@@ -236,11 +224,6 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
             tokens.token
           )}`;
 
-          console.log("🔄 [TOKEN REFRESH] Actualizando token en imagen:", {
-            oldUrl: block.props.url.substring(0, 80) + "...",
-            newUrl: newUrl.substring(0, 80) + "...",
-          });
-
           return {
             ...block,
             props: {
@@ -256,13 +239,6 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
 
   // Procesar el contenido para añadir tokens a las imágenes existentes
   const processedContent = useMemo(() => {
-    const tokens = securityService.getValidTokens();
-    const currentToken = tokens?.token;
-    console.log("🔄 [TOKEN CHECK] Procesando contenido con token:", {
-      hasToken: !!currentToken,
-      tokenPreview: currentToken?.substring(0, 20) + "...",
-      validContentBlocks: validContent?.length || 0,
-    });
     return processContentWithTokens(validContent);
   }, [
     validContent,
@@ -335,32 +311,6 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
         JSON.stringify(currentContent) !== JSON.stringify(processedContent);
 
       if (contentChanged) {
-        console.log("📝 [EDIT MODE] BlockNote editor updating content:", {
-          blocksCount: processedContent.length,
-          hasImages: processedContent.some(
-            (block: any) => block.type === "image"
-          ),
-          hasFiles: processedContent.some(
-            (block: any) => block.type === "file"
-          ),
-          documentId,
-        });
-
-        // Log image and file blocks specifically for debugging attachment issues
-        const mediaBlocks = processedContent.filter(
-          (block: any) => block.type === "image" || block.type === "file"
-        );
-        if (mediaBlocks.length > 0) {
-          console.log(
-            "🖼️ [EDIT MODE] Media blocks in content:",
-            mediaBlocks.map((block: any) => ({
-              type: block.type,
-              props: block.props,
-              url: block.props?.url || block.props?.src,
-            }))
-          );
-        }
-
         editor.replaceBlocks(editor.document, processedContent);
       }
     }
@@ -371,10 +321,6 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
     if (!editor || !documentId) return;
 
     const refreshTokens = () => {
-      console.log(
-        "🔄 [TOKEN REFRESH] Verificando y actualizando tokens en imágenes..."
-      );
-
       const currentBlocks = editor.document;
       const updatedBlocks = processContentWithTokens(currentBlocks);
 
@@ -382,7 +328,6 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
       const hasChanges =
         JSON.stringify(currentBlocks) !== JSON.stringify(updatedBlocks);
       if (hasChanges) {
-        console.log("✅ [TOKEN REFRESH] Tokens actualizados en el editor");
         editor.replaceBlocks(editor.document, updatedBlocks);
       }
     };

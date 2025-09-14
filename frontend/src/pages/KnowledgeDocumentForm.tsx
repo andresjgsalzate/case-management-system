@@ -135,34 +135,9 @@ const KnowledgeDocumentForm: React.FC = () => {
     }
   }, [popularTags, tags.length, showSuggestedTags, userHidTags]);
 
-  // Load document data if editing - WITH ENHANCED DEBUGGING FOR ATTACHMENTS
+  // Load document data if editing
   useEffect(() => {
     if (document && isEditing) {
-      console.log("📄 [EDIT MODE] Loading document:", {
-        id: document.id,
-        title: document.title,
-        hasJsonContent: !!document.jsonContent,
-        jsonContentLength: document.jsonContent?.length || 0,
-        hasAttachments: (document.attachments?.length || 0) > 0,
-        attachmentsCount: document.attachments?.length || 0,
-      });
-
-      // Log detailed attachment info for debugging the 500 error
-      if (document.attachments && document.attachments.length > 0) {
-        console.log(
-          "� [EDIT MODE] Document attachments:",
-          document.attachments.map((att) => ({
-            id: att.id,
-            fileName: att.fileName,
-            mimeType: att.mimeType,
-            fileSize: att.fileSize,
-            uploadedBy: att.uploadedBy,
-          }))
-        );
-      } else {
-        console.log("📎 [EDIT MODE] No attachments found");
-      }
-
       setTitle(document.title);
       setJsonContent(document.jsonContent);
       setTextContent(document.content || "");
@@ -175,7 +150,6 @@ const KnowledgeDocumentForm: React.FC = () => {
         document.tags?.map((tag) =>
           typeof tag === "string" ? tag : tag.tagName
         ) || [];
-      console.log("🏷️ [EDIT MODE] Document tags being set:", documentTags);
       setTags(documentTags);
     }
   }, [document, isEditing]);

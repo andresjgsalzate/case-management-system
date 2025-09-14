@@ -1138,16 +1138,6 @@ const PDFDocumentComponent: React.FC<PDFDocumentProps> = ({
 
   const tagFontSize = getTagFontSize((document.tags || []).length);
 
-  // Debug: Log de información del documento
-  console.log("📄 [PDF DEBUG] Información del documento:", {
-    createdByUser: document.createdByUser,
-    documentType: document.document_type,
-    priority: document.priority,
-    isPublished: document.is_published,
-    tags: document.tags?.length || 0,
-    createdAt: document.created_at,
-  });
-
   return (
     <Document>
       {/* Página principal con contenido */}

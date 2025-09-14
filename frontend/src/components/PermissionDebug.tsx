@@ -20,18 +20,6 @@ export const PermissionDebug: React.FC = () => {
   const lastError = useRef<string | null>(null);
 
   useEffect(() => {
-    console.log("🔍 PermissionDebug - Estado actual:", {
-      userId: user?.id,
-      hasToken: !!token,
-      tokenLength: token?.length || 0,
-      permissionsLoaded,
-      isLoadingPermissions,
-      permissionsCount: userPermissions.length,
-      modulesCount: userModules.length,
-      loadAttempted: loadAttempted.current,
-      lastError: lastError.current,
-    });
-
     // Solo intentar cargar una vez si hay usuario y no se han cargado
     if (
       user &&

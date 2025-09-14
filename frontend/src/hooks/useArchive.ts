@@ -38,9 +38,7 @@ export const useArchiveStats = () => {
   return useQuery({
     queryKey: archiveKeys.stats(),
     queryFn: async () => {
-      console.log("🔍 useArchiveStats - Ejecutando queryFn");
       const result = await archiveApi.getArchiveStats();
-      console.log("🔍 useArchiveStats - Resultado de la API:", result);
       return result;
     },
     staleTime: 1000 * 60 * 5, // 5 minutos
@@ -247,17 +245,10 @@ export const useDeleteArchivedTodo = () => {
  * Hook para obtener elementos archivados combinados (casos y TODOs)
  */
 export const useArchivedItems = (filters?: ArchiveFilters) => {
-  console.log("🔍 useArchivedItems - Llamando con filtros:", filters);
-
   return useQuery({
     queryKey: archiveKeys.items(filters),
     queryFn: async () => {
-      console.log(
-        "🔍 useArchivedItems - Ejecutando queryFn con filtros:",
-        filters
-      );
       const result = await archiveApi.getArchivedItems(filters);
-      console.log("🔍 useArchivedItems - Resultado de la API:", result);
       return result;
     },
     staleTime: 1000 * 60 * 2, // 2 minutos
@@ -290,19 +281,6 @@ export const useSearchArchivedItems = (
 export const useArchiveData = (filters?: ArchiveFilters) => {
   const statsQuery = useArchiveStats();
   const itemsQuery = useArchivedItems(filters);
-
-  // Debug logs
-  console.log("🔍 useArchiveData Debug:", {
-    filters,
-    statsLoading: statsQuery.isLoading,
-    itemsLoading: itemsQuery.isLoading,
-    statsError: statsQuery.isError,
-    itemsError: itemsQuery.isError,
-    stats: statsQuery.data,
-    items: itemsQuery.data,
-    statsErrorMessage: statsQuery.error?.message,
-    itemsErrorMessage: itemsQuery.error?.message,
-  });
 
   return {
     stats: statsQuery.data,

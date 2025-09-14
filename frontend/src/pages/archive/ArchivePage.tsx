@@ -36,24 +36,6 @@ export const ArchivePage: React.FC = () => {
   const { showConfirmation, modalState, modalHandlers } =
     useConfirmationModal();
 
-  // Debug logs para la página de archivo
-  console.log("🔍 ArchivePage Debug:", {
-    filters,
-    stats,
-    items,
-    isLoading,
-    isError,
-    error: error?.message,
-    itemsLength: Array.isArray(items) ? items.length : 0,
-  });
-
-  // Debug logs para el modal
-  console.log("🔍 ArchivePage Modal State:", {
-    showDetailsModal,
-    selectedItem: selectedItem?.title || null,
-    selectedItemId: selectedItem?.id || null,
-  });
-
   // Elementos filtrados
   const filteredItems = useMemo(() => {
     if (!items || !Array.isArray(items)) return [];
@@ -79,10 +61,8 @@ export const ArchivePage: React.FC = () => {
   };
 
   const handleViewDetails = (item: ArchivedItem) => {
-    console.log("🔍 handleViewDetails called with item:", item);
     setSelectedItem(item);
     setShowDetailsModal(true);
-    console.log("🔍 showDetailsModal should be true now");
   };
 
   const handleRestoreRequest = async (item: ArchivedItem) => {
@@ -508,7 +488,6 @@ export const ArchivePage: React.FC = () => {
                       <div className="flex items-center justify-end space-x-2">
                         <Button
                           onClick={() => {
-                            console.log("🔍 Button clicked! Item:", item.title);
                             handleViewDetails(item);
                           }}
                           variant="ghost"
@@ -560,7 +539,6 @@ export const ArchivePage: React.FC = () => {
             <div
               className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
               onClick={() => {
-                console.log("🔍 Backdrop clicked, closing modal");
                 setShowDetailsModal(false);
               }}
             />
@@ -574,7 +552,6 @@ export const ArchivePage: React.FC = () => {
                 </h2>
                 <Button
                   onClick={() => {
-                    console.log("🔍 Close button clicked");
                     setShowDetailsModal(false);
                   }}
                   variant="ghost"

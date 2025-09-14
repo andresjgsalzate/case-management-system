@@ -69,9 +69,8 @@ export const RolesPage: React.FC = () => {
 
   const loadStats = async () => {
     try {
-      const statsData = await roleService.getRoleStats();
+      await roleService.getRoleStats();
       // setStats(statsData);
-      console.log("Stats loaded:", statsData);
     } catch (err) {
       console.error("Error loading stats:", err);
     }

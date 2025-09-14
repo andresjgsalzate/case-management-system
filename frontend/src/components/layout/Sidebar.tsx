@@ -160,23 +160,7 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
 
 export const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { hasPermission, canAccessModule, user, isAuthenticated } = useAuth();
-
-  // Debug logging FORZADO - debe aparecer siempre
-  console.log("🔍 SIDEBAR RENDERIZADO - Debug Info:");
-  console.log("  - Usuario autenticado:", isAuthenticated);
-  console.log("  - Usuario:", user?.email || "No user");
-  console.log("  - Rol:", user?.roleName || "No role");
-  console.log(
-    "  - hasPermission('archive.view'):",
-    hasPermission("archive.view")
-  );
-
-  // Test de permisos específicos
-  console.log("📋 PERMISOS ESPECÍFICOS:");
-  console.log("  - archive.view:", hasPermission("archive.view"));
-  console.log("  - casos.ver.all:", hasPermission("casos.ver.all"));
-  console.log("  - usuarios.ver.all:", hasPermission("usuarios.ver.all"));
+  const { hasPermission, canAccessModule } = useAuth();
 
   const handleItemClick = () => {
     setSidebarOpen(false);
@@ -184,21 +168,12 @@ export const Sidebar = () => {
 
   // Función para verificar si el usuario puede ver un elemento del menú
   const canAccessNavigationItem = (item: NavigationItem): boolean => {
-    console.log(`Checking access for ${item.name}:`, {
-      requiredPermission: item.requiredPermission,
-      requiredModule: item.requiredModule,
-      hasArchiveView: hasPermission("archive.view"),
-      canAccessCasos: canAccessModule("casos"),
-    });
-
     // Dashboard siempre es accesible para usuarios autenticados
     if (item.name === "Dashboard") return true;
 
     // Para Archivo, verificar el permiso específico
     if (item.name === "Archivo") {
-      const canAccess = hasPermission("archive.view");
-      console.log(`Archive access result: ${canAccess}`);
-      return canAccess;
+      return hasPermission("archive.view");
     }
 
     // Verificar permiso específico

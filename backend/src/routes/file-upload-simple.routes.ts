@@ -35,19 +35,11 @@ const flexibleAuth = async (req: Request, res: Response, next: any) => {
     if (headerToken) {
       token = headerToken;
       tokenSource = "header";
-      console.log(
-        "🔑 [FLEXIBLE AUTH] Token from header:",
-        token?.substring(0, 20) + "..."
-      );
     }
     // PRIORIDAD 2: Si no hay header, usar query
     else if (queryToken) {
       token = queryToken;
       tokenSource = "query";
-      console.log(
-        "🔑 [FLEXIBLE AUTH] Token from query:",
-        token?.substring(0, 20) + "..."
-      );
     }
 
     if (!token) {
@@ -57,19 +49,9 @@ const flexibleAuth = async (req: Request, res: Response, next: any) => {
 
     // Verificar el token
     const jwtSecret = process.env.JWT_SECRET || "fallback-secret-key";
-    console.log(
-      "🔍 [FLEXIBLE AUTH] Verifying token with secret:",
-      jwtSecret?.substring(0, 10) + "..."
-    );
 
     try {
       const decoded = jwt.verify(token, jwtSecret) as any;
-      console.log("✅ [FLEXIBLE AUTH] Token decoded successfully:", {
-        userId: decoded.userId,
-        exp: decoded.exp,
-        iat: decoded.iat,
-        source: tokenSource,
-      });
 
       (req as any).user = {
         id: decoded.userId, // Mapear userId a id
@@ -100,14 +82,7 @@ const flexibleAuth = async (req: Request, res: Response, next: any) => {
 
       if (fallbackToken) {
         try {
-          console.log(
-            `🔄 [FLEXIBLE AUTH] Trying fallback token from ${fallbackSource}...`
-          );
           const decoded = jwt.verify(fallbackToken, jwtSecret) as any;
-          console.log("✅ [FLEXIBLE AUTH] Fallback token valid:", {
-            userId: decoded.userId,
-            source: fallbackSource,
-          });
 
           (req as any).user = {
             id: decoded.userId,
@@ -148,30 +123,12 @@ router.get(
       const { fileName } = req.params;
       const { token } = req.query;
 
-      console.log("� [FILE VIEW] Attempting to view file:", {
-        fileName,
-        hasToken: !!token,
-        userAgent: req.get("User-Agent"),
-        ip: req.ip,
-        userId: req.user?.id,
-      });
-
       if (!fileName) {
         console.error("❌ [FILE VIEW] No filename provided");
         return res.status(400).json({ error: "Nombre del archivo requerido" });
       }
 
-      console.log(
-        "🔍 [FILE VIEW] Calling fileUploadService.getFileForDownload..."
-      );
       const fileInfo = await fileUploadService.getFileForDownload(fileName);
-
-      console.log("📁 [FILE VIEW] File info retrieved:", {
-        filePath: fileInfo.filePath,
-        mimeType: fileInfo.mimeType,
-        originalName: fileInfo.originalName,
-        exists: fs.existsSync(fileInfo.filePath),
-      });
 
       // Verificar que el archivo existe
       if (!fs.existsSync(fileInfo.filePath)) {
@@ -181,8 +138,6 @@ router.get(
         );
         return res.status(404).json({ error: "Archivo no encontrado" });
       }
-
-      console.log("✅ [FILE VIEW] Sending file to client");
 
       // Configurar headers para visualización
       res.setHeader("Content-Type", fileInfo.mimeType);
@@ -285,10 +240,6 @@ router.get(
     try {
       const { documentId } = req.params;
 
-      console.log(
-        `📎 [ATTACHMENTS] Getting attachments for document: ${documentId}`
-      );
-
       if (!documentId) {
         console.error("❌ [ATTACHMENTS] No document ID provided");
         return res.status(400).json({ error: "ID del documento requerido" });
@@ -297,23 +248,6 @@ router.get(
       const attachments = await fileUploadService.getDocumentAttachments(
         documentId
       );
-
-      console.log(
-        `📊 [ATTACHMENTS] Found ${attachments.length} attachments for document ${documentId}`
-      );
-
-      if (attachments.length > 0) {
-        console.log(
-          `📎 [ATTACHMENTS] Attachments details:`,
-          attachments.map((att) => ({
-            id: att.id,
-            fileName: att.fileName,
-            filePath: att.filePath,
-            mimeType: att.mimeType,
-            fileSize: att.fileSize,
-          }))
-        );
-      }
 
       res.status(200).json({
         attachments: attachments.map((attachment) => ({

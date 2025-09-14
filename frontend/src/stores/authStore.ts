@@ -40,6 +40,7 @@ interface AuthState {
   logout: () => void;
   refreshTokens: () => Promise<void>;
   getCurrentUser: () => Promise<void>;
+  updateUser: (userData: Partial<User>) => void;
   clearError: () => void;
   initializeFromSecurityService: () => Promise<void>;
 
@@ -234,6 +235,17 @@ export const useAuthStore = create<AuthState>()(
 
       clearError: () => {
         set({ error: null });
+      },
+
+      updateUser: (userData: Partial<User>) => {
+        const currentUser = get().user;
+        if (currentUser) {
+          const updatedUser = { ...currentUser, ...userData };
+          set({ user: updatedUser });
+
+          // Actualizar también en localStorage
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+        }
       },
 
       // Inicializar desde SecurityService
@@ -447,6 +459,7 @@ export const useAuthActions = () => {
     register: state.register,
     logout: state.logout,
     getCurrentUser: state.getCurrentUser,
+    updateUser: state.updateUser,
     clearError: state.clearError,
   }));
 };

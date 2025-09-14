@@ -8,6 +8,7 @@ import { PermissionIndicator } from "../PermissionIndicator";
 import { useInactivityTimeout } from "../../hooks/useInactivityTimeout";
 import { InactivityWarningModal } from "../InactivityWarningModal";
 import { Button } from "../ui/Button";
+import { UserProfileModal } from "../users/UserProfileModal";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [openDropdowns, setOpenDropdowns] = useState(new Set<string>());
   const [userManuallyToggled, setUserManuallyToggled] = useState(false);
 
@@ -218,7 +220,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
-                        // TODO: Navegar a Mi Perfil
+                        setShowProfileModal(true);
                       }}
                       className="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                     >
@@ -288,6 +290,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         onLogout={logout}
         remainingMinutes={remainingMinutes}
       />
+
+      {/* Modal de perfil de usuario */}
+      {showProfileModal && (
+        <UserProfileModal
+          onClose={() => setShowProfileModal(false)}
+          onSuccess={() => {
+            // Opcional: mostrar un mensaje de éxito
+            console.log("Perfil actualizado exitosamente");
+          }}
+        />
+      )}
     </div>
   );
 };

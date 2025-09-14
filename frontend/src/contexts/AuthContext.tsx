@@ -21,6 +21,7 @@ interface AuthContextType {
     fullName: string
   ) => Promise<void>;
   logout: () => void;
+  updateUser: (userData: Partial<User>) => void;
   clearError: () => void;
   hasPermission: (permission: string) => boolean;
   canAccessModule: (module: string) => boolean;
@@ -50,6 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     register,
     logout,
+    updateUser,
     clearError,
     hasPermission,
     canAccessModule,
@@ -96,6 +98,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     register,
     logout,
+    updateUser,
     clearError,
     hasPermission,
     canAccessModule,

@@ -21,6 +21,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [userManuallyToggled, setUserManuallyToggled] = useState(false);
 
   const menuRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Sistema de inactividad
   const { showWarning, remainingMinutes, extendSession } = useInactivityTimeout(
@@ -61,17 +62,27 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
 
-      if (menuRef.current && !menuRef.current.contains(target)) {
+      // Para el menú de usuario, verificar si el clic fue fuera del área del usuario
+      if (
+        showUserMenu &&
+        userMenuRef.current &&
+        !userMenuRef.current.contains(target)
+      ) {
         setShowUserMenu(false);
+      }
+
+      // Para otros dropdowns, verificar si el clic fue fuera del sidebar general
+      if (menuRef.current && !menuRef.current.contains(target)) {
         setOpenDropdowns(new Set());
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    // Usar 'click' en lugar de 'mousedown' para evitar conflictos
+    document.addEventListener("click", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
     };
-  }, []);
+  }, [showUserMenu]);
 
   // Auto-colapsar en móviles
   useEffect(() => {
@@ -151,16 +162,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           {/* User Section */}
-          <div className="border-t border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="border-t border-gray-200 dark:border-gray-700">
             <div
-              className={`relative ${
-                isCollapsed ? "p-2" : "p-4"
-              } overflow-hidden`}
+              ref={userMenuRef}
+              className={`relative ${isCollapsed ? "p-2" : "p-4"}`}
             >
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowUserMenu(!showUserMenu)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowUserMenu((prev) => !prev);
+                }}
                 className={`w-full ${
                   isCollapsed
                     ? "justify-center p-1 w-12 h-12 focus:ring-0 focus:ring-offset-0 mx-auto"
@@ -201,40 +214,38 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               {/* Dropdown menu */}
               {showUserMenu && !isCollapsed && (
                 <div className="absolute bottom-full left-0 w-full bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 mb-2 z-50">
-                  <div className="p-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                  <div className="p-2 space-y-1">
+                    <button
                       onClick={() => {
-                        console.log("Navegar a Mi Perfil");
                         setShowUserMenu(false);
+                        // TODO: Navegar a Mi Perfil
                       }}
-                      className="w-full justify-start"
+                      className="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                     >
                       <ActionIcon action="user" size="sm" color="gray" />
                       <span className="ml-3">Mi Perfil</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                    </button>
+                    <button
                       onClick={() => {
-                        console.log("Navegar a Configuración");
                         setShowUserMenu(false);
+                        // TODO: Navegar a Configuración
                       }}
-                      className="w-full justify-start"
+                      className="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
                     >
                       <ActionIcon action="settings" size="sm" color="gray" />
                       <span className="ml-3">Configuración</span>
-                    </Button>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={handleSignOut}
-                      className="w-full justify-start"
+                    </button>
+                    <div className="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        handleSignOut();
+                      }}
+                      className="w-full flex items-center px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                     >
                       <ActionIcon action="logout" size="sm" color="red" />
                       <span className="ml-3">Cerrar Sesión</span>
-                    </Button>
+                    </button>
                   </div>
                 </div>
               )}

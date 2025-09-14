@@ -3,6 +3,7 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import { useTheme } from "../../providers/ThemeProvider";
 import { securityService } from "../../services/security.service";
+import { createHighlighter } from "../../lib/shiki.bundle";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 
@@ -239,7 +240,14 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
 
   // Procesar el contenido para añadir tokens a las imágenes existentes
   const processedContent = useMemo(() => {
-    return processContentWithTokens(validContent);
+    const result = processContentWithTokens(validContent);
+    console.log("🔍 [BlockNote] Contenido procesado:", {
+      original: content,
+      valid: validContent,
+      processed: result,
+      editable,
+    });
+    return result;
   }, [
     validContent,
     processContentWithTokens,
@@ -249,25 +257,126 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
   // Create the BlockNote editor with upload support - Configuración basada en el sistema antiguo
   const editor = useCreateBlockNote({
     initialContent: processedContent, // Usar contenido procesado con tokens
-    uploadFile: documentId ? handleFileUpload : undefined, // Solo habilitar si hay documentId
-    // Configuración de code blocks (del sistema antiguo)
+    uploadFile: documentId && editable ? handleFileUpload : undefined, // Solo habilitar si hay documentId Y es editable
+    // CONFIGURACIÓN RADICAL: COMPLETAMENTE DIFERENTE para editable vs read-only
+    ...(editable
+      ? {
+          // MODO EDITABLE: Configuración completa con selector
+          codeBlock: {
+            indentLineWithTab: true,
+            defaultLanguage: "typescript",
+            supportedLanguages: {
+              // Lista completa de lenguajes soportados
+              typescript: { name: "TypeScript", aliases: ["ts"] },
+              javascript: { name: "JavaScript", aliases: ["js"] },
+              python: { name: "Python", aliases: ["py"] },
+              java: { name: "Java" },
+              csharp: { name: "C#", aliases: ["cs"] },
+              cpp: { name: "C++", aliases: ["c++"] },
+              c: { name: "C" },
+              go: { name: "Go" },
+              rust: { name: "Rust", aliases: ["rs"] },
+              php: { name: "PHP" },
+              ruby: { name: "Ruby", aliases: ["rb"] },
+              swift: { name: "Swift" },
+              kotlin: { name: "Kotlin", aliases: ["kt"] },
+              scala: { name: "Scala" },
+              dart: { name: "Dart" },
+              bash: { name: "Bash", aliases: ["sh", "shell"] },
+              powershell: { name: "PowerShell", aliases: ["ps1"] },
+              perl: { name: "Perl", aliases: ["pl"] },
+              lua: { name: "Lua" },
+              sql: { name: "SQL" },
+              plsql: { name: "PL/SQL" },
+              mysql: { name: "MySQL" },
+              postgresql: { name: "PostgreSQL", aliases: ["postgres"] },
+              html: { name: "HTML" },
+              css: { name: "CSS" },
+              scss: { name: "SCSS", aliases: ["sass"] },
+              less: { name: "Less" },
+              json: { name: "JSON" },
+              yaml: { name: "YAML", aliases: ["yml"] },
+              toml: { name: "TOML" },
+              xml: { name: "XML" },
+              ini: { name: "INI" },
+              markdown: { name: "Markdown", aliases: ["md"] },
+              latex: { name: "LaTeX", aliases: ["tex"] },
+              vue: { name: "Vue" },
+              svelte: { name: "Svelte" },
+              jsx: { name: "JSX" },
+              tsx: { name: "TSX" },
+              dockerfile: { name: "Dockerfile", aliases: ["docker"] },
+              makefile: { name: "Makefile", aliases: ["make"] },
+              r: { name: "R" },
+              matlab: { name: "MATLAB", aliases: ["m"] },
+              text: { name: "Plain Text", aliases: ["txt"] },
+              diff: { name: "Diff" },
+              apache: { name: "Apache Config" },
+              nginx: { name: "Nginx Config" },
+            },
+            createHighlighter: () => createHighlighter(),
+          },
+        }
+      : {
+          // MODO READ-ONLY: Configuración COMPLETA para mantener syntax highlighting
+          codeBlock: {
+            indentLineWithTab: false,
+            defaultLanguage: "typescript",
+            // INCLUIR TODOS los lenguajes para que el highlighting funcione
+            supportedLanguages: {
+              typescript: { name: "TypeScript", aliases: ["ts"] },
+              javascript: { name: "JavaScript", aliases: ["js"] },
+              python: { name: "Python", aliases: ["py"] },
+              java: { name: "Java" },
+              csharp: { name: "C#", aliases: ["cs"] },
+              cpp: { name: "C++", aliases: ["c++"] },
+              c: { name: "C" },
+              go: { name: "Go" },
+              rust: { name: "Rust", aliases: ["rs"] },
+              php: { name: "PHP" },
+              ruby: { name: "Ruby", aliases: ["rb"] },
+              swift: { name: "Swift" },
+              kotlin: { name: "Kotlin", aliases: ["kt"] },
+              scala: { name: "Scala" },
+              dart: { name: "Dart" },
+              bash: { name: "Bash", aliases: ["sh", "shell"] },
+              powershell: { name: "PowerShell", aliases: ["ps1"] },
+              perl: { name: "Perl", aliases: ["pl"] },
+              lua: { name: "Lua" },
+              sql: { name: "SQL" },
+              plsql: { name: "PL/SQL" },
+              mysql: { name: "MySQL" },
+              postgresql: { name: "PostgreSQL", aliases: ["postgres"] },
+              html: { name: "HTML" },
+              css: { name: "CSS" },
+              scss: { name: "SCSS", aliases: ["sass"] },
+              less: { name: "Less" },
+              json: { name: "JSON" },
+              yaml: { name: "YAML", aliases: ["yml"] },
+              toml: { name: "TOML" },
+              xml: { name: "XML" },
+              ini: { name: "INI" },
+              markdown: { name: "Markdown", aliases: ["md"] },
+              latex: { name: "LaTeX", aliases: ["tex"] },
+              vue: { name: "Vue" },
+              svelte: { name: "Svelte" },
+              jsx: { name: "JSX" },
+              tsx: { name: "TSX" },
+              dockerfile: { name: "Dockerfile", aliases: ["docker"] },
+              makefile: { name: "Makefile", aliases: ["make"] },
+              r: { name: "R" },
+              matlab: { name: "MATLAB", aliases: ["m"] },
+              text: { name: "Plain Text", aliases: ["txt"] },
+              diff: { name: "Diff" },
+              apache: { name: "Apache Config" },
+              nginx: { name: "Nginx Config" },
+            },
+            // MANTENER createHighlighter para que funcione el syntax highlighting
+            createHighlighter: () => createHighlighter(),
+          },
+        }),
+    // Configuración de tablas (solo en modo editable)
     ...(editable && {
-      codeBlock: {
-        indentLineWithTab: true,
-        defaultLanguage: "typescript",
-        supportedLanguages: {
-          typescript: { name: "TypeScript", aliases: ["ts"] },
-          javascript: { name: "JavaScript", aliases: ["js"] },
-          python: { name: "Python", aliases: ["py"] },
-          java: { name: "Java" },
-          sql: { name: "SQL" },
-          html: { name: "HTML" },
-          css: { name: "CSS" },
-          json: { name: "JSON" },
-          markdown: { name: "Markdown", aliases: ["md"] },
-        },
-      },
-      // Configuración de tablas (solo en modo editable)
       tables: {
         cellBackgroundColor: true,
         cellTextColor: true,
@@ -276,6 +385,267 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
       },
     }),
   });
+
+  // Debug del editor
+  console.log("🔧 [BlockNote] Editor creado:", {
+    editor,
+    editable,
+    hasContent: !!processedContent,
+    contentLength: processedContent?.length || 0,
+  });
+
+  // Configurar tema para BlockNote (funciona tanto en editable como read-only)
+  useEffect(() => {
+    const editorElement = document.querySelector(".blocknote-editor");
+    if (editorElement) {
+      editorElement.setAttribute("data-theme", isDark ? "dark" : "light");
+      editorElement.setAttribute("data-editable", editable.toString());
+    }
+  }, [isDark, editor, editable]);
+
+  // FORZAR ocultación del selector usando JavaScript directo
+  useEffect(() => {
+    if (!editable && editor) {
+      const forceHideSelector = () => {
+        // Buscar TODOS los posibles selectores en code blocks
+        const selectors = document.querySelectorAll(`
+          .blocknote-editor .bn-code-block .mantine-Select-root,
+          .blocknote-editor .bn-code-block .mantine-Select-wrapper,
+          .blocknote-editor .bn-code-block .mantine-Input-wrapper,
+          .blocknote-editor .bn-code-block .mantine-ComboboxTarget,
+          .blocknote-editor .bn-code-block .mantine-Combobox,
+          .blocknote-editor .bn-code-block button,
+          .blocknote-editor .bn-code-block select,
+          .blocknote-editor .bn-code-block input,
+          .blocknote-editor .bn-code-block [role="combobox"],
+          .blocknote-editor .bn-code-block [aria-haspopup],
+          .mantine-Select-dropdown,
+          .mantine-Popover-dropdown,
+          .mantine-Combobox-dropdown,
+          div[role="listbox"]
+        `);
+
+        selectors.forEach((element) => {
+          if (element instanceof HTMLElement) {
+            // FUERZA BRUTAL: Eliminar visualmente pero mantener en DOM
+            element.style.setProperty("display", "none", "important");
+            element.style.setProperty("opacity", "0", "important");
+            element.style.setProperty("pointer-events", "none", "important");
+            element.style.setProperty("visibility", "hidden", "important");
+            element.style.setProperty("position", "absolute", "important");
+            element.style.setProperty("top", "-99999px", "important");
+            element.style.setProperty("left", "-99999px", "important");
+            element.style.setProperty("width", "0", "important");
+            element.style.setProperty("height", "0", "important");
+            element.style.setProperty("max-width", "0", "important");
+            element.style.setProperty("max-height", "0", "important");
+            element.style.setProperty("overflow", "hidden", "important");
+            element.style.setProperty("z-index", "-99999", "important");
+            element.style.setProperty("transform", "scale(0)", "important");
+
+            // Remover eventos
+            element.removeAttribute("tabindex");
+            element.setAttribute("tabindex", "-1");
+            element.setAttribute("aria-hidden", "true");
+
+            // Deshabilitar completamente
+            if (element.tagName === "BUTTON") {
+              (element as HTMLButtonElement).disabled = true;
+            }
+            if (element.tagName === "INPUT") {
+              (element as HTMLInputElement).disabled = true;
+            }
+            if (element.tagName === "SELECT") {
+              (element as HTMLSelectElement).disabled = true;
+            }
+          }
+        });
+
+        // EXTRA: Ocultar cualquier dropdown que pueda estar abierto
+        const dropdowns = document.querySelectorAll(`
+          .mantine-Select-dropdown,
+          .mantine-Popover-dropdown,
+          .mantine-Combobox-dropdown,
+          [data-mantine-color-scheme] [role="listbox"],
+          [role="option"]
+        `);
+
+        dropdowns.forEach((dropdown) => {
+          if (dropdown instanceof HTMLElement) {
+            dropdown.style.setProperty("display", "none", "important");
+            dropdown.remove(); // Eliminar completamente los dropdowns
+          }
+        });
+      };
+
+      // Aplicar inmediatamente y repetidamente
+      const timeouts = [
+        setTimeout(forceHideSelector, 0),
+        setTimeout(forceHideSelector, 50),
+        setTimeout(forceHideSelector, 100),
+        setTimeout(forceHideSelector, 200),
+        setTimeout(forceHideSelector, 500),
+        setTimeout(forceHideSelector, 1000),
+      ];
+
+      // Observer más agresivo
+      const observer = new MutationObserver(() => {
+        setTimeout(forceHideSelector, 10);
+        setTimeout(forceHideSelector, 50);
+      });
+
+      const editorElement = document.querySelector(".blocknote-editor");
+      if (editorElement) {
+        observer.observe(editorElement, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeOldValue: true,
+        });
+      }
+
+      // También observar el body para dropdowns que aparecen fuera
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+
+      // INTERCEPTAR clicks y eventos para prevenir interacción
+      const preventInteraction = (e: Event) => {
+        const target = e.target as HTMLElement;
+        if (
+          target &&
+          (target.closest(".mantine-Select-root") ||
+            target.closest(".mantine-Select-dropdown") ||
+            target.closest(".mantine-Combobox") ||
+            target.closest('[role="combobox"]') ||
+            target.closest('[role="listbox"]') ||
+            target.closest("[aria-haspopup]"))
+        ) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          return false;
+        }
+      };
+
+      // Añadir listeners para interceptar interacciones
+      document.addEventListener("click", preventInteraction, true);
+      document.addEventListener("mousedown", preventInteraction, true);
+      document.addEventListener("keydown", preventInteraction, true);
+      document.addEventListener("focus", preventInteraction, true);
+
+      return () => {
+        timeouts.forEach(clearTimeout);
+        observer.disconnect();
+        document.removeEventListener("click", preventInteraction, true);
+        document.removeEventListener("mousedown", preventInteraction, true);
+        document.removeEventListener("keydown", preventInteraction, true);
+        document.removeEventListener("focus", preventInteraction, true);
+      };
+    }
+  }, [editable, editor]);
+
+  // SOLUCIÓN DEFINITIVA: CSS suave para ocultar selector sin romper el DOM
+  useEffect(() => {
+    if (!editable) {
+      const globalStyle =
+        document.getElementById("blocknote-readonly-override") ||
+        document.createElement("style");
+      globalStyle.id = "blocknote-readonly-override";
+      globalStyle.innerHTML = `
+        /* OCULTAR COMPLETAMENTE el selector de lenguaje manteniendo el DOM */
+        .blocknote-editor[data-editable="false"] .bn-code-block .mantine-Select-root,
+        .blocknote-editor[data-editable="false"] .bn-code-block .mantine-Select-wrapper,
+        .blocknote-editor[data-editable="false"] .bn-code-block .mantine-Select-input,
+        .blocknote-editor[data-editable="false"] .bn-code-block .mantine-Input-wrapper,
+        .blocknote-editor[data-editable="false"] .bn-code-block .mantine-Input-root,
+        .blocknote-editor[data-editable="false"] .bn-code-block .mantine-ComboboxTarget,
+        .blocknote-editor[data-editable="false"] .bn-code-block .mantine-Combobox,
+        .blocknote-editor[data-editable="false"] .bn-code-block .mantine-UnstyledButton-root,
+        .blocknote-editor[data-editable="false"] .bn-code-block button,
+        .blocknote-editor[data-editable="false"] .bn-code-block select,
+        .blocknote-editor[data-editable="false"] .bn-code-block input,
+        .blocknote-editor[data-editable="false"] .bn-code-block [role="combobox"],
+        .blocknote-editor[data-editable="false"] .bn-code-block [aria-haspopup],
+        .blocknote-editor[data-editable="false"] .bn-code-block [aria-expanded] {
+          display: none !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          visibility: hidden !important;
+          position: absolute !important;
+          top: -99999px !important;
+          left: -99999px !important;
+          width: 0 !important;
+          height: 0 !important;
+          max-width: 0 !important;
+          max-height: 0 !important;
+          overflow: hidden !important;
+          z-index: -99999 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          border: none !important;
+          background: transparent !important;
+          transform: scale(0) !important;
+        }
+        
+        /* Ocultar CUALQUIER dropdown globalmente */
+        .mantine-Select-dropdown,
+        .mantine-Popover-dropdown,
+        .mantine-Combobox-dropdown,
+        div[role="listbox"],
+        div[role="option"],
+        ul[role="listbox"],
+        li[role="option"],
+        [data-mantine-color-scheme] [role="listbox"],
+        [data-mantine-color-scheme] [role="option"] {
+          display: none !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          visibility: hidden !important;
+          position: absolute !important;
+          top: -99999px !important;
+          left: -99999px !important;
+        }
+        
+        /* Asegurar que el contenido de código se vea correctamente */
+        .blocknote-editor[data-editable="false"] .bn-code-block {
+          position: relative !important;
+        }
+        
+        .blocknote-editor[data-editable="false"] .bn-code-block .bn-code-block-content {
+          padding-top: 4px !important;
+          margin-top: 0 !important;
+          width: 100% !important;
+          position: relative !important;
+          z-index: 1 !important;
+        }
+        
+        /* Forzar que solo el pre sea visible */
+        .blocknote-editor[data-editable="false"] .bn-code-block pre {
+          position: relative !important;
+          z-index: 2 !important;
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
+      `;
+
+      // Inyectar el CSS con máxima prioridad
+      if (!document.head.contains(globalStyle)) {
+        document.head.insertBefore(globalStyle, document.head.firstChild);
+      }
+
+      return () => {
+        const styleElement = document.getElementById(
+          "blocknote-readonly-override"
+        );
+        if (styleElement) {
+          styleElement.remove();
+        }
+      };
+    }
+  }, [editable]);
 
   // Handle content changes
   const handleChange = useCallback(() => {
@@ -316,6 +686,18 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
     }
   }, [editor, processedContent, documentId]);
 
+  // Efecto para aplicar syntax highlighting cuando el contenido cambia
+  useEffect(() => {
+    // BlockNote maneja el syntax highlighting automáticamente
+    // Solo necesitamos asegurar que el tema esté configurado correctamente
+    if (editor) {
+      const editorElement = document.querySelector(".blocknote-editor");
+      if (editorElement) {
+        editorElement.setAttribute("data-theme", isDark ? "dark" : "light");
+      }
+    }
+  }, [editor, processedContent, isDark]);
+
   // Efecto para refrescar tokens periódicamente (cada 5 minutos)
   useEffect(() => {
     if (!editor || !documentId) return;
@@ -342,16 +724,17 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
     <div
       className={`blocknote-editor ${className}`}
       data-theme={isDark ? "dark" : "light"}
+      data-editable={editable}
     >
       <BlockNoteView
         editor={editor}
         editable={editable}
         onChange={handleChange}
         theme={isDark ? "dark" : "light"}
-        slashMenu={true} // Habilitar el slash menu explícitamente
-        formattingToolbar={true}
-        linkToolbar={true}
-        sideMenu={true}
+        slashMenu={editable} // Solo habilitar si es editable
+        formattingToolbar={editable} // Solo habilitar si es editable
+        linkToolbar={editable} // Solo habilitar si es editable
+        sideMenu={editable} // Solo habilitar si es editable
       />
 
       <style
@@ -376,6 +759,22 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
             color: #9ca3af;
             pointer-events: none;
             height: 0;
+          }
+          
+          /* CSS simplificado para modo de solo lectura */
+          ${
+            !editable
+              ? `
+          /* El CSS de ocultación se maneja dinámicamente con JavaScript */
+          .blocknote-editor[data-editable="false"] .bn-code-block .bn-code-block-content {
+            pointer-events: none !important;
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+          }
+          `
+              : ""
           }
           
           /* Custom styling for dark mode */

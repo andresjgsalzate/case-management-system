@@ -16,6 +16,7 @@ import {
 } from "@react-pdf/renderer";
 import { saveAs } from "file-saver";
 import { codeToHtml } from "shiki";
+import { securityService } from "./security.service";
 import {
   KnowledgeDocumentPDF,
   PDFContentBlock,
@@ -23,7 +24,107 @@ import {
   ColoredTextToken,
 } from "../types/pdf";
 
+// =================== CONFIGURACIÓN DE FUENTES ===================
+
+// Usar fuentes del sistema para mayor confiabilidad
+// React PDF tiene mejor soporte con fuentes incorporadas
+
+// Configuración de fuentes por casos de uso
+const FONT_FAMILIES = {
+  default: "Helvetica",
+  emoji: "Helvetica", // Usar Helvetica para emojis también
+  unicode: "Helvetica", // Helvetica tiene soporte Unicode básico
+  fallback: "Helvetica", // Fallback final del sistema
+};
 // =================== FUNCIONES DE UTILIDAD ===================
+
+/**
+ * Detecta si un texto contiene emojis usando múltiples patrones
+ */
+const containsEmoji = (text: string): boolean => {
+  if (!text || typeof text !== "string") return false;
+
+  // Patrones de emojis más completos
+  const emojiPatterns = [
+    // Emojis básicos
+    /[\u{1F600}-\u{1F64F}]/gu, // Emoticons
+    /[\u{1F300}-\u{1F5FF}]/gu, // Misc Symbols and Pictographs
+    /[\u{1F680}-\u{1F6FF}]/gu, // Transport and Map
+    /[\u{1F1E6}-\u{1F1FF}]/gu, // Regional indicator symbols
+    /[\u{2600}-\u{26FF}]/gu, // Misc symbols
+    /[\u{2700}-\u{27BF}]/gu, // Dingbats
+    // Emojis extendidos
+    /[\u{1F900}-\u{1F9FF}]/gu, // Supplemental Symbols and Pictographs
+    /[\u{1FA70}-\u{1FAFF}]/gu, // Symbols and Pictographs Extended-A
+    // Caracteres especiales comunes
+    /[\u{2049}\u{203C}\u{2139}\u{2194}-\u{2199}\u{21A9}\u{21AA}]/gu,
+  ];
+
+  return emojiPatterns.some((pattern) => pattern.test(text));
+};
+
+/**
+ * Devuelve el nombre de fuente apropiado según el contenido
+ */
+const getFontFamily = (text: string, baseFamily?: string): string => {
+  // Simplificado: usar siempre Helvetica que es confiable en React PDF
+  const selectedFont = baseFamily || FONT_FAMILIES.default;
+
+  console.log("🔤 [PDF] Selección de fuente:", {
+    textSample: text.substring(0, 30) + "...",
+    hasEmoji: containsEmoji(text),
+    selectedFont,
+    textLength: text.length,
+  });
+
+  return selectedFont;
+};
+
+/**
+ * Segmenta el texto separando emojis del texto normal
+/**
+ * Renderiza texto con soporte para emojis usando fuentes apropiadas
+ * Simplificado para usar solo Helvetica y evitar problemas de fuentes externas
+ */
+
+const renderTextWithEmojiSupport = (
+  text: string,
+  baseStyle: any = {},
+  forceFont?: string
+): React.ReactNode => {
+  if (!text || typeof text !== "string" || !text.trim()) {
+    return null;
+  }
+
+  const fontFamily = forceFont || getFontFamily(text);
+
+  return (
+    <Text style={{ ...baseStyle, fontFamily }} key={`text-${Math.random()}`}>
+      {text}
+    </Text>
+  );
+};
+
+/**
+ * Normaliza colores para uso en PDF
+ */
+const normalizeColor = (color: string): string => {
+  const colorMap: { [key: string]: string } = {
+    red: "#FF0000",
+    blue: "#0000FF",
+    green: "#008000",
+    yellow: "#FFFF00",
+    orange: "#FFA500",
+    purple: "#800080",
+    pink: "#FFC0CB",
+    gray: "#808080",
+    grey: "#808080",
+    black: "#000000",
+    white: "#FFFFFF",
+  };
+
+  return colorMap[color.toLowerCase()] || color;
+};
 
 /**
  * Extrae texto plano del contenido de un bloque
@@ -415,31 +516,59 @@ const styles = StyleSheet.create({
   paragraph: {
     fontSize: 12,
     lineHeight: 1.4,
-    marginBottom: 8,
+    marginBottom: 6,
     color: "#000000",
+    fontFamily: "Helvetica",
   },
 
   heading1: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginTop: 20,
-    marginBottom: 12,
-    color: "#111827",
-  },
-
-  heading2: {
-    fontSize: 16,
+    fontSize: 24,
     fontWeight: "bold",
     marginTop: 16,
     marginBottom: 10,
     color: "#111827",
+    fontFamily: "Helvetica",
+  },
+
+  heading2: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 14,
+    marginBottom: 8,
+    color: "#111827",
+    fontFamily: "Helvetica",
   },
 
   heading3: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "bold",
     marginTop: 12,
+    marginBottom: 6,
+    color: "#111827",
+    fontFamily: "Helvetica",
+  },
+
+  heading4: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginTop: 14,
     marginBottom: 8,
+    color: "#111827",
+  },
+
+  heading5: {
+    fontSize: 13,
+    fontWeight: "bold",
+    marginTop: 12,
+    marginBottom: 6,
+    color: "#111827",
+  },
+
+  heading6: {
+    fontSize: 12,
+    fontWeight: "bold",
+    marginTop: 10,
+    marginBottom: 6,
     color: "#111827",
   },
 
@@ -680,27 +809,302 @@ const styles = StyleSheet.create({
 
 // =================== RENDERIZADO DE BLOQUES ===================
 
-const renderInlineContent = (content: any): React.ReactNode => {
+/**
+ * Versión especial de renderInlineContent para headings
+ * Preserva estilos de formato pero hereda el tamaño de fuente del heading
+ */
+const renderHeadingInlineContent = (
+  content: any,
+  baseStyle: any,
+  blockProps?: any
+): React.ReactNode => {
   if (typeof content === "string") {
-    return content || null;
+    if (content.trim()) {
+      return content;
+    }
+    return null;
   }
 
   if (Array.isArray(content)) {
     const renderedItems = content
-      .map((item, index) => {
+      .map((item) => {
         if (typeof item === "string") {
-          return item || null;
+          if (item.trim()) {
+            return item;
+          }
+          return null;
         }
 
         if (item.type === "text") {
           const text = item.text || "";
           if (!text.trim()) return null;
 
+          // Combinar estilos del heading con estilos específicos del texto
+          const combinedStyles: any = {
+            ...baseStyle, // Heredar fontSize, fontWeight, color del heading
+          };
+
+          // Aplicar estilos específicos del texto, pero mantener el fontSize base
+          if (item.styles) {
+            if (item.styles.bold) combinedStyles.fontWeight = "bold";
+            if (item.styles.italic) combinedStyles.fontStyle = "italic";
+            if (item.styles.underline)
+              combinedStyles.textDecoration = "underline";
+            if (item.styles.strikethrough)
+              combinedStyles.textDecoration = "line-through";
+
+            if (item.styles.code) {
+              combinedStyles.fontFamily = "Courier";
+              combinedStyles.backgroundColor = "#F1F3F4";
+              combinedStyles.padding = 2;
+              combinedStyles.borderRadius = 3;
+              // Para código en headings, reducir ligeramente el tamaño
+              combinedStyles.fontSize = Math.max(10, baseStyle.fontSize - 2);
+            }
+          }
+
+          // IMPORTANTE: Preservar colores personalizados con normalización
+          // Los colores en BlockNote vienen desde block.props, no desde item.styles
+          const textColor =
+            blockProps?.textColor || item.styles?.textColor || item.textColor;
+          const backgroundColor =
+            blockProps?.backgroundColor ||
+            item.styles?.backgroundColor ||
+            item.backgroundColor;
+
+          console.log("🎨 [PDF DEBUG] Colores en heading:", {
+            blockPropsTextColor: blockProps?.textColor,
+            blockPropsBackgroundColor: blockProps?.backgroundColor,
+            itemStylesTextColor: item.styles?.textColor,
+            itemTextColor: item.textColor,
+            finalTextColor: textColor,
+            finalBackgroundColor: backgroundColor,
+            text: item.text?.substring(0, 30) + "...",
+          });
+
+          if (textColor && textColor !== "default") {
+            const normalizedColor = normalizeColor(textColor);
+
+            combinedStyles.color = normalizedColor;
+            console.log("🎨 [PDF] Aplicando color personalizado en heading:", {
+              originalColor: baseStyle.color,
+              textColor: textColor,
+              normalizedColor: normalizedColor,
+              source: item.styles?.textColor ? "styles.textColor" : "textColor",
+              text: item.text?.substring(0, 30) + "...",
+            });
+          }
+
+          // Aplicar color de fondo en heading si existe
+          if (backgroundColor && backgroundColor !== "default") {
+            const normalizedBgColor = normalizeColor(backgroundColor);
+
+            combinedStyles.backgroundColor = normalizedBgColor;
+            console.log("🎨 [PDF] Aplicando color de fondo en heading:", {
+              originalBgColor: backgroundColor,
+              normalizedBgColor: normalizedBgColor,
+              source: item.styles?.backgroundColor
+                ? "styles.backgroundColor"
+                : "backgroundColor",
+              text: item.text?.substring(0, 30) + "...",
+            });
+          }
+
+          // Determinar la fuente apropiada para el texto del heading
+          const fontFamily = getFontFamily(text, baseStyle.fontFamily);
+          combinedStyles.fontFamily = fontFamily;
+
+          console.log("🔤 [PDF] Fuente para heading:", {
+            text: text.substring(0, 20) + "...",
+            containsEmoji: containsEmoji(text),
+            baseFontFamily: baseStyle.fontFamily,
+            selectedFontFamily: fontFamily,
+          });
+
+          return renderTextWithEmojiSupport(text, combinedStyles);
+        }
+
+        if (item.text) {
+          const text = item.text || "";
+          if (!text.trim()) return null;
+          return text;
+        }
+
+        return null;
+      })
+      .filter((item) => item !== null);
+
+    // Detectar si hay emojis en el contenido combinado del heading
+    const allText = renderedItems
+      .map((item) =>
+        typeof item === "string" ? item : item?.props?.children || ""
+      )
+      .join("");
+    const fontFamily = getFontFamily(allText, baseStyle.fontFamily);
+
+    const finalStyle = {
+      ...baseStyle,
+      fontFamily: fontFamily,
+    };
+
+    console.log("🔤 [PDF] Fuente final para heading:", {
+      allText: allText.substring(0, 30) + "...",
+      containsEmoji: containsEmoji(allText),
+      baseFontFamily: baseStyle.fontFamily,
+      finalFontFamily: fontFamily,
+    });
+
+    return renderedItems.length > 0 ? (
+      <Text style={finalStyle}>
+        {renderedItems
+          .map((item) => {
+            if (typeof item === "string") {
+              if (!item.trim()) return null; // Evitar strings vacíos
+              return renderTextWithEmojiSupport(item, finalStyle);
+            }
+            return item;
+          })
+          .filter(Boolean)}
+      </Text>
+    ) : null;
+  }
+
+  if (content && typeof content === "object") {
+    if (content.text) {
+      const text = content.text || "";
+      return text.trim() ? text : null;
+    }
+    if (content.content) {
+      return renderHeadingInlineContent(content.content, baseStyle, blockProps);
+    }
+  }
+
+  return null;
+};
+
+const renderInlineContent = (
+  content: any,
+  blockProps?: any
+): React.ReactNode => {
+  // Validación inicial para evitar contenido vacío o inválido
+  if (!content) {
+    console.log("🚫 [PDF] Contenido nulo o undefined");
+    return null;
+  }
+
+  // Si es string vacío o solo espacios, retornar null
+  if (typeof content === "string") {
+    const trimmed = content.trim();
+    if (!trimmed) {
+      console.log("🚫 [PDF] String vacío después de trim");
+      return null;
+    }
+    return trimmed;
+  }
+
+  // Debug: Mostrar estructura completa del contenido para troubleshooting
+  if (Array.isArray(content) && content.length > 0) {
+    console.log("🔍 [PDF DEBUG] Estructura completa del contenido:", {
+      length: content.length,
+      sampleItem: content[0]
+        ? {
+            allProperties: Object.keys(content[0]),
+            type: content[0]?.type,
+            text: content[0]?.text?.substring(0, 30),
+            styles: content[0]?.styles,
+            textColor: content[0]?.textColor,
+            backgroundColor: content[0]?.backgroundColor,
+            props: content[0]?.props,
+            fullItem: content[0],
+          }
+        : null,
+    });
+
+    const hasStyles = content.some(
+      (item) => item?.styles?.textColor || item?.textColor
+    );
+    if (hasStyles) {
+      console.log("🔍 [PDF DEBUG] Contenido con estilos detectado:", {
+        items: content.map((item) => ({
+          type: item?.type,
+          text: item?.text?.substring(0, 20) + "...",
+          textColor: item?.styles?.textColor || item?.textColor,
+          backgroundColor:
+            item?.styles?.backgroundColor || item?.backgroundColor,
+          hasStyles: !!(
+            item?.styles ||
+            item?.textColor ||
+            item?.backgroundColor
+          ),
+        })),
+      });
+    }
+  }
+
+  if (typeof content === "string") {
+    // Solo retornar si el string tiene contenido útil, sin espacios extra
+    const trimmedContent = content.trim();
+    if (trimmedContent) {
+      const fontFamily = getFontFamily(trimmedContent);
+      console.log("🔤 [PDF] Detectando fuente para texto:", {
+        text: trimmedContent.substring(0, 20) + "...",
+        containsEmoji: containsEmoji(trimmedContent),
+        fontFamily: fontFamily,
+      });
+
+      return (
+        <Text
+          style={{
+            fontSize: 12,
+            color: "#000000",
+            lineHeight: 1.4,
+            fontFamily: fontFamily,
+          }}
+        >
+          {trimmedContent}
+        </Text>
+      );
+    }
+    return null;
+  }
+
+  if (Array.isArray(content)) {
+    // Validar que el array no esté vacío
+    if (content.length === 0) {
+      console.log("🚫 [PDF] Array de contenido vacío");
+      return null;
+    }
+
+    const renderedItems = content
+      .map((item, index) => {
+        if (typeof item === "string") {
+          // Devolver solo el texto si no está vacío
+          const trimmedString = item.trim();
+          if (trimmedString) {
+            return trimmedString;
+          }
+          return null;
+        }
+
+        if (item.type === "text") {
+          const text = item.text || "";
+          const trimmedText = text.trim();
+          if (!trimmedText) return null;
+
+          // Determinar la fuente apropiada según el contenido
+          const fontFamily = getFontFamily(trimmedText);
+          console.log("🔤 [PDF] Fuente para texto con estilos:", {
+            text: trimmedText.substring(0, 20) + "...",
+            containsEmoji: containsEmoji(trimmedText),
+            fontFamily: fontFamily,
+          });
+
           // Aplicar estilos según las propiedades del texto
           const textStyles: any = {
             fontSize: 12,
             color: "#000000",
             lineHeight: 1.4,
+            fontFamily: fontFamily,
           };
 
           if (item.styles) {
@@ -717,58 +1121,183 @@ const renderInlineContent = (content: any): React.ReactNode => {
               textStyles.fontSize = 11;
             }
 
-            // Manejo de colores
-            if (item.styles.textColor && item.styles.textColor !== "default") {
-              textStyles.color = item.styles.textColor;
+            // Manejo de colores con normalización - verificar blockProps primero, luego styles
+            const textColor =
+              blockProps?.textColor || item.styles?.textColor || item.textColor;
+            const backgroundColor =
+              blockProps?.backgroundColor ||
+              item.styles?.backgroundColor ||
+              item.backgroundColor;
+
+            console.log("🎨 [PDF DEBUG] Colores en párrafo:", {
+              blockPropsTextColor: blockProps?.textColor,
+              blockPropsBackgroundColor: blockProps?.backgroundColor,
+              itemStylesTextColor: item.styles?.textColor,
+              itemTextColor: item.textColor,
+              finalTextColor: textColor,
+              finalBackgroundColor: backgroundColor,
+              text: trimmedText.substring(0, 30) + "...",
+            });
+
+            if (textColor && textColor !== "default") {
+              const normalizedColor = normalizeColor(textColor);
+
+              textStyles.color = normalizedColor;
+              console.log("🎨 [PDF] Aplicando color de texto:", {
+                text:
+                  trimmedText.substring(0, 30) +
+                  (trimmedText.length > 30 ? "..." : ""),
+                originalColor: textColor,
+                normalizedColor: normalizedColor,
+                source: blockProps?.textColor
+                  ? "blockProps.textColor"
+                  : item.styles?.textColor
+                  ? "styles.textColor"
+                  : "textColor",
+              });
             }
-            if (
-              item.styles.backgroundColor &&
-              item.styles.backgroundColor !== "default"
-            ) {
-              textStyles.backgroundColor = item.styles.backgroundColor;
+
+            // Aplicar color de fondo si existe
+            if (backgroundColor && backgroundColor !== "default") {
+              const normalizedBgColor = normalizeColor(backgroundColor);
+
+              textStyles.backgroundColor = normalizedBgColor;
+              console.log("🎨 [PDF] Aplicando color de fondo:", {
+                text:
+                  trimmedText.substring(0, 30) +
+                  (trimmedText.length > 30 ? "..." : ""),
+                originalBgColor: backgroundColor,
+                normalizedBgColor: normalizedBgColor,
+                source: item.styles?.backgroundColor
+                  ? "styles.backgroundColor"
+                  : "backgroundColor",
+              });
             }
           }
 
           return (
             <Text key={index} style={textStyles}>
-              {text}
+              {renderTextWithEmojiSupport(trimmedText, textStyles)}
             </Text>
           );
         }
 
         if (item.text) {
           const text = item.text || "";
-          if (!text.trim()) return null;
-          return (
-            <Text
-              key={index}
-              style={{ fontSize: 12, color: "#000000", lineHeight: 1.4 }}
-            >
-              {text}
-            </Text>
-          );
+          const trimmedItemText = text.trim();
+          if (!trimmedItemText) return null;
+          // Devolver solo el texto sin envolver en Text
+          return trimmedItemText;
         }
 
         return null;
       })
-      .filter((item) => item !== null && item !== "");
+      .filter((item) => {
+        // Filtrar elementos nulos, undefined, y strings vacíos
+        if (item === null || item === undefined) return false;
 
-    // Si solo hay un elemento y es texto simple, devolverlo directamente
-    if (renderedItems.length === 1 && typeof renderedItems[0] === "string") {
-      return renderedItems[0];
+        // Si es string, verificar que no esté vacío después de trim
+        if (typeof item === "string") {
+          return item.trim().length > 0;
+        }
+
+        // Si es React element, verificar que tenga contenido válido
+        if (typeof item === "object" && item.props) {
+          const children = item.props.children;
+          if (typeof children === "string") {
+            return children.trim().length > 0;
+          }
+          return children !== null && children !== undefined;
+        }
+
+        return true;
+      });
+
+    // Si no hay elementos válidos, retornar null
+    if (renderedItems.length === 0) {
+      console.log("🚫 [PDF] No hay elementos válidos para renderizar");
+      return null;
     }
 
-    return renderedItems;
+    // Detectar si hay emojis en el contenido para usar la fuente apropiada
+    const allText = renderedItems
+      .map((item) => {
+        if (typeof item === "string") {
+          return item;
+        }
+        if (typeof item === "object" && item.props?.children) {
+          return typeof item.props.children === "string"
+            ? item.props.children
+            : "";
+        }
+        return "";
+      })
+      .join("");
+
+    const fontFamily = getFontFamily(allText);
+
+    console.log("🔤 [PDF] Fuente para contenido combinado:", {
+      allText: allText.substring(0, 50) + "...",
+      containsEmoji: containsEmoji(allText),
+      fontFamily: fontFamily,
+      validItemsCount: renderedItems.length,
+    });
+
+    return (
+      <Text
+        style={{
+          fontSize: 12,
+          color: "#000000",
+          lineHeight: 1.4,
+          fontFamily: fontFamily,
+        }}
+      >
+        {renderedItems
+          .map((item) => {
+            if (typeof item === "string") {
+              if (!item.trim()) return null; // Evitar strings vacíos
+              return renderTextWithEmojiSupport(item, {
+                fontSize: 12,
+                color: "#000000",
+                lineHeight: 1.4,
+                fontFamily: fontFamily,
+              });
+            }
+            return item;
+          })
+          .filter(Boolean)}
+      </Text>
+    );
   }
 
   if (content && typeof content === "object") {
     if (content.text) {
       const text = content.text || "";
-      if (!text.trim()) return null;
-      return text;
+      if (text.trim()) {
+        // SIEMPRE envolver en Text para react-pdf con soporte para emojis
+        const fontFamily = getFontFamily(text);
+        return (
+          <Text
+            style={{
+              fontSize: 12,
+              color: "#000000",
+              lineHeight: 1.4,
+              fontFamily,
+            }}
+          >
+            {renderTextWithEmojiSupport(text, {
+              fontSize: 12,
+              color: "#000000",
+              lineHeight: 1.4,
+              fontFamily,
+            })}
+          </Text>
+        );
+      }
+      return null;
     }
     if (content.content) {
-      return renderInlineContent(content.content);
+      return renderInlineContent(content.content, blockProps);
     }
   }
 
@@ -784,28 +1313,69 @@ const renderBlock = (
     case "paragraph":
       return (
         <Text key={index} style={styles.paragraph}>
-          {renderInlineContent(block.content)}
+          {renderInlineContent(block.content, block.props)}
         </Text>
       );
 
     case "heading":
       const headingLevel = block.props?.level || 1;
-      const headingStyle =
-        headingLevel === 1
-          ? styles.heading1
-          : headingLevel === 2
-          ? styles.heading2
-          : styles.heading3;
-      return (
+      let headingStyle;
+
+      switch (headingLevel) {
+        case 1:
+          headingStyle = styles.heading1;
+          break;
+        case 2:
+          headingStyle = styles.heading2;
+          break;
+        case 3:
+          headingStyle = styles.heading3;
+          break;
+        case 4:
+          headingStyle = styles.heading4;
+          break;
+        case 5:
+          headingStyle = styles.heading5;
+          break;
+        case 6:
+          headingStyle = styles.heading6;
+          break;
+        default:
+          headingStyle = styles.heading3; // Fallback para niveles no esperados
+      }
+
+      // Usar renderHeadingInlineContent para preservar colores y estilos
+      const headingContent = renderHeadingInlineContent(
+        block.content,
+        headingStyle,
+        block.props
+      );
+
+      console.log(`📝 [PDF] Renderizando H${headingLevel} con estilos:`, {
+        fontSize: headingStyle.fontSize,
+        level: headingLevel,
+        hasContent: !!headingContent,
+      });
+
+      // renderHeadingInlineContent ya devuelve un Text component con los estilos aplicados
+      const headingElement = renderHeadingInlineContent(
+        block.content,
+        headingStyle,
+        block.props
+      );
+
+      return headingElement ? (
+        <View key={index}>{headingElement}</View>
+      ) : (
         <Text key={index} style={headingStyle}>
-          {renderInlineContent(block.content)}
+          ""
         </Text>
       );
 
     case "bulletListItem":
       return (
         <Text key={index} style={styles.listItem}>
-          • {renderInlineContent(block.content)}
+          • {renderInlineContent(block.content, block.props)}
         </Text>
       );
 
@@ -813,7 +1383,7 @@ const renderBlock = (
       const itemNumber = numberedListCounter ? numberedListCounter.value++ : 1;
       return (
         <Text key={index} style={styles.numberedListItem}>
-          {itemNumber}. {renderInlineContent(block.content)}
+          {itemNumber}. {renderInlineContent(block.content, block.props)}
         </Text>
       );
 
@@ -831,7 +1401,7 @@ const renderBlock = (
             {isChecked && <Text style={styles.checkmark}>✔</Text>}
           </View>
           <Text style={styles.checkboxText}>
-            {renderInlineContent(block.content)}
+            {renderInlineContent(block.content, block.props)}
           </Text>
         </View>
       );
@@ -873,7 +1443,7 @@ const renderBlock = (
             <Text style={styles.codeLanguage}>{language.toUpperCase()}</Text>
           )}
           <Text style={styles.codeText}>
-            {renderInlineContent(block.content)}
+            {renderInlineContent(block.content, block.props)}
           </Text>
         </View>
       );
@@ -882,7 +1452,7 @@ const renderBlock = (
       return (
         <View key={index} style={styles.quote}>
           <Text style={styles.quoteText}>
-            {renderInlineContent(block.content)}
+            {renderInlineContent(block.content, block.props)}
           </Text>
         </View>
       );
@@ -899,7 +1469,7 @@ const renderBlock = (
     default:
       return (
         <Text key={index} style={styles.paragraph}>
-          {renderInlineContent((block as any).content)}
+          {renderInlineContent((block as any).content, (block as any).props)}
         </Text>
       );
   }
@@ -943,6 +1513,70 @@ const renderTable = (
   );
 };
 
+/**
+ * Convierte una imagen a data URL para usar en PDF
+ */
+const convertImageToDataUrl = async (
+  imageUrl: string
+): Promise<string | null> => {
+  try {
+    console.log("🔄 [PDF] Convirtiendo imagen a data URL:", imageUrl);
+
+    // Obtener token válido para autenticación
+    const tokens = securityService.getValidTokens();
+    if (!tokens) {
+      console.error("❌ [PDF] No hay tokens válidos para obtener imagen");
+      return null;
+    }
+
+    // Configurar headers de autorización
+    const headers: HeadersInit = {
+      Authorization: `Bearer ${tokens.token}`,
+    };
+
+    console.log("🔑 [PDF] Usando token para fetch de imagen");
+
+    const response = await fetch(imageUrl, {
+      method: "GET",
+      headers: headers,
+    });
+
+    if (!response.ok) {
+      console.error("❌ [PDF] Error al obtener imagen:", {
+        status: response.status,
+        statusText: response.statusText,
+        url: imageUrl.substring(0, 100) + "...",
+      });
+      return null;
+    }
+
+    const blob = await response.blob();
+    console.log(
+      "✅ [PDF] Imagen obtenida exitosamente, convirtiendo a data URL"
+    );
+
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        console.log(
+          "✅ [PDF] Imagen convertida a data URL:",
+          result.substring(0, 50) + "..."
+        );
+        resolve(result);
+      };
+      reader.onerror = () => {
+        console.error("❌ [PDF] Error al convertir imagen a data URL");
+        resolve(null);
+      };
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error("❌ [PDF] Error al procesar imagen:", error);
+    return null;
+  }
+};
+
 const renderImage = (
   block: PDFContentBlock,
   index: number
@@ -954,17 +1588,92 @@ const renderImage = (
   const src = (block.props as any)?.url || "";
   const alt = (block.props as any)?.alt || "";
   const caption = (block.props as any)?.caption || "";
+  const isProcessed = (block.props as any)?.isProcessed || false;
 
   if (!src) {
     return <View key={index} />;
   }
 
-  // Verificar si es una imagen externa
-  const isExternalImage = src.startsWith("http") && !src.includes("localhost");
+  console.log("🖼️ [PDF] Renderizando imagen:", {
+    src: src.substring(0, 100) + (src.length > 100 ? "..." : ""),
+    isProcessed,
+    alt,
+    caption,
+  });
+
+  // Si la imagen fue procesada, usar directamente la URL
+  let finalImageSrc = src;
+
+  // Si no fue procesada y es imagen local, aplicar lógica de fallback
+  if (!isProcessed) {
+    const isLocalImage =
+      src.startsWith("/api/files/") ||
+      src.startsWith("/uploads/") ||
+      src.includes("localhost") ||
+      src.includes(window.location.hostname) ||
+      (!src.startsWith("http://") && !src.startsWith("https://"));
+
+    if (isLocalImage) {
+      // Construir URL completa si es necesario
+      if (!src.startsWith("http")) {
+        const baseUrl = window.location.origin;
+        finalImageSrc = `${baseUrl}${src}`;
+      }
+
+      // Agregar token de autenticación si no está presente
+      if (!finalImageSrc.includes("token=")) {
+        try {
+          const tokens = securityService.getValidTokens();
+          if (tokens && tokens.token) {
+            const separator = finalImageSrc.includes("?") ? "&" : "?";
+            finalImageSrc = `${finalImageSrc}${separator}token=${encodeURIComponent(
+              tokens.token
+            )}`;
+          }
+        } catch (error) {
+          console.warn("No se pudo agregar token a la imagen:", error);
+        }
+      }
+
+      // Agregar formato si no tiene extensión
+      if (!finalImageSrc.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|$|&)/i)) {
+        const separator = finalImageSrc.includes("?") ? "&" : "?";
+        finalImageSrc = `${finalImageSrc}${separator}format=jpg`;
+      }
+    }
+  }
+
+  console.log("🎯 [PDF] URL final de imagen:", {
+    original: src.substring(0, 50) + "...",
+    final: finalImageSrc.substring(0, 50) + "...",
+    isData: finalImageSrc.startsWith("data:"),
+    isProcessed,
+  });
+
+  // Detectar si es imagen local vs externa
+  const isLocalImage =
+    isProcessed ||
+    src.startsWith("data:") ||
+    finalImageSrc.startsWith("/api/files/") ||
+    finalImageSrc.startsWith("/uploads/") ||
+    finalImageSrc.includes("localhost") ||
+    finalImageSrc.includes(window.location.hostname) ||
+    (!finalImageSrc.startsWith("http://") &&
+      !finalImageSrc.startsWith("https://"));
 
   return (
     <View key={index} style={{ marginVertical: 12, alignItems: "center" }}>
-      {isExternalImage ? (
+      {isLocalImage ? (
+        // Para imágenes locales y data URLs, renderizar directamente
+        <Image
+          src={finalImageSrc}
+          style={{
+            maxWidth: 500,
+            maxHeight: 300,
+            objectFit: "contain",
+          }}
+        />
+      ) : (
         // Para imágenes externas, mostrar un placeholder debido a problemas de CORS
         <View
           style={{
@@ -997,16 +1706,6 @@ const renderImage = (
             {src.length > 60 ? `${src.substring(0, 60)}...` : src}
           </Text>
         </View>
-      ) : (
-        // Para imágenes locales, intentar renderizar
-        <Image
-          src={src}
-          style={{
-            maxWidth: 500,
-            maxHeight: 300,
-            objectFit: "contain",
-          }}
-        />
       )}
       {(alt || caption) && (
         <Text
@@ -1034,7 +1733,7 @@ const preprocessDocumentWithSyntaxHighlighting = async (
 ): Promise<KnowledgeDocumentPDF> => {
   try {
     console.log(
-      "🎨 [PDF] Iniciando preprocesamiento con syntax highlighting..."
+      "🎨 [PDF] Iniciando preprocesamiento con syntax highlighting e imágenes..."
     );
 
     if (!document.content || !Array.isArray(document.content)) {
@@ -1042,9 +1741,10 @@ const preprocessDocumentWithSyntaxHighlighting = async (
       return document;
     }
 
-    // Procesar todos los bloques de código
+    // Procesar todos los bloques de código e imágenes
     const processedContent = await Promise.all(
       document.content.map(async (block: any) => {
+        // Procesar bloques de código
         if (block.type === "codeBlock") {
           const language = block.props?.language || "";
           const codeContent = extractTextFromContent(block.content);
@@ -1068,6 +1768,92 @@ const preprocessDocumentWithSyntaxHighlighting = async (
                 error
               );
               return block;
+            }
+          }
+        }
+
+        // Procesar imágenes
+        if (block.type === "image") {
+          const src = (block.props as any)?.url || "";
+
+          if (src) {
+            console.log("🖼️ [PDF] Preprocesando imagen:", src);
+
+            // Detectar imágenes locales vs externas
+            const isLocalImage =
+              src.startsWith("/api/files/") ||
+              src.startsWith("/uploads/") ||
+              src.includes("localhost") ||
+              src.includes(window.location.hostname) ||
+              (!src.startsWith("http://") && !src.startsWith("https://"));
+
+            if (isLocalImage) {
+              // Construir URL completa con token para imágenes locales
+              let finalImageSrc = src;
+
+              if (!src.startsWith("http")) {
+                const baseUrl = window.location.origin;
+                finalImageSrc = `${baseUrl}${src}`;
+              }
+
+              // Agregar token de autenticación
+              if (!finalImageSrc.includes("token=")) {
+                try {
+                  const tokens = securityService.getValidTokens();
+                  if (tokens && tokens.token) {
+                    const separator = finalImageSrc.includes("?") ? "&" : "?";
+                    finalImageSrc = `${finalImageSrc}${separator}token=${encodeURIComponent(
+                      tokens.token
+                    )}`;
+                  }
+                } catch (error) {
+                  console.warn("No se pudo agregar token a la imagen:", error);
+                }
+              }
+
+              // Intentar convertir a data URL para mejor compatibilidad con react-pdf
+              try {
+                const dataUrl = await convertImageToDataUrl(finalImageSrc);
+                if (dataUrl) {
+                  console.log(
+                    "✅ [PDF] Imagen convertida a data URL exitosamente"
+                  );
+                  return {
+                    ...block,
+                    props: {
+                      ...block.props,
+                      url: dataUrl,
+                      originalUrl: src,
+                      isProcessed: true,
+                    },
+                  };
+                }
+              } catch (error) {
+                console.warn(
+                  "⚠️ [PDF] Error convirtiendo imagen a data URL:",
+                  error
+                );
+              }
+
+              // Si no se pudo convertir, usar URL original con mejoras
+              if (
+                !finalImageSrc.match(
+                  /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|$|&)/i
+                )
+              ) {
+                const separator = finalImageSrc.includes("?") ? "&" : "?";
+                finalImageSrc = `${finalImageSrc}${separator}format=jpg`;
+              }
+
+              return {
+                ...block,
+                props: {
+                  ...block.props,
+                  url: finalImageSrc,
+                  originalUrl: src,
+                  isProcessed: true,
+                },
+              };
             }
           }
         }

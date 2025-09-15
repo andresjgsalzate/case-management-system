@@ -241,12 +241,6 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
   // Procesar el contenido para añadir tokens a las imágenes existentes
   const processedContent = useMemo(() => {
     const result = processContentWithTokens(validContent);
-    console.log("🔍 [BlockNote] Contenido procesado:", {
-      original: content,
-      valid: validContent,
-      processed: result,
-      editable,
-    });
     return result;
   }, [
     validContent,
@@ -384,14 +378,6 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
         splitCells: true,
       },
     }),
-  });
-
-  // Debug del editor
-  console.log("🔧 [BlockNote] Editor creado:", {
-    editor,
-    editable,
-    hasContent: !!processedContent,
-    contentLength: processedContent?.length || 0,
   });
 
   // Configurar tema para BlockNote (funciona tanto en editable como read-only)

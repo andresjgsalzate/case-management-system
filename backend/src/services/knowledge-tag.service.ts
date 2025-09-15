@@ -278,24 +278,12 @@ export class KnowledgeTagService {
     tagNames: string[],
     userId?: string
   ): Promise<void> {
-    console.log(
-      `[assignTagsToDocument] Document: ${documentId}, Tags:`,
-      tagNames,
-      `User: ${userId}`
-    );
-
     // Eliminar relaciones existentes
     await this.relationRepository.delete({ documentId });
-    console.log(
-      `[assignTagsToDocument] Deleted existing relations for document ${documentId}`
-    );
 
     if (tagNames.length === 0) {
       // Actualizar tags_json en el documento
       await this.updateDocumentTagsJson(documentId, []);
-      console.log(
-        `[assignTagsToDocument] No tags provided, updated document with empty tags`
-      );
       return;
     }
 
@@ -304,9 +292,6 @@ export class KnowledgeTagService {
     for (const tagName of tagNames) {
       const tag = await this.findOrCreateTag(tagName.trim(), userId);
       tags.push(tag);
-      console.log(
-        `[assignTagsToDocument] Found/created tag: ${tag.tagName} (${tag.id})`
-      );
     }
 
     // Crear nuevas relaciones
@@ -318,17 +303,10 @@ export class KnowledgeTagService {
     );
 
     await this.relationRepository.save(relations);
-    console.log(
-      `[assignTagsToDocument] Created ${relations.length} new relations`
-    );
 
     // Actualizar tags_json en el documento
     const tagIds = tags.map((tag) => tag.id);
     await this.updateDocumentTagsJson(documentId, tagIds);
-    console.log(
-      `[assignTagsToDocument] Updated document tags_json with IDs:`,
-      tagIds
-    );
   }
 
   /**

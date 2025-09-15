@@ -282,12 +282,6 @@ export const useAuthStore = create<AuthState>()(
           const response = await authPermissionService.getUserPermissions();
           if (response.success && response.data) {
             const { permissions, modules } = response.data;
-            console.log("✅ loadUserPermissions - Permisos cargados:", {
-              permissionsCount: permissions.length,
-              modulesCount: modules.length,
-              firstPermissions: permissions.slice(0, 5).map((p) => p.name || p),
-              allPermissions: permissions.map((p) => p.name || p), // 🔍 Ver TODOS los permisos
-            });
             set({
               userPermissions: permissions,
               userModules: modules,
@@ -295,10 +289,6 @@ export const useAuthStore = create<AuthState>()(
               isLoadingPermissions: false,
             });
           } else {
-            console.log(
-              "❌ loadUserPermissions - Respuesta sin datos:",
-              response
-            );
             set({
               userPermissions: [],
               userModules: [],

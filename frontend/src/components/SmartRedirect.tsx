@@ -17,30 +17,22 @@ export const SmartRedirect: React.FC = () => {
 
     // CRUCIAL: Esperar a que termine la carga Y que el usuario esté autenticado
     if (isLoading) {
-      console.log("⏳ Cargando autenticación...");
       return;
     }
 
     // Si no está autenticado después de cargar, redirigir al login
     if (!isAuthenticated || !user) {
-      console.log("❌ Usuario no autenticado, redirigiendo al login");
       navigate("/login", { replace: true });
       return;
     }
 
     // NUEVO: Esperar a que los permisos se carguen también
     if (isLoadingPermissions || !permissionsLoaded) {
-      console.log("⏳ Esperando permisos para SmartRedirect...");
       return;
     }
 
     // Dar un pequeño delay para asegurar que los permisos se han cargado
     const timer = setTimeout(() => {
-      console.log("🔄 SmartRedirect ejecutándose...");
-      console.log("👤 Usuario:", user?.email, user?.roleName);
-      console.log("� Módulos permitidos:", allowedModules);
-      console.log("📊 Total módulos permitidos:", allowedModules.length);
-
       // Determinar la mejor ruta basándose en permisos específicos
       let targetRoute = "/unauthorized"; // Por defecto
 
@@ -138,7 +130,6 @@ export const SmartRedirect: React.FC = () => {
         }
       }
 
-      console.log(`🎯 Ruta objetivo determinada: ${targetRoute}`);
       navigate(targetRoute, { replace: true });
     }, 1000); // Aumentar a 1 segundo para dar más tiempo
 

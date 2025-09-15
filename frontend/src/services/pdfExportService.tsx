@@ -58,15 +58,9 @@ const containsEmoji = (text: string): boolean => {
 /**
  * Devuelve el nombre de fuente apropiado según el contenido
  */
-const getFontFamily = (text: string, baseFamily?: string): string => {
+const getFontFamily = (baseFamily?: string): string => {
   // Simplificado: usar siempre Helvetica que es confiable en React PDF
   const selectedFont = baseFamily || FONT_FAMILIES.default;
-  console.log("🔤 [PDF] Selección de fuente:", {
-    textSample: text.substring(0, 30) + "...",
-    hasEmoji: containsEmoji(text),
-    selectedFont,
-    textLength: text.length,
-  });
   return selectedFont;
 };
 /**
@@ -794,7 +788,7 @@ const renderHeadingInlineContent = (
             });
           }
           // Determinar la fuente apropiada para el texto del heading
-          const fontFamily = getFontFamily(text, baseStyle.fontFamily);
+          const fontFamily = getFontFamily(baseStyle.fontFamily);
           combinedStyles.fontFamily = fontFamily;
           console.log("🔤 [PDF] Fuente para heading:", {
             text: text.substring(0, 20) + "...",
@@ -818,7 +812,7 @@ const renderHeadingInlineContent = (
         typeof item === "string" ? item : item?.props?.children || ""
       )
       .join("");
-    const fontFamily = getFontFamily(allText, baseStyle.fontFamily);
+    const fontFamily = getFontFamily(baseStyle.fontFamily);
     const finalStyle = {
       ...baseStyle,
       fontFamily: fontFamily,

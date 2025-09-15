@@ -19,10 +19,7 @@ export const useAllDashboardMetrics = () => {
           hasPermission("admin.full");
         const canReadTimeMetrics =
           hasPermission("metrics.time.read.all") || hasPermission("admin.full");
-        console.log("🔐 Permisos de métricas:", {
-          canReadUserMetrics,
-          canReadTimeMetrics,
-        });
+
         // Cargar métricas básicas que siempre están disponibles
         const [
           dashboardStats,
@@ -58,9 +55,7 @@ export const useAllDashboardMetrics = () => {
             );
           }
         }
-        console.log(
-          "✅ Métricas del dashboard cargadas según permisos del usuario"
-        );
+
         return {
           dashboardStats,
           timeMetrics,

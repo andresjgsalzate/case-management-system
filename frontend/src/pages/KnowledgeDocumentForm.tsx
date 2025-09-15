@@ -193,10 +193,6 @@ const KnowledgeDocumentForm: React.FC = () => {
 
       // Cargar casos asociados
       if (document.associatedCases && document.associatedCases.length > 0) {
-        console.log(
-          "Cargando casos asociados del documento:",
-          document.associatedCases
-        );
         setAssociatedCases(document.associatedCases);
       } else {
         setAssociatedCases([]); // Limpiar casos si no hay ninguno
@@ -300,14 +296,7 @@ const KnowledgeDocumentForm: React.FC = () => {
 
   const getAvailableCases = () => {
     if (!casesData) return [];
-    console.log(
-      "Todos los casos:",
-      casesData.map((c) => ({
-        id: c.id,
-        numeroCaso: c.numeroCaso,
-        estado: c.estado,
-      }))
-    );
+
     return casesData.filter(
       (caso: Case) =>
         !associatedCases.includes(caso.id) &&

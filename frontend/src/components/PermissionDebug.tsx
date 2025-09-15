@@ -28,7 +28,6 @@ export const PermissionDebug: React.FC = () => {
       !isLoadingPermissions &&
       !loadAttempted.current
     ) {
-      console.log("🚀 PermissionDebug - Iniciando carga de permisos...");
       loadAttempted.current = true;
       lastError.current = null;
 
@@ -183,7 +182,6 @@ export const PermissionDebug: React.FC = () => {
           {lastError.current && lastError.current.includes("401") && (
             <button
               onClick={() => {
-                console.log("🚪 Logout manual desde debug");
                 logout();
               }}
               className="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700"

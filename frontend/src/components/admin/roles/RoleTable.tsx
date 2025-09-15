@@ -52,9 +52,8 @@ export default function RoleTable({
     setCloneModal({ isOpen: true, role });
   };
 
-  const handleToggleStatus = (role: Role) => {
+  const handleToggleStatus = (_role: Role) => {
     // TODO: Implementar función de toggle status
-    console.log(`Toggle status for role: ${role.name}`);
   };
 
   const closeModals = () => {

@@ -297,7 +297,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           onClose={() => setShowProfileModal(false)}
           onSuccess={() => {
             // Opcional: mostrar un mensaje de éxito
-            console.log("Perfil actualizado exitosamente");
           }}
         />
       )}

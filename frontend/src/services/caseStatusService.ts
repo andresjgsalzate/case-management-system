@@ -1,4 +1,5 @@
 import type { ApiResponse } from "../types/api";
+import { securityService } from "./security.service";
 
 export interface CaseStatus {
   id: number;
@@ -38,7 +39,8 @@ export class CaseStatusService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    const token = localStorage.getItem("token");
+    const tokens = securityService.getValidTokens();
+    const token = tokens?.token;
     const config: RequestInit = {
       ...options,
       headers: {

@@ -87,8 +87,6 @@ const DocumentHeader: React.FC<{ document: KnowledgeDocumentPDF }> = ({
           document={document}
           variant="primary"
           size="md"
-          onExportStart={() => console.log("Iniciando exportación...")}
-          onExportSuccess={() => console.log("PDF exportado correctamente")}
           onExportError={(error) => console.error("Error al exportar:", error)}
         />
       </div>
@@ -170,7 +168,6 @@ const CustomPDFExportComponent: React.FC<{
 
     if (result.success) {
       // Lógica personalizada después de exportar exitosamente
-      console.log("PDF exportado correctamente!");
       // Podríamos mostrar un toast, actualizar analytics, etc.
     }
   };
@@ -341,8 +338,8 @@ const exampleDocument: KnowledgeDocumentPDF = {
       props: { language: "javascript" },
       content: [
         {
-          text: 'console.log("Hola mundo");\\nconst config = { api: "localhost:3000" };',
           type: "text",
+          text: "",
           styles: {},
         },
       ],

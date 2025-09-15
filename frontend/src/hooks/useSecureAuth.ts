@@ -26,9 +26,7 @@ export const useSecureAuth = () => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        console.log("🔧 Inicializando autenticación desde SecurityService...");
         await initializeFromSecurityService();
-        console.log("✅ Autenticación inicializada correctamente");
       } catch (error) {
         console.warn("⚠️ Error inicializando autenticación:", error);
       }
@@ -52,7 +50,6 @@ export const useSecureAuth = () => {
 
     if (!isAuthenticated && hasValidSession) {
       // Hay una sesión válida pero el store no está actualizado
-      console.log("🔄 Sesión válida encontrada - Sincronizando estado");
       return true;
     }
 
@@ -141,8 +138,8 @@ export const useSecureAuth = () => {
       logout();
     };
 
-    const handleTokenRefreshed = (newToken: string) => {
-      console.log("🔄 Token actualizado:", newToken.substring(0, 10) + "...");
+    const handleTokenRefreshed = (_newToken: string) => {
+      // TODO: Manejar token actualizado
     };
 
     securityService.onSessionExpire(handleSessionExpired);

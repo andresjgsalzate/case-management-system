@@ -17,6 +17,7 @@ import {
   DocumentStats,
 } from "../types/knowledge";
 import { config } from "../config/config";
+import { securityService } from "./security.service";
 
 const API_BASE_URL = config.api.baseUrl;
 
@@ -30,9 +31,9 @@ const api = axios.create({
 
 // Add auth token to requests
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const tokens = securityService.getValidTokens();
+  if (tokens?.token) {
+    config.headers.Authorization = `Bearer ${tokens.token}`;
   }
   return config;
 });

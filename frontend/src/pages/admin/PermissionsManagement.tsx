@@ -124,7 +124,7 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
     }
   };
 
-  const handleDeletePermission = async (id: string) => {
+  const handleDeletePermission = async (_id: string) => {
     if (confirm("¿Estás seguro de que deseas eliminar este permiso?")) {
       try {
         // TODO: Implementar deletePermission en el servicio
@@ -132,7 +132,6 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
         await authPermissionService.deletePermission(id);
         setPermissions(permissions.filter((p) => p.id !== id));
         */
-        console.log("Eliminando permiso:", id);
         success("Funcionalidad en desarrollo - Permiso no eliminado");
       } catch (error) {
         console.error("Error al eliminar permiso:", error);

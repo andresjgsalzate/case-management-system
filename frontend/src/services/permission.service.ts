@@ -36,14 +36,18 @@ interface RolePermissionsResponse {
   permissionsByModule: Record<string, Permission[]>;
 }
 
-const API_BASE_URL = "http://localhost:3000/api";
+import { config } from "../config/config";
+import { securityService } from "./security.service";
+
+const API_BASE_URL = config.api.baseUrl;
 
 class PermissionService {
   private baseUrl = API_BASE_URL;
 
-  // Obtener el token del localStorage
+  // Obtener el token del SecurityService
   private getAuthToken(): string | null {
-    return localStorage.getItem("token");
+    const tokens = securityService.getValidTokens();
+    return tokens?.token || null;
   }
 
   // Obtener headers de autenticación

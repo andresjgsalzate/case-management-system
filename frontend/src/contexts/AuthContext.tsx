@@ -23,8 +23,10 @@ interface AuthContextType {
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   clearError: () => void;
-  hasPermission: (permission: string) => boolean;
-  canAccessModule: (module: string) => boolean;
+  hasPermission: (permission: string) => boolean; // Deprecado
+  canAccessModule: (module: string) => boolean; // Deprecado
+  hasPermissionAsync: (permission: string) => Promise<boolean>; // Nueva función dinámica
+  canAccessModuleAsync: (module: string) => Promise<boolean>; // Nueva función dinámica
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,6 +57,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     clearError,
     hasPermission,
     canAccessModule,
+    hasPermissionAsync,
+    canAccessModuleAsync,
     refreshTokens,
   } = useAuthStore();
 
@@ -102,6 +106,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     clearError,
     hasPermission,
     canAccessModule,
+    hasPermissionAsync,
+    canAccessModuleAsync,
   };
 
   return (

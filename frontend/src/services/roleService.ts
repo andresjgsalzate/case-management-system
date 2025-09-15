@@ -9,6 +9,7 @@ import {
   RoleStats,
   CloneRoleRequest,
 } from "../types/role";
+import { securityService } from "./security.service";
 
 class RoleService {
   private baseUrl = "/api/roles";
@@ -17,7 +18,8 @@ class RoleService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const token = localStorage.getItem("token");
+    const tokens = securityService.getValidTokens();
+    const token = tokens?.token;
 
     const config: RequestInit = {
       ...options,

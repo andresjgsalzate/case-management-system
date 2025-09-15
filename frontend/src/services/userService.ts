@@ -9,6 +9,7 @@ import {
   Role,
 } from "../types/user";
 import { config } from "../config/config";
+import { securityService } from "./security.service";
 
 const API_BASE_URL = config.api.baseUrl;
 
@@ -20,7 +21,8 @@ interface ApiResponse<T> {
 
 class UserService {
   private getToken(): string | null {
-    return localStorage.getItem("token");
+    const tokens = securityService.getValidTokens();
+    return tokens?.token || null;
   }
 
   private async makeRequest<T>(

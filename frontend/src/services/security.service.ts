@@ -129,8 +129,6 @@ class SecurityService {
 
     this.startInactivityTimer();
     this.startRefreshTimer(expiresIn);
-
-    console.log("🔐 Tokens almacenados de forma segura");
   }
 
   /**
@@ -139,11 +137,15 @@ class SecurityService {
   public getValidTokens(): { token: string; refreshToken: string } | null {
     try {
       const encryptedData = sessionStorage.getItem(SecurityService.SESSION_KEY);
-      if (!encryptedData) return null;
+
+      if (!encryptedData) {
+        return null;
+      }
 
       const secureData: SecureTokenData = JSON.parse(
         this.decrypt(encryptedData)
       );
+
       const now = Date.now();
 
       // Verificar expiración
@@ -160,7 +162,9 @@ class SecurityService {
         !storedFingerprint ||
         this.decrypt(storedFingerprint) !== currentFingerprint
       ) {
-        console.warn("🚨 Token comprometido: Huella digital no coincide");
+        console.warn(
+          "🚨 Token comprometido: Huella digital no coincide en localStorage"
+        );
         this.clearSession();
         return null;
       }
@@ -173,6 +177,7 @@ class SecurityService {
 
       // Verificar inactividad
       const timeSinceActivity = now - secureData.lastActivity;
+
       if (timeSinceActivity > SecurityService.INACTIVITY_TIMEOUT) {
         console.warn("🚨 Sesión expirada por inactividad");
         this.clearSession();
@@ -187,7 +192,7 @@ class SecurityService {
         refreshToken: secureData.refreshToken,
       };
     } catch (error) {
-      console.error("Error al recuperar tokens:", error);
+      console.error("❌ Error al recuperar tokens:", error);
       this.clearSession();
       return null;
     }
@@ -218,8 +223,6 @@ class SecurityService {
     if (this.onTokenRefreshed) {
       this.onTokenRefreshed(newToken);
     }
-
-    console.log("🔄 Tokens actualizados");
   }
 
   /**
@@ -231,8 +234,6 @@ class SecurityService {
     localStorage.removeItem("__fp__");
 
     this.stopTimers();
-
-    console.log("🧹 Sesión limpiada");
   }
 
   /**
@@ -413,8 +414,6 @@ class SecurityService {
     if (!tokens) return;
 
     try {
-      console.log("🔄 Intentando refrescar token...");
-
       // Importar dinámicamente para evitar dependencias circulares
       const { authService } = await import("./auth.service");
 
@@ -427,8 +426,6 @@ class SecurityService {
 
         // Programar el siguiente refresh
         this.startRefreshTimer(3600); // 1 hora por defecto
-
-        console.log("✅ Token refrescado exitosamente");
       } else {
         throw new Error("Refresh token response was not successful");
       }

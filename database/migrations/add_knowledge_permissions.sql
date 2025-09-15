@@ -29,6 +29,14 @@ VALUES
 ('knowledge', 'archive', 'team', 'knowledge.archive.team', 'Archivar documentos del equipo', NOW(), NOW()),
 ('knowledge', 'archive', 'all', 'knowledge.archive.all', 'Archivar cualquier documento de conocimiento', NOW(), NOW()),
 
+('knowledge', 'export', 'own', 'knowledge.export.own', 'Exportar documentos de conocimiento propios', NOW(), NOW()),
+('knowledge', 'export', 'team', 'knowledge.export.team', 'Exportar documentos del equipo', NOW(), NOW()),
+('knowledge', 'export', 'all', 'knowledge.export.all', 'Exportar cualquier documento de conocimiento', NOW(), NOW()),
+
+('knowledge', 'duplicate', 'own', 'knowledge.duplicate.own', 'Duplicar documentos de conocimiento propios', NOW(), NOW()),
+('knowledge', 'duplicate', 'team', 'knowledge.duplicate.team', 'Duplicar documentos del equipo', NOW(), NOW()),
+('knowledge', 'duplicate', 'all', 'knowledge.duplicate.all', 'Duplicar cualquier documento de conocimiento', NOW(), NOW()),
+
 -- Permisos para tipos de documentos
 ('knowledge_types', 'read', 'all', 'knowledge_types.read.all', 'Ver tipos de documentos de conocimiento', NOW(), NOW()),
 ('knowledge_types', 'create', 'all', 'knowledge_types.create.all', 'Crear tipos de documentos de conocimiento', NOW(), NOW()),

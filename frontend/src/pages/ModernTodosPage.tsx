@@ -92,7 +92,6 @@ const ModernTodosPage: React.FC = () => {
 
   const generateReport = () => {
     // TODO: Implement report generation
-    console.log("Generating TODO report...");
   };
 
   if (loading) {

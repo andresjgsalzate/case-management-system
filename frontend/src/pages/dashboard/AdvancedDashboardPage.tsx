@@ -1,18 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { ActionIcon } from "../../components/ui/ActionIcons";
-import {
-  useTimeMetrics,
-  useUserTimeMetrics,
-  useCaseTimeMetrics,
-  useStatusMetrics,
-  useApplicationTimeMetrics,
-  useTodoMetrics,
-  useDashboardStats,
-} from "../../hooks/useDashboardMetrics";
+import { useAllDashboardMetrics } from "../../hooks/useDashboardMetrics";
 import { useCases } from "../../hooks/useCases";
 import { Button } from "../../components/ui/Button";
 import { PageWrapper } from "../../components/layout/PageWrapper";
+import { ApplicationTimeMetrics } from "../../services/dashboardMetrics.service";
 
 const LoadingSpinner: React.FC<{ size?: "sm" | "lg"; text?: string }> = ({
   size = "sm",
@@ -43,29 +36,25 @@ const ErrorMessage: React.FC<{ message: string; onRetry?: () => void }> = ({
 );
 
 export const AdvancedDashboardPage: React.FC = () => {
-  // Hooks para obtener datos
+  // Hook optimizado para cargar todas las métricas en paralelo
   const {
-    data: dashboardStats,
+    data: allMetrics,
     isLoading,
     error,
     refetch,
-  } = useDashboardStats();
+  } = useAllDashboardMetrics();
 
   // Hook para obtener casos
   const { data: cases } = useCases();
 
-  // Hooks para métricas de tiempo
-  const { data: timeMetrics, isLoading: timeLoading } = useTimeMetrics();
-  const { data: userTimeMetrics, isLoading: userTimeLoading } =
-    useUserTimeMetrics();
-  const { data: caseTimeMetrics, isLoading: caseTimeLoading } =
-    useCaseTimeMetrics();
-  const { data: statusMetrics, isLoading: statusLoading } = useStatusMetrics();
-  const { data: appTimeMetrics, isLoading: appTimeLoading } =
-    useApplicationTimeMetrics();
-
-  // Métricas de TODOs
-  const { data: todoMetrics, isLoading: todoLoading } = useTodoMetrics();
+  // Extraer métricas individuales del resultado optimizado
+  const dashboardStats = allMetrics?.dashboardStats;
+  const timeMetrics = allMetrics?.timeMetrics;
+  const userTimeMetrics = allMetrics?.userTimeMetrics;
+  const caseTimeMetrics = allMetrics?.caseTimeMetrics;
+  const statusMetrics = allMetrics?.statusMetrics;
+  const appTimeMetrics = allMetrics?.applicationTimeMetrics;
+  const todoMetrics = allMetrics?.todoMetrics;
 
   // Calcular estadísticas desde los casos reales - usar useMemo para estabilizar
   const stats = React.useMemo(() => {
@@ -222,14 +211,14 @@ export const AdvancedDashboardPage: React.FC = () => {
                   Tiempo Total (Este Mes)
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {timeLoading
+                  {isLoading
                     ? "..."
                     : timeMetrics
                     ? `${timeMetrics.totalHours.toFixed(1)}h`
                     : "0h"}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {timeLoading
+                  {isLoading
                     ? "..."
                     : timeMetrics
                     ? `${timeMetrics.totalTimeMinutes} min`
@@ -249,14 +238,14 @@ export const AdvancedDashboardPage: React.FC = () => {
                   Tiempo por Casos (Este Mes)
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {timeLoading
+                  {isLoading
                     ? "..."
                     : timeMetrics
                     ? `${timeMetrics.casesTimeHours.toFixed(1)}h`
                     : "0h"}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {timeLoading
+                  {isLoading
                     ? "..."
                     : timeMetrics
                     ? `${Math.round(timeMetrics.casesTimeMinutes)} min`
@@ -276,14 +265,14 @@ export const AdvancedDashboardPage: React.FC = () => {
                   Tiempo por TODOs (Este Mes)
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {timeLoading
+                  {isLoading
                     ? "..."
                     : timeMetrics
                     ? `${timeMetrics.todosTimeHours.toFixed(1)}h`
                     : "0h"}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {timeLoading
+                  {isLoading
                     ? "..."
                     : timeMetrics
                     ? `${timeMetrics.todosTimeMinutes} min`
@@ -303,7 +292,7 @@ export const AdvancedDashboardPage: React.FC = () => {
                   Aplicaciones (Este Mes)
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {appTimeLoading
+                  {isLoading
                     ? "..."
                     : appTimeMetrics
                     ? appTimeMetrics.length
@@ -331,7 +320,7 @@ export const AdvancedDashboardPage: React.FC = () => {
                   Total TODOs
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {todoLoading ? "..." : todoMetrics?.totalTodos || 0}
+                  {isLoading ? "..." : todoMetrics?.totalTodos || 0}
                 </p>
               </div>
             </div>
@@ -347,7 +336,7 @@ export const AdvancedDashboardPage: React.FC = () => {
                   En Progreso
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {todoLoading ? "..." : todoMetrics?.inProgressTodos || 0}
+                  {isLoading ? "..." : todoMetrics?.inProgressTodos || 0}
                 </p>
               </div>
             </div>
@@ -363,7 +352,7 @@ export const AdvancedDashboardPage: React.FC = () => {
                   Completados
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {todoLoading ? "..." : todoMetrics?.completedTodos || 0}
+                  {isLoading ? "..." : todoMetrics?.completedTodos || 0}
                 </p>
               </div>
             </div>
@@ -379,7 +368,7 @@ export const AdvancedDashboardPage: React.FC = () => {
                   Vencidos
                 </p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {todoLoading ? "..." : todoMetrics?.overdueTodos || 0}
+                  {isLoading ? "..." : todoMetrics?.overdueTodos || 0}
                 </p>
               </div>
             </div>
@@ -393,7 +382,7 @@ export const AdvancedDashboardPage: React.FC = () => {
           Tiempo por Usuario
         </h2>
         <div className="table-card">
-          {userTimeLoading ? (
+          {isLoading ? (
             <div className="p-6 text-center">
               <LoadingSpinner
                 size="sm"
@@ -474,7 +463,7 @@ export const AdvancedDashboardPage: React.FC = () => {
           Métricas por Estado
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-          {statusLoading ? (
+          {isLoading ? (
             <div className="col-span-full text-center py-8">
               <LoadingSpinner
                 size="sm"
@@ -554,7 +543,7 @@ export const AdvancedDashboardPage: React.FC = () => {
           Tiempo por Aplicación
         </h2>
         <div className="table-card">
-          {appTimeLoading ? (
+          {isLoading ? (
             <div className="p-6 text-center">
               <LoadingSpinner
                 size="sm"
@@ -582,7 +571,7 @@ export const AdvancedDashboardPage: React.FC = () => {
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {appTimeMetrics && appTimeMetrics.length > 0 ? (
-                    appTimeMetrics.map((app) => (
+                    appTimeMetrics.map((app: ApplicationTimeMetrics) => (
                       <tr
                         key={app.applicationId}
                         className="hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -634,7 +623,7 @@ export const AdvancedDashboardPage: React.FC = () => {
           Casos con Mayor Tiempo Invertido
         </h2>
         <div className="table-card">
-          {caseTimeLoading ? (
+          {isLoading ? (
             <div className="p-6 text-center">
               <LoadingSpinner size="sm" text="Cargando métricas por caso..." />
             </div>

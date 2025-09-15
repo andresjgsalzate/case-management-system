@@ -1,12 +1,13 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { Layout } from "./components/layout/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { SmartRedirect } from "./components/SmartRedirect";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
-import { AdvancedDashboardPage } from "./pages/dashboard/AdvancedDashboardPage";
+import { DashboardContainer } from "./pages/dashboard/DashboardContainer";
 import { CasesPage, NewCasePage, CaseDetailPage } from "./pages/cases";
 import { CaseControlPage } from "./pages/cases/CaseControlPage";
 import { DispositionsPage } from "./pages/dispositions/DispositionsPage";
@@ -57,7 +58,9 @@ function App() {
               path="/"
               element={
                 <ProtectedRoute>
-                  <Navigate to="/dashboard" replace />
+                  <Layout>
+                    <SmartRedirect />
+                  </Layout>
                 </ProtectedRoute>
               }
             />
@@ -65,9 +68,9 @@ function App() {
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute requiredPermission="metrics.time.read.own">
                   <Layout>
-                    <AdvancedDashboardPage />
+                    <DashboardContainer />
                   </Layout>
                 </ProtectedRoute>
               }

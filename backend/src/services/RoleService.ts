@@ -3,6 +3,7 @@ import { AppDataSource } from "../config/database";
 import { Role } from "../entities/Role";
 import { RolePermission } from "../entities/RolePermission";
 import { Permission } from "../entities/Permission";
+import { UserProfile } from "../entities/UserProfile";
 
 export interface CreateRoleDto {
   name: string;
@@ -21,11 +22,13 @@ export class RoleService {
   private roleRepository: Repository<Role>;
   private rolePermissionRepository: Repository<RolePermission>;
   private permissionRepository: Repository<Permission>;
+  private userProfileRepository: Repository<UserProfile>;
 
   constructor() {
     this.roleRepository = AppDataSource.getRepository(Role);
     this.rolePermissionRepository = AppDataSource.getRepository(RolePermission);
     this.permissionRepository = AppDataSource.getRepository(Permission);
+    this.userProfileRepository = AppDataSource.getRepository(UserProfile);
   }
 
   /**
@@ -203,7 +206,7 @@ export class RoleService {
   }
 
   /**
-   * Eliminar un rol (soft delete)
+   * Eliminar un rol (eliminación real si no tiene usuarios, soft delete si tiene usuarios)
    */
   async deleteRole(id: string): Promise<void> {
     const role = await this.roleRepository.findOne({ where: { id } });
@@ -218,11 +221,28 @@ export class RoleService {
       throw new Error("No se puede eliminar el rol del sistema");
     }
 
-    // Soft delete - marcar como inactivo
-    await this.roleRepository.update(id, { isActive: false });
+    // Verificar la información del rol para decidir el tipo de eliminación
+    const deleteInfo = await this.canDeleteRole(id);
 
-    // Eliminar todas las asignaciones de permisos
-    await this.rolePermissionRepository.delete({ roleId: id });
+    if (!deleteInfo.canDelete) {
+      throw new Error(deleteInfo.reason || "No se puede eliminar el rol");
+    }
+
+    if (deleteInfo.hasUsers) {
+      // Soft delete - marcar como inactivo si tiene usuarios asociados
+      await this.roleRepository.update(id, { isActive: false });
+
+      // Mantener los permisos para posible restauración futura
+      // No eliminar las asignaciones de permisos en soft delete
+    } else {
+      // Eliminación real si no tiene usuarios asociados
+
+      // Primero eliminar todas las asignaciones de permisos
+      await this.rolePermissionRepository.delete({ roleId: id });
+
+      // Luego eliminar el rol completamente
+      await this.roleRepository.delete(id);
+    }
   }
 
   /**
@@ -358,7 +378,12 @@ export class RoleService {
    */
   async canDeleteRole(
     roleId: string
-  ): Promise<{ canDelete: boolean; reason?: string }> {
+  ): Promise<{
+    canDelete: boolean;
+    reason?: string;
+    hasUsers?: boolean;
+    hasPermissions?: boolean;
+  }> {
     const role = await this.roleRepository.findOne({ where: { id: roleId } });
 
     if (!role) {
@@ -374,9 +399,23 @@ export class RoleService {
       };
     }
 
-    // TODO: Verificar si hay usuarios asignados a este rol
-    // Esto se implementará cuando tengamos la entidad User
+    // Verificar si hay usuarios asignados a este rol
+    const userCount = await this.userProfileRepository.count({
+      where: { roleId },
+    });
 
-    return { canDelete: true };
+    // Verificar si hay permisos asignados a este rol
+    const permissionCount = await this.rolePermissionRepository.count({
+      where: { roleId },
+    });
+
+    const hasUsers = userCount > 0;
+    const hasPermissions = permissionCount > 0;
+
+    return {
+      canDelete: true,
+      hasUsers,
+      hasPermissions,
+    };
   }
 }

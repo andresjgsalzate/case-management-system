@@ -87,7 +87,7 @@ router.get(
 // GET /api/knowledge/tags - Obtener todas las etiquetas
 router.get(
   "/knowledge/tags",
-  requireAnyPermission(["tags.read", "tags.manage"]),
+  requireAnyPermission(["tags.read.all", "tags.manage.all"]),
   async (req: Request, res: Response) => {
     try {
       const tags = await knowledgeTagService.getAllTagsWithUsage();
@@ -101,7 +101,7 @@ router.get(
 // GET /api/knowledge/tags/popular - Obtener etiquetas populares
 router.get(
   "/knowledge/tags/popular",
-  requireAnyPermission(["tags.read", "tags.manage"]),
+  requireAnyPermission(["tags.read.all", "tags.manage.all"]),
   async (req: Request, res: Response) => {
     try {
       const { limit } = req.query;
@@ -121,10 +121,10 @@ router.get(
   }
 );
 
-// GET /api/knowledge/tags/details/:id - Obtener información detallada de una etiqueta
+// GET /api/knowledge/tags/details/:id - Obtener detalles de una etiqueta específica
 router.get(
   "/knowledge/tags/details/:id",
-  requireAnyPermission(["tags.read", "tags.manage"]),
+  requireAnyPermission(["tags.read.all", "tags.manage.all"]),
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -153,7 +153,7 @@ router.get(
 // GET /api/knowledge/tags/:id - Obtener etiqueta por ID con uso real
 router.get(
   "/knowledge/tags/:id",
-  requireAnyPermission(["tags.read", "tags.manage"]),
+  requireAnyPermission(["tags.read.all", "tags.manage.all"]),
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -180,7 +180,7 @@ router.get(
 // GET /api/knowledge/tags/:tagName - Obtener etiqueta por nombre
 router.get(
   "/knowledge/tags/:tagName",
-  requireAnyPermission(["tags.read", "tags.manage"]),
+  requireAnyPermission(["tags.read.all", "tags.manage.all"]),
   async (req: Request, res: Response) => {
     try {
       const { tagName } = req.params;

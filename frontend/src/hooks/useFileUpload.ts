@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { config } from "../config/config";
+import { securityService } from "../services/security.service";
 
 // Configure axios for file uploads
 const api = axios.create({
@@ -10,14 +11,25 @@ const api = axios.create({
   },
 });
 
-// Add auth token to requests
+// Add auth token to requests usando securityService
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const tokens = securityService.getValidTokens();
+  if (tokens?.token) {
+    config.headers.Authorization = `Bearer ${tokens.token}`;
   }
   return config;
 });
+
+// Interceptor de respuesta para manejo de errores
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      console.warn("🔐 Token expirado o inválido en useFileUpload");
+    }
+    return Promise.reject(error);
+  }
+);
 
 export interface FileAttachment {
   id: string;
@@ -68,11 +80,8 @@ export const useUploadFiles = () => {
             "Content-Type": "multipart/form-data",
           },
           // Opcional: callback para progreso de carga
-          onUploadProgress: (progressEvent: any) => {
-            const percentCompleted = Math.round(
-              (progressEvent.loaded * 100) / (progressEvent.total || 1)
-            );
-            console.log(`Upload progress: ${percentCompleted}%`);
+          onUploadProgress: (_progressEvent: any) => {
+            // TODO: Implementar indicador de progreso
           },
         }
       );
@@ -85,7 +94,6 @@ export const useUploadFiles = () => {
         queryKey: ["attachments", variables.documentId],
       });
 
-      console.log("Archivos subidos:", data.uploaded);
       if (data.errors.length > 0) {
         console.warn("Errores en algunos archivos:", data.errors);
       }

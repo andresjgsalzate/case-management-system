@@ -28,7 +28,6 @@ export const CaseDetailPage = () => {
 
     if (confirmed) {
       try {
-        console.log("Eliminando caso:", caso?.id);
         success("Caso eliminado exitosamente");
         navigate("/cases");
       } catch (error) {

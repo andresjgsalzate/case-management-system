@@ -42,7 +42,6 @@ export const SessionTimeoutWarning: React.FC<SessionTimeoutWarningProps> = ({
   const handleExtendSession = () => {
     // En una implementación real, esto haría una llamada al backend
     // para extender la sesión o refrescar el token
-    console.log("🔄 Extending session...");
 
     // Por ahora, simplemente ocultamos el warning
     setShowWarning(false);

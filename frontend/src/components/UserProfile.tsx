@@ -117,7 +117,6 @@ export const UserProfile: React.FC = () => {
               onClick={() => {
                 setIsMenuOpen(false);
                 // TODO: Implementar perfil de usuario
-                console.log("Abrir perfil de usuario");
               }}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             >
@@ -141,7 +140,6 @@ export const UserProfile: React.FC = () => {
               onClick={() => {
                 setIsMenuOpen(false);
                 // TODO: Implementar configuración
-                console.log("Abrir configuración");
               }}
               className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
             >

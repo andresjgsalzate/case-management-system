@@ -9,6 +9,7 @@ import {
   useCheckUserFeedback,
   knowledgeKeys,
 } from "../hooks/useKnowledge";
+import { useFeaturePermissions } from "../hooks/usePermissions";
 import { useCases } from "../hooks/useCases";
 import { Case } from "../services/api";
 import { useQueryClient } from "@tanstack/react-query";
@@ -25,6 +26,9 @@ const KnowledgeDocumentView: React.FC = () => {
   // Modal states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
+
+  // Permisos y autenticación
+  const permissions = useFeaturePermissions();
 
   // Notificaciones
   const { success, error: showError } = useToast();
@@ -351,78 +355,87 @@ const KnowledgeDocumentView: React.FC = () => {
                 <ActionIcon action="favorite" size="sm" color="yellow" />
               </button>
 
-              <button
-                onClick={handleDuplicate}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
-                title="Duplicar documento"
-              >
-                <ActionIcon action="duplicate" size="sm" color="gray" />
-              </button>
-
-              {/* Botón Exportar PDF */}
-              <button
-                onClick={() => {
-                  const pdfDocument = convertToPDFFormat(document);
-                  // Aquí llamaremos directamente al servicio de PDF
-                  import("../services/pdfExportService").then(
-                    ({ downloadPDF }) => {
-                      downloadPDF(pdfDocument, {
-                        fileName: `${document.title || "documento"}.pdf`,
-                      });
-                    }
-                  );
-                }}
-                className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100"
-                title="Exportar a PDF"
-              >
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-              </button>
-
-              <Link
-                to={`/knowledge/${document.id}/edit`}
-                className="p-2 text-gray-400 hover:text-blue-600 rounded-md hover:bg-gray-100"
-                title="Editar documento"
-              >
-                <ActionIcon action="edit" size="sm" color="blue" />
-              </Link>
-
-              {!document.isArchived ? (
+              {permissions.canDuplicateKnowledge && (
                 <button
-                  onClick={handleArchive}
-                  className="p-2 text-gray-400 hover:text-orange-600 rounded-md hover:bg-gray-100"
-                  title="Archivar documento"
+                  onClick={handleDuplicate}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
+                  title="Duplicar documento"
                 >
-                  <ActionIcon action="archive" size="sm" color="orange" />
-                </button>
-              ) : (
-                <button
-                  onClick={handleUnarchive}
-                  className="p-2 text-gray-400 hover:text-green-600 rounded-md hover:bg-gray-100"
-                  title="Restaurar documento"
-                >
-                  <ActionIcon action="archive" size="sm" color="green" />
+                  <ActionIcon action="duplicate" size="sm" color="gray" />
                 </button>
               )}
 
-              <button
-                onClick={handleDelete}
-                className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20"
-                title="Eliminar documento permanentemente"
-              >
-                <ActionIcon action="delete" size="sm" color="red" />
-              </button>
+              {/* Botón Exportar PDF */}
+              {permissions.canExportKnowledge && (
+                <button
+                  onClick={() => {
+                    const pdfDocument = convertToPDFFormat(document);
+                    // Aquí llamaremos directamente al servicio de PDF
+                    import("../services/pdfExportService").then(
+                      ({ downloadPDF }) => {
+                        downloadPDF(pdfDocument, {
+                          fileName: `${document.title || "documento"}.pdf`,
+                        });
+                      }
+                    );
+                  }}
+                  className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100"
+                  title="Exportar a PDF"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </button>
+              )}
+
+              {permissions.canEditKnowledge && (
+                <Link
+                  to={`/knowledge/${document.id}/edit`}
+                  className="p-2 text-gray-400 hover:text-blue-600 rounded-md hover:bg-gray-100"
+                  title="Editar documento"
+                >
+                  <ActionIcon action="edit" size="sm" color="blue" />
+                </Link>
+              )}
+
+              {permissions.canArchiveKnowledge &&
+                (!document.isArchived ? (
+                  <button
+                    onClick={handleArchive}
+                    className="p-2 text-gray-400 hover:text-orange-600 rounded-md hover:bg-gray-100"
+                    title="Archivar documento"
+                  >
+                    <ActionIcon action="archive" size="sm" color="orange" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleUnarchive}
+                    className="p-2 text-gray-400 hover:text-green-600 rounded-md hover:bg-gray-100"
+                    title="Restaurar documento"
+                  >
+                    <ActionIcon action="archive" size="sm" color="green" />
+                  </button>
+                ))}
+
+              {permissions.canDeleteKnowledge && (
+                <button
+                  onClick={handleDelete}
+                  className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20"
+                  title="Eliminar documento permanentemente"
+                >
+                  <ActionIcon action="delete" size="sm" color="red" />
+                </button>
+              )}
             </div>
           </div>
         </div>

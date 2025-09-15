@@ -116,7 +116,7 @@ router.get(
  */
 router.get(
   "/cases",
-  requireAnyPermission(["casos.ver.own", "casos.ver.team", "casos.ver.all"]),
+  requireAnyPermission(["cases.view.own", "cases.view.team", "cases.view.all"]),
   async (req: Request, res: Response) => {
     res.json({
       message: "Lista de casos según permisos del usuario",
@@ -129,7 +129,7 @@ router.get(
  */
 router.post(
   "/cases/:id/assign",
-  requireAnyPermission(["casos.asignar.team", "casos.asignar.all"]),
+  requireAnyPermission(["cases.assign.team", "cases.assign.all"]),
   async (req: Request, res: Response) => {
     res.json({
       message: "Caso asignado correctamente",

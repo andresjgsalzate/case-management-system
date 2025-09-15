@@ -112,7 +112,6 @@ export const exportDisitionsExcelByMonth = async (
   onSuccess?: NotificationFn
 ) => {
   try {
-    console.log("Monthly data:", monthlyData); // Debug log
 
     // Crear datos completos directamente como array
     const excelData = [

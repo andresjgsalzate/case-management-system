@@ -11,46 +11,53 @@ export interface ModulePermission {
   adminOnly?: boolean; // Si es solo para administradores
 }
 
-// Lista de todos los módulos disponibles en el sistema
+// NOTA: Esta lista ahora usa permisos dinámicos de la base de datos
+// Los permisos se verifican contra la base de datos en tiempo real
 export const SYSTEM_MODULES: ModulePermission[] = [
   {
     name: "Dashboard",
     href: "/",
     icon: "HomeIcon",
-    permissions: [], // Dashboard siempre visible para usuarios autenticados
+    permissions: [
+      "metrics.view.own",
+      "metrics.view.team",
+      "metrics.view.all",
+      "metrics.time.read.own",
+      "metrics.cases.read.own",
+    ], // Requiere permisos de métricas
   },
   {
     name: "Casos",
     href: "/cases",
     icon: "DocumentTextIcon",
-    permissions: ["cases.read_own", "cases.read_team", "cases.read_all"],
+    permissions: ["cases.view.own", "cases.view.team", "cases.view.all"],
   },
   {
     name: "Nuevo Caso",
     href: "/cases/new",
     icon: "PlusIcon",
-    permissions: ["cases.create_own", "cases.create_team", "cases.create_all"],
+    permissions: ["cases.create.own", "cases.create.team", "cases.create.all"],
   },
   {
     name: "Notas",
     href: "/notes",
     icon: "DocumentDuplicateIcon",
-    permissions: ["notes.read_own", "notes.read_team", "notes.read_all"],
+    permissions: ["notes.view.own", "notes.view.team", "notes.view.all"],
   },
   {
     name: "TODOs",
     href: "/todos",
     icon: "ListBulletIcon",
-    permissions: ["todos.read_own", "todos.read_team", "todos.read_all"],
+    permissions: ["todos.view.own", "todos.view.team", "todos.view.all"],
   },
   {
     name: "Control de Casos",
     href: "/case-control",
     icon: "ClockIcon",
     permissions: [
-      "case_control.read_own",
-      "case_control.read_team",
-      "case_control.read_all",
+      "case_control.view.own",
+      "case_control.view.team",
+      "case_control.view.all",
     ],
   },
   {
@@ -58,16 +65,16 @@ export const SYSTEM_MODULES: ModulePermission[] = [
     href: "/dispositions",
     icon: "WrenchScrewdriverIcon",
     permissions: [
-      "dispositions.read_own",
-      "dispositions.read_team",
-      "dispositions.read_all",
+      "dispositions.view.own",
+      "dispositions.view.team",
+      "dispositions.view.all",
     ],
   },
   {
     name: "Archivo",
     href: "/archive",
     icon: "ArchiveBoxIcon",
-    permissions: ["archive.view"],
+    permissions: ["archive.view.own"],
   },
   {
     name: "Base de Conocimiento",
@@ -81,7 +88,7 @@ export const SYSTEM_MODULES: ModulePermission[] = [
   },
 ];
 
-// Secciones administrativas agrupadas
+// NOTA: Secciones administrativas ahora usan permisos dinámicos de la base de datos
 export const ADMIN_SECTIONS: Array<{
   id: string;
   title: string;
@@ -99,60 +106,65 @@ export const ADMIN_SECTIONS: Array<{
         name: "Usuarios",
         href: "/users",
         icon: "UsersIcon",
-        permissions: ["users.read_all", "users.admin_all"],
+        permissions: ["users.view.all", "users.manage.all"],
         adminOnly: true,
       },
       {
         name: "Roles",
         href: "/roles",
         icon: "CogIcon",
-        permissions: ["roles.read_all", "roles.admin_all"],
+        permissions: ["roles.manage.all"],
         adminOnly: true,
       },
       {
         name: "Gestión de Permisos",
         href: "/permissions",
         icon: "ShieldCheckIcon",
-        permissions: ["permissions.admin_all", "permissions.gestionar.all"],
+        permissions: ["permissions.admin.all", "permissions.read.all"],
         adminOnly: true,
       },
       {
         name: "Orígenes",
         href: "/admin/origins",
         icon: "BuildingOffice2Icon",
-        permissions: ["admin.config", "origins.admin_all"],
+        permissions: ["admin.config.all", "origins.admin.all"],
         adminOnly: true,
       },
       {
         name: "Aplicaciones",
         href: "/admin/applications",
         icon: "CubeIcon",
-        permissions: ["admin.config", "applications.admin_all"],
+        permissions: ["admin.config.all", "applications.admin.all"],
         adminOnly: true,
       },
       {
         name: "Estados de Control",
         href: "/admin/case-statuses",
         icon: "FlagIcon",
-        permissions: ["admin.config", "case_statuses.admin_all"],
+        permissions: ["admin.config.all", "case_statuses.admin.all"],
         adminOnly: true,
       },
       {
         name: "Etiquetas",
         href: "/admin/tags",
         icon: "TagIcon",
-        permissions: ["tags.manage", "tags.read", "tags.create", "tags.update"],
-        adminOnly: false, // No restringido solo a administradores
+        permissions: [
+          "tags.manage.all",
+          "tags.read.all",
+          "tags.create.all",
+          "tags.update.all",
+        ],
+        adminOnly: false,
       },
       {
         name: "Tipos de Documento",
         href: "/admin/document-types",
         icon: "DocumentTextIcon",
         permissions: [
-          "document_types.manage",
-          "document_types.read",
-          "document_types.create",
-          "document_types.update",
+          "knowledge_types.manage.all",
+          "knowledge_types.read.all",
+          "knowledge_types.create.all",
+          "knowledge_types.update.all",
         ],
         adminOnly: false, // No restringido solo a administradores
       },
@@ -160,21 +172,21 @@ export const ADMIN_SECTIONS: Array<{
         name: "Prioridades de Tareas",
         href: "/admin/todo-priorities",
         icon: "FlagIcon",
-        permissions: ["todos.crear.all", "todos.editar.all", "todos.admin.all"],
+        permissions: ["todos.create.all", "todos.edit.all", "todos.admin.all"],
         adminOnly: false, // No restringido solo a administradores
       },
       {
         name: "Estado del Sistema",
         href: "/system/status",
         icon: "CogIcon",
-        permissions: ["system.read_all", "system.admin_all"],
+        permissions: ["admin.config.all", "admin.read.all"],
         adminOnly: true,
       },
       {
         name: "Debug de Seguridad",
         href: "/admin/security-debug",
         icon: "ShieldCheckIcon",
-        permissions: ["system.debug", "system.admin_all"],
+        permissions: ["admin.debug.all", "admin.config.all"],
         adminOnly: true,
       },
     ],
@@ -190,9 +202,9 @@ export const useModulePermissions = () => {
   return useMemo(() => {
     // Verificar si el usuario tiene permisos de administrador usando el sistema dinámico
     const isAdmin =
-      hasPermission("permissions.admin_all") ||
-      hasPermission("roles.gestionar.all") ||
-      hasPermission("users.admin_all");
+      hasPermission("permissions.admin.all") ||
+      hasPermission("roles.manage.all") ||
+      hasPermission("users.admin.all");
 
     // Función para verificar si el usuario puede acceder a un módulo específico
     const canAccessModuleWithPermissions = (
@@ -260,6 +272,7 @@ export const useModulePermissions = () => {
 
 /**
  * Hook para permisos específicos de funcionalidades
+ * Completamente dinámico basado en la base de datos
  */
 export const useFeaturePermissions = () => {
   const { hasPermission, user } = useAuth();
@@ -268,63 +281,92 @@ export const useFeaturePermissions = () => {
     const isAdmin = user?.roleName === "Administrador";
 
     return {
-      // Permisos de casos
+      // Permisos de casos (usando permisos estandarizados de BD)
       canCreateCases:
-        hasPermission("cases.create_own") ||
-        hasPermission("cases.create_team") ||
-        hasPermission("cases.create_all"),
-      canViewAllCases: hasPermission("cases.read_all"),
+        hasPermission("cases.create.own") ||
+        hasPermission("cases.create.team") ||
+        hasPermission("cases.create.all"),
+      canViewAllCases: hasPermission("cases.view.all"),
       canEditCases:
-        hasPermission("cases.update_own") ||
-        hasPermission("cases.update_team") ||
-        hasPermission("cases.update_all"),
+        hasPermission("cases.edit.own") ||
+        hasPermission("cases.edit.team") ||
+        hasPermission("cases.edit.all"),
       canDeleteCases:
-        hasPermission("cases.delete_own") ||
-        hasPermission("cases.delete_team") ||
-        hasPermission("cases.delete_all"),
+        hasPermission("cases.delete.own") ||
+        hasPermission("cases.delete.team") ||
+        hasPermission("cases.delete.all"),
 
-      // Permisos de notas
+      // Permisos de notas (usando permisos estandarizados de BD)
       canCreateNotes:
-        hasPermission("notes.create_own") ||
-        hasPermission("notes.create_team") ||
-        hasPermission("notes.create_all"),
-      canViewAllNotes: hasPermission("notes.read_all"),
+        hasPermission("notes.create.own") ||
+        hasPermission("notes.create.team") ||
+        hasPermission("notes.create.all"),
+      canViewAllNotes: hasPermission("notes.view.all"),
       canEditNotes:
-        hasPermission("notes.update_own") ||
-        hasPermission("notes.update_team") ||
-        hasPermission("notes.update_all"),
+        hasPermission("notes.edit.own") ||
+        hasPermission("notes.edit.team") ||
+        hasPermission("notes.edit.all"),
 
-      // Permisos de TODOs
+      // Permisos de TODOs (usando permisos estandarizados de BD)
       canCreateTodos:
-        hasPermission("todos.create_own") ||
-        hasPermission("todos.create_team") ||
-        hasPermission("todos.create_all"),
-      canViewAllTodos: hasPermission("todos.read_all"),
+        hasPermission("todos.create.own") ||
+        hasPermission("todos.create.team") ||
+        hasPermission("todos.create.all"),
+      canViewAllTodos: hasPermission("todos.view.all"),
       canEditTodos:
-        hasPermission("todos.update_own") ||
-        hasPermission("todos.update_team") ||
-        hasPermission("todos.update_all"),
+        hasPermission("todos.edit.own") ||
+        hasPermission("todos.edit.team") ||
+        hasPermission("todos.edit.all"),
 
-      // Permisos de disposiciones
+      // Permisos de Base de Conocimiento - 100% dinámicos (usando permisos estandarizados de BD)
+      canCreateKnowledge:
+        hasPermission("knowledge.create.own") ||
+        hasPermission("knowledge.create.team") ||
+        hasPermission("knowledge.create.all"),
+      canViewAllKnowledge: hasPermission("knowledge.read.all"),
+      canEditKnowledge:
+        hasPermission("knowledge.update.own") ||
+        hasPermission("knowledge.update.team") ||
+        hasPermission("knowledge.update.all"),
+      canDeleteKnowledge:
+        hasPermission("knowledge.delete.own") ||
+        hasPermission("knowledge.delete.team") ||
+        hasPermission("knowledge.delete.all"),
+      canArchiveKnowledge:
+        hasPermission("knowledge.archive.own") ||
+        hasPermission("knowledge.archive.team") ||
+        hasPermission("knowledge.archive.all"),
+      canExportKnowledge:
+        hasPermission("knowledge.export.own") ||
+        hasPermission("knowledge.export.team") ||
+        hasPermission("knowledge.export.all"),
+      canDuplicateKnowledge:
+        hasPermission("knowledge.duplicate.own") ||
+        hasPermission("knowledge.duplicate.team") ||
+        hasPermission("knowledge.duplicate.all"),
+
+      // Permisos de disposiciones (usando permisos estandarizados de BD)
       canCreateDispositions:
-        hasPermission("dispositions.create_own") ||
-        hasPermission("dispositions.create_team") ||
-        hasPermission("dispositions.create_all"),
-      canViewAllDispositions: hasPermission("dispositions.read_all"),
+        hasPermission("dispositions.create.own") ||
+        hasPermission("dispositions.create.team") ||
+        hasPermission("dispositions.create.all"),
+      canViewAllDispositions: hasPermission("dispositions.view.all"),
       canEditDispositions:
-        hasPermission("dispositions.update_own") ||
-        hasPermission("dispositions.update_team") ||
-        hasPermission("dispositions.update_all"),
+        hasPermission("dispositions.edit.own") ||
+        hasPermission("dispositions.edit.team") ||
+        hasPermission("dispositions.edit.all"),
 
-      // Permisos administrativos
+      // Permisos administrativos (usando permisos estandarizados de BD)
       canManageUsers:
-        hasPermission("users.admin_all") || hasPermission("users.update_all"),
+        hasPermission("users.manage.all") || hasPermission("users.edit.all"),
       canManageRoles:
-        hasPermission("roles.admin_all") || hasPermission("roles.update_all"),
+        hasPermission("roles.manage.all") || hasPermission("roles.edit.all"),
       canManageSystem:
-        hasPermission("system.admin_all") || hasPermission("system.update_all"),
+        hasPermission("admin.config.all") ||
+        hasPermission("permissions.admin.all"),
       canViewReports:
-        hasPermission("reports.read_team") || hasPermission("reports.read_all"),
+        hasPermission("reports.generate.team") ||
+        hasPermission("reports.generate.all"),
 
       // Estado general
       isAdmin,

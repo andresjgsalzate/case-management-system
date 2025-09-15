@@ -1,4 +1,5 @@
 import { authService } from "./auth.service";
+import { securityService } from "./security.service";
 
 const API_BASE_URL = "http://localhost:3000/api";
 
@@ -7,7 +8,10 @@ const metricsRequest = async <T>(
   url: string,
   params?: Record<string, string>
 ): Promise<T> => {
-  const token = localStorage.getItem("token");
+  // Usar SecurityService en lugar de localStorage directo
+  const tokens = securityService.getValidTokens();
+  const token = tokens?.token;
+
   const queryString = params
     ? "?" + new URLSearchParams(params).toString()
     : "";
@@ -21,21 +25,35 @@ const metricsRequest = async <T>(
   });
 
   if (response.status === 401) {
-    // Token expirado, intentar renovar
-    const refreshToken = localStorage.getItem("refreshToken");
-    if (refreshToken) {
+    // Token expirado, intentar renovar usando SecurityService
+    const refreshTokens = securityService.getValidTokens();
+    if (refreshTokens?.refreshToken) {
       try {
-        const refreshResponse = await authService.refreshToken(refreshToken);
+        const refreshResponse = await authService.refreshToken(
+          refreshTokens.refreshToken
+        );
         if (refreshResponse.success && refreshResponse.data) {
-          localStorage.setItem("token", refreshResponse.data.token);
+          // Actualizar tokens en SecurityService
+          const refreshToken =
+            (refreshResponse.data as any).refreshToken ||
+            refreshResponse.data.token;
+          securityService.updateTokens(
+            refreshResponse.data.token,
+            refreshToken
+          );
+
           // Reintentar la petición original
           return metricsRequest(url, params);
         }
       } catch (error) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
+        console.error("❌ [MetricsRequest] Token refresh failed:", error);
+        securityService.clearSession();
         throw new Error("Session expired");
       }
+    } else {
+      console.warn("⚠️ [MetricsRequest] No refresh token available");
+      securityService.clearSession();
+      throw new Error("No authentication tokens available");
     }
   }
 

@@ -47,7 +47,6 @@ class AuthService {
 
     securityService.onTokenRefresh((_newToken: string) => {
       // Token actualizado automáticamente por SecurityService
-      console.log("Token actualizado automáticamente");
     });
   }
 
@@ -167,8 +166,6 @@ class AuthService {
 
     // Redirigir al login
     window.location.href = "/auth/login";
-
-    console.log("🚨 Sesión expirada - Redirigiendo al login");
   }
 
   /**

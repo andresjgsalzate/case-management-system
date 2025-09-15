@@ -10,7 +10,7 @@ export interface DashboardPermissions {
 }
 
 export const useDashboardPermissions = (): DashboardPermissions => {
-  const { user, canAccessModule } = useAuth();
+  const { user, hasPermission } = useAuth();
 
   return useMemo(() => {
     if (!user) {
@@ -23,34 +23,33 @@ export const useDashboardPermissions = (): DashboardPermissions => {
       };
     }
 
-    // Verificar permisos específicos del módulo de dashboard
-    const canAccessDashboard = canAccessModule("dashboard");
-
-    if (!canAccessDashboard) {
-      return {
-        canReadOwnMetrics: false,
-        canReadTeamMetrics: false,
-        canReadAllMetrics: false,
-        canExportMetrics: false,
-        canManageMetrics: false,
-      };
-    }
-
-    // Determinar permisos basados en el rol
+    // Determinar permisos basados en permisos específicos de la base de datos
     const isAdmin =
       user.roleName === "Administrador" || user.roleName === "admin";
     const isSupervisor =
       user.roleName === "Supervisor" || user.roleName === "supervisor";
 
     return {
-      // Todos pueden ver sus propias métricas si tienen acceso al dashboard
-      canReadOwnMetrics: true,
+      // Verificar permisos específicos de métricas
+      canReadOwnMetrics:
+        hasPermission("metrics.time.read.own") ||
+        hasPermission("metrics.cases.read.own") ||
+        hasPermission("metrics.todos.read.own"),
 
       // Supervisores y admins pueden ver métricas del equipo
-      canReadTeamMetrics: isSupervisor || isAdmin,
+      canReadTeamMetrics:
+        hasPermission("metrics.time.read.team") ||
+        hasPermission("metrics.cases.read.team") ||
+        hasPermission("metrics.todos.read.team") ||
+        hasPermission("metrics.users.read.team"),
 
       // Solo admins pueden ver todas las métricas
-      canReadAllMetrics: isAdmin,
+      canReadAllMetrics:
+        hasPermission("metrics.time.read.all") ||
+        hasPermission("metrics.cases.read.all") ||
+        hasPermission("metrics.todos.read.all") ||
+        hasPermission("metrics.users.read.all") ||
+        hasPermission("metrics.applications.read.all"),
 
       // Supervisores y admins pueden exportar
       canExportMetrics: isSupervisor || isAdmin,
@@ -58,5 +57,5 @@ export const useDashboardPermissions = (): DashboardPermissions => {
       // Solo admins pueden gestionar métricas
       canManageMetrics: isAdmin,
     };
-  }, [user, canAccessModule]);
+  }, [user, hasPermission]);
 };

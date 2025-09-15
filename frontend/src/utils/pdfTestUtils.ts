@@ -53,9 +53,6 @@ export const testAttachments = [
 
 // Función para validar el mapeo de adjuntos
 export const validateAttachmentMapping = (attachment: any) => {
-  console.log("=== VALIDACIÓN DE ADJUNTO ===");
-  console.log("Attachment original:", attachment);
-
   const mapped = {
     id: attachment.id,
     file_name: attachment.fileName || attachment.file_name || attachment.name,
@@ -69,9 +66,6 @@ export const validateAttachmentMapping = (attachment: any) => {
     created_at:
       attachment.createdAt || attachment.created_at || new Date().toISOString(),
   };
-
-  console.log("Attachment mapeado:", mapped);
-  console.log("=====================================");
 
   return mapped;
 };
@@ -96,12 +90,9 @@ export const testFileIcons = () => {
     { fileName: "desconocido.xyz", fileType: "unknown", expected: "[FILE]" },
   ];
 
-  console.log("=== PRUEBA DE ICONOS DE ARCHIVOS ===");
-  testCases.forEach((test) => {
+  testCases.forEach((_test) => {
     // Aquí simularíamos la función getAttachmentIcon
-    console.log(`${test.fileName} -> ${test.expected}`);
   });
-  console.log("====================================");
 };
 
 // Ejemplo de uso en el componente

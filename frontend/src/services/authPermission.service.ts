@@ -1,6 +1,7 @@
 import { ApiResponse } from "../types/api";
 import { Permission, Role, UserPermissionsResponse } from "../types/auth";
 import { config } from "../config/config";
+import { securityService } from "./security.service";
 
 const API_BASE_URL = config.api.baseUrl;
 
@@ -9,7 +10,9 @@ class AuthPermissionService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const token = localStorage.getItem("token");
+    // Usar SecurityService para obtener el token de forma segura
+    const tokens = securityService.getValidTokens();
+    const token = tokens?.token;
 
     const config: RequestInit = {
       headers: {

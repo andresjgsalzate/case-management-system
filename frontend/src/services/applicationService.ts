@@ -1,4 +1,5 @@
 import type { ApiResponse } from "../types/api";
+import { securityService } from "./security.service";
 
 export interface Application {
   id: number;
@@ -48,7 +49,8 @@ export class ApplicationService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    const token = localStorage.getItem("token");
+    const tokens = securityService.getValidTokens();
+    const token = tokens?.token;
     const config: RequestInit = {
       ...options,
       headers: {

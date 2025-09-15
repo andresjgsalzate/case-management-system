@@ -49,7 +49,6 @@ export const useInactivityTimeout = ({
     // Timer para mostrar advertencia
     const warningTime = (timeoutDuration - warningDuration) * 60 * 1000;
     warningTimeoutRef.current = setTimeout(() => {
-      console.log("⚠️ Advertencia de inactividad - sesión expirará pronto");
       setShowWarning(true);
       setRemainingMinutes(warningDuration);
 
@@ -70,7 +69,6 @@ export const useInactivityTimeout = ({
     // Timer para logout por inactividad
     const timeoutTime = timeoutDuration * 60 * 1000;
     timeoutRef.current = setTimeout(() => {
-      console.log("🔒 Timeout por inactividad - cerrando sesión");
       setShowWarning(false);
       onTimeout?.();
       logout();
@@ -146,7 +144,6 @@ export const useInactivityTimeout = ({
   }, [timeoutDuration]);
 
   const extendSession = useCallback(() => {
-    console.log("🔄 Sesión extendida por el usuario");
     resetTimer();
   }, [resetTimer]);
 

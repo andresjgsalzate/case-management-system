@@ -1,4 +1,5 @@
 import { config } from "../config/config";
+import { securityService } from "./security.service";
 
 const API_BASE_URL = config.api.baseUrl;
 
@@ -69,7 +70,8 @@ class TodoPriorityService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<any> {
-    const token = localStorage.getItem("token");
+    const tokens = securityService.getValidTokens();
+    const token = tokens?.token;
     const config: RequestInit = {
       headers: {
         "Content-Type": "application/json",

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useSidebarPermissions } from "../../hooks/useSidebarPermissions";
 import { Modal } from "../ui/Modal";
 import { Button } from "../ui/Button";
 import { ActionIcon, ActionType } from "../ui/ActionIcons";
@@ -40,7 +41,25 @@ const navigation: NavigationItem[] = [
     icon: "success",
     requiredModule: "todos",
   },
-  { name: "Archivo", href: "/archive", icon: "archive" }, // Sin restricciones de permisos por ahora
+  {
+    name: "Disposiciones",
+    href: "/dispositions",
+    icon: "view",
+    requiredModule: "dispositions",
+  },
+  {
+    name: "Notas",
+    href: "/notes",
+    icon: "document",
+    requiredModule: "notas",
+  },
+  {
+    name: "Base de Conocimiento",
+    href: "/knowledge",
+    icon: "book",
+    requiredPermission: "knowledge.read.all",
+  },
+  { name: "Archivo", href: "/archive", icon: "archive" },
   {
     name: "Usuarios",
     href: "/users",
@@ -160,23 +179,21 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
 
 export const Sidebar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { hasPermission, canAccessModule } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const { hasPermission, canAccessModule, isLoading } = useSidebarPermissions();
 
   const handleItemClick = () => {
     setSidebarOpen(false);
   };
 
+  // Si no está autenticado, no mostrar nada
+  if (!isAuthenticated) {
+    return null;
+  }
+
   // Función para verificar si el usuario puede ver un elemento del menú
   const canAccessNavigationItem = (item: NavigationItem): boolean => {
-    // Dashboard siempre es accesible para usuarios autenticados
-    if (item.name === "Dashboard") return true;
-
-    // Para Archivo, verificar el permiso específico
-    if (item.name === "Archivo") {
-      return hasPermission("archive.view");
-    }
-
-    // Verificar permiso específico
+    // Verificar permiso específico primero
     if (item.requiredPermission) {
       return hasPermission(item.requiredPermission);
     }
@@ -186,14 +203,39 @@ export const Sidebar = () => {
       return canAccessModule(item.requiredModule);
     }
 
-    // Si no tiene restricciones, es accesible
-    return true;
+    // Para Dashboard, verificar el permiso específico de dashboard
+    if (item.name === "Dashboard") {
+      return (
+        hasPermission("dashboard.ver.own") || hasPermission("dashboard.ver.all")
+      );
+    }
+
+    // Para Archivo, verificar el permiso específico
+    if (item.name === "Archivo") {
+      return hasPermission("archive.view");
+    }
+
+    // Si no tiene restricciones específicas, NO es accesible por defecto
+    // Esto asegura que solo elementos con permisos explícitos sean visibles
+    return false;
   };
 
   // Filtrar elementos de navegación basándose en permisos
   const filteredNavigation = navigation.filter(canAccessNavigationItem);
+
+  // Mostrar indicador de carga si se están verificando permisos
+  if (isLoading) {
+    return (
+      <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex items-center justify-center">
+        <div className="text-sm text-gray-500 dark:text-gray-400">
+          🔄 Verificando permisos...
+        </div>
+      </div>
+    );
+  }
+
   console.log(
-    "Filtered navigation:",
+    "🔍 Permisos verificados - Navegación filtrada:",
     filteredNavigation.map((item) => item.name)
   );
 

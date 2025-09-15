@@ -20,9 +20,9 @@ export const LoginPage: React.FC = () => {
 
     try {
       await login(email, password);
-      navigate("/dashboard");
+      navigate("/"); // Usar SmartRedirect para redirección inteligente
     } catch (error) {
-      console.error("Login failed:", error);
+      console.error("❌ Login failed:", error);
     } finally {
       setIsSubmitting(false);
     }

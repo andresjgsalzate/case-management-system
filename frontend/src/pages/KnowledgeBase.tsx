@@ -11,12 +11,14 @@ import { useCases } from "../hooks/useCases";
 import { KnowledgeDocument } from "../types/knowledge";
 import { Case } from "../services/api";
 import { useToast } from "../hooks/useNotification";
+import { useFeaturePermissions } from "../hooks/usePermissions";
 
 interface KnowledgeBaseProps {}
 
 const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
+  const permissions = useFeaturePermissions();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"created_at" | "updated_at" | "title">(
@@ -225,13 +227,15 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
           </div>
 
           <div className="flex space-x-3">
-            <button
-              onClick={handleCreateDocument}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
-            >
-              <ActionIcon action="add" size="sm" color="primary" />
-              Nuevo Documento
-            </button>
+            {permissions.canCreateKnowledge && (
+              <button
+                onClick={handleCreateDocument}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
+              >
+                <ActionIcon action="add" size="sm" color="primary" />
+                Nuevo Documento
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -538,10 +542,12 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
           <p className="text-gray-600 dark:text-gray-300 mb-6">
             {searchQuery || selectedType
               ? "Prueba con otros términos de búsqueda o filtros."
-              : "Comienza creando tu primer documento de conocimiento."}
+              : permissions.canCreateKnowledge
+              ? "Comienza creando tu primer documento de conocimiento."
+              : "No tienes permisos para crear documentos. Contacta al administrador para más información."}
           </p>
 
-          {!searchQuery && !selectedType && (
+          {!searchQuery && !selectedType && permissions.canCreateKnowledge && (
             <button
               onClick={handleCreateDocument}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400 dark:focus:ring-offset-gray-800"

@@ -1,5 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import { AuthService } from "../modules/auth/auth.service";
+import { AppDataSource } from "../config/database";
+import { UserProfile } from "../entities/UserProfile";
+import { Role } from "../entities/Role";
+import { RolePermission } from "../entities/RolePermission";
+import { Permission } from "../entities/Permission";
 import { createError } from "./errorHandler";
 
 export interface AuthRequest extends Request {
@@ -26,7 +31,42 @@ export const authenticateToken = async (
       throw createError("Invalid or expired token", 401);
     }
 
-    req.user = user;
+    // Obtener permisos del usuario
+    const userRepository = AppDataSource.getRepository(UserProfile);
+    const rolePermissionRepository =
+      AppDataSource.getRepository(RolePermission);
+
+    const userWithRole = await userRepository.findOne({
+      where: { id: user.id },
+      relations: ["role"],
+    });
+
+    if (!userWithRole || !userWithRole.role) {
+      throw createError("User role not found", 401);
+    }
+
+    // Obtener permisos del rol
+    const rolePermissions = await rolePermissionRepository
+      .createQueryBuilder("rp")
+      .innerJoinAndSelect("rp.permission", "permission")
+      .where("rp.roleId = :roleId", { roleId: userWithRole.role.id })
+      .andWhere("permission.isActive = :isActive", { isActive: true })
+      .getMany();
+
+    // Extraer nombres de permisos
+    const permissions = rolePermissions.map((rp) => rp.permission.name);
+
+    // Asignar al request
+    req.user = {
+      ...user,
+      roleName: userWithRole.role.name,
+      permissions: permissions,
+    };
+
+    console.log(
+      `🔐 [AUTH] Usuario ${user.id} autenticado con ${permissions.length} permisos`
+    );
+
     next();
   } catch (error) {
     next(error);

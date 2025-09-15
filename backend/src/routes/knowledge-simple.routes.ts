@@ -48,7 +48,20 @@ router.get(
   ]),
   async (req: Request, res: Response) => {
     try {
-      const result = await knowledgeDocumentService.findAll(req.query as any);
+      const userId = (req as any).user?.id;
+      const userPermissions = (req as any).user?.permissions || [];
+
+      console.log(
+        `📚 [KNOWLEDGE] Usuario ${userId} solicitando documentos con permisos: ${userPermissions.join(
+          ", "
+        )}`
+      );
+
+      const result = await knowledgeDocumentService.findAll(
+        req.query as any,
+        userId,
+        userPermissions
+      );
       res.json(result);
     } catch (error) {
       handleError(res, error, 400);
@@ -69,9 +82,20 @@ router.get(
           .json({ error: "Parámetro de búsqueda requerido" });
       }
 
+      const userId = (req as any).user?.id;
+      const userPermissions = (req as any).user?.permissions || [];
+
+      console.log(
+        `🔍 [SEARCH] Usuario ${userId} buscando: "${q}" con permisos: ${userPermissions.join(
+          ", "
+        )}`
+      );
+
       const documents = await knowledgeDocumentService.searchContent(
         q,
-        parseInt(limit as string) || 10
+        parseInt(limit as string) || 10,
+        userId,
+        userPermissions
       );
       res.json(documents);
     } catch (error) {
@@ -335,9 +359,21 @@ router.get(
     try {
       const searchTerm = req.query.q as string;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+
+      const userId = (req as any).user?.id;
+      const userPermissions = (req as any).user?.permissions || [];
+
+      console.log(
+        `🔍 [ADVANCED SEARCH] Usuario ${userId} buscando: "${searchTerm}" con permisos: ${userPermissions.join(
+          ", "
+        )}`
+      );
+
       const result = await knowledgeDocumentService.searchContent(
         searchTerm,
-        limit
+        limit,
+        userId,
+        userPermissions
       );
       res.json(result);
     } catch (error) {

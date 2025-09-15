@@ -224,6 +224,7 @@ export const useAuthStore = create<AuthState>()(
       },
       // Inicializar desde SecurityService
       initializeFromSecurityService: async () => {
+        set({ isLoading: true }); // Importante: marcar como cargando
         try {
           const tokens = securityService.getValidTokens();
           const userString = localStorage.getItem("user");
@@ -234,6 +235,7 @@ export const useAuthStore = create<AuthState>()(
               token: tokens.token,
               refreshToken: tokens.refreshToken,
               isAuthenticated: true,
+              isLoading: false, // Terminar la carga
               error: null,
             });
             // Cargar permisos
@@ -245,6 +247,7 @@ export const useAuthStore = create<AuthState>()(
               token: null,
               refreshToken: null,
               isAuthenticated: false,
+              isLoading: false, // Terminar la carga
               userPermissions: [],
               userModules: [],
               permissionsLoaded: false,
@@ -257,6 +260,7 @@ export const useAuthStore = create<AuthState>()(
             token: null,
             refreshToken: null,
             isAuthenticated: false,
+            isLoading: false, // Terminar la carga incluso en error
             error: "Error de inicialización",
           });
         }

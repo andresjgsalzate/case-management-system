@@ -64,7 +64,11 @@ export class KnowledgeDocumentService {
     return result;
   }
 
-  async findAll(query: KnowledgeDocumentQueryDto): Promise<{
+  async findAll(
+    query: KnowledgeDocumentQueryDto,
+    userId?: string,
+    userPermissions?: string[]
+  ): Promise<{
     documents: KnowledgeDocument[];
     total: number;
     page: number;
@@ -73,6 +77,7 @@ export class KnowledgeDocumentService {
     const queryBuilder = this.createQueryBuilder();
 
     this.applyFilters(queryBuilder, query);
+    this.applyPermissionFilters(queryBuilder, userId, userPermissions);
     this.applySorting(queryBuilder, query);
 
     const page = query.page || 1;
@@ -341,18 +346,20 @@ export class KnowledgeDocumentService {
 
   async searchContent(
     searchTerm: string,
-    limit: number = 10
+    limit: number = 10,
+    userId?: string,
+    userPermissions?: string[]
   ): Promise<KnowledgeDocument[]> {
-    return this.knowledgeDocumentRepository
+    const queryBuilder = this.knowledgeDocumentRepository
       .createQueryBuilder("doc")
-      .where("doc.isPublished = true")
-      .andWhere("doc.isArchived = false")
       .andWhere("(doc.title ILIKE :search OR doc.content ILIKE :search)", {
         search: `%${searchTerm}%`,
-      })
-      .orderBy("doc.viewCount", "DESC")
-      .limit(limit)
-      .getMany();
+      });
+
+    // Aplicar filtros de permisos
+    this.applyPermissionFilters(queryBuilder, userId, userPermissions);
+
+    return queryBuilder.orderBy("doc.viewCount", "DESC").limit(limit).getMany();
   }
 
   private createQueryBuilder(): SelectQueryBuilder<KnowledgeDocument> {
@@ -413,6 +420,96 @@ export class KnowledgeDocumentService {
     if (query.tags && query.tags.length > 0) {
       queryBuilder.andWhere("tags.tagName IN (:...tagNames)", {
         tagNames: query.tags,
+      });
+    }
+  }
+
+  private applyPermissionFilters(
+    queryBuilder: SelectQueryBuilder<KnowledgeDocument>,
+    userId?: string,
+    userPermissions?: string[]
+  ): void {
+    if (!userId || !userPermissions) {
+      // Si no hay información de usuario, mostrar solo documentos publicados
+      queryBuilder.andWhere("doc.isPublished = :published", {
+        published: true,
+      });
+      queryBuilder.andWhere("doc.isArchived = :archived", { archived: false });
+      return;
+    }
+
+    // Determinar el nivel de permisos del usuario
+    // CLAVE: Solo usuarios con permisos de EDICIÓN pueden ver documentos no publicados de otros
+    const hasAllEditPermissions = userPermissions.some(
+      (p) =>
+        p.includes("knowledge.update.all") || p.includes("knowledge.delete.all")
+    );
+
+    const hasTeamEditPermissions = userPermissions.some(
+      (p) =>
+        p.includes("knowledge.update.team") ||
+        p.includes("knowledge.delete.team")
+    );
+
+    const hasOwnEditPermissions = userPermissions.some(
+      (p) =>
+        p.includes("knowledge.update.own") || p.includes("knowledge.delete.own")
+    );
+
+    // También verificar permisos de lectura para determinar el alcance
+    const hasAllReadPermissions = userPermissions.some((p) =>
+      p.includes("knowledge.read.all")
+    );
+    const hasTeamReadPermissions = userPermissions.some((p) =>
+      p.includes("knowledge.read.team")
+    );
+    const hasOwnReadPermissions = userPermissions.some((p) =>
+      p.includes("knowledge.read.own")
+    );
+
+    // Siempre excluir documentos archivados
+    queryBuilder.andWhere("doc.isArchived = :archived", { archived: false });
+
+    if (hasAllEditPermissions) {
+      // Usuario con permisos de EDICIÓN ALL: puede ver todos los documentos (publicados y no publicados)
+      console.log(
+        `🔓 Usuario ${userId} tiene permisos de EDICIÓN ALL - puede ver todos los documentos`
+      );
+      // No agregar filtros adicionales
+    } else if (hasTeamEditPermissions) {
+      // Usuario con permisos de EDICIÓN TEAM: puede ver documentos del team completos + documentos publicados de otros
+      console.log(
+        `👥 Usuario ${userId} tiene permisos de EDICIÓN TEAM - aplicando filtros apropiados`
+      );
+      queryBuilder.andWhere(
+        "(doc.createdBy = :userId OR doc.isPublished = :published)",
+        { userId, published: true }
+      );
+    } else if (hasOwnEditPermissions || hasOwnReadPermissions) {
+      // Usuario con permisos OWN (edición o solo lectura): puede ver sus documentos completos + documentos publicados de otros
+      console.log(
+        `👤 Usuario ${userId} tiene permisos OWN - puede ver sus documentos + documentos publicados de otros`
+      );
+      queryBuilder.andWhere(
+        "(doc.createdBy = :userId OR doc.isPublished = :published)",
+        { userId, published: true }
+      );
+    } else if (hasAllReadPermissions || hasTeamReadPermissions) {
+      // Usuario con solo permisos de LECTURA (sin edición): solo documentos publicados + sus propios documentos
+      console.log(
+        `📖 Usuario ${userId} tiene solo permisos de LECTURA - solo documentos publicados + propios`
+      );
+      queryBuilder.andWhere(
+        "(doc.createdBy = :userId OR doc.isPublished = :published)",
+        { userId, published: true }
+      );
+    } else {
+      // Usuario sin permisos específicos: solo documentos publicados
+      console.log(
+        `🔒 Usuario ${userId} sin permisos específicos - solo documentos publicados`
+      );
+      queryBuilder.andWhere("doc.isPublished = :published", {
+        published: true,
       });
     }
   }

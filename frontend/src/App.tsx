@@ -68,7 +68,7 @@ function App() {
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute requiredPermission="metrics.time.read.own">
+                <ProtectedRoute requiredPermission="dashboard.ver.own">
                   <Layout>
                     <DashboardContainer />
                   </Layout>
@@ -90,7 +90,7 @@ function App() {
             <Route
               path="/cases/new"
               element={
-                <ProtectedRoute requiredPermission="casos.crear.all">
+                <ProtectedRoute requiredPermission="cases.create.all">
                   <Layout>
                     <NewCasePage />
                   </Layout>
@@ -101,7 +101,7 @@ function App() {
             <Route
               path="/cases/edit/:id"
               element={
-                <ProtectedRoute requiredPermission="casos.editar.all">
+                <ProtectedRoute requiredPermission="cases.edit.all">
                   <Layout>
                     <NewCasePage />
                   </Layout>
@@ -112,7 +112,7 @@ function App() {
             <Route
               path="/cases/view/:id"
               element={
-                <ProtectedRoute requiredPermission="casos.ver.all">
+                <ProtectedRoute requiredPermission="cases.view.all">
                   <Layout>
                     <CaseDetailPage />
                   </Layout>
@@ -178,7 +178,7 @@ function App() {
             <Route
               path="/archive"
               element={
-                <ProtectedRoute requiredPermission="archive.view">
+                <ProtectedRoute requiredPermission="archive.view.own">
                   <Layout>
                     <ArchivePage />
                   </Layout>
@@ -269,7 +269,7 @@ function App() {
             <Route
               path="/roles"
               element={
-                <ProtectedRoute requiredPermission="roles:view:all">
+                <ProtectedRoute requiredPermission="roles.view.all">
                   <Layout>
                     <RolesPage />
                   </Layout>
@@ -280,7 +280,7 @@ function App() {
             <Route
               path="/permissions"
               element={
-                <ProtectedRoute requiredPermission="permissions.read_all">
+                <ProtectedRoute requiredPermission="permissions.read.all">
                   <Layout>
                     <PermissionsManagement />
                   </Layout>
@@ -291,7 +291,7 @@ function App() {
             <Route
               path="/permissions/role-assignment"
               element={
-                <ProtectedRoute requiredPermission="permissions.assign_all">
+                <ProtectedRoute requiredPermission="permissions.assign.all">
                   <Layout>
                     <PermissionRoleAssignment />
                   </Layout>
@@ -346,7 +346,7 @@ function App() {
             <Route
               path="/admin/tags"
               element={
-                <ProtectedRoute requiredPermission="tags.manage">
+                <ProtectedRoute requiredPermission="tags.manage.all">
                   <Layout>
                     <TagsPage />
                   </Layout>
@@ -357,7 +357,7 @@ function App() {
             <Route
               path="/admin/document-types"
               element={
-                <ProtectedRoute requiredPermission="document_types.manage">
+                <ProtectedRoute requiredPermission="knowledge_types.read.all">
                   <Layout>
                     <DocumentTypesPage />
                   </Layout>
@@ -368,7 +368,7 @@ function App() {
             <Route
               path="/admin/todo-priorities"
               element={
-                <ProtectedRoute requiredPermission="todos.crear.all">
+                <ProtectedRoute requiredPermission="todos.create.all">
                   <Layout>
                     <TodoPrioritiesPage />
                   </Layout>
@@ -390,7 +390,7 @@ function App() {
             <Route
               path="/admin/security-debug"
               element={
-                <ProtectedRoute requiredPermission="system.admin_all">
+                <ProtectedRoute requiredPermission="admin.config.all">
                   <Layout>
                     <SecurityDebugPage />
                   </Layout>

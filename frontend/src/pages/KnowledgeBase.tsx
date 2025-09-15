@@ -5,8 +5,11 @@ import {
   useKnowledgeDocuments,
   useDocumentTypes,
   useCreateKnowledgeDocument,
+  usePopularTags,
 } from "../hooks/useKnowledge";
+import { useCases } from "../hooks/useCases";
 import { KnowledgeDocument } from "../types/knowledge";
+import { Case } from "../services/api";
 import { useToast } from "../hooks/useNotification";
 
 interface KnowledgeBaseProps {}
@@ -40,6 +43,8 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   });
 
   const { data: documentTypes, isLoading: typesLoading } = useDocumentTypes();
+  const { data: casesData } = useCases(); // Para obtener información de los casos
+  const { data: popularTags } = usePopularTags(10); // Obtener 10 etiquetas populares
 
   // Create document mutation
   const createDocumentMutation = useCreateKnowledgeDocument({
@@ -138,6 +143,50 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
     if (isDeprecated) return "Obsoleto";
     if (isPublished) return "Publicado";
     return "Borrador";
+  };
+
+  // Helper para obtener casos asociados
+  const getAssociatedCasesInfo = (doc: KnowledgeDocument) => {
+    if (!doc.associatedCases || !casesData) return null;
+
+    const associatedCases = casesData.filter((caso: Case) =>
+      doc.associatedCases?.includes(caso.id)
+    );
+
+    return associatedCases;
+  };
+
+  // Helper para obtener etiquetas relacionadas/populares
+  const getRelatedTags = (doc: KnowledgeDocument) => {
+    if (!popularTags) return [];
+
+    const documentTagNames = doc.tags?.map((tag) => tag.tagName) || [];
+
+    // Obtener etiquetas populares que no están en este documento
+    const relatedTags = popularTags
+      .filter((tag) => !documentTagNames.includes(tag.tagName))
+      .slice(0, 3); // Máximo 3 etiquetas relacionadas
+
+    return relatedTags;
+  };
+
+  // Helper para obtener todas las etiquetas a mostrar (del documento + relacionadas)
+  const getDisplayTags = (doc: KnowledgeDocument) => {
+    const docTags = doc.tags || [];
+    const maxDocTags = 4; // Mostrar hasta 4 etiquetas del documento
+    const displayDocTags = docTags.slice(0, maxDocTags);
+
+    // Si hay espacio, agregar etiquetas relacionadas
+    const remainingSpace = maxDocTags - displayDocTags.length;
+    const relatedTags =
+      remainingSpace > 0 ? getRelatedTags(doc).slice(0, remainingSpace) : [];
+
+    return {
+      documentTags: displayDocTags,
+      relatedTags,
+      totalDocTags: docTags.length,
+      showMore: docTags.length > maxDocTags,
+    };
   };
 
   const documents = documentsResponse?.documents || [];
@@ -297,31 +346,166 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                     </Link>
                   </h3>
 
-                  {doc.content && (
-                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 mb-3">
-                      {doc.content.substring(0, 150)}...
-                    </p>
-                  )}
+                  {/* Priority and Difficulty */}
+                  <div className="flex items-center space-x-4 mb-3">
+                    <div className="flex items-center text-sm">
+                      <span className="text-gray-600 dark:text-gray-300 mr-1">
+                        Prioridad:
+                      </span>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          doc.priority === "urgent"
+                            ? "bg-red-100 text-red-800"
+                            : doc.priority === "high"
+                            ? "bg-orange-100 text-orange-800"
+                            : doc.priority === "medium"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        {doc.priority === "urgent"
+                          ? "Urgente"
+                          : doc.priority === "high"
+                          ? "Alta"
+                          : doc.priority === "medium"
+                          ? "Media"
+                          : "Baja"}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <span className="text-gray-600 dark:text-gray-300 mr-1">
+                        Dificultad:
+                      </span>
+                      <div className="flex">
+                        {[...Array(5)].map((_, i) => (
+                          <ActionIcon
+                            key={i}
+                            action="star"
+                            size="sm"
+                            color={i < doc.difficultyLevel ? "yellow" : "gray"}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Associated Cases */}
+                  {doc.associatedCases &&
+                    doc.associatedCases.length > 0 &&
+                    (() => {
+                      const associatedCases = getAssociatedCasesInfo(doc);
+                      return (
+                        <div className="flex items-center text-sm mb-3 flex-wrap gap-1">
+                          <ActionIcon
+                            action="case"
+                            size="sm"
+                            color="blue"
+                            className="mr-1"
+                          />
+                          <span className="text-gray-600 dark:text-gray-300 mr-1">
+                            Casos:
+                          </span>
+                          {associatedCases && associatedCases.length > 0 ? (
+                            <>
+                              {associatedCases
+                                .slice(0, 2) // Mostrar hasta 2 casos
+                                .map((caso, index) => (
+                                  <span
+                                    key={index}
+                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                    title={`${caso.numeroCaso}: ${caso.descripcion}`}
+                                  >
+                                    {caso.numeroCaso}
+                                  </span>
+                                ))}
+                              {doc.associatedCases.length > 2 && (
+                                <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                                  +{doc.associatedCases.length - 2}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-blue-600 dark:text-blue-400 font-medium">
+                              {doc.associatedCases.length} asociado
+                              {doc.associatedCases.length !== 1 ? "s" : ""}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                   {/* Type and Tags */}
-                  <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="space-y-2">
+                    {/* Document Type */}
                     {doc.documentType && (
-                      <div className="flex items-center">
+                      <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
                         <ActionIcon action="folder" size="sm" color="gray" />
-                        {doc.documentType.name}
+                        <span className="ml-1">{doc.documentType.name}</span>
                       </div>
                     )}
 
-                    {doc.tags && doc.tags.length > 0 && (
-                      <div className="flex items-center">
-                        <ActionIcon action="tag" size="sm" color="gray" />
-                        {doc.tags
-                          .slice(0, 2)
-                          .map((tag) => tag.tagName)
-                          .join(", ")}
-                        {doc.tags.length > 2 && ` +${doc.tags.length - 2}`}
-                      </div>
-                    )}
+                    {/* Tags Section */}
+                    {(() => {
+                      const tagInfo = getDisplayTags(doc);
+                      const hasAnyTags =
+                        tagInfo.documentTags.length > 0 ||
+                        tagInfo.relatedTags.length > 0;
+
+                      return hasAnyTags ? (
+                        <div className="space-y-1">
+                          {/* Document Tags */}
+                          {tagInfo.documentTags.length > 0 && (
+                            <div className="flex items-start flex-wrap gap-1">
+                              <ActionIcon
+                                action="tag"
+                                size="sm"
+                                color="gray"
+                                className="mt-0.5 mr-1 flex-shrink-0"
+                              />
+                              {tagInfo.documentTags.map((tag, index) => (
+                                <span
+                                  key={index}
+                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white"
+                                  style={{
+                                    backgroundColor: tag.color || "#6b7280",
+                                  }}
+                                >
+                                  {tag.tagName}
+                                </span>
+                              ))}
+                              {tagInfo.showMore && (
+                                <span className="text-xs text-gray-500 self-center">
+                                  +
+                                  {tagInfo.totalDocTags -
+                                    tagInfo.documentTags.length}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Related/Popular Tags */}
+                          {tagInfo.relatedTags.length > 0 && (
+                            <div className="flex items-start flex-wrap gap-1">
+                              <span className="text-xs text-gray-400 self-center mr-1">
+                                Relacionadas:
+                              </span>
+                              {tagInfo.relatedTags.map((tag, index) => (
+                                <span
+                                  key={index}
+                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-gray-300 text-gray-600 bg-gray-50"
+                                  style={{
+                                    borderColor: tag.color || "#d1d5db",
+                                    color: tag.color || "#6b7280",
+                                  }}
+                                >
+                                  {tag.tagName}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
 
@@ -329,7 +513,11 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                 <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-100 dark:border-gray-700">
                   <div className="flex items-center">
                     <ActionIcon action="user" size="sm" color="gray" />
-                    Autor
+                    <span className="ml-1">
+                      {doc.__createdByUser__?.fullName ||
+                        doc.__createdByUser__?.email ||
+                        "Usuario desconocido"}
+                    </span>
                   </div>
 
                   <div className="flex items-center">

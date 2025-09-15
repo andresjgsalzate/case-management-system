@@ -65,6 +65,7 @@ export interface KnowledgeDocument {
   versions?: KnowledgeDocumentVersion[];
   attachments?: KnowledgeDocumentAttachment[];
   feedback?: KnowledgeDocumentFeedback[];
+  associatedCases?: string[]; // IDs de casos asociados
 
   // Special backend-loaded properties (with lazy loading)
   __createdByUser__?: User;
@@ -158,6 +159,7 @@ export interface CreateKnowledgeDocumentDto {
   difficultyLevel?: number;
   isTemplate?: boolean;
   tags?: string[];
+  associatedCases?: string[]; // IDs de casos asociados
 }
 
 export interface UpdateKnowledgeDocumentDto {
@@ -170,6 +172,7 @@ export interface UpdateKnowledgeDocumentDto {
   isTemplate?: boolean;
   isPublished?: boolean;
   tags?: string[];
+  associatedCases?: string[]; // IDs de casos asociados
   changeSummary?: string;
 }
 

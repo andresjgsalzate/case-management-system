@@ -629,6 +629,36 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
           visibility: visible !important;
           opacity: 1 !important;
         }
+
+        /* Ajuste sutil para más ancho en lectura - SOLO el contenido interno */
+        .blocknote-editor[data-editable="false"] .ProseMirror {
+          padding-left: 0.5rem !important;
+          padding-right: 0.5rem !important;
+          max-width: 100% !important;
+        }
+
+        /* Asegurar que las imágenes usen el espacio disponible */
+        .blocknote-editor[data-editable="false"] .ProseMirror img {
+          max-width: 100% !important;
+          width: auto !important;
+          height: auto !important;
+          display: block !important;
+          margin: 0 auto !important;
+        }
+
+        /* Optimizar también el modo edición para mejor uso del espacio */
+        .blocknote-editor[data-editable="true"] .ProseMirror {
+          padding-left: 0.75rem !important;
+          padding-right: 0.75rem !important;
+          max-width: 100% !important;
+        }
+
+        /* Imágenes en modo edición también más anchas */
+        .blocknote-editor[data-editable="true"] .ProseMirror img {
+          max-width: 100% !important;
+          width: auto !important;
+          height: auto !important;
+        }
       `;
 
       // Inyectar el CSS con máxima prioridad

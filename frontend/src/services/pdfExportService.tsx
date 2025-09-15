@@ -1884,6 +1884,22 @@ const PDFDocumentComponent: React.FC<PDFDocumentProps> = ({
 }: {
   document: KnowledgeDocumentPDF;
 }) => {
+  // Función para traducir prioridades al español
+  const translatePriority = (priority: string): string => {
+    switch (priority.toLowerCase()) {
+      case "low":
+        return "Baja";
+      case "medium":
+        return "Media";
+      case "high":
+        return "Alta";
+      case "urgent":
+        return "Urgente";
+      default:
+        return priority; // Si no se reconoce, devolver como está
+    }
+  };
+
   // Filtrar adjuntos para obtener solo documentos (no imágenes embebidas)
   const documentAttachments = (document.attachments || []).filter(
     (attachment: any) => {
@@ -1965,16 +1981,7 @@ const PDFDocumentComponent: React.FC<PDFDocumentProps> = ({
             <View style={styles.metadataRow}>
               <Text style={styles.metadataLabel}>Prioridad:</Text>
               <Text style={styles.metadataValue}>
-                {document.priority.trim()}
-              </Text>
-            </View>
-          )}
-
-          {document.is_published !== undefined && (
-            <View style={styles.metadataRow}>
-              <Text style={styles.metadataLabel}>Estado:</Text>
-              <Text style={styles.metadataValue}>
-                {document.is_published ? "Publicado" : "Borrador"}
+                {translatePriority(document.priority.trim())}
               </Text>
             </View>
           )}
@@ -2009,6 +2016,17 @@ const PDFDocumentComponent: React.FC<PDFDocumentProps> = ({
               </Text>
             </View>
           )}
+
+          {/* Casos Asociados */}
+          {document.associated_cases &&
+            document.associated_cases.length > 0 && (
+              <View style={styles.metadataRow}>
+                <Text style={styles.metadataLabel}>Caso Asociado:</Text>
+                <Text style={styles.metadataValue}>
+                  {document.associated_cases.join(", ")}
+                </Text>
+              </View>
+            )}
         </View>
 
         {/* Contenido */}

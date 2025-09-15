@@ -54,6 +54,11 @@ export class CreateKnowledgeDocumentDto {
   @IsArray()
   @IsString({ each: true })
   tags?: string[] = [];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  associatedCases?: string[] = [];
 }
 
 export class UpdateKnowledgeDocumentDto {
@@ -96,6 +101,11 @@ export class UpdateKnowledgeDocumentDto {
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  associatedCases?: string[];
 
   @IsOptional()
   @IsString()

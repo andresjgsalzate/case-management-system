@@ -1,6 +1,17 @@
 import { authService } from "./auth.service";
 
 // Tipos para los datos de casos
+export interface CaseStatus {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Case {
   id: string;
   numeroCaso: string;
@@ -16,10 +27,14 @@ export interface Case {
   estado:
     | "nuevo"
     | "en_progreso"
+    | "en_curso"
     | "pendiente"
     | "resuelto"
     | "cerrado"
-    | "cancelado";
+    | "cancelado"
+    | "asignado";
+  statusId?: string; // ID del estado en la tabla case_statuses
+  isArchived?: boolean; // Indica si el caso está archivado
   observaciones?: string;
   originId?: string;
   applicationId?: string;
@@ -47,6 +62,7 @@ export interface Case {
     email: string;
     fullName?: string;
   };
+  status?: CaseStatus; // Objeto de estado completo desde case_statuses
 }
 
 export interface Origin {

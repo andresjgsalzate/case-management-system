@@ -172,7 +172,9 @@ export type ActionType =
   | "check"
   | "stop"
   | "arrowRight"
-  | "loading";
+  | "loading"
+  | "star"
+  | "case";
 
 // Tipos para tamaños
 export type IconSize = "xs" | "sm" | "md" | "lg" | "xl";
@@ -284,6 +286,8 @@ const iconMap: Record<ActionType, React.ComponentType<any>> = {
   stop: StopIcon,
   arrowRight: ArrowRightIcon,
   loading: ArrowPathIcon,
+  star: StarIcon,
+  case: FolderIcon,
 };
 
 // Mapeo de tamaños
@@ -413,6 +417,8 @@ const actionColorMap: Record<ActionType, ColorVariant> = {
   stop: "red",
   arrowRight: "blue",
   loading: "blue",
+  star: "yellow",
+  case: "blue",
 };
 
 // Props del componente

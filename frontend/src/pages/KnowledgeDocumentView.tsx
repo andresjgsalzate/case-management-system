@@ -9,6 +9,8 @@ import {
   useCheckUserFeedback,
   knowledgeKeys,
 } from "../hooks/useKnowledge";
+import { useCases } from "../hooks/useCases";
+import { Case } from "../services/api";
 import { useQueryClient } from "@tanstack/react-query";
 import BlockNoteEditor from "../components/knowledge/BlockNoteEditor";
 import AttachmentsList from "../components/AttachmentsList";
@@ -41,6 +43,9 @@ const KnowledgeDocumentView: React.FC = () => {
 
   // Check if user has already provided feedback
   const { data: feedbackCheck } = useCheckUserFeedback(id || "");
+
+  // Get cases for displaying case numbers
+  const { data: casesData } = useCases();
 
   // Force fresh data when viewing document
   React.useEffect(() => {
@@ -77,6 +82,17 @@ const KnowledgeDocumentView: React.FC = () => {
       return { text: "Publicado", color: "bg-green-100 text-green-800" };
     }
     return { text: "Borrador", color: "bg-yellow-100 text-yellow-800" };
+  };
+
+  // Helper para obtener información de casos asociados
+  const getAssociatedCasesInfo = () => {
+    if (!document?.associatedCases || !casesData) return [];
+
+    const associatedCases = casesData.filter((caso: Case) =>
+      document.associatedCases?.includes(caso.id)
+    );
+
+    return associatedCases;
   };
 
   // Handle actions
@@ -216,6 +232,14 @@ const KnowledgeDocumentView: React.FC = () => {
     const documentType = doc.__documentType__ || doc.documentType;
     const createdByUser = doc.__createdByUser__ || doc.createdByUser;
 
+    // Obtener los números de casos asociados
+    const associatedCasesNumbers =
+      doc.associatedCases && casesData
+        ? casesData
+            .filter((caso: Case) => doc.associatedCases.includes(caso.id))
+            .map((caso: Case) => caso.numeroCaso)
+        : undefined;
+
     return {
       id: doc.id,
       title: doc.title || "Documento Sin Título",
@@ -231,6 +255,7 @@ const KnowledgeDocumentView: React.FC = () => {
       is_published: doc.isPublished,
       view_count: doc.viewCount,
       version: doc.version || 1,
+      associated_cases: associatedCasesNumbers,
       tags:
         doc.tags?.map((tag: any) => ({
           id: tag.id || `tag-${Math.random()}`,
@@ -298,7 +323,7 @@ const KnowledgeDocumentView: React.FC = () => {
   const statusInfo = getStatusInfo(document);
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-full mx-auto px-6 sm:px-8 lg:px-12 py-6">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
@@ -445,7 +470,8 @@ const KnowledgeDocumentView: React.FC = () => {
                 {document.tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs"
+                    className="px-2 py-1 rounded-full text-xs font-medium text-white"
+                    style={{ backgroundColor: tag.color || "#6b7280" }}
                   >
                     {tag.tagName}
                   </span>
@@ -492,6 +518,38 @@ const KnowledgeDocumentView: React.FC = () => {
                 </span>
               </div>
 
+              {/* Associated Cases */}
+              {document.associatedCases &&
+                document.associatedCases.length > 0 && (
+                  <div className="flex items-center">
+                    <span className="font-medium">Casos Asociados:</span>
+                    <div className="ml-2 flex flex-wrap gap-1">
+                      {(() => {
+                        const associatedCases = getAssociatedCasesInfo();
+                        return associatedCases.length > 0 ? (
+                          associatedCases.map((caso, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium"
+                              title={`${caso.numeroCaso}: ${caso.descripcion}`}
+                            >
+                              {caso.numeroCaso}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+                            {document.associatedCases.length} caso
+                            {document.associatedCases.length !== 1
+                              ? "s"
+                              : ""}{" "}
+                            (cargando...)
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
+
               {document.isTemplate && (
                 <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
                   Plantilla
@@ -510,11 +568,13 @@ const KnowledgeDocumentView: React.FC = () => {
           {document.jsonContent &&
           Array.isArray(document.jsonContent) &&
           document.jsonContent.length > 0 ? (
-            <BlockNoteEditor
-              content={document.jsonContent}
-              editable={false}
-              className="prose prose-lg max-w-none"
-            />
+            <div className="w-full max-w-none">
+              <BlockNoteEditor
+                content={document.jsonContent}
+                editable={false}
+                className="prose prose-lg max-w-none w-full"
+              />
+            </div>
           ) : document.content ? (
             <div className="prose prose-lg max-w-none">
               <p>{document.content}</p>

@@ -28,10 +28,11 @@ export class KnowledgeDocumentService {
     userId: string
   ): Promise<KnowledgeDocument> {
     // Crear el documento (sin incluir tags ya que es una relación separada)
-    const { tags, ...documentData } = createDto;
+    const { tags, associatedCases, ...documentData } = createDto;
 
     const document = this.knowledgeDocumentRepository.create({
       ...documentData,
+      associatedCases: associatedCases || [], // Asignar casos asociados o array vacío
       createdBy: userId,
       lastEditedBy: userId,
     });
@@ -218,11 +219,12 @@ export class KnowledgeDocumentService {
     }
 
     // Actualizar documento - evitar actualizar relaciones anidadas
-    const { tags, changeSummary, ...updateData } = updateDto;
+    const { tags, changeSummary, associatedCases, ...updateData } = updateDto;
 
     // Remover las relaciones anidadas para evitar que TypeORM las actualice incorrectamente
     const documentToUpdate = {
       ...updateData,
+      ...(associatedCases !== undefined && { associatedCases }), // Solo actualizar si se proporciona
       lastEditedBy: userId,
       id: document.id,
     };

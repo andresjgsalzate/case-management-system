@@ -133,6 +133,14 @@ export class KnowledgeDocument {
   @Column({ name: "tags_json", type: "jsonb", default: () => "'[]'::jsonb" })
   tagsJson: string[];
 
+  // Campo JSON para casos asociados
+  @Column({
+    name: "associated_cases",
+    type: "jsonb",
+    default: () => "'[]'::jsonb",
+  })
+  associatedCases: string[];
+
   // Relaciones
   @OneToMany(() => KnowledgeDocumentTag, (tag) => tag.document)
   tags: KnowledgeDocumentTag[];

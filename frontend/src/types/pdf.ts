@@ -142,6 +142,7 @@ export interface KnowledgeDocumentPDF {
   is_published?: boolean;
   view_count?: number;
   version?: number;
+  associated_cases?: string[]; // Array de números de caso asociados
   createdByUser?: {
     fullName: string;
     email: string;

@@ -9,6 +9,11 @@ import {
   useAllTags,
   useSearchTags,
 } from "../hooks/useKnowledge";
+import { useCases } from "../hooks/useCases";
+import { Case } from "../services/api";
+// import { getCaseStatuses } from "../services/api/caseControlApi";
+// import { CaseStatus } from "../types/caseControl";
+// import { useQuery } from "@tanstack/react-query";
 import {
   CreateKnowledgeDocumentDto,
   UpdateKnowledgeDocumentDto,
@@ -47,6 +52,9 @@ const KnowledgeDocumentForm: React.FC = () => {
   const [showPredictiveTags, setShowPredictiveTags] = useState(false);
   const [showAttachments, setShowAttachments] = useState(false); // Para mostrar/ocultar sección de archivos
   const [showAllPopular, setShowAllPopular] = useState(false); // Para mostrar/ocultar etiquetas populares
+  const [associatedCases, setAssociatedCases] = useState<string[]>([]); // IDs de casos asociados
+  const [caseSearchInput, setCaseSearchInput] = useState(""); // Input para buscar casos
+  const [showCaseSearch, setShowCaseSearch] = useState(false); // Mostrar/ocultar búsqueda de casos
 
   // Notificaciones
   const { success, error: showError } = useToast();
@@ -94,6 +102,37 @@ const KnowledgeDocumentForm: React.FC = () => {
 
   // Sistema de predicción de tags
   const { data: predictiveTags } = useSearchTags(tagInput);
+
+  // Query para obtener casos (incluyendo archivados)
+  const { data: casesData } = useCases();
+
+  // Query para obtener estados dinámicos de casos (no necesaria con la nueva lógica simplificada)
+  // const { data: caseStatuses = [] } = useQuery<CaseStatus[]>({
+  //   queryKey: ["caseStatuses"],
+  //   queryFn: getCaseStatuses,
+  // });
+
+  // Función para obtener el estado display de un caso
+  const getCaseStatusDisplay = (caso: Case) => {
+    // Verificar si el caso está archivado
+    // Asumimos que un caso archivado tiene estado "cerrado", "cancelado" o algun campo isArchived
+    const isArchived =
+      caso.estado === "cerrado" ||
+      caso.estado === "cancelado" ||
+      caso.isArchived === true;
+
+    if (isArchived) {
+      return {
+        name: "Archivado",
+        color: "#6b7280", // gris
+      };
+    } else {
+      return {
+        name: "En Progreso",
+        color: "#10b981", // verde
+      };
+    }
+  };
 
   // Effect para cerrar dropdown al hacer clic fuera
   React.useEffect(() => {
@@ -151,6 +190,17 @@ const KnowledgeDocumentForm: React.FC = () => {
           typeof tag === "string" ? tag : tag.tagName
         ) || [];
       setTags(documentTags);
+
+      // Cargar casos asociados
+      if (document.associatedCases && document.associatedCases.length > 0) {
+        console.log(
+          "Cargando casos asociados del documento:",
+          document.associatedCases
+        );
+        setAssociatedCases(document.associatedCases);
+      } else {
+        setAssociatedCases([]); // Limpiar casos si no hay ninguno
+      }
     }
   }, [document, isEditing]);
 
@@ -230,6 +280,47 @@ const KnowledgeDocumentForm: React.FC = () => {
     }
   };
 
+  // Handle cases
+  const handleAddCase = (caseId: string) => {
+    if (!associatedCases.includes(caseId)) {
+      setAssociatedCases([...associatedCases, caseId]);
+    }
+    setCaseSearchInput("");
+    setShowCaseSearch(false);
+  };
+
+  const handleRemoveCase = (caseId: string) => {
+    setAssociatedCases(associatedCases.filter((id) => id !== caseId));
+  };
+
+  const getSelectedCases = () => {
+    if (!casesData) return [];
+    return casesData.filter((caso: Case) => associatedCases.includes(caso.id));
+  };
+
+  const getAvailableCases = () => {
+    if (!casesData) return [];
+    console.log(
+      "Todos los casos:",
+      casesData.map((c) => ({
+        id: c.id,
+        numeroCaso: c.numeroCaso,
+        estado: c.estado,
+      }))
+    );
+    return casesData.filter(
+      (caso: Case) =>
+        !associatedCases.includes(caso.id) &&
+        (caseSearchInput === "" ||
+          caso.numeroCaso
+            .toLowerCase()
+            .includes(caseSearchInput.toLowerCase()) ||
+          caso.descripcion
+            ?.toLowerCase()
+            .includes(caseSearchInput.toLowerCase()))
+    );
+  };
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -243,6 +334,7 @@ const KnowledgeDocumentForm: React.FC = () => {
       difficultyLevel,
       isTemplate,
       tags: tags.length > 0 ? tags : undefined,
+      associatedCases: associatedCases, // Enviar array (vacío o con datos)
     };
 
     try {
@@ -275,7 +367,7 @@ const KnowledgeDocumentForm: React.FC = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-full mx-auto px-6 sm:px-8 lg:px-12">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <button
@@ -311,7 +403,7 @@ const KnowledgeDocumentForm: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-full mx-auto px-6 sm:px-8 lg:px-12 py-6">
         <form id="document-form" onSubmit={handleSubmit} className="space-y-6">
           {/* Document Information Card */}
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
@@ -598,6 +690,155 @@ const KnowledgeDocumentForm: React.FC = () => {
             </div>
           </div>
 
+          {/* Associated Cases Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+                <ActionIcon action="case" size="lg" className="mr-2" />
+                Casos Asociados
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Asocia este documento con casos específicos para mejor
+                organización
+              </p>
+            </div>
+            <div className="p-6 space-y-4">
+              {/* Case Search Input */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Buscar y agregar casos
+                </label>
+                <div className="relative">
+                  <Input
+                    type="text"
+                    placeholder="Buscar casos por título o descripción..."
+                    value={caseSearchInput}
+                    onChange={(e) => {
+                      setCaseSearchInput(e.target.value);
+                      setShowCaseSearch(e.target.value.length > 0);
+                    }}
+                    onFocus={() =>
+                      setShowCaseSearch(caseSearchInput.length > 0)
+                    }
+                    className="w-full"
+                  />
+                  {/* Search Results */}
+                  {showCaseSearch && caseSearchInput && (
+                    <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      {getAvailableCases().length > 0 ? (
+                        getAvailableCases()
+                          .slice(0, 10)
+                          .map((caso: Case) => (
+                            <button
+                              key={caso.id}
+                              type="button"
+                              onClick={() => handleAddCase(caso.id)}
+                              className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-600 last:border-b-0"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                    {caso.numeroCaso}
+                                  </p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                                    {caso.descripcion}
+                                  </p>
+                                </div>
+                                <div className="ml-2 flex flex-col items-end">
+                                  {(() => {
+                                    const statusDisplay =
+                                      getCaseStatusDisplay(caso);
+                                    return (
+                                      <span
+                                        className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white"
+                                        style={{
+                                          backgroundColor: statusDisplay.color,
+                                        }}
+                                      >
+                                        {statusDisplay.name}
+                                      </span>
+                                    );
+                                  })()}
+                                </div>
+                              </div>
+                            </button>
+                          ))
+                      ) : (
+                        <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                          No se encontraron casos que coincidan con la búsqueda
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Selected Cases */}
+              {getSelectedCases().length > 0 && (
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Casos Seleccionados ({getSelectedCases().length})
+                  </label>
+                  <div className="space-y-2">
+                    {getSelectedCases().map((caso: Case) => (
+                      <div
+                        key={caso.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
+                      >
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {caso.numeroCaso}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {caso.descripcion}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            {(() => {
+                              const statusDisplay = getCaseStatusDisplay(caso);
+                              return (
+                                <span
+                                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white"
+                                  style={{
+                                    backgroundColor: statusDisplay.color,
+                                  }}
+                                >
+                                  {statusDisplay.name}
+                                </span>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCase(caso.id)}
+                          className="ml-3 p-1 text-gray-400 hover:text-red-600 transition-colors"
+                          title="Quitar caso"
+                        >
+                          <ActionIcon action="close" size="sm" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Empty State */}
+              {getSelectedCases().length === 0 && (
+                <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                  <ActionIcon
+                    action="case"
+                    size="lg"
+                    className="mx-auto mb-2 opacity-50"
+                  />
+                  <p className="text-sm">No hay casos asociados</p>
+                  <p className="text-xs mt-1">
+                    Busca y selecciona casos para asociar con este documento
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Content Editor Card */}
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -626,12 +867,13 @@ const KnowledgeDocumentForm: React.FC = () => {
                 </div>
               </div>
 
-              <div className="document-main-content">
+              <div className="document-main-content w-full max-w-none">
                 <BlockNoteEditor
                   content={jsonContent}
                   onChange={handleContentChange}
                   onContentChange={handleTextContentChange}
                   documentId={id} // Pasar el ID del documento para habilitar uploads
+                  className="w-full max-w-none"
                 />
               </div>
 

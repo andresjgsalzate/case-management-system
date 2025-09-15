@@ -333,6 +333,7 @@ const KnowledgeDocumentForm: React.FC = () => {
       priority,
       difficultyLevel,
       isTemplate,
+      isPublished, // 🔧 AÑADIR el campo isPublished
       tags: tags.length > 0 ? tags : undefined,
       associatedCases: associatedCases, // Enviar array (vacío o con datos)
     };

@@ -63,10 +63,6 @@ export const authenticateToken = async (
       permissions: permissions,
     };
 
-    console.log(
-      `🔐 [AUTH] Usuario ${user.id} autenticado con ${permissions.length} permisos`
-    );
-
     next();
   } catch (error) {
     next(error);

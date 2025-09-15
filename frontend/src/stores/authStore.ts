@@ -70,6 +70,7 @@ export const useAuthStore = create<AuthState>()(
           const response = await authService.login({ email, password });
           if (response.success && response.data) {
             const { user, token, refreshToken } = response.data;
+
             // Usar SecurityService para almacenamiento seguro
             securityService.storeTokens(token, refreshToken, 3600); // 1 hora por defecto
             // Solo guardar datos del usuario (no tokens)

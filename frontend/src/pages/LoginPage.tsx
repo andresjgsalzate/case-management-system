@@ -132,21 +132,6 @@ export const LoginPage: React.FC = () => {
               </Link>
             </span>
           </div>
-
-          {/* Información de prueba - solo para desarrollo */}
-          <div className="mt-4 p-4 bg-blue-50 rounded-md">
-            <h4 className="text-sm font-medium text-blue-800 mb-2">
-              Usuarios de prueba:
-            </h4>
-            <div className="text-xs text-blue-700 space-y-1">
-              <p>
-                <strong>Admin:</strong> admin@test.com / 123456
-              </p>
-              <p>
-                <strong>Usuario:</strong> user@test.com / user123
-              </p>
-            </div>
-          </div>
         </form>
       </div>
     </div>

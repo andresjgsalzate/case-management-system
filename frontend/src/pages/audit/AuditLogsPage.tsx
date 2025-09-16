@@ -175,10 +175,10 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Sistema de Auditoría
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-300">
             Monitoreo completo de todas las operaciones del sistema
           </p>
         </div>
@@ -199,7 +199,9 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
               size="sm"
               onClick={() => exportLogs("CSV")}
               title="Exportar CSV"
+              className="flex items-center gap-1"
             >
+              <ActionIcon action="download" className="w-4 h-4" />
               CSV
             </Button>
             <Button
@@ -207,7 +209,9 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
               size="sm"
               onClick={() => exportLogs("XLSX")}
               title="Exportar Excel"
+              className="flex items-center gap-1"
             >
+              <ActionIcon action="download" className="w-4 h-4" />
               Excel
             </Button>
             <Button
@@ -215,7 +219,9 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
               size="sm"
               onClick={() => exportLogs("JSON")}
               title="Exportar JSON"
+              className="flex items-center gap-1"
             >
+              <ActionIcon action="download" className="w-4 h-4" />
               JSON
             </Button>
           </div>
@@ -228,15 +234,23 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Búsqueda general */}
             <div className="space-y-2">
-              <Label>Búsqueda general</Label>
+              <Label className="text-gray-700 dark:text-gray-300">
+                Búsqueda general
+              </Label>
               <div className="flex gap-2">
                 <Input
                   placeholder="Buscar en logs..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                  className="dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                 />
-                <Button onClick={handleSearch} size="sm">
+                <Button
+                  onClick={handleSearch}
+                  size="sm"
+                  className="flex items-center gap-1"
+                >
+                  <ActionIcon action="search" className="w-4 h-4" />
                   Buscar
                 </Button>
               </div>
@@ -244,12 +258,13 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
 
             {/* Filtro por acción */}
             <div className="space-y-2">
-              <Label>Acción</Label>
+              <Label className="text-gray-700 dark:text-gray-300">Acción</Label>
               <Select
                 value={filters.action || ""}
                 onChange={(e) =>
                   handleFilterChange("action", e.target.value || undefined)
                 }
+                className="dark:bg-gray-800 dark:border-gray-600 dark:text-white"
               >
                 <option value="">Todas las acciones</option>
                 {AUDIT_ACTION_OPTIONS.map((option) => (
@@ -262,12 +277,13 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
 
             {/* Filtro por módulo */}
             <div className="space-y-2">
-              <Label>Módulo</Label>
+              <Label className="text-gray-700 dark:text-gray-300">Módulo</Label>
               <Select
                 value={filters.module || ""}
                 onChange={(e) =>
                   handleFilterChange("module", e.target.value || undefined)
                 }
+                className="dark:bg-gray-800 dark:border-gray-600 dark:text-white"
               >
                 <option value="">Todos los módulos</option>
                 {AUDIT_MODULE_OPTIONS.map((option) => (
@@ -280,12 +296,15 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
 
             {/* Filtro por tipo de entidad */}
             <div className="space-y-2">
-              <Label>Tipo de Entidad</Label>
+              <Label className="text-gray-700 dark:text-gray-300">
+                Tipo de Entidad
+              </Label>
               <Select
                 value={filters.entityType || ""}
                 onChange={(e) =>
                   handleFilterChange("entityType", e.target.value || undefined)
                 }
+                className="dark:bg-gray-800 dark:border-gray-600 dark:text-white"
               >
                 <option value="">Todos los tipos</option>
                 {AUDIT_ENTITY_TYPE_OPTIONS.map((option) => (
@@ -298,43 +317,52 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
 
             {/* Filtro por fecha inicio */}
             <div className="space-y-2">
-              <Label>Fecha desde</Label>
+              <Label className="text-gray-700 dark:text-gray-300">
+                Fecha desde
+              </Label>
               <Input
                 type="date"
                 value={filters.startDate || ""}
                 onChange={(e) =>
                   handleFilterChange("startDate", e.target.value || undefined)
                 }
+                className="dark:bg-gray-800 dark:border-gray-600 dark:text-white"
               />
             </div>
 
             {/* Filtro por fecha fin */}
             <div className="space-y-2">
-              <Label>Fecha hasta</Label>
+              <Label className="text-gray-700 dark:text-gray-300">
+                Fecha hasta
+              </Label>
               <Input
                 type="date"
                 value={filters.endDate || ""}
                 onChange={(e) =>
                   handleFilterChange("endDate", e.target.value || undefined)
                 }
+                className="dark:bg-gray-800 dark:border-gray-600 dark:text-white"
               />
             </div>
 
             {/* Filtro por usuario */}
             <div className="space-y-2">
-              <Label>Usuario</Label>
+              <Label className="text-gray-700 dark:text-gray-300">
+                Usuario
+              </Label>
               <Input
                 placeholder="Email del usuario"
                 value={filters.userEmail || ""}
                 onChange={(e) =>
                   handleFilterChange("userEmail", e.target.value || undefined)
                 }
+                className="dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
               />
             </div>
 
             {/* Filtro por éxito de operación */}
             <div className="space-y-2">
-              <Label>Estado</Label>
+              <Label className="text-gray-700 dark:text-gray-300">Estado</Label>
               <Select
                 value={filters.operationSuccess?.toString() || ""}
                 onChange={(e) =>
@@ -345,6 +373,7 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                       : e.target.value === "true"
                   )
                 }
+                className="dark:bg-gray-800 dark:border-gray-600 dark:text-white"
               >
                 <option value="">Todos los estados</option>
                 <option value="true">Exitosos</option>
@@ -354,10 +383,21 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
           </div>
 
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="secondary" onClick={clearFilters}>
+            <Button
+              variant="secondary"
+              onClick={clearFilters}
+              className="flex items-center gap-1"
+            >
+              <ActionIcon action="restore" className="w-4 h-4" />
               Limpiar Filtros
             </Button>
-            <Button onClick={() => setIsFiltersPanelOpen(false)}>Cerrar</Button>
+            <Button
+              onClick={() => setIsFiltersPanelOpen(false)}
+              className="flex items-center gap-1"
+            >
+              <ActionIcon action="close" className="w-4 h-4" />
+              Cerrar
+            </Button>
           </div>
         </Card>
       )}
@@ -366,7 +406,7 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
       <Card>
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               Logs de Auditoría ({pagination.total} registros)
             </h2>
           </div>
@@ -380,26 +420,26 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">
+                    <tr className="border-b border-gray-200 dark:border-gray-700">
+                      <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
                         Fecha
                       </th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">
+                      <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
                         Usuario
                       </th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">
+                      <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
                         Acción
                       </th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">
+                      <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
                         Módulo
                       </th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">
+                      <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
                         Entidad
                       </th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">
+                      <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
                         Estado
                       </th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-500">
+                      <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
                         Acciones
                       </th>
                     </tr>
@@ -409,19 +449,19 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                       logs.map((log) => (
                         <tr
                           key={log.id}
-                          className="border-b border-gray-100 hover:bg-gray-50"
+                          className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                         >
                           <td className="py-3 px-4">
-                            <div className="text-sm text-gray-900">
+                            <div className="text-sm text-gray-900 dark:text-gray-100">
                               {formatDate(log.createdAt)}
                             </div>
                           </td>
                           <td className="py-3 px-4">
                             <div className="text-sm">
-                              <div className="font-medium text-gray-900">
+                              <div className="font-medium text-gray-900 dark:text-gray-100">
                                 {log.userName || log.userEmail}
                               </div>
-                              <div className="text-gray-500">
+                              <div className="text-gray-500 dark:text-gray-400">
                                 {log.userRole}
                               </div>
                             </div>
@@ -435,19 +475,19 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                             </Badge>
                           </td>
                           <td className="py-3 px-4">
-                            <span className="text-sm text-gray-900">
+                            <span className="text-sm text-gray-900 dark:text-gray-100">
                               {getModuleLabel(log.module as AuditModule)}
                             </span>
                           </td>
                           <td className="py-3 px-4">
                             <div className="text-sm">
-                              <div className="font-medium text-gray-900">
+                              <div className="font-medium text-gray-900 dark:text-gray-100">
                                 {getEntityTypeLabel(
                                   log.entityType as AuditEntityType
                                 )}
                               </div>
                               {log.entityName && (
-                                <div className="text-gray-500">
+                                <div className="text-gray-500 dark:text-gray-400">
                                   {log.entityName}
                                 </div>
                               )}
@@ -467,7 +507,9 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => viewLogDetails(log)}
+                              className="flex items-center gap-1"
                             >
+                              <ActionIcon action="view" className="w-4 h-4" />
                               Ver Detalles
                             </Button>
                           </td>
@@ -475,10 +517,16 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={8} className="text-center py-8">
-                          <p className="text-gray-500">
-                            No se encontraron logs de auditoría
-                          </p>
+                        <td colSpan={7} className="text-center py-8">
+                          <div className="flex flex-col items-center gap-2">
+                            <ActionIcon
+                              action="info"
+                              className="w-8 h-8 text-gray-400"
+                            />
+                            <p className="text-gray-500 dark:text-gray-400">
+                              No se encontraron logs de auditoría
+                            </p>
+                          </div>
                         </td>
                       </tr>
                     )}
@@ -486,19 +534,25 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                 </table>
               </div>
 
-              {logs.length === 0 && (
+              {logs.length === 0 && !loading && (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">
-                    No se encontraron logs de auditoría con los filtros
-                    aplicados.
-                  </p>
+                  <div className="flex flex-col items-center gap-2">
+                    <ActionIcon
+                      action="info"
+                      className="w-8 h-8 text-gray-400"
+                    />
+                    <p className="text-gray-500 dark:text-gray-400">
+                      No se encontraron logs de auditoría con los filtros
+                      aplicados.
+                    </p>
+                  </div>
                 </div>
               )}
 
               {/* Paginación */}
               {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-6">
-                  <div className="text-sm text-gray-700">
+                  <div className="text-sm text-gray-700 dark:text-gray-300">
                     Mostrando{" "}
                     {Math.min(
                       (pagination.page - 1) * pagination.limit + 1,
@@ -518,11 +572,13 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                       size="sm"
                       onClick={() => handlePageChange(pagination.page - 1)}
                       disabled={!pagination.hasPreviousPage}
+                      className="flex items-center gap-1"
                     >
+                      <ActionIcon action="back" className="w-4 h-4" />
                       Anterior
                     </Button>
 
-                    <span className="flex items-center px-3 py-1 text-sm">
+                    <span className="flex items-center px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
                       Página {pagination.page} de {pagination.totalPages}
                     </span>
 
@@ -531,8 +587,10 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                       size="sm"
                       onClick={() => handlePageChange(pagination.page + 1)}
                       disabled={!pagination.hasNextPage}
+                      className="flex items-center gap-1"
                     >
                       Siguiente
+                      <ActionIcon action="arrowRight" className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
@@ -554,24 +612,24 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
             {/* Información general */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="text-sm font-medium text-gray-500">
+                <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   Fecha y Hora
                 </Label>
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-gray-900 dark:text-gray-100">
                   {formatDate(selectedLog.createdAt)}
                 </p>
               </div>
               <div>
-                <Label className="text-sm font-medium text-gray-500">
+                <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   Usuario
                 </Label>
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-gray-900 dark:text-gray-100">
                   {selectedLog.userName || selectedLog.userEmail} (
                   {selectedLog.userRole})
                 </p>
               </div>
               <div>
-                <Label className="text-sm font-medium text-gray-500">
+                <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   Acción
                 </Label>
                 <Badge className={getActionColor(selectedLog.action)}>
@@ -579,7 +637,7 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                 </Badge>
               </div>
               <div>
-                <Label className="text-sm font-medium text-gray-500">
+                <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   Estado
                 </Label>
                 <Badge
@@ -589,18 +647,18 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                 </Badge>
               </div>
               <div>
-                <Label className="text-sm font-medium text-gray-500">
+                <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   Módulo
                 </Label>
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-gray-900 dark:text-gray-100">
                   {getModuleLabel(selectedLog.module as AuditModule)}
                 </p>
               </div>
               <div>
-                <Label className="text-sm font-medium text-gray-500">
+                <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   Tipo de Entidad
                 </Label>
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-gray-900 dark:text-gray-100">
                   {getEntityTypeLabel(
                     selectedLog.entityType as AuditEntityType
                   )}
@@ -608,30 +666,30 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
               </div>
               {selectedLog.entityName && (
                 <div className="md:col-span-2">
-                  <Label className="text-sm font-medium text-gray-500">
+                  <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                     Nombre de Entidad
                   </Label>
-                  <p className="text-sm text-gray-900">
+                  <p className="text-sm text-gray-900 dark:text-gray-100">
                     {selectedLog.entityName}
                   </p>
                 </div>
               )}
               {selectedLog.ipAddress && (
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">
+                  <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                     Dirección IP
                   </Label>
-                  <p className="text-sm text-gray-900">
+                  <p className="text-sm text-gray-900 dark:text-gray-100">
                     {selectedLog.ipAddress}
                   </p>
                 </div>
               )}
               {selectedLog.requestPath && (
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">
+                  <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                     Ruta de Request
                   </Label>
-                  <p className="text-sm text-gray-900">
+                  <p className="text-sm text-gray-900 dark:text-gray-100">
                     {selectedLog.requestMethod} {selectedLog.requestPath}
                   </p>
                 </div>
@@ -641,11 +699,11 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
             {/* Mensaje de error si existe */}
             {selectedLog.errorMessage && (
               <div>
-                <Label className="text-sm font-medium text-red-500">
+                <Label className="text-sm font-medium text-red-500 dark:text-red-400">
                   Mensaje de Error
                 </Label>
-                <div className="bg-red-50 border border-red-200 rounded p-3 mt-1">
-                  <p className="text-sm text-red-700">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-3 mt-1">
+                  <p className="text-sm text-red-700 dark:text-red-300">
                     {selectedLog.errorMessage}
                   </p>
                 </div>
@@ -655,14 +713,17 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
             {/* Cambios realizados */}
             {selectedLog.changes && selectedLog.changes.length > 0 && (
               <div>
-                <Label className="text-sm font-medium text-gray-500">
+                <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   Cambios Realizados
                 </Label>
                 <div className="mt-2 space-y-2">
                   {selectedLog.changes.map((change, index) => (
-                    <div key={index} className="bg-gray-50 border rounded p-3">
+                    <div
+                      key={index}
+                      className="bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded p-3"
+                    >
                       <div className="flex justify-between items-start">
-                        <div className="font-medium text-gray-900">
+                        <div className="font-medium text-gray-900 dark:text-gray-100">
                           {change.fieldName}
                         </div>
                         <Badge variant="secondary">{change.changeType}</Badge>
@@ -670,20 +731,20 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                       <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                         {change.oldValue && (
                           <div>
-                            <span className="font-medium text-red-600">
+                            <span className="font-medium text-red-600 dark:text-red-400">
                               Valor anterior:
                             </span>
-                            <p className="text-gray-700 mt-1">
+                            <p className="text-gray-700 dark:text-gray-300 mt-1">
                               {change.oldValue}
                             </p>
                           </div>
                         )}
                         {change.newValue && (
                           <div>
-                            <span className="font-medium text-green-600">
+                            <span className="font-medium text-green-600 dark:text-green-400">
                               Valor nuevo:
                             </span>
-                            <p className="text-gray-700 mt-1">
+                            <p className="text-gray-700 dark:text-gray-300 mt-1">
                               {change.newValue}
                             </p>
                           </div>
@@ -699,11 +760,11 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
             {selectedLog.operationContext &&
               Object.keys(selectedLog.operationContext).length > 0 && (
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">
+                  <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                     Contexto de Operación
                   </Label>
-                  <div className="bg-gray-50 border rounded p-3 mt-1">
-                    <pre className="text-xs text-gray-700 whitespace-pre-wrap">
+                  <div className="bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded p-3 mt-1">
+                    <pre className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
                       {JSON.stringify(selectedLog.operationContext, null, 2)}
                     </pre>
                   </div>

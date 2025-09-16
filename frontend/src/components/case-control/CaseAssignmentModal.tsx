@@ -8,6 +8,7 @@ import { Card } from "../ui/Card";
 import { Badge } from "../ui/Badge";
 import { Modal } from "../ui/Modal";
 import { useAuth } from "../../contexts/AuthContext";
+import { securityService } from "../../services/security.service";
 import {
   createCaseControl,
   getCaseControls,
@@ -55,10 +56,14 @@ export const CaseAssignmentModal: React.FC<CaseAssignmentModalProps> = ({
   const { data: cases = [] } = useQuery({
     queryKey: ["cases"],
     queryFn: async (): Promise<Case[]> => {
-      const token = localStorage.getItem("token");
+      const tokens = securityService.getValidTokens();
+      if (!tokens) {
+        throw new Error("No valid authentication token");
+      }
+
       const response = await fetch("http://localhost:3000/api/cases", {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${tokens.token}`,
         },
       });
       const result = await response.json();
@@ -78,10 +83,14 @@ export const CaseAssignmentModal: React.FC<CaseAssignmentModalProps> = ({
   const { data: users = [] } = useQuery({
     queryKey: ["users"],
     queryFn: async (): Promise<User[]> => {
-      const token = localStorage.getItem("token");
+      const tokens = securityService.getValidTokens();
+      if (!tokens) {
+        throw new Error("No valid authentication token");
+      }
+
       const response = await fetch("http://localhost:3000/api/auth/users", {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${tokens.token}`,
         },
       });
       const result = await response.json();

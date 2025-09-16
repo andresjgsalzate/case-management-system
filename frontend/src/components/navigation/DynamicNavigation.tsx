@@ -16,6 +16,8 @@ const ICON_ACTION_MAP: Record<string, string> = {
   DocumentDuplicateIcon: "duplicate",
   CogIcon: "settings",
   BuildingOfficeIcon: "building",
+  BuildingOffice2Icon: "building",
+  CubeIcon: "modules",
   FlagIcon: "flag",
   ShieldCheckIcon: "shield",
   ArchiveBoxIcon: "archive",

@@ -176,6 +176,13 @@ export const ADMIN_SECTIONS: Array<{
         adminOnly: false, // No restringido solo a administradores
       },
       {
+        name: "Auditoría",
+        href: "/admin/audit",
+        icon: "ShieldCheckIcon",
+        permissions: ["audit.view.all", "audit.admin.all"],
+        adminOnly: true,
+      },
+      {
         name: "Estado del Sistema",
         href: "/system/status",
         icon: "CogIcon",

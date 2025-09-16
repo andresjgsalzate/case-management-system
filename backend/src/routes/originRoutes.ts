@@ -1,12 +1,16 @@
 import { Router } from "express";
 import { OriginController } from "../controllers/OriginController";
 import { authenticateToken } from "../middleware/auth";
+import { AuditMiddleware } from "../middleware/auditMiddleware";
 
 const router = Router();
 const originController = new OriginController();
 
 // Todas las rutas requieren autenticación
 router.use(authenticateToken);
+
+// Aplicar middleware de auditoría después de la autenticación
+router.use(AuditMiddleware.initializeAuditContext);
 
 /**
  * @route GET /api/origins
@@ -41,21 +45,33 @@ router.get("/:id", originController.getOriginById.bind(originController));
  * @desc Crear nuevo origen
  * @access Privado
  */
-router.post("/", originController.createOrigin.bind(originController));
+router.post(
+  "/",
+  AuditMiddleware.auditCreate("origenes"),
+  originController.createOrigin.bind(originController)
+);
 
 /**
  * @route PUT /api/origins/:id
  * @desc Actualizar origen
  * @access Privado
  */
-router.put("/:id", originController.updateOrigin.bind(originController));
+router.put(
+  "/:id",
+  AuditMiddleware.auditUpdate("origenes"),
+  originController.updateOrigin.bind(originController)
+);
 
 /**
  * @route DELETE /api/origins/:id
  * @desc Eliminar origen
  * @access Privado
  */
-router.delete("/:id", originController.deleteOrigin.bind(originController));
+router.delete(
+  "/:id",
+  AuditMiddleware.auditDelete("origenes"),
+  originController.deleteOrigin.bind(originController)
+);
 
 /**
  * @route GET /api/origins/:id/can-delete

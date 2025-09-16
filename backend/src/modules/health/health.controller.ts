@@ -17,7 +17,7 @@ export class HealthController {
           total: Math.round((memoryUsage.heapTotal / 1024 / 1024) * 100) / 100,
         },
         environment: process.env.NODE_ENV || "development",
-        version: "1.0.0",
+        version: "1.1.0",
       });
     } catch (error) {
       console.error("Health check error:", error);

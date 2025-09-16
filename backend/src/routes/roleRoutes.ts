@@ -1,12 +1,16 @@
 import { Router } from "express";
 import { RoleController } from "../controllers/RoleController";
 import { authenticateToken } from "../middleware/auth";
+import { AuditMiddleware } from "../middleware/auditMiddleware";
 
 const router = Router();
 const roleController = new RoleController();
 
 // Todas las rutas requieren autenticación
 router.use(authenticateToken);
+
+// Aplicar middleware de auditoría después de la autenticación
+router.use(AuditMiddleware.initializeAuditContext);
 
 /**
  * @route GET /api/roles
@@ -51,21 +55,33 @@ router.get("/:id", roleController.getRoleById.bind(roleController));
  * @desc Crear nuevo rol
  * @access Privado
  */
-router.post("/", roleController.createRole.bind(roleController));
+router.post(
+  "/",
+  AuditMiddleware.auditCreate("roles"),
+  roleController.createRole.bind(roleController)
+);
 
 /**
  * @route POST /api/roles/:id/clone
  * @desc Clonar un rol existente
  * @access Privado
  */
-router.post("/:id/clone", roleController.cloneRole.bind(roleController));
+router.post(
+  "/:id/clone",
+  AuditMiddleware.auditCreate("roles"),
+  roleController.cloneRole.bind(roleController)
+);
 
 /**
  * @route PUT /api/roles/:id
  * @desc Actualizar rol
  * @access Privado
  */
-router.put("/:id", roleController.updateRole.bind(roleController));
+router.put(
+  "/:id",
+  AuditMiddleware.auditUpdate("roles"),
+  roleController.updateRole.bind(roleController)
+);
 
 /**
  * @route PUT /api/roles/:id/permissions
@@ -74,6 +90,7 @@ router.put("/:id", roleController.updateRole.bind(roleController));
  */
 router.put(
   "/:id/permissions",
+  AuditMiddleware.auditUpdate("roles"),
   roleController.assignPermissions.bind(roleController)
 );
 
@@ -82,6 +99,10 @@ router.put(
  * @desc Eliminar rol
  * @access Privado
  */
-router.delete("/:id", roleController.deleteRole.bind(roleController));
+router.delete(
+  "/:id",
+  AuditMiddleware.auditDelete("roles"),
+  roleController.deleteRole.bind(roleController)
+);
 
 export { router as roleRoutes };

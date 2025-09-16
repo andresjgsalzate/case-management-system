@@ -34,3 +34,7 @@ export { KnowledgeTag } from "./KnowledgeTag";
 export { KnowledgeDocumentTag } from "./KnowledgeDocumentTag";
 export { KnowledgeDocumentTagRelation } from "./KnowledgeDocumentTagRelation";
 export { DocumentType } from "./DocumentType";
+
+// Audit System entities
+export { AuditLog } from "./AuditLog";
+export { AuditEntityChange } from "./AuditEntityChange";

@@ -1,4 +1,4 @@
-# Case Management System
+# Case Management System v1.1.0
 
 Sistema completo de gestión de casos con backend en Node.js/TypeScript y frontend en React/TypeScript.
 
@@ -14,6 +14,45 @@ Sistema completo de gestión de casos con backend en Node.js/TypeScript y fronte
 - **Control de Tiempo**: Registro manual y automático de tiempo por caso
 - **Notas**: Sistema de anotaciones por caso
 - **Roles y Usuarios**: Administración completa de usuarios y permisos
+- **🆕 Sistema de Auditoría Completo**: Trazabilidad total de todas las operaciones del sistema
+
+### 🔍 **Sistema de Auditoría v1.1.0** _(NUEVO)_
+
+#### **Cobertura Completa de Módulos**
+
+- ✅ **Base de Conocimiento**: Documentos, tags y tipos de documento
+- ✅ **Administración**: Usuarios, roles, permisos, aplicaciones, orígenes
+- ✅ **Archivos y Reportes**: Descargas, visualizaciones y acceso a métricas
+- ✅ **Casos y TODOs**: Operaciones principales del sistema
+- ✅ **Tiempo y Notas**: Seguimiento de actividades
+
+#### **Acciones Auditadas**
+
+- **CREATE**: Creación de registros
+- **UPDATE**: Modificaciones de datos
+- **DELETE**: Eliminación de registros
+- **READ**: Acceso a información sensible
+- **DOWNLOAD**: Descargas de archivos
+- **VIEW**: Visualización de documentos
+- **EXPORT**: Exportación de datos
+- **ARCHIVE/RESTORE**: Archivado y restauración
+
+#### **Información Capturada**
+
+- **Usuario**: ID, email, nombre, rol
+- **Operación**: Acción, módulo, entidad afectada
+- **Contexto**: IP, navegador, sesión, ruta
+- **Cambios**: Valores anteriores y nuevos
+- **Timestamp**: Fecha y hora exacta
+- **Estado**: Éxito o fallo de la operación
+
+#### **Características Avanzadas**
+
+- **Detección Automática**: Identificación inteligente de módulos
+- **Campos Sensibles**: Protección de información confidencial
+- **Contexto Enriquecido**: Información detallada de cada operación
+- **Middleware Universal**: Captura automática en todas las rutas
+- **Interfaz Frontend**: Visualización completa de logs de auditoría
 
 ### 🛠 **Tecnologías**
 

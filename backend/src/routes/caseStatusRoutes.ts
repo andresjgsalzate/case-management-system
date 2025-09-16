@@ -1,12 +1,16 @@
 import { Router } from "express";
 import { CaseStatusController } from "../controllers/CaseStatusController";
 import { authenticateToken } from "../middleware/auth";
+import { AuditMiddleware } from "../middleware/auditMiddleware";
 
 const router = Router();
 const caseStatusController = new CaseStatusController();
 
 // Todas las rutas requieren autenticación
 router.use(authenticateToken);
+
+// Aplicar middleware de auditoría después de la autenticación
+router.use(AuditMiddleware.initializeAuditContext);
 
 /**
  * @route GET /api/case-statuses
@@ -60,7 +64,11 @@ router.get(
  * @desc Crear nuevo estado
  * @access Privado
  */
-router.post("/", caseStatusController.createStatus.bind(caseStatusController));
+router.post(
+  "/",
+  AuditMiddleware.auditCreate("case_status_control"),
+  caseStatusController.createStatus.bind(caseStatusController)
+);
 
 /**
  * @route PUT /api/case-statuses/:id
@@ -69,6 +77,7 @@ router.post("/", caseStatusController.createStatus.bind(caseStatusController));
  */
 router.put(
   "/:id",
+  AuditMiddleware.auditUpdate("case_status_control"),
   caseStatusController.updateStatus.bind(caseStatusController)
 );
 
@@ -79,6 +88,7 @@ router.put(
  */
 router.put(
   "/reorder",
+  AuditMiddleware.auditUpdate("case_status_control"),
   caseStatusController.reorderStatuses.bind(caseStatusController)
 );
 
@@ -89,6 +99,7 @@ router.put(
  */
 router.delete(
   "/:id",
+  AuditMiddleware.auditDelete("case_status_control"),
   caseStatusController.deleteStatus.bind(caseStatusController)
 );
 

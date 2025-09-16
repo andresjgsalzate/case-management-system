@@ -81,6 +81,9 @@ import {
   CheckIcon,
   StopIcon,
   ArrowRightIcon,
+  CubeIcon,
+  DocumentTextIcon,
+  CheckBadgeIcon,
 } from "@heroicons/react/24/outline";
 
 // Tipos para los iconos de acción
@@ -174,7 +177,10 @@ export type ActionType =
   | "arrowRight"
   | "loading"
   | "star"
-  | "case";
+  | "case"
+  | "modules"
+  | "changelog"
+  | "verified";
 
 // Tipos para tamaños
 export type IconSize = "xs" | "sm" | "md" | "lg" | "xl";
@@ -288,6 +294,9 @@ const iconMap: Record<ActionType, React.ComponentType<any>> = {
   loading: ArrowPathIcon,
   star: StarIcon,
   case: FolderIcon,
+  modules: CubeIcon,
+  changelog: DocumentTextIcon,
+  verified: CheckBadgeIcon,
 };
 
 // Mapeo de tamaños
@@ -419,6 +428,9 @@ const actionColorMap: Record<ActionType, ColorVariant> = {
   loading: "blue",
   star: "yellow",
   case: "blue",
+  modules: "purple",
+  changelog: "green",
+  verified: "success",
 };
 
 // Props del componente

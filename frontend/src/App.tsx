@@ -31,10 +31,14 @@ import TagsPage from "./pages/tags/TagsPage";
 import DocumentTypesPage from "./pages/document-types/DocumentTypesPage";
 import { TodoPrioritiesPage } from "./pages/admin/TodoPrioritiesPage";
 import { SecurityDebugPage } from "./pages/admin/SecurityDebugPage";
+// Audit imports
+import { AuditLogsPage } from "./pages/audit";
 // Knowledge Base imports
 import KnowledgeBase from "./pages/KnowledgeBase";
 import KnowledgeDocumentForm from "./pages/KnowledgeDocumentForm";
 import KnowledgeDocumentView from "./pages/KnowledgeDocumentView";
+// System imports
+import { SystemInfoPage } from "./pages/SystemInfoPage";
 // Security imports
 import { useSecureAuth } from "./hooks/useSecureAuth";
 import { SessionTimeoutWarning } from "./components/SessionTimeoutWarning";
@@ -377,11 +381,33 @@ function App() {
             />
 
             <Route
+              path="/admin/audit"
+              element={
+                <ProtectedRoute requiredPermission="audit.view.all">
+                  <Layout>
+                    <AuditLogsPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/system/status"
               element={
                 <ProtectedRoute requiredPermission="dashboard.ver.all">
                   <Layout>
                     <SystemStatusPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/system/info"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <SystemInfoPage />
                   </Layout>
                 </ProtectedRoute>
               }

@@ -4,6 +4,7 @@ import {
   fileUploadService,
 } from "../services/file-upload.service";
 import { authenticateToken } from "../middleware/auth";
+import { AuditMiddleware } from "../middleware/auditMiddleware";
 import path from "path";
 import fs from "fs";
 
@@ -11,6 +12,9 @@ const router = Router();
 
 // Aplicar autenticación a todas las rutas
 router.use(authenticateToken);
+
+// Aplicar middleware de auditoría después de la autenticación
+router.use(AuditMiddleware.initializeAuditContext);
 
 /**
  * Subir archivos para un documento de conocimiento
@@ -124,6 +128,7 @@ router.get(
  */
 router.get(
   "/knowledge/download/:fileName",
+  AuditMiddleware.auditCreate("file_downloads"),
   async (req: Request, res: Response) => {
     try {
       const { fileName } = req.params;
@@ -165,41 +170,45 @@ router.get(
  * Visualizar un archivo (para imágenes y PDFs)
  * GET /api/files/knowledge/view/:fileName
  */
-router.get("/knowledge/view/:fileName", async (req: Request, res: Response) => {
-  try {
-    const { fileName } = req.params;
+router.get(
+  "/knowledge/view/:fileName",
+  AuditMiddleware.auditCreate("file_views"),
+  async (req: Request, res: Response) => {
+    try {
+      const { fileName } = req.params;
 
-    if (!fileName) {
-      return res.status(400).json({ error: "Nombre del archivo requerido" });
+      if (!fileName) {
+        return res.status(400).json({ error: "Nombre del archivo requerido" });
+      }
+
+      const fileInfo = await fileUploadService.getFileForDownload(fileName);
+
+      // Verificar que el archivo existe
+      if (!fs.existsSync(fileInfo.filePath)) {
+        return res.status(404).json({ error: "Archivo no encontrado" });
+      }
+
+      // Configurar headers para visualización
+      res.setHeader("Content-Type", fileInfo.mimeType);
+      res.setHeader(
+        "Content-Disposition",
+        `inline; filename="${fileInfo.originalName}"`
+      );
+
+      // Enviar el archivo para visualización
+      res.sendFile(path.resolve(fileInfo.filePath));
+    } catch (error) {
+      console.error("Error visualizando archivo:", error);
+      if (error instanceof Error && error.message === "Archivo no encontrado") {
+        return res.status(404).json({ error: "Archivo no encontrado" });
+      }
+      res.status(500).json({
+        error: "Error interno del servidor",
+        message: error instanceof Error ? error.message : "Error desconocido",
+      });
     }
-
-    const fileInfo = await fileUploadService.getFileForDownload(fileName);
-
-    // Verificar que el archivo existe
-    if (!fs.existsSync(fileInfo.filePath)) {
-      return res.status(404).json({ error: "Archivo no encontrado" });
-    }
-
-    // Configurar headers para visualización
-    res.setHeader("Content-Type", fileInfo.mimeType);
-    res.setHeader(
-      "Content-Disposition",
-      `inline; filename="${fileInfo.originalName}"`
-    );
-
-    // Enviar el archivo para visualización
-    res.sendFile(path.resolve(fileInfo.filePath));
-  } catch (error) {
-    console.error("Error visualizando archivo:", error);
-    if (error instanceof Error && error.message === "Archivo no encontrado") {
-      return res.status(404).json({ error: "Archivo no encontrado" });
-    }
-    res.status(500).json({
-      error: "Error interno del servidor",
-      message: error instanceof Error ? error.message : "Error desconocido",
-    });
   }
-});
+);
 
 /**
  * Eliminar un archivo adjunto

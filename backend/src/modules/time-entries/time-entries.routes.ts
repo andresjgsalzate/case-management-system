@@ -1,12 +1,16 @@
 import { Router } from "express";
 import { TimeEntriesController } from "./time-entries.controller";
 import { authenticateToken } from "../../middleware/auth";
+import { AuditMiddleware } from "../../middleware/auditMiddleware";
 
 const router = Router();
 const timeEntriesController = new TimeEntriesController();
 
 // Aplicar middleware de autenticación a todas las rutas
 router.use(authenticateToken);
+
+// Aplicar middleware de auditoría después de la autenticación
+router.use(AuditMiddleware.initializeAuditContext);
 
 // Rutas para time entries
 router.get(
@@ -23,6 +27,7 @@ router.get(
 );
 router.delete(
   "/:id",
+  AuditMiddleware.auditDelete("time_entries"),
   timeEntriesController.deleteTimeEntry.bind(timeEntriesController)
 );
 

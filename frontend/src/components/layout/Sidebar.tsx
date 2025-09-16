@@ -89,6 +89,12 @@ const navigation: NavigationItem[] = [
     icon: "tag",
     requiredPermission: "tags.manage",
   },
+  {
+    name: "Auditoría",
+    href: "/admin/audit",
+    icon: "shield",
+    requiredPermission: "audit.view.all",
+  },
 ];
 
 // Debug log para verificar que el archivo se está cargando

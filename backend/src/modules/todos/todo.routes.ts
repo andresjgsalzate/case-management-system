@@ -1,12 +1,16 @@
 import { Router } from "express";
 import { TodoController } from "./todo.controller";
 import { authenticateToken } from "../../middleware/auth";
+import { AuditMiddleware } from "../../middleware/auditMiddleware";
 
 const router = Router();
 const todoController = new TodoController();
 
 // Aplicar middleware de autenticación a todas las rutas
 router.use(authenticateToken);
+
+// Aplicar middleware de auditoría después de la autenticación
+router.use(AuditMiddleware.initializeAuditContext);
 
 // Rutas para TODOs
 router.get("/", (req, res) => todoController.getAllTodos(req, res));
@@ -15,16 +19,26 @@ router.get("/priorities", (req, res) =>
 );
 router.get("/metrics", (req, res) => todoController.getTodoMetrics(req, res));
 router.get("/:id", (req, res) => todoController.getTodoById(req, res));
-router.post("/", (req, res) => todoController.createTodo(req, res));
-router.put("/:id", (req, res) => todoController.updateTodo(req, res));
-router.delete("/:id", (req, res) => todoController.deleteTodo(req, res));
-router.patch("/:id/complete", (req, res) =>
-  todoController.completeTodo(req, res)
+router.post("/", AuditMiddleware.auditCreate("todos"), (req, res) =>
+  todoController.createTodo(req, res)
 );
-router.patch("/:id/reactivate", (req, res) =>
-  todoController.reactivateTodo(req, res)
+router.put("/:id", AuditMiddleware.auditUpdate("todos"), (req, res) =>
+  todoController.updateTodo(req, res)
 );
-router.patch("/:id/archive", (req, res) =>
+router.delete("/:id", AuditMiddleware.auditDelete("todos"), (req, res) =>
+  todoController.deleteTodo(req, res)
+);
+router.patch(
+  "/:id/complete",
+  AuditMiddleware.auditUpdate("todos"),
+  (req, res) => todoController.completeTodo(req, res)
+);
+router.patch(
+  "/:id/reactivate",
+  AuditMiddleware.auditUpdate("todos"),
+  (req, res) => todoController.reactivateTodo(req, res)
+);
+router.patch("/:id/archive", AuditMiddleware.auditUpdate("todos"), (req, res) =>
   todoController.archiveTodo(req, res)
 );
 

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { PermissionController } from "../controllers/PermissionController";
 import { RoleController } from "../controllers/RoleController";
 import { authenticateToken } from "../middleware/auth";
+import { AuditMiddleware } from "../middleware/auditMiddleware";
 import {
   requirePermission,
   requireAdmin,
@@ -11,6 +12,10 @@ import {
 const router = Router();
 const permissionController = new PermissionController();
 const roleController = new RoleController();
+
+// Aplicar middleware de auditoría a rutas que requieren autenticación
+router.use(authenticateToken);
+router.use(AuditMiddleware.initializeAuditContext);
 
 // ===========================
 // RUTAS DE PERMISOS
@@ -57,8 +62,11 @@ router.get("/permissions/search", requireAdmin(), (req, res) =>
  * @desc Crear un nuevo permiso
  * @access Requiere permiso: roles.gestionar.all
  */
-router.post("/permissions", requireAdmin(), (req, res) =>
-  permissionController.createPermission(req, res)
+router.post(
+  "/permissions",
+  requireAdmin(),
+  AuditMiddleware.auditCreate("permissions"),
+  (req, res) => permissionController.createPermission(req, res)
 );
 
 /**
@@ -124,8 +132,11 @@ router.get("/roles/:id", requireAdmin(), (req, res) =>
  * @desc Crear un nuevo rol
  * @access Requiere permiso: roles.gestionar.all
  */
-router.post("/roles", requireAdmin(), (req, res) =>
-  roleController.createRole(req, res)
+router.post(
+  "/roles",
+  requireAdmin(),
+  AuditMiddleware.auditCreate("roles"),
+  (req, res) => roleController.createRole(req, res)
 );
 
 /**
@@ -133,8 +144,11 @@ router.post("/roles", requireAdmin(), (req, res) =>
  * @desc Actualizar un rol existente
  * @access Requiere permiso: roles.gestionar.all
  */
-router.put("/roles/:id", requireAdmin(), (req, res) =>
-  roleController.updateRole(req, res)
+router.put(
+  "/roles/:id",
+  requireAdmin(),
+  AuditMiddleware.auditUpdate("roles"),
+  (req, res) => roleController.updateRole(req, res)
 );
 
 /**
@@ -142,8 +156,11 @@ router.put("/roles/:id", requireAdmin(), (req, res) =>
  * @desc Eliminar un rol (soft delete)
  * @access Requiere permiso: roles.gestionar.all
  */
-router.delete("/roles/:id", requireAdmin(), (req, res) =>
-  roleController.deleteRole(req, res)
+router.delete(
+  "/roles/:id",
+  requireAdmin(),
+  AuditMiddleware.auditDelete("roles"),
+  (req, res) => roleController.deleteRole(req, res)
 );
 
 /**
@@ -151,8 +168,11 @@ router.delete("/roles/:id", requireAdmin(), (req, res) =>
  * @desc Asignar permisos a un rol
  * @access Requiere permiso: roles.gestionar.all
  */
-router.post("/roles/:id/permissions", requireAdmin(), (req, res) =>
-  roleController.assignPermissions(req, res)
+router.post(
+  "/roles/:id/permissions",
+  requireAdmin(),
+  AuditMiddleware.auditUpdate("role_permissions"),
+  (req, res) => roleController.assignPermissions(req, res)
 );
 
 /**
@@ -160,8 +180,11 @@ router.post("/roles/:id/permissions", requireAdmin(), (req, res) =>
  * @desc Clonar un rol existente
  * @access Requiere permiso: roles.gestionar.all
  */
-router.post("/roles/:id/clone", requireAdmin(), (req, res) =>
-  roleController.cloneRole(req, res)
+router.post(
+  "/roles/:id/clone",
+  requireAdmin(),
+  AuditMiddleware.auditCreate("roles"),
+  (req, res) => roleController.cloneRole(req, res)
 );
 
 /**

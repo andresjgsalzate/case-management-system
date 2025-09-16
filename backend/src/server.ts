@@ -7,6 +7,7 @@ import { config } from "./config/environment";
 import { initializeDatabase } from "./config/database";
 import { errorHandler } from "./middleware/errorHandler";
 import { logger } from "./utils/logger";
+import { AuditMiddleware } from "./middleware/auditMiddleware";
 
 // Importar rutas cuando las creemos
 // import authRoutes from "./modules/auth/auth.routes";
@@ -38,7 +39,9 @@ import { caseStatusRoutes } from "./routes/caseStatusRoutes";
 import { todoPriorityRoutes } from "./routes/todoPriorityRoutes";
 import fileUploadRoutes from "./routes/file-upload-simple.routes";
 import adminStorageRoutes from "./routes/admin-storage.routes";
+import systemInfoRoutes from "./routes/systemInfo";
 import { FileUploadService } from "./services/file-upload-simple.service";
+import auditRoutes from "./routes/audit.routes";
 
 const app = express();
 
@@ -94,7 +97,9 @@ app.use("/api/case-statuses", caseStatusRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/origins", originRoutes);
 app.use("/api/admin/todo-priorities", todoPriorityRoutes);
+app.use("/api/system", systemInfoRoutes);
 app.use("/api", permissionsRoutes);
+app.use("/api/audit", auditRoutes); // Rutas del sistema de auditoría
 
 // Error handling middleware (debe ir al final)
 app.use(errorHandler);

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { ActionIcon } from "../ui/ActionIcons";
 import { useAuth } from "../../contexts/AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
@@ -16,6 +17,7 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -49,6 +51,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const handleSignOut = useCallback(() => {
     logout();
   }, [logout]);
+
+  const handleVersionClick = useCallback(() => {
+    navigate("/system/info");
+  }, [navigate]);
 
   const toggleCollapse = useCallback(() => {
     setIsCollapsed((prev) => !prev);
@@ -237,6 +243,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       <ActionIcon action="settings" size="sm" color="gray" />
                       <span className="ml-3">Configuración</span>
                     </button>
+                    <Link
+                      to="/system/info"
+                      onClick={() => setShowUserMenu(false)}
+                      className="w-full flex items-center px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                    >
+                      <ActionIcon action="info" size="sm" color="gray" />
+                      <span className="ml-3">Información del Sistema</span>
+                    </Link>
                     <div className="border-t border-gray-200 dark:border-gray-600 my-1"></div>
                     <button
                       onClick={() => {
@@ -268,7 +282,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               }`}
             >
               <ThemeToggle isCollapsed={isCollapsed} />
-              {!isCollapsed && <VersionDisplay />}
+              {!isCollapsed && <VersionDisplay onClick={handleVersionClick} />}
             </div>
           </div>
         </div>

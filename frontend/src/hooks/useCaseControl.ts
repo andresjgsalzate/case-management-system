@@ -1,14 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TimeEntry, ManualTimeEntry } from "../types/caseControl";
+import { securityService } from "../services/security.service";
 
 // API functions (necesitaremos crearlas)
 const api = {
   async getTimeEntries(caseControlId: string): Promise<TimeEntry[]> {
+    const tokens = securityService.getValidTokens();
+    if (!tokens) {
+      throw new Error("No valid authentication token");
+    }
+
     const response = await fetch(
       `http://localhost:3000/api/time-entries/case-control/${caseControlId}`,
       {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${tokens.token}`,
         },
       }
     );
@@ -19,11 +25,16 @@ const api = {
   async getManualTimeEntries(
     caseControlId: string
   ): Promise<ManualTimeEntry[]> {
+    const tokens = securityService.getValidTokens();
+    if (!tokens) {
+      throw new Error("No valid authentication token");
+    }
+
     const response = await fetch(
       `http://localhost:3000/api/manual-time-entries/case-control/${caseControlId}`,
       {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${tokens.token}`,
         },
       }
     );
@@ -38,13 +49,18 @@ const api = {
     durationMinutes: number;
     date: string;
   }): Promise<ManualTimeEntry> {
+    const tokens = securityService.getValidTokens();
+    if (!tokens) {
+      throw new Error("No valid authentication token");
+    }
+
     const response = await fetch(
       "http://localhost:3000/api/manual-time-entries",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${tokens.token}`,
         },
         body: JSON.stringify({
           caseControlId: data.caseControlId,
@@ -59,12 +75,17 @@ const api = {
   },
 
   async deleteTimeEntry(entryId: string): Promise<void> {
+    const tokens = securityService.getValidTokens();
+    if (!tokens) {
+      throw new Error("No valid authentication token");
+    }
+
     const response = await fetch(
       `http://localhost:3000/api/time-entries/${entryId}`,
       {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${tokens.token}`,
         },
       }
     );
@@ -72,12 +93,17 @@ const api = {
   },
 
   async deleteManualTimeEntry(entryId: string): Promise<void> {
+    const tokens = securityService.getValidTokens();
+    if (!tokens) {
+      throw new Error("No valid authentication token");
+    }
+
     const response = await fetch(
       `http://localhost:3000/api/manual-time-entries/${entryId}`,
       {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${tokens.token}`,
         },
       }
     );

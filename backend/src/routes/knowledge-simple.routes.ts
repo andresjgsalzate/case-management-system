@@ -5,6 +5,7 @@ import { DocumentTypeService } from "../services/document-type.service";
 import { DocumentFeedbackService } from "../services/document-feedback.service";
 import { KnowledgeTagService } from "../services/knowledge-tag.service";
 import { authenticateToken } from "../middleware/auth";
+import { AuditMiddleware } from "../middleware/auditMiddleware";
 import {
   requirePermission,
   requirePermissionWithScope,
@@ -15,6 +16,9 @@ const router = Router();
 
 // Aplicar autenticación a todas las rutas
 router.use(authenticateToken);
+
+// Aplicar middleware de auditoría después de la autenticación
+router.use(AuditMiddleware.initializeAuditContext);
 
 // Inicializar servicios
 const knowledgeDocumentService = new KnowledgeDocumentService();
@@ -234,6 +238,7 @@ router.get(
 router.post(
   "/knowledge/tags",
   requirePermission("tags.create"),
+  AuditMiddleware.auditCreate("knowledge_tags"),
   async (req: Request, res: Response) => {
     try {
       const { tagName, color, category, description } = req.body;
@@ -274,6 +279,7 @@ router.post(
 router.put(
   "/knowledge/tags/:id",
   requirePermission("tags.update"),
+  AuditMiddleware.auditUpdate("knowledge_tags"),
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -297,6 +303,7 @@ router.put(
 router.delete(
   "/knowledge/tags/:id",
   requirePermission("tags.delete"),
+  AuditMiddleware.auditDelete("knowledge_tags"),
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -333,6 +340,7 @@ router.get(
 router.post(
   "/knowledge",
   requirePermission("knowledge.create.own"),
+  AuditMiddleware.auditCreate("knowledge_documents"),
   async (req: Request, res: Response) => {
     try {
       const userId = (req as any).user?.id;
@@ -412,6 +420,7 @@ router.put(
     "knowledge.update.team",
     "knowledge.update.all",
   ]),
+  AuditMiddleware.auditUpdate("knowledge_documents"),
   async (req: Request, res: Response) => {
     try {
       const userId = (req as any).user?.id;
@@ -457,6 +466,7 @@ router.put(
 router.put(
   "/knowledge/:id/publish",
   authenticateToken,
+  AuditMiddleware.auditUpdate("knowledge_documents"),
   async (req: Request, res: Response) => {
     try {
       const userId = (req as any).user.id;
@@ -476,6 +486,7 @@ router.put(
 router.put(
   "/knowledge/:id/archive",
   authenticateToken,
+  AuditMiddleware.auditUpdate("knowledge_documents"),
   async (req: Request, res: Response) => {
     try {
       const userId = (req as any).user.id;
@@ -495,6 +506,7 @@ router.put(
 router.delete(
   "/knowledge/:id",
   authenticateToken,
+  AuditMiddleware.auditDelete("knowledge_documents"),
   async (req: Request, res: Response) => {
     try {
       await knowledgeDocumentService.remove(req.params.id!);
@@ -575,6 +587,7 @@ router.get(
 router.post(
   "/document-types",
   authenticateToken,
+  AuditMiddleware.auditCreate("document_types"),
   async (req: Request, res: Response) => {
     try {
       const userId = (req as any).user.id;
@@ -590,6 +603,7 @@ router.post(
 router.put(
   "/document-types/:id",
   authenticateToken,
+  AuditMiddleware.auditUpdate("document_types"),
   async (req: Request, res: Response) => {
     try {
       const type = await documentTypeService.update(req.params.id!, req.body);
@@ -604,6 +618,7 @@ router.put(
 router.put(
   "/document-types/:id/toggle",
   authenticateToken,
+  AuditMiddleware.auditUpdate("document_types"),
   async (req: Request, res: Response) => {
     try {
       const type = await documentTypeService.toggleActive(req.params.id!);
@@ -618,6 +633,7 @@ router.put(
 router.delete(
   "/document-types/:id",
   authenticateToken,
+  AuditMiddleware.auditDelete("document_types"),
   async (req: Request, res: Response) => {
     try {
       await documentTypeService.remove(req.params.id!);
@@ -864,6 +880,7 @@ router.get(
 router.delete(
   "/knowledge/tags/:id",
   authenticateToken,
+  AuditMiddleware.auditDelete("knowledge_tags"),
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;

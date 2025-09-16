@@ -21,6 +21,8 @@ import {
   RolePermission,
   ArchivedCase,
   ArchivedTodo,
+  AuditLog,
+  AuditEntityChange,
 } from "../entities";
 import { DocumentType } from "../entities/DocumentType";
 import { KnowledgeDocument } from "../entities/KnowledgeDocument";
@@ -39,7 +41,7 @@ export const AppDataSource = new DataSource({
   username: config.database.username,
   password: config.database.password,
   database: config.database.database,
-  synchronize: config.env === "development",
+  synchronize: config.env === "development", // Solo en desarrollo, evita problemas en producción
   logging: config.env === "development",
   entities: [
     Role,
@@ -71,6 +73,8 @@ export const AppDataSource = new DataSource({
     KnowledgeDocumentFeedback,
     KnowledgeTag,
     KnowledgeDocumentTagRelation,
+    AuditLog,
+    AuditEntityChange,
   ],
   migrations: ["src/database/migrations/**/*.ts"],
   subscribers: ["src/database/subscribers/**/*.ts"],

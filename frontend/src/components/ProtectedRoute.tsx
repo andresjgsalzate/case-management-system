@@ -14,10 +14,27 @@ interface ProtectedRouteProps {
 // Helper function to check alternative permission formats (simplificado para nombres exactos)
 const checkPermissionVariants = (
   permission: string,
-  hasPermission: (perm: string) => boolean
+  hasPermission: (perm: string) => boolean,
+  userPermissions: any[],
+  userRole?: string
 ): boolean => {
-  // Ahora que usamos nombres exactos de BD, solo verificamos el permiso tal como viene
-  return hasPermission(permission);
+  // Para permisos de auditoría, también verificar el rol directamente
+  if (permission.startsWith("audit.") && userRole === "Administrador") {
+    return true;
+  }
+
+  // Verificar el permiso directamente usando la función hasPermission
+  if (hasPermission(permission)) {
+    return true;
+  }
+
+  // Fallback: verificar directamente en los permisos del usuario
+  if (userPermissions && Array.isArray(userPermissions)) {
+    const permissionNames = userPermissions.map((p) => p.name || p);
+    return permissionNames.includes(permission);
+  }
+
+  return false;
 };
 
 // Helper function to check module access via permissions instead of canAccessModule
@@ -68,8 +85,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   adminOnly = false,
 }) => {
   const { isAuthenticated, isLoading } = useAuth();
-  const { hasPermission, isLoadingPermissions, permissionsLoaded } =
-    useAuthStore();
+  const {
+    hasPermission,
+    isLoadingPermissions,
+    permissionsLoaded,
+    userPermissions,
+    user,
+  } = useAuthStore();
 
   // CRUCIAL: Mostrar loading mientras se verifica la autenticación O se cargan los permisos
   if (isLoading || (isAuthenticated && isLoadingPermissions)) {
@@ -127,7 +149,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Si requiere un permiso específico
   if (
     requiredPermission &&
-    !checkPermissionVariants(requiredPermission, hasPermission)
+    !checkPermissionVariants(
+      requiredPermission,
+      hasPermission,
+      userPermissions || [],
+      user?.roleName
+    )
   ) {
     return <Navigate to="/unauthorized" replace />;
   }
@@ -136,7 +163,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (
     requiredPermissions &&
     !requiredPermissions.some((permission) =>
-      checkPermissionVariants(permission, hasPermission)
+      checkPermissionVariants(
+        permission,
+        hasPermission,
+        userPermissions || [],
+        user?.roleName
+      )
     )
   ) {
     return <Navigate to="/unauthorized" replace />;

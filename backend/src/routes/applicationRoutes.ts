@@ -1,12 +1,16 @@
 import { Router } from "express";
 import { ApplicationController } from "../controllers/ApplicationController";
 import { authenticateToken } from "../middleware/auth";
+import { AuditMiddleware } from "../middleware/auditMiddleware";
 
 const router = Router();
 const applicationController = new ApplicationController();
 
 // Todas las rutas requieren autenticación
 router.use(authenticateToken);
+
+// Aplicar middleware de auditoría después de la autenticación
+router.use(AuditMiddleware.initializeAuditContext);
 
 /**
  * @route GET /api/applications
@@ -55,6 +59,7 @@ router.get(
  */
 router.post(
   "/",
+  AuditMiddleware.auditCreate("aplicaciones"),
   applicationController.createApplication.bind(applicationController)
 );
 
@@ -65,6 +70,7 @@ router.post(
  */
 router.put(
   "/:id",
+  AuditMiddleware.auditUpdate("aplicaciones"),
   applicationController.updateApplication.bind(applicationController)
 );
 
@@ -75,6 +81,7 @@ router.put(
  */
 router.delete(
   "/:id",
+  AuditMiddleware.auditDelete("aplicaciones"),
   applicationController.deleteApplication.bind(applicationController)
 );
 

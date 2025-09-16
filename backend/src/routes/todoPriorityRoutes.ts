@@ -1,12 +1,16 @@
 import { Router } from "express";
 import { TodoPriorityController } from "../controllers/TodoPriorityController";
 import { authenticateToken } from "../middleware/auth";
+import { AuditMiddleware } from "../middleware/auditMiddleware";
 
 const router = Router();
 const todoPriorityController = new TodoPriorityController();
 
 // Todas las rutas requieren autenticación
 router.use(authenticateToken);
+
+// Aplicar middleware de auditoría después de la autenticación
+router.use(AuditMiddleware.initializeAuditContext);
 
 /**
  * @route GET /api/admin/todo-priorities
@@ -45,6 +49,7 @@ router.get(
  */
 router.post(
   "/",
+  AuditMiddleware.auditCreate("todo_priorities"),
   todoPriorityController.createPriority.bind(todoPriorityController)
 );
 
@@ -55,6 +60,7 @@ router.post(
  */
 router.put(
   "/:id",
+  AuditMiddleware.auditUpdate("todo_priorities"),
   todoPriorityController.updatePriority.bind(todoPriorityController)
 );
 
@@ -65,6 +71,7 @@ router.put(
  */
 router.put(
   "/:id/toggle",
+  AuditMiddleware.auditUpdate("todo_priorities"),
   todoPriorityController.togglePriorityStatus.bind(todoPriorityController)
 );
 
@@ -75,6 +82,7 @@ router.put(
  */
 router.delete(
   "/:id",
+  AuditMiddleware.auditDelete("todo_priorities"),
   todoPriorityController.deletePriority.bind(todoPriorityController)
 );
 
@@ -85,6 +93,7 @@ router.delete(
  */
 router.put(
   "/reorder",
+  AuditMiddleware.auditUpdate("todo_priorities"),
   todoPriorityController.reorderPriorities.bind(todoPriorityController)
 );
 

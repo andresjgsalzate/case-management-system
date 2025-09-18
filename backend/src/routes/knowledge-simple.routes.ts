@@ -237,7 +237,7 @@ router.get(
 // POST /api/knowledge/tags - Crear una nueva etiqueta
 router.post(
   "/knowledge/tags",
-  requirePermission("tags.create"),
+  requirePermission("tags.create.all"),
   AuditMiddleware.auditCreate("knowledge_tags"),
   async (req: Request, res: Response) => {
     try {
@@ -278,7 +278,7 @@ router.post(
 // PUT /api/knowledge/tags/:id - Actualizar etiqueta
 router.put(
   "/knowledge/tags/:id",
-  requirePermission("tags.update"),
+  requirePermission("tags.update.all"),
   AuditMiddleware.auditUpdate("knowledge_tags"),
   async (req: Request, res: Response) => {
     try {
@@ -302,7 +302,7 @@ router.put(
 // DELETE /api/knowledge/tags/:id - Eliminar etiqueta por ID
 router.delete(
   "/knowledge/tags/:id",
-  requirePermission("tags.delete"),
+  requirePermission("tags.delete.all"),
   AuditMiddleware.auditDelete("knowledge_tags"),
   async (req: Request, res: Response) => {
     try {

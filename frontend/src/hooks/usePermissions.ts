@@ -189,13 +189,6 @@ export const ADMIN_SECTIONS: Array<{
         permissions: ["admin.config.all", "admin.read.all"],
         adminOnly: true,
       },
-      {
-        name: "Debug de Seguridad",
-        href: "/admin/security-debug",
-        icon: "ShieldCheckIcon",
-        permissions: ["admin.debug.all", "admin.config.all"],
-        adminOnly: true,
-      },
     ],
   },
 ];

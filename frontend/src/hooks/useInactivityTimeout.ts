@@ -19,11 +19,14 @@ export const useInactivityTimeout = ({
 
   const [showWarning, setShowWarning] = useState(false);
   const [remainingMinutes, setRemainingMinutes] = useState(0);
+  const [timeUntilTimeout, setTimeUntilTimeout] = useState(0);
 
   const timeoutRef = useRef<number>();
   const warningTimeoutRef = useRef<number>();
   const lastActivityRef = useRef<number>(Date.now());
   const warningIntervalRef = useRef<number>();
+  const countdownIntervalRef = useRef<number>();
+  const showWarningRef = useRef<boolean>(false); // Ref para evitar problemas de clausura
 
   const resetTimer = useCallback(() => {
     // Limpiar timers existentes
@@ -36,9 +39,13 @@ export const useInactivityTimeout = ({
     if (warningIntervalRef.current) {
       clearInterval(warningIntervalRef.current);
     }
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+    }
 
     // Resetear estado de advertencia
     setShowWarning(false);
+    showWarningRef.current = false; // Sincronizar ref
     setRemainingMinutes(0);
 
     // Actualizar última actividad
@@ -46,22 +53,38 @@ export const useInactivityTimeout = ({
 
     if (!isAuthenticated) return;
 
+    // Iniciar contador en tiempo real (cada segundo)
+    const totalTimeMs = timeoutDuration * 60 * 1000;
+    setTimeUntilTimeout(totalTimeMs);
+
+    countdownIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - lastActivityRef.current;
+      const remaining = Math.max(0, totalTimeMs - elapsed);
+      setTimeUntilTimeout(remaining);
+
+      if (remaining <= 0) {
+        clearInterval(countdownIntervalRef.current!);
+      }
+    }, 1000);
+
     // Timer para mostrar advertencia
     const warningTime = (timeoutDuration - warningDuration) * 60 * 1000;
     warningTimeoutRef.current = setTimeout(() => {
+      console.log("⚠️ ACTIVANDO ADVERTENCIA - showWarning será true");
       setShowWarning(true);
+      showWarningRef.current = true; // Sincronizar ref
       setRemainingMinutes(warningDuration);
 
-      // Iniciar countdown para la advertencia
+      // Iniciar countdown para la advertencia (actualizar cada 30 segundos)
       warningIntervalRef.current = setInterval(() => {
         setRemainingMinutes((prev) => {
-          if (prev <= 1) {
+          if (prev <= 0.5) {
             // El timeout principal se encargará del logout
             return 0;
           }
-          return prev - 1;
+          return prev - 0.5; // Reducir 30 segundos
         });
-      }, 60000); // Actualizar cada minuto
+      }, 30000); // Actualizar cada 30 segundos
 
       onWarning?.();
     }, warningTime);
@@ -84,14 +107,36 @@ export const useInactivityTimeout = ({
     onTimeout,
   ]);
 
+  // Función separada para actividad del usuario (NO debe funcionar durante advertencia)
+  const resetTimerForActivity = useCallback(() => {
+    // Usar la ref para evitar problemas de clausura
+    if (showWarningRef.current) {
+      console.log(
+        "🚫 ACTIVIDAD IGNORADA - Modal de seguridad activo, showWarning =",
+        showWarningRef.current
+      );
+      return;
+    }
+
+    console.log(
+      "✅ ACTIVIDAD DETECTADA - Reiniciando timer, showWarning =",
+      showWarningRef.current
+    );
+    resetTimer();
+  }, [resetTimer]);
   useEffect(() => {
+    // Limpiar timers si no está autenticado
     if (!isAuthenticated) {
       // Limpiar timers si no está autenticado
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
       if (warningIntervalRef.current) clearInterval(warningIntervalRef.current);
+      if (countdownIntervalRef.current)
+        clearInterval(countdownIntervalRef.current);
       setShowWarning(false);
+      showWarningRef.current = false; // Sincronizar ref
       setRemainingMinutes(0);
+      setTimeUntilTimeout(0);
       return;
     }
 
@@ -109,7 +154,7 @@ export const useInactivityTimeout = ({
     let throttleTimer: number;
     const throttledResetTimer = () => {
       if (!throttleTimer) {
-        resetTimer();
+        resetTimerForActivity(); // Usar la función que respeta el estado de advertencia
         throttleTimer = setTimeout(() => {
           throttleTimer = null as any;
         }, 1000); // Throttle de 1 segundo
@@ -132,18 +177,22 @@ export const useInactivityTimeout = ({
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
       if (warningIntervalRef.current) clearInterval(warningIntervalRef.current);
+      if (countdownIntervalRef.current)
+        clearInterval(countdownIntervalRef.current);
       if (throttleTimer) clearTimeout(throttleTimer);
     };
-  }, [isAuthenticated, resetTimer]);
+  }, [isAuthenticated, resetTimerForActivity]);
 
   const getTimeUntilTimeout = useCallback(() => {
-    const timeSinceLastActivity = Date.now() - lastActivityRef.current;
-    const timeoutTime = timeoutDuration * 60 * 1000;
-    const remainingTime = Math.max(0, timeoutTime - timeSinceLastActivity);
-    return Math.ceil(remainingTime / (60 * 1000)); // retorna minutos restantes
-  }, [timeoutDuration]);
+    return timeUntilTimeout;
+  }, [timeUntilTimeout]);
 
   const extendSession = useCallback(() => {
+    console.log("🔄 EXTENDIENDO SESIÓN - Ocultando modal y reiniciando timer");
+    // Forzar el reset del timer y ocultar la advertencia
+    setShowWarning(false);
+    showWarningRef.current = false; // Sincronizar ref
+    setRemainingMinutes(0);
     resetTimer();
   }, [resetTimer]);
 

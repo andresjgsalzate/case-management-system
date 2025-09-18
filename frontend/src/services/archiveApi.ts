@@ -7,7 +7,6 @@ import {
   CreateArchivedCaseData,
   CreateArchivedTodoData,
   RestoreArchivedItemData,
-  DeleteArchivedItemData,
 } from "../types/archive.types";
 import { authService } from "./auth.service";
 
@@ -22,11 +21,9 @@ class ArchiveApi {
    * Obtener estadísticas del archivo
    */
   async getArchiveStats(): Promise<ArchiveStats> {
-
     const response = await authService.authenticatedRequest<ArchiveStats>(
       `${this.baseUrl}/stats`
     );
-
 
     if (!response.data) {
       throw new Error("Failed to load archive stats");
@@ -117,13 +114,9 @@ class ArchiveApi {
   /**
    * Eliminar permanentemente un caso archivado
    */
-  async deleteArchivedCase(
-    id: string,
-    deleteData: DeleteArchivedItemData
-  ): Promise<void> {
+  async deleteArchivedCase(id: string): Promise<void> {
     await authService.authenticatedRequest(`${this.baseUrl}/cases/${id}`, {
       method: "DELETE",
-      body: JSON.stringify(deleteData),
     });
   }
 
@@ -210,13 +203,9 @@ class ArchiveApi {
   /**
    * Eliminar permanentemente un TODO archivado
    */
-  async deleteArchivedTodo(
-    id: string,
-    deleteData: DeleteArchivedItemData
-  ): Promise<void> {
+  async deleteArchivedTodo(id: string): Promise<void> {
     await authService.authenticatedRequest(`${this.baseUrl}/todos/${id}`, {
       method: "DELETE",
-      body: JSON.stringify(deleteData),
     });
   }
 
@@ -251,7 +240,6 @@ class ArchiveApi {
     const response = await authService.authenticatedRequest<ArchivedItem[]>(
       url
     );
-
 
     return response.data || [];
   }
@@ -389,7 +377,6 @@ class ArchiveApi {
     caseId: string | number,
     reason?: string
   ): Promise<ArchivedCase> {
-
     try {
       const response = await authService.authenticatedRequest<{
         success: boolean;
@@ -399,7 +386,6 @@ class ArchiveApi {
         method: "POST",
         body: JSON.stringify({ reason }),
       });
-
 
       if (!response.data?.data && !response.data) {
         console.error("Estructura de respuesta inesperada:", response);

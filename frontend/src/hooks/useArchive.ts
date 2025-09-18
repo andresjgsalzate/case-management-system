@@ -5,7 +5,6 @@ import {
   CreateArchivedCaseData,
   CreateArchivedTodoData,
   RestoreArchivedItemData,
-  DeleteArchivedItemData,
 } from "../types/archive.types";
 
 // =============================================
@@ -124,13 +123,7 @@ export const useDeleteArchivedCase = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      deleteData,
-    }: {
-      id: string;
-      deleteData: DeleteArchivedItemData;
-    }) => archiveApi.deleteArchivedCase(id, deleteData),
+    mutationFn: ({ id }: { id: string }) => archiveApi.deleteArchivedCase(id),
     onSuccess: () => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: archiveKeys.all });
@@ -220,13 +213,7 @@ export const useDeleteArchivedTodo = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      deleteData,
-    }: {
-      id: string;
-      deleteData: DeleteArchivedItemData;
-    }) => archiveApi.deleteArchivedTodo(id, deleteData),
+    mutationFn: ({ id }: { id: string }) => archiveApi.deleteArchivedTodo(id),
     onSuccess: () => {
       // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: archiveKeys.all });

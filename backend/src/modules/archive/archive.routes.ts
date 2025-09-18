@@ -49,6 +49,17 @@ router.post(
   restoreArchivedItem
 );
 
+// DELETE /api/archive/cases/:id - Eliminar permanentemente caso archivado (ruta específica)
+router.delete(
+  "/cases/:id",
+  AuditMiddleware.auditDelete("archived_cases"),
+  (req: Request, res: Response, next: NextFunction) => {
+    // Transformar el parámetro para que funcione con deleteArchivedItem
+    req.params.type = "case"; // Cambiar 'cases' a 'case'
+    deleteArchivedItem(req, res, next);
+  }
+);
+
 // DELETE /api/archive/todos/:id - Eliminar permanentemente TODO archivado (ruta específica)
 router.delete(
   "/todos/:id",

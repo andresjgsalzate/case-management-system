@@ -30,7 +30,6 @@ import CaseStatusesPage from "./pages/admin/CaseStatusesPage";
 import TagsPage from "./pages/tags/TagsPage";
 import DocumentTypesPage from "./pages/document-types/DocumentTypesPage";
 import { TodoPrioritiesPage } from "./pages/admin/TodoPrioritiesPage";
-import { SecurityDebugPage } from "./pages/admin/SecurityDebugPage";
 // Audit imports
 import { AuditLogsPage } from "./pages/audit";
 // Knowledge Base imports
@@ -408,17 +407,6 @@ function App() {
                 <ProtectedRoute>
                   <Layout>
                     <SystemInfoPage />
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/admin/security-debug"
-              element={
-                <ProtectedRoute requiredPermission="admin.config.all">
-                  <Layout>
-                    <SecurityDebugPage />
                   </Layout>
                 </ProtectedRoute>
               }

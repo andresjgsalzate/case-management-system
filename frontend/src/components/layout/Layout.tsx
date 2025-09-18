@@ -5,7 +5,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
 import { VersionDisplay } from "./VersionDisplay";
 import { DynamicNavigation } from "../navigation/DynamicNavigation";
-import { PermissionIndicator } from "../PermissionIndicator";
 import { useInactivityTimeout } from "../../hooks/useInactivityTimeout";
 import { InactivityWarningModal } from "../InactivityWarningModal";
 import { Button } from "../ui/Button";
@@ -27,11 +26,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const menuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Sistema de inactividad
+  // Sistema de inactividad - CONFIGURACIÓN DE PRODUCCIÓN
   const { showWarning, remainingMinutes, extendSession } = useInactivityTimeout(
     {
-      timeoutDuration: 30, // 30 minutos de inactividad
-      warningDuration: 5, // Advertencia 5 minutos antes
+      timeoutDuration: 30, // 30 minutos de inactividad total
+      warningDuration: 3, // 3 minutos de advertencia antes del cierre
       onTimeout: logout,
     }
   );
@@ -292,10 +291,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div className="flex-1 overflow-hidden">
         <main className="h-full overflow-y-auto p-6">{children}</main>
       </div>
-
-      {/* Permission Indicator for Development */}
-      {typeof window !== "undefined" &&
-        window.location.hostname === "localhost" && <PermissionIndicator />}
 
       {/* Modal de advertencia de inactividad */}
       <InactivityWarningModal

@@ -152,13 +152,7 @@ router.delete(
   "/cases/:id",
   authenticateToken,
   requirePermission("archive.delete"),
-  async (req, res, next) => {
-    try {
-      res.status(204).send();
-    } catch (error) {
-      next(error);
-    }
-  }
+  archiveController.deleteArchivedCase
 );
 
 // =============================================

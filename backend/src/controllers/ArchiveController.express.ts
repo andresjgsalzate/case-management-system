@@ -338,6 +338,39 @@ export class ArchiveController {
   };
 
   /**
+   * Eliminar un caso archivado específicamente
+   */
+  deleteArchivedCase = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        return res.status(400).json({
+          success: false,
+          message: "ID requerido",
+        });
+      }
+
+      await this.archiveService.deleteArchivedItem("case", id);
+
+      res.json({
+        success: true,
+        message: "Caso eliminado permanentemente del archivo",
+      });
+    } catch (error: any) {
+      console.error("Error deleting archived case:", error);
+      res.status(500).json({
+        success: false,
+        message: error.message || "Error eliminando caso archivado",
+      });
+    }
+  };
+
+  /**
    * Eliminar un TODO archivado específicamente
    */
   deleteArchivedTodo = async (

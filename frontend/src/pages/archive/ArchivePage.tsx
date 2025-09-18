@@ -16,7 +16,7 @@ import { Button } from "../../components/ui/Button";
 import { useToast } from "../../contexts/ToastContext";
 
 export const ArchivePage: React.FC = () => {
-  const { success, error: showError, info } = useToast();
+  const { success, error: showError } = useToast();
   const [filters, setFilters] = useState<ArchiveFilters>({
     type: "all",
     showRestored: false,
@@ -68,16 +68,14 @@ export const ArchivePage: React.FC = () => {
   const handleRestoreRequest = async (item: ArchivedItem) => {
     const confirmed = await showConfirmation({
       title: "Restaurar Elemento",
-      message: `¿Estás seguro de que quieres restaurar "${item.title}"? Esto recreará el elemento en su ubicación original con todos sus datos y relaciones.`,
+      message: `¿Estás seguro de que quieres restaurar "${item.title}"?`,
       confirmText: "Restaurar",
       cancelText: "Cancelar",
-      type: "success",
+      type: "info",
     });
 
     if (confirmed) {
       try {
-        info("Restaurando elemento...");
-
         if (item.itemType === "case") {
           await archiveManager.restoreCase({
             id: item.id,
@@ -114,17 +112,13 @@ export const ArchivePage: React.FC = () => {
 
     if (confirmed) {
       try {
-        info("Eliminando elemento...");
-
         if (item.itemType === "case") {
           await archiveManager.deleteCase({
             id: item.id,
-            deleteData: { reason: "Eliminado desde la interfaz de archivo" },
           });
         } else {
           await archiveManager.deleteTodo({
             id: item.id,
-            deleteData: { reason: "Eliminado desde la interfaz de archivo" },
           });
         }
 

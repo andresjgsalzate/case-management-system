@@ -137,6 +137,47 @@ export class KnowledgeDocumentService {
     return data;
   }
 
+  // Nuevo: Búsqueda con sugerencias
+  static async getSearchSuggestions(
+    query: string,
+    limit?: number
+  ): Promise<{
+    documents: Array<{ id: string; title: string; type: "document" }>;
+    tags: Array<{ name: string; type: "tag" }>;
+    cases: Array<{ id: string; caseNumber: string; type: "case" }>;
+  }> {
+    const { data } = await api.get("/knowledge/search/suggestions", {
+      params: { q: query, limit },
+    });
+    return data;
+  }
+
+  // Nuevo: Búsqueda avanzada
+  static async enhancedSearch(searchParams: {
+    search?: string;
+    tags?: string[];
+    caseNumber?: string;
+    documentTypeId?: string;
+    priority?: string;
+    isPublished?: boolean;
+    limit?: number;
+    page?: number;
+  }): Promise<{
+    documents: KnowledgeDocument[];
+    total: number;
+    page: number;
+    totalPages: number;
+    searchStats?: {
+      foundInTitle: number;
+      foundInContent: number;
+      foundInTags: number;
+      foundInCases: number;
+    };
+  }> {
+    const { data } = await api.post("/knowledge/search/advanced", searchParams);
+    return data;
+  }
+
   static async getStats(id: string): Promise<DocumentStats> {
     const { data } = await api.get(`/knowledge/${id}/stats`);
     return data;

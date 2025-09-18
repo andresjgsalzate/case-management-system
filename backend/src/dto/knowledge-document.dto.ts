@@ -12,6 +12,7 @@ import {
   MaxLength,
 } from "class-validator";
 import { Transform } from "class-transformer";
+import { KnowledgeDocument } from "../entities/KnowledgeDocument";
 
 export enum Priority {
   LOW = "low",
@@ -149,6 +150,10 @@ export class KnowledgeDocumentQueryDto {
   tags?: string[];
 
   @IsOptional()
+  @IsString()
+  caseNumber?: string; // Nuevo: búsqueda por número de caso
+
+  @IsOptional()
   @IsEnum(Priority)
   priority?: Priority;
 
@@ -189,4 +194,42 @@ export class KnowledgeDocumentQueryDto {
   @IsOptional()
   @IsString()
   sortOrder?: "ASC" | "DESC" = "DESC";
+
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === "true")
+  includeStats?: boolean = false; // Nuevo: incluir estadísticas de búsqueda
+}
+
+// Nuevo DTO para sugerencias de búsqueda
+export class SearchSuggestionsDto {
+  @IsString()
+  @MaxLength(100)
+  search: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Transform(({ value }) => parseInt(value))
+  @Min(1)
+  @Max(10)
+  limit?: number = 5;
+}
+
+// Nuevo DTO para respuesta de búsqueda mejorada
+export class EnhancedSearchResponseDto {
+  documents: KnowledgeDocument[];
+  total: number;
+  page: number;
+  totalPages: number;
+  searchStats?: {
+    foundInTitle: number;
+    foundInContent: number;
+    foundInTags: number;
+    foundInCases: number;
+  };
+  suggestions?: {
+    documents: Array<{ id: string; title: string; type: "document" }>;
+    tags: Array<{ name: string; type: "tag" }>;
+    cases: Array<{ id: string; caseNumber: string; type: "case" }>;
+  };
 }

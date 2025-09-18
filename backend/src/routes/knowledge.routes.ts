@@ -92,7 +92,7 @@ router.get(
   }
 );
 
-// GET /api/knowledge/search - Búsqueda de contenido
+// GET /api/knowledge/search - Búsqueda de contenido (Mejorada)
 router.get(
   "/knowledge/search",
   authenticateToken,
@@ -105,11 +105,72 @@ router.get(
           .json({ error: "Parámetro de búsqueda requerido" });
       }
 
+      const userId = (req as any).user?.id;
+      const userPermissions = (req as any).user?.permissions || [];
+
       const documents = await knowledgeDocumentService.searchContent(
         q,
-        parseInt(limit as string) || 10
+        parseInt(limit as string) || 10,
+        userId,
+        userPermissions
       );
       res.json(documents);
+    } catch (error) {
+      handleError(res, error, 400);
+    }
+  }
+);
+
+// GET /api/knowledge/search/suggestions - Sugerencias de búsqueda
+router.get(
+  "/knowledge/search/suggestions",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const { q, limit } = req.query;
+      if (!q || typeof q !== "string" || q.length < 2) {
+        return res.json({ documents: [], tags: [], cases: [] });
+      }
+
+      const userId = (req as any).user?.id;
+      const userPermissions = (req as any).user?.permissions || [];
+
+      const suggestions = await knowledgeDocumentService.getSearchSuggestions(
+        q,
+        parseInt(limit as string) || 5,
+        userId,
+        userPermissions
+      );
+      res.json(suggestions);
+    } catch (error) {
+      handleError(res, error, 400);
+    }
+  }
+);
+
+// POST /api/knowledge/search/advanced - Búsqueda avanzada
+router.post(
+  "/knowledge/search/advanced",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const userPermissions = (req as any).user?.permissions || [];
+
+      const searchQuery = req.body;
+      const result = await knowledgeDocumentService.enhancedSearch(
+        searchQuery,
+        userId,
+        userPermissions
+      );
+
+      res.json({
+        documents: result.documents,
+        total: result.total,
+        page: searchQuery.page || 1,
+        totalPages: Math.ceil(result.total / (searchQuery.limit || 10)),
+        searchStats: result.searchStats,
+      });
     } catch (error) {
       handleError(res, error, 400);
     }

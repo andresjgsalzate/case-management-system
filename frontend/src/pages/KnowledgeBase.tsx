@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ActionIcon } from "../components/ui/ActionIcons";
+import SmartSearch from "../components/search/SmartSearch";
 import {
   useKnowledgeDocuments,
-  useDocumentTypes,
   useCreateKnowledgeDocument,
   usePopularTags,
 } from "../hooks/useKnowledge";
@@ -12,6 +12,7 @@ import { KnowledgeDocument } from "../types/knowledge";
 import { Case } from "../services/api";
 import { useToast } from "../hooks/useNotification";
 import { useFeaturePermissions } from "../hooks/usePermissions";
+import { knowledgeApi } from "../services/knowledge.service";
 
 interface KnowledgeBaseProps {}
 
@@ -20,11 +21,14 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   const { success, error: showError } = useToast();
   const permissions = useFeaturePermissions();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedType, setSelectedType] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"created_at" | "updated_at" | "title">(
     "updated_at"
   );
   const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("DESC");
+  const [searchResults, setSearchResults] = useState<
+    KnowledgeDocument[] | null
+  >(null);
+  const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,13 +42,12 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
     error: documentsError,
   } = useKnowledgeDocuments({
     search: searchQuery,
-    documentTypeId: selectedType || undefined,
+    documentTypeId: undefined,
     sortBy,
     sortOrder,
     limit: 20,
   });
 
-  const { data: documentTypes, isLoading: typesLoading } = useDocumentTypes();
   const { data: casesData } = useCases(); // Para obtener información de los casos
   const { data: popularTags } = usePopularTags(10); // Obtener 10 etiquetas populares
 
@@ -100,14 +103,33 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
     setIsCreating(false);
   };
 
-  // Handle search
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+  // Nueva función para manejar búsqueda inteligente
+  const handleSmartSearch = async (term: string, filters?: any) => {
+    try {
+      setIsAdvancedSearch(true);
+      const result = await knowledgeApi.documents.enhancedSearch({
+        search: term,
+        documentTypeId: undefined,
+        ...filters,
+      });
+      setSearchResults(result.documents);
+      setSearchQuery(term);
+    } catch (error) {
+      showError("Error al realizar la búsqueda");
+      console.error("Search error:", error);
+    }
   };
 
-  // Filter by type
-  const handleTypeFilter = (typeId: string | null) => {
-    setSelectedType(typeId);
+  // Función para manejar selección de documento desde sugerencias
+  const handleSelectDocument = (documentId: string) => {
+    navigate(`/knowledge/${documentId}`);
+  };
+
+  // Función para limpiar búsqueda
+  const clearAdvancedSearch = () => {
+    setIsAdvancedSearch(false);
+    setSearchResults(null);
+    setSearchQuery("");
   };
 
   // Format date
@@ -191,9 +213,12 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
     };
   };
 
-  const documents = documentsResponse?.documents || [];
+  const documents =
+    isAdvancedSearch && searchResults
+      ? searchResults
+      : documentsResponse?.documents || [];
 
-  if (documentsLoading || typesLoading) {
+  if (documentsLoading) {
     return (
       <div className="flex items-center justify-center min-h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
@@ -240,38 +265,36 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
         </div>
       </div>
 
-      {/* Search and Filters */}
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Search */}
-        <div className="md:col-span-2">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <ActionIcon action="search" size="sm" color="gray" />
-            </div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
-              placeholder="Buscar documentos..."
+      {/* Smart Search */}
+      <div className="mb-6">
+        <div className="flex items-center space-x-4">
+          <div className="flex-1">
+            <SmartSearch
+              onSearch={handleSmartSearch}
+              onSelectDocument={handleSelectDocument}
+              placeholder="Buscar documentos, etiquetas, casos..."
+              className="w-full"
             />
           </div>
+          {isAdvancedSearch && (
+            <button
+              onClick={clearAdvancedSearch}
+              className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+            >
+              <ActionIcon
+                action="close"
+                size="sm"
+                color="gray"
+                className="mr-2"
+              />
+              Limpiar búsqueda
+            </button>
+          )}
         </div>
 
-        {/* Type Filter */}
-        <div>
-          <select
-            value={selectedType || ""}
-            onChange={(e) => handleTypeFilter(e.target.value || null)}
-            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
-          >
-            <option value="">Todos los tipos</option>
-            {documentTypes?.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.name}
-              </option>
-            ))}
-          </select>
+        {/* Tip debajo de la búsqueda avanzada */}
+        <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+          💡 Tip: Usa la búsqueda inteligente arriba para mejores resultados
         </div>
       </div>
 
@@ -296,12 +319,34 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
         </select>
       </div>
 
-      {/* Results Count */}
+      {/* Results Count and Search Info */}
       <div className="mb-4">
-        <p className="text-sm text-gray-600 dark:text-gray-300">
-          {documents?.length || 0} documento{documents?.length !== 1 ? "s" : ""}{" "}
-          encontrado{documents?.length !== 1 ? "s" : ""}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            {isAdvancedSearch ? (
+              <>
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 mr-2">
+                  <ActionIcon
+                    action="search"
+                    size="xs"
+                    color="blue"
+                    className="mr-1"
+                  />
+                  Búsqueda inteligente
+                </span>
+                Mostrando {documents.length} resultado(s) para "{searchQuery}"
+              </>
+            ) : (
+              <>
+                {documents?.length || 0} documento
+                {documents?.length !== 1 ? "s" : ""} encontrado
+                {documents?.length !== 1 ? "s" : ""}
+              </>
+            )}
+          </p>
+
+          {!isAdvancedSearch && <div></div>}
+        </div>
       </div>
 
       {/* Documents Grid */}
@@ -540,14 +585,14 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
             No se encontraron documentos
           </h3>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            {searchQuery || selectedType
-              ? "Prueba con otros términos de búsqueda o filtros."
+            {searchQuery
+              ? "Prueba con otros términos de búsqueda."
               : permissions.canCreateKnowledge
               ? "Comienza creando tu primer documento de conocimiento."
               : "No tienes permisos para crear documentos. Contacta al administrador para más información."}
           </p>
 
-          {!searchQuery && !selectedType && permissions.canCreateKnowledge && (
+          {!searchQuery && permissions.canCreateKnowledge && (
             <button
               onClick={handleCreateDocument}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400 dark:focus:ring-offset-gray-800"

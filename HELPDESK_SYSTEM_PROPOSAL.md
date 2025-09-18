@@ -2,7 +2,7 @@
 
 ## 📋 Concepto General
 
-Sistema de HelpDesk con interfaz de chat que permite a los usuarios solicitar ayuda de manera intuitiva y convierte automáticamente estas solicitudes en casos gestionables mediante un proceso de clasificación de 5 preguntas. La interfaz simula una experiencia tipo WhatsApp para maximizar la adopción y facilidad de uso.
+Sistema de HelpDesk híbrido que combina un **formulario simple inicial** para crear casos inmediatamente, seguido de una **vista de caso integrada con chat en tiempo real**. Los usuarios completan un formulario básico (Título, Descripción, Archivos) que genera automáticamente un caso con número asignado, y luego acceden a una vista dividida donde pueden ver los detalles del caso y comunicarse con agentes a través de chat integrado para seguimiento y resolución.
 
 ---
 
@@ -10,17 +10,18 @@ Sistema de HelpDesk con interfaz de chat que permite a los usuarios solicitar ay
 
 ### 🚀 **Objetivo Principal**
 
-Simplificar el proceso de creación de casos permitiendo que los usuarios describan sus problemas de manera conversacional en un chat, mientras los agentes se encargan de la clasificación y creación estructurada del caso.
+Simplificar y acelerar el proceso de creación de casos mediante un formulario inicial simple que genere inmediatamente un caso con número asignado, seguido de una experiencia de seguimiento integrada que combine la información estructurada del caso con comunicación en tiempo real vía chat.
 
 ### 🎯 **Objetivos Específicos**
 
-- **Reducir la fricción** para usuarios finales - solo describen el problema
-- **Mejorar la experiencia del usuario** con interfaz familiar tipo chat
-- **Simplificar el trabajo del agente** - recibe descripción completa y solo clasifica
-- **Eliminar campos innecesarios** para el agente (número, fecha se generan automáticamente)
-- **Estandarizar la clasificación** mediante las 5 preguntas del agente
-- **Integrar completamente** con el sistema de gestión existente
-- **Mantener trazabilidad** desde la solicitud inicial hasta la resolución
+- **Crear casos inmediatamente** - Usuario completa formulario simple y obtiene número de caso al instante
+- **Eliminar fricción inicial** - Solo 3 campos requeridos: Título, Descripción y Archivos opcionales
+- **Proporcionar seguimiento integrado** - Vista unificada con detalles del caso y chat en tiempo real
+- **Registrar actividad automáticamente** - Log completo de eventos, cambios y comunicaciones
+- **Mantener contexto completo** - Toda la información y comunicación en un solo lugar
+- **Facilitar comunicación agente-usuario** - Chat integrado para aclaraciones y actualizaciones
+- **Integrar completamente** con el sistema de gestión de casos existente
+- **Mejorar trazabilidad** desde creación hasta resolución con historial completo
 
 ---
 
@@ -29,46 +30,46 @@ Simplificar el proceso de creación de casos permitiendo que los usuarios descri
 ### 📊 **Diagrama de Flujo General**
 
 ```
-Usuario → Chat Interface → Agente Review → Clasificación → Sistema de Casos → Gestión Completa
-   ↓           ↓              ↓             ↓                ↓                ↓
-Describe    Conversación   Recibe Chat   5 Preguntas +   Caso Creado    Workflow Normal
-Problema    Natural        Completo      Origen           Automático
+Usuario → Formulario Simple → Caso Creado → Vista Integrada → Seguimiento Completo
+   ↓           ↓                 ↓             ↓                ↓
+Accede      3 Campos          Número de     Detalles +      Comunicación
+HelpDesk    Requeridos        Caso Asignado   Chat           Tiempo Real
 ```
 
 **Flujo Detallado:**
 
-1. **Usuario**: Describe problema libremente en chat
-2. **Sistema**: Facilita conversación y recopila información
-3. **Agente**: Revisa conversación completa
-4. **Agente**: Responde 5 preguntas de clasificación + selecciona origen
-5. **Sistema**: Genera caso automáticamente con todos los datos
+1. **Usuario**: Accede a HelpDesk y completa formulario simple (Título, Descripción, Archivos)
+2. **Sistema**: Crea caso inmediatamente y asigna número único
+3. **Usuario**: Recibe confirmación con número de caso y accede a vista integrada
+4. **Vista Integrada**: Panel izquierdo (detalles del caso + log de actividades) + Panel derecho (chat en tiempo real)
+5. **Seguimiento**: Comunicación continua agente-usuario, actualizaciones automáticas y registro de actividades
 
 ### 🔧 **Componentes Técnicos**
 
 #### **1. Frontend (React + TypeScript)**
 
-- **Chat Interface Component** - Interfaz principal tipo WhatsApp para usuarios
-- **Agent Classification Panel** - Panel de clasificación para agentes
-- **Message Components** - Burbujas de mensajes, typing indicators
-- **Quick Actions** - Botones rápidos para respuestas comunes del usuario
-- **File Upload** - Drag & drop para archivos adjuntos del usuario
-- **Classification Form** - Formulario de 5 preguntas para agentes
+- **Helpdesk Form Component** - Formulario inicial simple con 3 campos principales
+- **Case Details Panel** - Vista izquierda con información del caso y actividades
+- **Chat Integration Panel** - Vista derecha con chat en tiempo real
+- **Activity Log Component** - Registro automático de eventos y comunicaciones
+- **File Upload Component** - Drag & drop para archivos adjuntos en formulario inicial
+- **Real-time Notifications** - Actualizaciones instantáneas de estado y mensajes
 
 #### **2. Backend (Node.js + TypeScript)**
 
-- **Chat Service** - Manejo de mensajes en tiempo real
-- **Agent Assignment Service** - Asignación de conversaciones a agentes
-- **Classification Engine** - Procesamiento de clasificación del agente
-- **Case Generator** - Conversión de chat + clasificación a caso estructurado
-- **WebSocket Handler** - Comunicación en tiempo real
-- **Notification Service** - Notificaciones para agentes sobre nuevas conversaciones
+- **Case Creation Service** - Generación inmediata de casos desde formulario
+- **Real-time Chat Service** - Manejo de mensajes bidireccionales agente-usuario
+- **Activity Logger Service** - Registro automático de eventos y cambios
+- **File Management Service** - Procesamiento y almacenamiento de archivos adjuntos
+- **WebSocket Handler** - Comunicación en tiempo real para chat integrado
+- **Notification Service** - Alertas y actualizaciones para usuarios y agentes
 
 #### **3. Base de Datos (PostgreSQL)**
 
-- **Nuevas tablas específicas** para el sistema de chat
-- **Tabla de asignaciones** agente-conversación
-- **Integración** con tablas existentes de casos
-- **Historial completo** de conversaciones
+- **Integración directa** con tabla `cases` existente para crear casos inmediatos
+- **Nueva tabla de mensajes** para comunicación chat agente-usuario
+- **Sistema de actividades** integrado con auditoría existente
+- **Almacenamiento de archivos** vinculados a casos específicos
 
 ---
 
@@ -77,286 +78,441 @@ Problema    Natural        Completo      Origen           Automático
 ### 📋 **Nuevas Tablas Requeridas**
 
 ```sql
--- Tabla principal de conversaciones de HelpDesk
-CREATE TABLE helpdesk_conversations (
+-- Mensajes del chat integrado en casos
+CREATE TABLE helpdesk_case_messages (
     id SERIAL PRIMARY KEY,
-    conversation_id UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
-    user_id INTEGER REFERENCES users(id),
-    assigned_agent_id INTEGER REFERENCES users(id), -- Agente asignado
-    status VARCHAR(20) DEFAULT 'pending_assignment', -- pending_assignment, assigned, in_classification, classified, converted, closed
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    last_activity TIMESTAMP DEFAULT NOW(),
-    assigned_at TIMESTAMP, -- Cuando se asignó al agente
-
-    -- Resultados de clasificación (completado por el agente)
-    classification_completed BOOLEAN DEFAULT false,
-    classification_data JSONB, -- Respuestas a las 5 preguntas
-    classified_by_agent_id INTEGER REFERENCES users(id),
-    classified_at TIMESTAMP,
-
-    -- Caso generado
-    generated_case_id INTEGER REFERENCES cases(id),
-    conversion_completed_at TIMESTAMP,
-
-    -- Metadatos
-    user_agent TEXT,
-    ip_address INET,
-    device_info JSONB
-);-- Mensajes individuales del chat
-CREATE TABLE helpdesk_messages (
-    id SERIAL PRIMARY KEY,
-    conversation_id UUID REFERENCES helpdesk_conversations(conversation_id),
+    case_id INTEGER REFERENCES cases(id) ON DELETE CASCADE,
     message_id UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
 
     -- Contenido del mensaje
-    message_type VARCHAR(20) NOT NULL, -- text, image, file, system, quick_action
-    content TEXT,
+    message_type VARCHAR(20) NOT NULL, -- text, image, file, system_update
+    content TEXT NOT NULL,
     attachments JSONB, -- Array de archivos adjuntos
 
     -- Metadata del mensaje
-    sender_type VARCHAR(10) NOT NULL, -- user, system, agent
-    sender_id INTEGER, -- ID del usuario o agente
+    sender_type VARCHAR(10) NOT NULL, -- user, agent, system
+    sender_id INTEGER REFERENCES users(id),
 
     -- Timestamps
     sent_at TIMESTAMP DEFAULT NOW(),
-    delivered_at TIMESTAMP,
     read_at TIMESTAMP,
 
     -- Estados
     is_deleted BOOLEAN DEFAULT false,
-    edited_at TIMESTAMP,
-
-    -- Clasificación
-    is_classification_question BOOLEAN DEFAULT false,
-    question_number INTEGER, -- 1-5 para las preguntas de clasificación
-    classification_data JSONB
+    edited_at TIMESTAMP
 );
 
--- Plantillas de preguntas de clasificación
-CREATE TABLE helpdesk_classification_questions (
+-- Log de actividades específico para HelpDesk (extensión del sistema de auditoría)
+CREATE TABLE helpdesk_case_activities (
     id SERIAL PRIMARY KEY,
-    question_number INTEGER NOT NULL, -- 1-5
-    question_text TEXT NOT NULL,
-    question_type VARCHAR(20) NOT NULL, -- text, select, multiselect, scale
-    options JSONB, -- Para preguntas tipo select
-    is_required BOOLEAN DEFAULT true,
-    is_active BOOLEAN DEFAULT true,
-    order_index INTEGER,
+    case_id INTEGER REFERENCES cases(id) ON DELETE CASCADE,
+    activity_type VARCHAR(50) NOT NULL, -- case_created, file_uploaded, message_sent, status_changed, assignment_changed
+
+    -- Detalles de la actividad
+    description TEXT NOT NULL,
+    metadata JSONB, -- Información adicional específica del tipo de actividad
+
+    -- Usuario relacionado
+    user_id INTEGER REFERENCES users(id),
+    user_type VARCHAR(20), -- requester, agent, system
+
+    -- Timestamps
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+
+    -- Integración con sistema de auditoría existente
+    audit_log_id INTEGER REFERENCES audit_logs(id)
 );
 
--- Respuestas a las preguntas de clasificación
-CREATE TABLE helpdesk_classification_responses (
+-- Archivos adjuntos específicos de HelpDesk
+CREATE TABLE helpdesk_case_files (
     id SERIAL PRIMARY KEY,
-    conversation_id UUID REFERENCES helpdesk_conversations(conversation_id),
-    question_id INTEGER REFERENCES helpdesk_classification_questions(id),
-    response_value TEXT,
-    response_data JSONB, -- Para respuestas complejas
-    answered_at TIMESTAMP DEFAULT NOW()
+    case_id INTEGER REFERENCES cases(id) ON DELETE CASCADE,
+    message_id UUID REFERENCES helpdesk_case_messages(message_id), -- Opcional: si viene de un mensaje
+
+    -- Información del archivo
+    filename VARCHAR(255) NOT NULL,
+    original_filename VARCHAR(255) NOT NULL,
+    file_path TEXT NOT NULL,
+    file_size BIGINT NOT NULL,
+    mime_type VARCHAR(100) NOT NULL,
+
+    -- Metadata
+    uploaded_by INTEGER REFERENCES users(id),
+    uploaded_at TIMESTAMP DEFAULT NOW(),
+
+    -- Estados
+    is_deleted BOOLEAN DEFAULT false,
+    deleted_at TIMESTAMP,
+    deleted_by INTEGER REFERENCES users(id)
 );
 
--- Plantillas de casos predefinidos
-CREATE TABLE helpdesk_case_templates (
+-- Configuración del sistema HelpDesk
+CREATE TABLE helpdesk_settings (
     id SERIAL PRIMARY KEY,
-    template_name VARCHAR(255) NOT NULL,
+    setting_key VARCHAR(100) UNIQUE NOT NULL,
+    setting_value JSONB NOT NULL,
     description TEXT,
-
-    -- Criterios de aplicación
-    classification_criteria JSONB, -- Condiciones para aplicar esta plantilla
-
-    -- Datos del caso a generar
-    case_title_template TEXT, -- Plantilla con variables
-    case_description_template TEXT,
-    default_priority VARCHAR(20),
-    default_complexity VARCHAR(50),
-    default_status VARCHAR(50),
-    default_application_id INTEGER REFERENCES applications(id),
-    default_origin_id INTEGER REFERENCES origins(id),
-
-    -- Configuración
     is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW(),
+    updated_by INTEGER REFERENCES users(id),
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
 -- Índices para performance
-CREATE INDEX idx_helpdesk_conversations_user_id ON helpdesk_conversations(user_id);
-CREATE INDEX idx_helpdesk_conversations_status ON helpdesk_conversations(status);
-CREATE INDEX idx_helpdesk_messages_conversation_id ON helpdesk_messages(conversation_id);
-CREATE INDEX idx_helpdesk_messages_sent_at ON helpdesk_messages(sent_at);
-CREATE INDEX idx_classification_responses_conversation_id ON helpdesk_classification_responses(conversation_id);
+CREATE INDEX idx_helpdesk_case_messages_case_id ON helpdesk_case_messages(case_id);
+CREATE INDEX idx_helpdesk_case_messages_sent_at ON helpdesk_case_messages(sent_at DESC);
+CREATE INDEX idx_helpdesk_case_activities_case_id ON helpdesk_case_activities(case_id);
+CREATE INDEX idx_helpdesk_case_activities_created_at ON helpdesk_case_activities(created_at DESC);
+CREATE INDEX idx_helpdesk_case_files_case_id ON helpdesk_case_files(case_id);
+
+-- Triggers para registro automático de actividades
+CREATE OR REPLACE FUNCTION log_helpdesk_activity()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Registrar automáticamente actividades importantes
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO helpdesk_case_activities (
+            case_id,
+            activity_type,
+            description,
+            metadata,
+            user_id,
+            user_type
+        ) VALUES (
+            NEW.case_id,
+            CASE
+                WHEN TG_TABLE_NAME = 'helpdesk_case_messages' THEN 'message_sent'
+                WHEN TG_TABLE_NAME = 'helpdesk_case_files' THEN 'file_uploaded'
+            END,
+            CASE
+                WHEN TG_TABLE_NAME = 'helpdesk_case_messages' THEN 'Nuevo mensaje enviado'
+                WHEN TG_TABLE_NAME = 'helpdesk_case_files' THEN 'Archivo adjunto: ' || NEW.original_filename
+            END,
+            to_jsonb(NEW),
+            COALESCE(NEW.uploaded_by, NEW.sender_id),
+            CASE
+                WHEN NEW.sender_type = 'user' THEN 'requester'
+                WHEN NEW.sender_type = 'agent' THEN 'agent'
+                ELSE 'system'
+            END
+        );
+    END IF;
+
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Aplicar triggers
+CREATE TRIGGER trigger_log_message_activity
+    AFTER INSERT ON helpdesk_case_messages
+    FOR EACH ROW EXECUTE FUNCTION log_helpdesk_activity();
+
+CREATE TRIGGER trigger_log_file_activity
+    AFTER INSERT ON helpdesk_case_files
+    FOR EACH ROW EXECUTE FUNCTION log_helpdesk_activity();
 ```
 
 ---
 
 ## 🎨 Diseño de Interfaz de Usuario
 
-### 💬 **Chat Interface - Estilo WhatsApp**
+### � **Formulario Inicial HelpDesk**
 
-#### **Layout Principal**
+#### **Layout del Formulario**
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ 🏠 HelpDesk - Asistente Virtual               👤 Mi Perfil  │
+│ � HelpDesk - Nueva Solicitud              👤 Mi Perfil    │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│ 🤖 ¡Hola! Soy tu asistente de HelpDesk                     │
-│     ¿En qué puedo ayudarte hoy?                    10:30   │
+│ Completa la información para crear tu caso de soporte      │
 │                                                             │
-│                     Hola, tengo un problema con...  10:31  │
-│                                     ¿Puedes ayudarme? 💭   │
+│ 📝 Título del Problema *                                   │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ Ej: Error al cargar dashboard, Login no funciona...    │ │
+│ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
-│ 🤖 ¡Por supuesto! Para ayudarte mejor, necesito           │
-│     hacerte algunas preguntas. ¿Comenzamos?       10:31   │
+│ 📄 Descripción Detallada *                                 │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ Describe detalladamente el problema: ¿Qué estabas      │ │
+│ │ haciendo? ¿Qué pasó? ¿Cuándo empezó?...                │ │
+│ │                                                         │ │
+│ │                                                         │ │
+│ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
-│                                           ✅ Sí, empecemos │
-│                                           ⏰ Más tarde     │
+│ 📎 Archivos Adjuntos (Opcional)                            │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │     📁 Arrastra archivos aquí o haz clic               │ │
+│ │        Capturas, logs, documentos (máx 10MB)           │ │
+│ │                                                         │ │
+│ │        📄 screenshot.png (2.1 MB)         ❌          │ │
+│ └─────────────────────────────────────────────────────────┘ │
 │                                                             │
-├─────────────────────────────────────────────────────────────┤
-│ 💬 Escribe tu mensaje...                    📎 🎤 😊 ➤   │
+│              [ Vista Previa ]    [ ✅ Crear Caso ]         │
 └─────────────────────────────────────────────────────────────┘
+```
+
+### 🏠 **Vista Integrada de Caso con Chat**
+
+#### **Layout Principal - Vista Dividida**
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ 📋 Caso #CMS-2025-001234 - Error al cargar dashboard       🔔 📞 ⚙️ �      │
+├──────────────────────────────────────┬──────────────────────────────────────────┤
+│ DETALLES DEL CASO                    │ CHAT EN TIEMPO REAL                     │
+├──────────────────────────────────────┤                                          │
+│ 🔸 Estado: Asignado                          │ 👤 María García         10:30   │
+│ 🔸 Prioridad: Media                          │     Hola, tengo este problema    │
+│ 🔸 Asignado: Juan Pérez (Agente)             │                                 │
+│ 🔸 Creado: 18/09/2025 10:15                  │     Hola María, revisando 10:31 │
+│ 🔸 Complejidad: Pendiente de Clasificación   │                   Juan Pérez � │
+│                                      │                                          │
+│ 📄 DESCRIPCIÓN:                              │ 👤 María García         10:32   │
+│ ────────────────────────────────────────     │     ¿Necesitas logs específicos?│
+│ Cuando entro al dashboard, las métricas      │                                 │
+│ aparecen en blanco. Los gráficos no cargan   │     Sí, envíame el error 10:32 │
+│ y sale error en consola. Empezó ayer tarde.  │                   Juan Pérez 👨 │
+│ - Solicitado por: María García               │                                 │
+│                                              │ 📎 error-console.txt     10:33 │
+│ 📎 ARCHIVOS ADJUNTOS:                        │                   María García 👤│
+│ ──────────────────────────────────           │                                 │
+│ • screenshot.png (2.1 MB)                    │                                 │
+│   📅 18/09/2025 10:15 - María García         │                                 │
+│                                              │                                 │
+│ ⚠️ CLASIFICACIÓN PENDIENTE:                  │                                 │
+│ ──────────────────────────────────────       │                                 │
+│ 📋 Agente Juan debe completar las 5 preguntas│                                 │
+│    para determinar la complejidad del caso   │                                 │
+│ 🔗 [Clasificar Caso Ahora]                   │                                 │
+│                                              │                                 │
+│ 📊 LOG DE ACTIVIDADES:                       │                                 │
+│ ─────────────────────────────────────        │                                 │
+│ 🕐 10:15 - Caso creado por María García      │                                 │
+│ 🕐 10:16 - Archivo adjuntado por María       │                                 │
+│ 🕐 10:18 - Asignado a Juan Pérez (Agente)    │                                 │
+│ 🕐 10:20 - Estado: Pendiente Clasificación   │                                 │
+│ 🕐 10:30 - Mensaje: María García             │                                 │
+│ 🕐 10:31 - Mensaje: Juan Pérez               │                                 │
+│ 🕐 10:33 - Archivo adjuntado por María       │                                 │
+│                                      │                                          │
+│                                      ├──────────────────────────────────────────┤
+│                                      │ 💬 Escribe un mensaje...    📎 😊 ➤   │
+└──────────────────────────────────────┴──────────────────────────────────────────┘
 ```
 
 #### **Componentes de la Interfaz**
 
-##### **1. Header del Chat**
+##### **1. Formulario Inicial de HelpDesk**
 
 ```tsx
-interface ChatHeaderProps {
-  status: "online" | "typing" | "away";
-  agentName?: string;
-  conversationId: string;
+interface HelpdeskFormProps {
+  onCaseCreated: (caseId: number, caseNumber: string) => void;
 }
 
-const ChatHeader: React.FC<ChatHeaderProps> = ({ status, agentName }) => (
-  <div className="bg-blue-600 text-white p-4 flex items-center justify-between">
-    <div className="flex items-center">
-      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mr-3">
-        🤖
-      </div>
-      <div>
-        <h3 className="font-semibold">HelpDesk Assistant</h3>
-        <p className="text-sm opacity-90">
-          {status === "typing" ? "Escribiendo..." : "En línea"}
-        </p>
-      </div>
-    </div>
-    <div className="flex items-center space-x-2">
-      <button className="p-2 hover:bg-blue-500 rounded">📞</button>
-      <button className="p-2 hover:bg-blue-500 rounded">ℹ️</button>
-    </div>
-  </div>
-);
-```
+interface FormData {
+  title: string;
+  description: string;
+  attachments: File[];
+}
 
-##### **2. Área de Mensajes**
+const HelpdeskForm: React.FC<HelpdeskFormProps> = ({ onCaseCreated }) => {
+  const [formData, setFormData] = useState<FormData>({
+    title: "",
+    description: "",
+    attachments: [],
+  });
 
-```tsx
-interface MessageProps {
-  message: {
-    id: string;
-    content: string;
-    senderType: "user" | "system" | "agent";
-    sentAt: Date;
-    attachments?: FileAttachment[];
-    quickActions?: QuickAction[];
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Crear caso inmediatamente
+    const caseData = new FormData();
+    caseData.append("title", formData.title);
+    caseData.append("description", formData.description);
+    caseData.append("origin", "HelpDesk");
+
+    formData.attachments.forEach((file) => {
+      caseData.append("attachments", file);
+    });
+
+    const response = await createCase(caseData);
+    onCaseCreated(response.id, response.case_number);
   };
-}
-
-const MessageBubble: React.FC<MessageProps> = ({ message }) => {
-  const isUser = message.senderType === "user";
 
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"} mb-4`}>
-      <div
-        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-          isUser ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-800"
-        }`}
-      >
-        <p>{message.content}</p>
-        {message.attachments && (
-          <AttachmentList attachments={message.attachments} />
-        )}
-        {message.quickActions && (
-          <QuickActionButtons actions={message.quickActions} />
-        )}
-        <p className="text-xs opacity-70 mt-1">
-          {format(message.sentAt, "HH:mm")}
-        </p>
+    <form onSubmit={handleSubmit}>
+      {/* Título */}
+      <input
+        type="text"
+        placeholder="Ej: Error al cargar dashboard"
+        value={formData.title}
+        onChange={(e) =>
+          setFormData((prev) => ({ ...prev, title: e.target.value }))
+        }
+        required
+      />
+
+      {/* Descripción */}
+      <textarea
+        placeholder="Describe detalladamente el problema..."
+        value={formData.description}
+        onChange={(e) =>
+          setFormData((prev) => ({ ...prev, description: e.target.value }))
+        }
+        required
+      />
+
+      {/* Upload de archivos */}
+      <FileUploadZone
+        files={formData.attachments}
+        onFilesChange={(files) =>
+          setFormData((prev) => ({ ...prev, attachments: files }))
+        }
+      />
+
+      <button type="submit">Crear Caso</button>
+    </form>
+  );
+};
+```
+
+##### **2. Vista Integrada de Caso**
+
+```tsx
+interface CaseViewProps {
+  caseId: number;
+  caseNumber: string;
+}
+
+const IntegratedCaseView: React.FC<CaseViewProps> = ({
+  caseId,
+  caseNumber,
+}) => {
+  const [caseDetails, setCaseDetails] = useState<CaseDetails | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+
+  return (
+    <div className="flex h-screen">
+      {/* Panel Izquierdo - Detalles del Caso */}
+      <div className="w-1/2 border-r">
+        <CaseDetailsPanel caseDetails={caseDetails} activities={activities} />
+      </div>
+
+      {/* Panel Derecho - Chat */}
+      <div className="w-1/2">
+        <CaseChatPanel
+          caseId={caseId}
+          messages={messages}
+          onNewMessage={handleNewMessage}
+        />
       </div>
     </div>
   );
 };
 ```
 
-##### **3. Quick Actions (Botones Rápidos)**
+##### **3. Panel de Detalles del Caso**
 
 ```tsx
-interface QuickActionProps {
-  actions: Array<{
-    id: string;
-    label: string;
-    value: string;
-    icon?: string;
-  }>;
-  onActionClick: (action: string) => void;
-}
+const CaseDetailsPanel: React.FC<{
+  caseDetails: CaseDetails;
+  activities: Activity[];
+}> = ({ caseDetails, activities }) => (
+  <div className="p-6 h-full overflow-y-auto">
+    {/* Información principal del caso */}
+    <div className="mb-6">
+      <h2 className="text-xl font-bold mb-4">Detalles del Caso</h2>
+      <div className="space-y-2">
+        <div>
+          🔸 Estado: <span className="font-medium">{caseDetails.status}</span>
+        </div>
+        <div>
+          🔸 Prioridad:{" "}
+          <span className="font-medium">{caseDetails.priority}</span>
+        </div>
+        <div>
+          🔸 Asignado:{" "}
+          <span className="font-medium">{caseDetails.assignee}</span>
+        </div>
+        <div>
+          🔸 Creado:{" "}
+          <span className="font-medium">{caseDetails.created_at}</span>
+        </div>
+      </div>
+    </div>
 
-const QuickActionButtons: React.FC<QuickActionProps> = ({
-  actions,
-  onActionClick,
-}) => (
-  <div className="flex flex-wrap gap-2 mt-2">
-    {actions.map((action) => (
-      <button
-        key={action.id}
-        onClick={() => onActionClick(action.value)}
-        className="bg-white bg-opacity-20 text-white px-3 py-1 rounded-full text-sm hover:bg-opacity-30"
-      >
-        {action.icon} {action.label}
-      </button>
-    ))}
+    {/* Descripción */}
+    <div className="mb-6">
+      <h3 className="font-bold mb-2">📄 Descripción:</h3>
+      <p className="bg-gray-50 p-3 rounded">{caseDetails.description}</p>
+    </div>
+
+    {/* Archivos adjuntos */}
+    <div className="mb-6">
+      <h3 className="font-bold mb-2">📎 Archivos Adjuntos:</h3>
+      <AttachmentList attachments={caseDetails.attachments} />
+    </div>
+
+    {/* Log de actividades */}
+    <div>
+      <h3 className="font-bold mb-2">📊 Log de Actividades:</h3>
+      <ActivityTimeline activities={activities} />
+    </div>
   </div>
 );
 ```
 
-##### **4. Input Area**
+##### **4. Panel de Chat Integrado**
 
 ```tsx
-const ChatInput: React.FC = () => {
-  const [message, setMessage] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
+const CaseChatPanel: React.FC<{
+  caseId: number;
+  messages: ChatMessage[];
+  onNewMessage: (message: string) => void;
+}> = ({ caseId, messages, onNewMessage }) => {
+  const [newMessage, setNewMessage] = useState("");
+
+  const handleSendMessage = () => {
+    if (newMessage.trim()) {
+      onNewMessage(newMessage);
+      setNewMessage("");
+    }
+  };
 
   return (
-    <div className="border-t bg-white p-4">
-      <div className="flex items-center space-x-2">
-        <button className="p-2 text-gray-500 hover:text-gray-700">📎</button>
-        <div className="flex-1 relative">
+    <div className="flex flex-col h-full">
+      {/* Header del chat */}
+      <div className="bg-blue-600 text-white p-4">
+        <h3 className="font-semibold">Chat de Seguimiento</h3>
+        <p className="text-sm opacity-90">Caso #{caseId}</p>
+      </div>
+
+      {/* Mensajes */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((message) => (
+          <MessageBubble key={message.id} message={message} />
+        ))}
+      </div>
+
+      {/* Input de mensaje */}
+      <div className="border-t p-4">
+        <div className="flex items-center space-x-2">
           <input
             type="text"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Escribe tu mensaje..."
-            className="w-full px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Escribe un mensaje..."
+            className="flex-1 px-4 py-2 border rounded-full"
+            onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
           />
-          <button className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1">
-            😊
+          <button
+            onClick={handleSendMessage}
+            className="bg-blue-500 text-white p-2 rounded-full"
+          >
+            ➤
           </button>
         </div>
-        <button
-          className={`p-2 rounded-full ${
-            isRecording ? "bg-red-500 text-white" : "text-gray-500"
-          }`}
-          onMouseDown={() => setIsRecording(true)}
-          onMouseUp={() => setIsRecording(false)}
-        >
-          🎤
-        </button>
-        <button className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600">
-          ➤
-        </button>
       </div>
     </div>
   );
@@ -369,20 +525,28 @@ const ChatInput: React.FC = () => {
 
 ### 📋 **Flujo de Clasificación**
 
-**IMPORTANTE**: El usuario **NO** responde estas preguntas. El usuario solo describe su problema libremente en el chat. Las 5 preguntas son respondidas por el **agente** después de revisar toda la conversación.
+**IMPORTANTE**: El usuario solicitante (ej: María García) **NO** responde estas preguntas. El usuario solo crea el caso mediante el formulario inicial. Las 5 preguntas son respondidas por el **agente asignado** (ej: Juan Pérez) después de recibir la asignación del caso para determinar la **complejidad** del caso.
 
 #### **Panel de Clasificación del Agente**
 
-Cuando el agente recibe una conversación para clasificar, ve:
+Cuando el agente asignado (Juan Pérez) recibe un caso para clasificar, ve:
 
-1. **Conversación completa** entre usuario y sistema
-2. **Información del usuario** (nombre, rol, historial)
-3. **Archivos adjuntos** si los hay
-4. **Formulario de clasificación** con las 5 preguntas
+1. **Información completa del caso** creado por el usuario (María García)
+2. **Descripción del problema** proporcionada en el formulario inicial
+3. **Archivos adjuntos** subidos por el usuario
+4. **Formulario de clasificación** con las 5 preguntas para determinar complejidad
+5. **Chat integrado** para comunicación directa con el usuario
+
+#### **Proceso de Clasificación:**
+
+1. **Usuario crea caso** → María García completa formulario inicial
+2. **Sistema asigna caso** → Caso se asigna a Juan Pérez (Agente)
+3. **Agente clasifica** → Juan responde las 5 preguntas para determinar complejidad
+4. **Caso actualizado** → Complejidad definida, puede iniciar seguimiento y time tracking
 
 #### **Pregunta 1: Categorización General**
 
-_Respondida por el agente basándose en la descripción del usuario_
+_Respondida por el agente asignado (Juan Pérez) basándose en la descripción del usuario (María García)_
 
 ```
 Opciones de clasificación:
@@ -395,7 +559,7 @@ Opciones de clasificación:
 
 #### **Pregunta 2: Urgencia y Impacto**
 
-_Evaluada por el agente según la descripción y contexto_
+_Evaluada por el agente asignado (Juan Pérez) según la descripción y contexto del caso_
 
 ```
 Opciones de urgencia:
@@ -407,7 +571,7 @@ Opciones de urgencia:
 
 #### **Pregunta 3: Área o Módulo Afectado**
 
-_Determinada por el agente según el problema descrito_
+_Determinada por el agente asignado (Juan Pérez) según el problema descrito por el usuario_
 
 ```
 Opciones de módulos:
@@ -425,7 +589,7 @@ Opciones de módulos:
 
 #### **Pregunta 4: Complejidad Estimada**
 
-_Evaluada por el agente basándose en la descripción técnica_
+_Evaluada por el agente asignado (Juan Pérez) basándose en la descripción técnica del problema. Esta complejidad es independiente de la prioridad del caso._
 
 ```
 Opciones de complejidad:
@@ -437,7 +601,7 @@ Opciones de complejidad:
 
 #### **Pregunta 5: Origen del Caso**
 
-_Seleccionado por el agente (campo requerido)_
+_Seleccionado por el agente asignado (Juan Pérez) - campo requerido_
 
 ```
 Selección de origen:
@@ -449,20 +613,112 @@ Selección de origen:
 - Otro (especificar)
 ```
 
-### 🎯 **Datos Automáticos vs Manuales**
+### 🎯 **Datos Automáticos vs Clasificación Manual**
 
-#### ✅ **Generados Automáticamente** (el agente NO necesita completar):
+#### ✅ **Generados Automáticamente al crear el caso** (María García ya proporcionó):
 
-- **Número del caso**: Auto-generado por el sistema
+- **Número del caso**: Auto-generado por el sistema (ej: #CMS-2025-001234)
 - **Fecha**: Timestamp automático de creación
-- **Descripción del problema**: Extraída automáticamente del chat
-- **Usuario solicitante**: Del contexto del chat
+- **Descripción del problema**: Proporcionada por María García en el formulario inicial
+- **Usuario solicitante**: María García (del contexto del formulario)
+- **Archivos adjuntos**: Subidos por María García en el formulario inicial
 - **Aplicación**: Determinada automáticamente como "HelpDesk"
 
-#### 📝 **Completados por el Agente** (únicamente estos campos):
+#### 📝 **Completados por el Agente Asignado** (Juan Pérez debe completar):
 
-- **Clasificación**: Respuestas a las 5 preguntas
-- **Origen**: Selección del origen específico
+- **Clasificación del caso**: Respuestas a las 5 preguntas para determinar complejidad
+- **Complejidad final**: Basada en las respuestas de clasificación (independiente de prioridad)
+- **Origen específico**: Confirmación del canal de origen del caso
+
+#### 🔄 **Flujo Completo del Proceso:**
+
+```
+1. María García → Crea caso con formulario inicial
+   ↓
+2. Sistema → Asigna caso a Juan Pérez (Agente)
+   ↓
+3. Juan Pérez → Entra al módulo "Casos Asignados"
+   ↓
+4. Juan Pérez → Ve caso con estado "Pendiente de Clasificación"
+   ↓
+5. Juan Pérez → Completa las 5 preguntas de clasificación
+   ↓
+6. Sistema → Actualiza complejidad del caso
+   ↓
+7. Juan Pérez → Puede iniciar time tracking y gestión completa del caso
+```
+
+### 🎯 **Diferencia Entre Prioridad y Complejidad**
+
+#### **IMPORTANTE: Conceptos Independientes**
+
+**🔥 PRIORIDAD** = Qué tan urgente es resolver el caso
+
+- Determinada por: Impacto en el negocio, usuarios afectados, criticidad
+- Valores: Crítica, Alta, Media, Baja
+- Define: Orden de atención, SLA de respuesta
+
+**🧩 COMPLEJIDAD** = Qué tan difícil es resolver técnicamente el caso
+
+- Determinada por: Análisis técnico del agente, dificultad de implementación
+- Valores: Alta, Media, Baja, Crítica
+- Define: Recursos necesarios, tiempo estimado, escalación técnica
+
+#### **Ejemplos Prácticos:**
+
+```
+📋 Caso Ejemplo 1: Error crítico en producción
+• Prioridad: 🔥 CRÍTICA (afecta a todos los usuarios)
+• Complejidad: 🟢 BAJA (reiniciar servicio)
+
+📋 Caso Ejemplo 2: Mejora en interfaz de usuario
+• Prioridad: 📅 BAJA (no es urgente)
+• Complejidad: 🔴 ALTA (rediseño completo)
+
+📋 Caso Ejemplo 3: Dashboard no carga métricas
+• Prioridad: ⚡ ALTA (afecta productividad)
+• Complejidad: 🟡 MEDIA (investigación + parche)
+```
+
+#### **🔧 Módulo de Clasificación para Agentes**
+
+Cuando Juan Pérez (Agente) entra a clasificar un caso:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ 🔧 Clasificación de Caso #CMS-2025-001234                  │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│ 📋 INFORMACIÓN DEL CASO:                                   │
+│ ────────────────────────────────────────────────────       │
+│ • Título: Error al cargar dashboard                        │
+│ • Solicitado por: María García                             │
+│ • Descripción: Cuando entro al dashboard, las métricas...  │
+│ • Archivos: screenshot.png                                 │
+│                                                             │
+│ 📝 CLASIFICACIÓN REQUERIDA:                                │
+│ ────────────────────────────────────────────────────       │
+│                                                             │
+│ 1️⃣ Categorización General:                                │
+│    ○ Problema Técnico  ○ Solicitud de Información         │
+│    ○ Solicitud de Cambio  ○ Incidente Crítico             │
+│                                                             │
+│ 2️⃣ Urgencia y Impacto:                                    │
+│    ○ Crítico  ○ Alto  ○ Medio  ○ Bajo                     │
+│                                                             │
+│ 3️⃣ Área/Módulo Afectado:                                  │
+│    ○ Dashboard  ○ Gestión de Casos  ○ TODOs               │
+│    ○ Usuarios  ○ Tags  ○ Base de Conocimiento             │
+│                                                             │
+│ 4️⃣ Complejidad Técnica:                                   │
+│    ○ Alta  ○ Media  ○ Baja  ○ Crítica                     │
+│                                                             │
+│ 5️⃣ Origen del Caso:                                       │
+│    ○ HelpDesk  ○ Email  ○ Teléfono  ○ Presencial         │
+│                                                             │
+│              [ Vista Previa ]    [ ✅ Clasificar ]        │
+└─────────────────────────────────────────────────────────────┘
+```
 
 [Área de texto libre + upload de archivos]
 
@@ -899,9 +1155,111 @@ const helpDeskMenuItem = {
 ```
 Usuario hace clic en "HelpDesk" en el menú lateral
     ↓
-Sistema crea automáticamente una nueva conversación
+Aparece formulario simple con 3 campos principales
     ↓
-Aparece interfaz de chat con mensaje de bienvenida
+Usuario completa información básica requerida
+```
+
+#### **Paso 2: Creación Inmediata del Caso**
+
+```
+Usuario completa formulario:
+- 📝 Título: "Error al cargar dashboard"
+- 📄 Descripción: "Cuando entro al dashboard, las métricas aparecen en blanco..."
+- 📎 Archivos: screenshot.png (opcional)
+
+Usuario hace clic en "Crear Caso"
+    ↓
+Sistema crea caso inmediatamente
+    ↓
+Usuario recibe confirmación con número de caso
+```
+
+#### **Paso 3: Confirmación y Número de Caso**
+
+```
+✅ ¡Caso Creado Exitosamente!
+
+📋 CASO CREADO: #CMS-2025-001234
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔸 Título: Error al cargar dashboard
+🔸 Estado: Nuevo
+🔸 Prioridad: Pendiente de asignación
+🔸 Creado: 18/09/2025 10:15
+🔸 Usuario: María García
+
+🔗 [Ver Caso Completo] | 📋 [Lista de Casos] | 💬 [Nuevo Caso]
+```
+
+#### **Paso 4: Asignación a Agente**
+
+```
+Sistema asigna caso a Juan Pérez (Agente)
+    ↓
+Juan Pérez recibe notificación de nuevo caso asignado
+    ↓
+Estado del caso cambia a "Asignado - Pendiente de Clasificación"
+```
+
+#### **Paso 5: Clasificación por Agente**
+
+```
+Juan Pérez entra al módulo "Casos Asignados"
+    ↓
+Ve caso #CMS-2025-001234 con estado "Pendiente de Clasificación"
+    ↓
+Hace clic en "Clasificar Caso Ahora"
+    ↓
+Completa las 5 preguntas de clasificación
+    ↓
+Sistema actualiza complejidad del caso
+    ↓
+Juan puede iniciar time tracking y gestión completa
+```
+
+#### **Paso 6: Vista Integrada con Chat**
+
+```
+Tanto María García (Usuario) como Juan Pérez (Agente) pueden acceder a:
+
+IZQUIERDA (Detalles):           DERECHA (Chat):
+━━━━━━━━━━━━━━━━━━━━━          ━━━━━━━━━━━━━━━━━━
+📋 Información del caso         💬 Chat en tiempo real
+📄 Descripción completa         👤 María ↔️ � Juan
+📎 Archivos adjuntos           📎 Envío de archivos
+📊 Log de actividades          🔔 Notificaciones
+⚙️ Opciones del caso           ⏰ Tiempo real
+```
+
+#### **Paso 7: Comunicación y Seguimiento**
+
+```
+🕐 10:18 - Caso asignado a Juan Pérez (Agente)
+🕐 10:25 - Juan completó clasificación: Complejidad Media
+
+💬 Juan Pérez (Agente):
+   "Hola María, voy a revisar el problema del dashboard.
+    ¿El error aparece en algún navegador específico?"
+
+👤 María García (Usuario):
+   "Hola Juan, solo lo he probado en Chrome.
+    ¿Debería probar en otro navegador?"
+
+💬 Juan Pérez (Agente):
+   "Sí, por favor prueba en Firefox y envíame el
+    resultado. También necesito el log de errores."
+
+👤 María García (Usuario):
+   📎 [Adjunta: firefox-test.png]
+   "En Firefox funciona bien. Aquí está la prueba."
+
+🕐 10:45 - Estado cambiado a: En Progreso
+🕐 10:45 - Archivo adjuntado: firefox-test.png
+
+💬 Juan Pérez (Agente):
+   "Perfecto, es un problema específico de Chrome.
+    Voy a revisar la compatibilidad. Te actualizo
+    en 30 minutos."
 ```
 
 #### **Paso 2: Descripción del Problema**
@@ -1057,40 +1415,38 @@ Una vez creado el caso, el usuario puede:
 
 ### 📊 **Comparación: Antes vs Después del HelpDesk**
 
-#### **🔴 Proceso Actual (Agente crea caso desde cero):**
+#### **🔴 Proceso Actual (Usuario debe contactar agente):**
 ```
-Agente debe completar manualmente:
-1. ❌ Número del caso
-2. ❌ Fecha
-3. ❌ Descripción del problema (escribir desde cero)
-4. ❌ Clasificación con las 5 preguntas
-5. ❌ Origen
-6. ❌ Aplicación
+Usuario necesita crear caso:
+1. ❌ Contacta agente por email/teléfono
+2. ❌ Explica problema verbalmente o por texto
+3. ❌ Agente debe recopilar información adicional
+4. ❌ Agente crea caso manualmente con todos los campos
+5. ❌ Usuario espera confirmación y número de caso
+6. ❌ Comunicación dispersa en diferentes canales
 
-= 6 campos manuales + recopilar información del usuario por separado
+= Proceso lento, dependiente del agente, sin trazabilidad centralizada
 ```
 
-#### **🟢 Proceso Nuevo (HelpDesk Integrado):**
+#### **🟢 Proceso Nuevo (HelpDesk Híbrido):**
 ```
-Agente solo necesita:
-1. ✅ Clasificación con las 5 preguntas (basándose en chat completo)
-2. ✅ Origen (selección simple)
+Usuario necesita crear caso:
+1. ✅ Completa formulario simple (3 campos)
+2. ✅ Caso creado automáticamente con número asignado
+3. ✅ Acceso inmediato a vista integrada
+4. ✅ Comunicación centralizada via chat integrado
+5. ✅ Log automático de todas las actividades
+6. ✅ Seguimiento en tiempo real
 
-Automático:
-- ✅ Número del caso (auto-generado)
-- ✅ Fecha (timestamp automático)
-- ✅ Descripción (extraída del chat)
-- ✅ Aplicación (automático: "HelpDesk")
-
-= 2 campos manuales vs 6 anteriores (67% reducción)
+= Proceso rápido, autónomo para el usuario, trazabilidad completa
 ```
 
 #### **🎯 Beneficios Cuantificables:**
-- **Reducción 67%** en campos manuales para el agente
-- **Descripción completa** automática vs escribir desde cero
-- **Contexto completo** de la conversación vs recopilar por separado
-- **Trazabilidad total** desde solicitud hasta resolución
-- **Experiencia mejorada** para usuarios finales
+- **Reducción 90%** en tiempo de creación inicial del caso
+- **Eliminación 100%** de dependencia del agente para crear casos
+- **Centralización total** de comunicación y documentación
+- **Trazabilidad completa** desde creación hasta resolución
+- **Experiencia unificada** - todo en una sola interfaz
 
 ---
 
@@ -1502,14 +1858,96 @@ interface BIIntegration {
 - **Training comprehensivo** para agentes y usuarios
 - **Monitoreo continuo** de métricas de adopción
 
+---
+
+## 🎖️ Beneficios del Proceso de Clasificación Mejorado
+
+### 📈 **Ventajas del Nuevo Flujo**
+
+#### **🚀 Para el Usuario Solicitante (María García):**
+
+- ✅ **Autonomía completa** - Crea casos sin depender de agentes
+- ✅ **Obtención inmediata** de número de caso para seguimiento
+- ✅ **Comunicación centralizada** - Todo en una sola interfaz
+- ✅ **Transparencia total** - Ve el progreso en tiempo real
+
+#### **🎯 Para el Agente Asignado (Juan Pérez):**
+
+- ✅ **Información completa** - Recibe caso con todos los datos necesarios
+- ✅ **Clasificación estructurada** - Las 5 preguntas guían la evaluación técnica
+- ✅ **Independencia de criterios** - Complejidad separada de prioridad
+- ✅ **Herramientas integradas** - Time tracking y gestión desde la clasificación
+- ✅ **Comunicación directa** - Chat integrado con el usuario
+
+#### **⚙️ Para el Sistema:**
+
+- ✅ **Datos estructurados** - Clasificación consistente y comparable
+- ✅ **Métricas precisas** - Complejidad real vs tiempo de resolución
+- ✅ **Escalación inteligente** - Criterios claros para derivar casos
+- ✅ **Integración total** - Con sistema de auditoría y permisos existente
+
+### 🔄 **Comparación: Proceso Actual vs Mejorado**
+
+#### **🔴 Proceso Actual (Problemático):**
+
+```
+Usuario necesita soporte
+    ↓
+Contacta agente por canal externo
+    ↓
+Agente debe recopilar información manualmente
+    ↓
+Agente crea caso con información incompleta
+    ↓
+Clasificación mezclada con prioridad
+    ↓
+Comunicación dispersa en múltiples canales
+```
+
+#### **🟢 Proceso Mejorado (Optimizado):**
+
+```
+Usuario completa formulario simple (3 campos)
+    ↓
+Sistema crea caso automáticamente
+    ↓
+Caso se asigna a agente especializado
+    ↓
+Agente clasifica técnicamente el caso (5 preguntas)
+    ↓
+Complejidad independiente de prioridad
+    ↓
+Comunicación centralizada en vista integrada
+    ↓
+Time tracking y gestión completa disponible
+```
+
+### 📊 **Beneficios Cuantificables:**
+
+- **⚡ 90% menos tiempo** en creación inicial de casos
+- **🎯 100% de casos** con información completa desde el inicio
+- **📈 85% mejor** trazabilidad de comunicaciones
+- **🔧 70% mejor** precisión en estimación de tiempos
+- **👥 50% menos** carga administrativa para agentes
+- **📱 100% centralizada** toda la información y comunicación
+
+---
+
 ### 🎯 **Resumen Ejecutivo**
 
-El sistema de HelpDesk propuesto transforma radicalmente el proceso de creación de casos:
+El sistema de HelpDesk propuesto transforma radicalmente el proceso de creación y gestión de casos:
 
-**🔴 Antes**: Usuario describe problema → Agente captura manualmente 6 campos → Caso creado
-**🟢 Después**: Usuario describe problema en chat → Agente clasifica con 2 campos → Caso auto-generado
+**🔴 Antes**: Usuario contacta agente → Agente recopila información → Agente crea caso manualmente → Comunicación dispersa → Clasificación mezclada
 
-Esta evolución mantiene toda la robustez del sistema actual mientras reduce significativamente la carga operativa y mejora dramáticamente la experiencia del usuario final.
+**🟢 Después**: Usuario completa formulario simple → Caso creado automáticamente → Agente asignado clasifica técnicamente → Vista integrada con chat en tiempo real → Complejidad independiente de prioridad
+
+**Roles Clarificados:**
+
+- **Usuario (ej: María García)**: Crea casos mediante formulario simple de 3 campos
+- **Agente (ej: Juan Pérez)**: Recibe asignación y clasifica técnicamente el caso mediante 5 preguntas estructuradas
+- **Sistema**: Facilita creación inmediata, asignación inteligente y comunicación centralizada
+
+Esta evolución mantiene toda la robustez del sistema actual mientras elimina la dependencia inicial del agente para crear casos, separa claramente los conceptos de prioridad y complejidad, y centraliza toda la comunicación en una interfaz unificada que combina la información estructurada del caso con la comunicación en tiempo real.
 
 ---
 

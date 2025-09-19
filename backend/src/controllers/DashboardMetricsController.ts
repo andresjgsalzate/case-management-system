@@ -2,7 +2,68 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../config/database";
 import { AuthRequest } from "../middleware/auth";
 
+// Helper interfaces
+interface UserPermissions {
+  canReadOwn: boolean;
+  canReadAll: boolean;
+  isAdmin: boolean;
+}
+
 export class DashboardMetricsController {
+  /**
+   * Helper function to verify user permissions for metrics
+   * @param user User object with role and permissions
+   * @param metricType Type of metric (time, cases, general, etc.)
+   * @returns Object with permission flags
+   */
+  private static async verifyMetricPermissions(
+    user: any,
+    metricType: string
+  ): Promise<UserPermissions> {
+    const permissions = user?.role?.rolePermissions || [];
+
+    // Check for admin permissions
+    const isAdmin = permissions.some(
+      (rp: any) => rp.permission.name === "admin.full"
+    );
+
+    // Check for specific metric permissions
+    const canReadOwn = permissions.some(
+      (rp: any) =>
+        rp.permission.name === `metrics.${metricType}.read.own` ||
+        rp.permission.name === `dashboard.read.own`
+    );
+
+    const canReadAll = permissions.some(
+      (rp: any) =>
+        rp.permission.name === `metrics.${metricType}.read.all` ||
+        rp.permission.name === `dashboard.read.all` ||
+        isAdmin
+    );
+
+    return {
+      canReadOwn,
+      canReadAll,
+      isAdmin,
+    };
+  }
+
+  /**
+   * Helper function to get user with permissions
+   * @param userId User ID to lookup
+   * @returns User object with role and permissions
+   */
+  private static async getUserWithPermissions(userId: string) {
+    const userRepo = AppDataSource.getRepository("UserProfile");
+    return await userRepo.findOne({
+      where: { id: userId },
+      relations: [
+        "role",
+        "role.rolePermissions",
+        "role.rolePermissions.permission",
+      ],
+    });
+  }
   // GET /api/metrics/general - Métricas generales del dashboard
   static async getGeneralMetrics(req: AuthRequest, res: Response) {
     try {
@@ -12,41 +73,46 @@ export class DashboardMetricsController {
         return res.status(401).json({ error: "Usuario no autenticado" });
       }
 
-      // Verificar permisos del usuario
-      const userRepo = AppDataSource.getRepository("UserProfile");
-      const user = await userRepo.findOne({
-        where: { id: userId },
-        relations: [
-          "role",
-          "role.rolePermissions",
-          "role.rolePermissions.permission",
-        ],
-      });
-
-      // Verificar si tiene permisos para ver métricas generales
-      const canReadAllMetrics = user?.role?.rolePermissions?.some(
-        (rp: any) =>
-          rp.permission.name === "metrics.general.read.all" ||
-          rp.permission.name === "admin.full"
+      // Get user with permissions
+      const user = await DashboardMetricsController.getUserWithPermissions(
+        userId
       );
+      const permissions =
+        await DashboardMetricsController.verifyMetricPermissions(
+          user,
+          "general"
+        );
+
+      // Check if user has any permission to read metrics
+      if (!permissions.canReadOwn && !permissions.canReadAll) {
+        return res.status(403).json({
+          error: "No tienes permisos para ver métricas generales",
+        });
+      }
 
       let totalCasesQuery = `SELECT COUNT(*) as count FROM case_control`;
       let activeCasesQuery = `SELECT COUNT(*) as count FROM case_control WHERE "isTimerActive" = true`;
       let totalUsersQuery = `SELECT COUNT(*) as count FROM user_profiles WHERE "isActive" = true`;
 
-      // Si no tiene permisos para ver todo, filtrar por sus casos
-      if (!canReadAllMetrics) {
+      // Apply filtering based on permissions
+      if (!permissions.canReadAll && permissions.canReadOwn) {
+        // User can only see their own metrics
         totalCasesQuery += ` WHERE "userId" = $1`;
         activeCasesQuery += ` AND "userId" = $1`;
+        // For own scope, don't show total users
+        totalUsersQuery = `SELECT 0 as count`;
       }
 
       const [totalCases, activeCases, totalUsers] = await Promise.all([
-        AppDataSource.query(totalCasesQuery, canReadAllMetrics ? [] : [userId]),
+        AppDataSource.query(
+          totalCasesQuery,
+          !permissions.canReadAll ? [userId] : []
+        ),
         AppDataSource.query(
           activeCasesQuery,
-          canReadAllMetrics ? [] : [userId]
+          !permissions.canReadAll ? [userId] : []
         ),
-        canReadAllMetrics
+        permissions.canReadAll
           ? AppDataSource.query(totalUsersQuery)
           : [{ count: 0 }],
       ]);
@@ -58,6 +124,7 @@ export class DashboardMetricsController {
         completedCases:
           parseInt(totalCases[0]?.count || 0) -
           parseInt(activeCases[0]?.count || 0),
+        scope: permissions.canReadAll ? "all" : "own", // Include scope info
       };
 
       res.json({ success: true, data: metrics });
@@ -80,16 +147,19 @@ export class DashboardMetricsController {
         return res.status(401).json({ error: "Usuario no autenticado" });
       }
 
-      // Verificar permisos del usuario
-      const userRepo = AppDataSource.getRepository("UserProfile");
-      const user = await userRepo.findOne({
-        where: { id: userId },
-        relations: [
-          "role",
-          "role.rolePermissions",
-          "role.rolePermissions.permission",
-        ],
-      });
+      // Get user with permissions
+      const user = await DashboardMetricsController.getUserWithPermissions(
+        userId
+      );
+      const permissions =
+        await DashboardMetricsController.verifyMetricPermissions(user, "time");
+
+      // Check if user has any permission to read metrics
+      if (!permissions.canReadOwn && !permissions.canReadAll) {
+        return res.status(403).json({
+          error: "No tienes permisos para ver métricas de tiempo",
+        });
+      }
 
       // Construir consulta base con subconsulta para evitar duplicados
       let baseConditions = "1=1";
@@ -108,14 +178,8 @@ export class DashboardMetricsController {
         paramIndex++;
       }
 
-      // Filtrar por permisos
-      const canReadAllMetrics = user?.role?.rolePermissions?.some(
-        (rp: any) =>
-          rp.permission.name === "metrics.time.read.all" ||
-          rp.permission.name === "admin.full"
-      );
-
-      if (!canReadAllMetrics) {
+      // Apply filtering based on permissions
+      if (!permissions.canReadAll && permissions.canReadOwn) {
         baseConditions += ` AND cc."userId" = $${paramIndex}`;
         queryParams.push(userId);
         paramIndex++;
@@ -190,7 +254,7 @@ export class DashboardMetricsController {
         todoParamIndex++;
       }
 
-      if (!canReadAllMetrics) {
+      if (!permissions.canReadAll && permissions.canReadOwn) {
         todosTimeQuery += ` AND tc.user_id = $${todoParamIndex}`;
         todoQueryParams.push(userId);
       }
@@ -202,7 +266,7 @@ export class DashboardMetricsController {
         WHERE cc."isTimerActive" = true
       `;
 
-      if (!canReadAllMetrics) {
+      if (!permissions.canReadAll && permissions.canReadOwn) {
         activeTimersQuery += ` AND cc."userId" = $${queryParams.length}`;
         // No necesitamos agregar el parámetro de nuevo, ya lo tenemos
       }
@@ -226,7 +290,7 @@ export class DashboardMetricsController {
       );
 
       // Ejecutar consulta separada para timers activos con los mismos parámetros de usuario
-      const activeTimersParams = canReadAllMetrics ? [] : [userId];
+      const activeTimersParams = permissions.canReadAll ? [] : [userId];
       const activeTimersResult = await AppDataSource.query(
         activeTimersQuery,
         activeTimersParams
@@ -262,6 +326,7 @@ export class DashboardMetricsController {
         activeTimers: parseInt(activeTimersResult[0]?.active_timers || 0),
         currentMonth: now.toLocaleString("es-ES", { month: "long" }),
         currentYear: now.getFullYear(),
+        scope: permissions.canReadAll ? "all" : "own", // Include scope info
       };
 
       res.json({ success: true, data: timeMetrics });
@@ -381,36 +446,26 @@ export class DashboardMetricsController {
         return res.status(401).json({ error: "Usuario no autenticado" });
       }
 
-      // Verificar permisos del usuario
-      const userRepo = AppDataSource.getRepository("UserProfile");
-      const user = await userRepo.findOne({
-        where: { id: userId },
-        relations: [
-          "role",
-          "role.rolePermissions",
-          "role.rolePermissions.permission",
-        ],
-      });
+      // Get user with permissions
+      const user = await DashboardMetricsController.getUserWithPermissions(
+        userId
+      );
+      const permissions =
+        await DashboardMetricsController.verifyMetricPermissions(user, "cases");
+
+      // Check if user has any permission to read case metrics
+      if (!permissions.canReadOwn && !permissions.canReadAll) {
+        return res.status(403).json({
+          error: "No tienes permisos para ver métricas de casos",
+        });
+      }
 
       console.log("=== DEBUG: Usuario y permisos ===");
       console.log("Usuario:", user?.fullName, "Rol:", user?.role?.name);
-      console.log(
-        "Permisos:",
-        user?.role?.rolePermissions?.map((rp: any) => rp.permission.name)
-      );
-
-      // Verificar si tiene permisos para ver todas las métricas de casos
-      const canReadAllCaseMetrics = user?.role?.rolePermissions?.some(
-        (rp: any) =>
-          rp.permission.name === "metrics.cases.read.all" ||
-          rp.permission.name === "metrics.time.read.all" ||
-          rp.permission.name === "admin.full"
-      );
-
-      console.log(
-        "Puede ver todas las métricas de casos:",
-        canReadAllCaseMetrics
-      );
+      console.log("Permisos de casos:", {
+        canReadOwn: permissions.canReadOwn,
+        canReadAll: permissions.canReadAll,
+      });
 
       // Consulta que obtiene datos reales de los casos con cálculo dinámico del tiempo
       let caseQuery = `
@@ -422,7 +477,7 @@ export class DashboardMetricsController {
           COALESCE(cs.name, 'En progreso') as status,
           COALESCE(cs.color, '#3b82f6') as status_color,
           -- Calcular tiempo dinámicamente como en Control de casos
-          COALESCE(
+          (COALESCE(
             (SELECT SUM(
               CASE 
                 WHEN te."endTime" IS NOT NULL AND te."startTime" IS NOT NULL 
@@ -435,7 +490,7 @@ export class DashboardMetricsController {
             (SELECT SUM(mte."durationMinutes") 
              FROM manual_time_entries mte 
              WHERE mte."caseControlId" = cc.id), 0
-          ) as total_time_minutes,
+          )) as total_time_minutes,
           c."clasificacion" as complexity
         FROM case_control cc
         LEFT JOIN cases c ON cc."caseId" = c.id
@@ -457,7 +512,7 @@ export class DashboardMetricsController {
       }
 
       // Filtrar por permisos: si no tiene permisos para ver todos, solo mostrar sus casos
-      if (!canReadAllCaseMetrics) {
+      if (!permissions.canReadAll && permissions.canReadOwn) {
         console.log("Aplicando filtro por usuario actual:", userId);
         caseQuery += ` AND cc."userId" = $${queryParams.length + 1}`;
         queryParams.push(userId);
@@ -465,27 +520,22 @@ export class DashboardMetricsController {
         console.log("Usuario tiene permisos para ver todos los casos");
       }
 
-      // Agregar filtro para mostrar solo casos con tiempo calculado > 0
-      // Usamos subconsulta para filtrar casos con tiempo > 0
+      // Agregar condición WHERE para filtrar casos con tiempo > 0 y ordenar
       caseQuery += `
-        AND (
-          (SELECT 
-            COALESCE(
-              (SELECT SUM(
-                CASE 
-                  WHEN te."endTime" IS NOT NULL AND te."startTime" IS NOT NULL 
-                  THEN EXTRACT(EPOCH FROM (te."endTime" - te."startTime")) / 60
-                  ELSE COALESCE(te."durationMinutes", 0)
-                END
-              ) FROM time_entries te WHERE te."caseControlId" = cc.id), 0
-            ) +
-            COALESCE(
-              (SELECT SUM(mte."durationMinutes") 
-               FROM manual_time_entries mte 
-               WHERE mte."caseControlId" = cc.id), 0
-            )
-          ) > 0
-        )
+        AND (COALESCE(
+          (SELECT SUM(
+            CASE 
+              WHEN te."endTime" IS NOT NULL AND te."startTime" IS NOT NULL 
+              THEN EXTRACT(EPOCH FROM (te."endTime" - te."startTime")) / 60
+              ELSE COALESCE(te."durationMinutes", 0)
+            END
+          ) FROM time_entries te WHERE te."caseControlId" = cc.id), 0
+        ) +
+        COALESCE(
+          (SELECT SUM(mte."durationMinutes") 
+           FROM manual_time_entries mte 
+           WHERE mte."caseControlId" = cc.id), 0
+        )) > 0
         ORDER BY total_time_minutes DESC
         LIMIT 10
       `;
@@ -503,7 +553,13 @@ export class DashboardMetricsController {
         complexity: row.complexity,
       }));
 
-      res.json({ success: true, data: caseTimeMetrics });
+      res.json({
+        success: true,
+        data: {
+          cases: caseTimeMetrics,
+          scope: permissions.canReadAll ? "all" : "own",
+        },
+      });
     } catch (error) {
       console.error("Error en getCaseTimeMetrics:", error);
       res.status(500).json({
@@ -523,16 +579,22 @@ export class DashboardMetricsController {
         return res.status(401).json({ error: "Usuario no autenticado" });
       }
 
-      // Verificar permisos del usuario
-      const userRepo = AppDataSource.getRepository("UserProfile");
-      const user = await userRepo.findOne({
-        where: { id: userId },
-        relations: [
-          "role",
-          "role.rolePermissions",
-          "role.rolePermissions.permission",
-        ],
-      });
+      // Get user with permissions
+      const user = await DashboardMetricsController.getUserWithPermissions(
+        userId
+      );
+      const permissions =
+        await DashboardMetricsController.verifyMetricPermissions(
+          user,
+          "status"
+        );
+
+      // Check if user has any permission to read status metrics
+      if (!permissions.canReadOwn && !permissions.canReadAll) {
+        return res.status(403).json({
+          error: "No tienes permisos para ver métricas de estados",
+        });
+      }
 
       let statusQuery = `
         SELECT 
@@ -558,7 +620,7 @@ export class DashboardMetricsController {
             )
           ), 0) as total_time_minutes
         FROM case_status_control cs
-        INNER JOIN case_control cc ON cs.id = cc."statusId"
+        LEFT JOIN case_control cc ON cs.id = cc."statusId"
         WHERE cs."isActive" = true
       `;
 
@@ -577,19 +639,31 @@ export class DashboardMetricsController {
         paramIndex++;
       }
 
-      // Filtrar por permisos
-      const canReadAllMetrics = user?.role?.rolePermissions?.some(
-        (rp: any) =>
-          rp.permission.name === "metrics.status.read.all" ||
-          rp.permission.name === "admin.full"
-      );
-
-      if (!canReadAllMetrics) {
+      // Apply filtering based on permissions
+      if (!permissions.canReadAll && permissions.canReadOwn) {
         statusQuery += ` AND (cc."userId" IS NULL OR cc."userId" = $${paramIndex})`;
         queryParams.push(userId);
       }
 
-      statusQuery += ` GROUP BY cs.id, cs.name, cs.color ORDER BY cases_count DESC`;
+      statusQuery += ` GROUP BY cs.id, cs.name, cs.color 
+        HAVING COUNT(cc.id) > 0 OR COALESCE(SUM(
+          -- Calcular tiempo dinámicamente como en Control de casos
+          COALESCE(
+            (SELECT SUM(
+              CASE 
+                WHEN te."endTime" IS NOT NULL AND te."startTime" IS NOT NULL 
+                THEN EXTRACT(EPOCH FROM (te."endTime" - te."startTime")) / 60
+                ELSE COALESCE(te."durationMinutes", 0)
+              END
+            ) FROM time_entries te WHERE te."caseControlId" = cc.id), 0
+          ) +
+          COALESCE(
+            (SELECT SUM(mte."durationMinutes") 
+             FROM manual_time_entries mte 
+             WHERE mte."caseControlId" = cc.id), 0
+          )
+        ), 0) > 0
+        ORDER BY cases_count DESC`;
 
       const result = await AppDataSource.query(statusQuery, queryParams);
 
@@ -601,7 +675,13 @@ export class DashboardMetricsController {
         totalTimeMinutes: parseInt(row.total_time_minutes || 0),
       }));
 
-      res.json({ success: true, data: statusMetrics });
+      res.json({
+        success: true,
+        data: {
+          statuses: statusMetrics,
+          scope: permissions.canReadAll ? "all" : "own",
+        },
+      });
     } catch (error) {
       console.error("Error en getStatusMetrics:", error);
       res.status(500).json({
@@ -621,16 +701,22 @@ export class DashboardMetricsController {
         return res.status(401).json({ error: "Usuario no autenticado" });
       }
 
-      // Verificar permisos del usuario
-      const userRepo = AppDataSource.getRepository("UserProfile");
-      const user = await userRepo.findOne({
-        where: { id: userId },
-        relations: [
-          "role",
-          "role.rolePermissions",
-          "role.rolePermissions.permission",
-        ],
-      });
+      // Get user with permissions
+      const user = await DashboardMetricsController.getUserWithPermissions(
+        userId
+      );
+      const permissions =
+        await DashboardMetricsController.verifyMetricPermissions(
+          user,
+          "applications"
+        );
+
+      // Check if user has any permission to read application metrics
+      if (!permissions.canReadOwn && !permissions.canReadAll) {
+        return res.status(403).json({
+          error: "No tienes permisos para ver métricas de aplicaciones",
+        });
+      }
 
       // Consulta simplificada que obtiene aplicaciones desde los casos existentes
       let appQuery = `

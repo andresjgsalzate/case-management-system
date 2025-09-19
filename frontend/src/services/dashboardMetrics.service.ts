@@ -205,14 +205,14 @@ export const dashboardMetricsService = {
   async getCaseTimeMetrics(): Promise<CaseTimeMetrics[]> {
     try {
       const { start, end } = getCurrentMonthRange();
-      const data = await metricsRequest<CaseTimeMetrics[]>(
-        "/metrics/cases/time",
-        {
-          startDate: start,
-          endDate: end,
-        }
-      );
-      return data || [];
+      const response = await metricsRequest<{
+        cases: CaseTimeMetrics[];
+        scope: string;
+      }>("/metrics/cases/time", {
+        startDate: start,
+        endDate: end,
+      });
+      return response?.cases || [];
     } catch (error) {
       console.error("Error fetching case time metrics:", error);
       return [];
@@ -223,11 +223,14 @@ export const dashboardMetricsService = {
   async getStatusMetrics(): Promise<StatusMetrics[]> {
     try {
       const { start, end } = getCurrentMonthRange();
-      const data = await metricsRequest<StatusMetrics[]>("/metrics/status", {
+      const response = await metricsRequest<{
+        statuses: StatusMetrics[];
+        scope: string;
+      }>("/metrics/status", {
         startDate: start,
         endDate: end,
       });
-      return data || [];
+      return response?.statuses || [];
     } catch (error) {
       console.error("Error fetching status metrics:", error);
       return [];

@@ -218,7 +218,7 @@ Este proyecto está bajo la licencia MIT - ver el archivo [LICENSE](LICENSE) par
 
 ## 📞 Contacto
 
-Andres Salzate - [@andresjgsalzate](https://github.com/andresjgsalzate) - andresjgsalzate@gmail.com
+Andres Jurgensen Alzate - [@andresjgsalzate](https://github.com/andresjgsalzate) - andresjgsalzate@gmail.com
 
 ---
 

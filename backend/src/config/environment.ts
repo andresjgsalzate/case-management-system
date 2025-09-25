@@ -22,7 +22,9 @@ export const config = {
   },
 
   cors: {
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim())
+      : ["http://localhost:5173"],
   },
 
   upload: {

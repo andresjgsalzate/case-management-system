@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TimeEntry, ManualTimeEntry } from "../types/caseControl";
 import { securityService } from "../services/security.service";
+import { apiService } from "../services/api.service";
 
-// API functions (necesitaremos crearlas)
+// API functions (usando el servicio centralizado)
 const api = {
   async getTimeEntries(caseControlId: string): Promise<TimeEntry[]> {
     const tokens = securityService.getValidTokens();
@@ -10,16 +11,14 @@ const api = {
       throw new Error("No valid authentication token");
     }
 
-    const response = await fetch(
-      `http://localhost:3000/api/time-entries/case-control/${caseControlId}`,
+    return apiService.get<TimeEntry[]>(
+      `/time-entries/case-control/${caseControlId}`,
       {
         headers: {
           Authorization: `Bearer ${tokens.token}`,
         },
       }
     );
-    if (!response.ok) throw new Error("Failed to fetch time entries");
-    return response.json();
   },
 
   async getManualTimeEntries(
@@ -30,16 +29,14 @@ const api = {
       throw new Error("No valid authentication token");
     }
 
-    const response = await fetch(
-      `http://localhost:3000/api/manual-time-entries/case-control/${caseControlId}`,
+    return apiService.get<ManualTimeEntry[]>(
+      `/manual-time-entries/case-control/${caseControlId}`,
       {
         headers: {
           Authorization: `Bearer ${tokens.token}`,
         },
       }
     );
-    if (!response.ok) throw new Error("Failed to fetch manual time entries");
-    return response.json();
   },
 
   async addManualTime(data: {

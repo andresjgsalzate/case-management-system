@@ -1,7 +1,8 @@
 import { authService } from "./auth.service";
 import { securityService } from "./security.service";
+import { config } from "../config/config";
 
-const API_BASE_URL = "http://localhost:3000/api";
+const API_BASE_URL = config.api.baseUrl;
 
 // Helper para hacer peticiones autenticadas a métricas
 const metricsRequest = async <T>(

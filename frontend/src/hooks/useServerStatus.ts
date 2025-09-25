@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { config } from "../config/config";
 
 interface ServerStatus {
   isOnline: boolean;
@@ -17,14 +18,17 @@ export const useServerStatus = (checkInterval: number = 30000) => {
     const startTime = Date.now();
 
     try {
-      const response = await fetch("http://localhost:3000/api/health", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        // Timeout de 5 segundos
-        signal: AbortSignal.timeout(5000),
-      });
+      const response = await fetch(
+        `${config.api.baseUrl.replace("/api", "")}/api/health`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // Timeout de 5 segundos
+          signal: AbortSignal.timeout(5000),
+        }
+      );
 
       const responseTime = Date.now() - startTime;
 

@@ -1,31 +1,35 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
-import path from "path";
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@/shared": path.resolve(__dirname, "../shared"),
-    },
-  },
-  define: {
-    global: "globalThis",
-  },
-  server: {
-    port: 5173,
-    host: true,
-    proxy: {
-      "/api": {
-        target: "http://localhost:3000",
-        changeOrigin: true,
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, ".", "");
+  const backendUrl = env.VITE_BACKEND_URL || "http://localhost:3000";
+
+  return {
+    plugins: [react()],
+    resolve: {
+      alias: {
+        "@": "/src",
+        "@/shared": "../shared",
       },
     },
-  },
-  build: {
-    outDir: "dist",
-    sourcemap: true,
-  },
+    define: {
+      global: "globalThis",
+    },
+    server: {
+      port: 5173,
+      host: true,
+      proxy: {
+        "/api": {
+          target: backendUrl,
+          changeOrigin: true,
+        },
+      },
+    },
+    build: {
+      outDir: "dist",
+      sourcemap: true,
+    },
+  };
 });

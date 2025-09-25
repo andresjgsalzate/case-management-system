@@ -36,7 +36,7 @@ export const useSmartSearch = (options: UseSmartSearchOptions = {}) => {
     data: suggestions,
     isLoading: suggestionsLoading,
     error: suggestionsError,
-  } = useQuery({
+  } = useQuery<SearchSuggestion>({
     queryKey: ["search-suggestions", debouncedTerm],
     queryFn: () =>
       knowledgeApi.documents.getSearchSuggestions(

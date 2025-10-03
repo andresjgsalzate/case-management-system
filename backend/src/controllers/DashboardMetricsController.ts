@@ -161,38 +161,15 @@ export class DashboardMetricsController {
         });
       }
 
-      // Construir consulta base con subconsulta para evitar duplicados
-      let baseConditions = "1=1";
+      // Construir parámetros para filtros de fecha
       const queryParams: any[] = [];
       let paramIndex = 1;
 
-      if (startDate) {
-        baseConditions += ` AND cc."assignedAt" >= $${paramIndex}`;
-        queryParams.push(startDate);
-        paramIndex++;
-      }
-
-      if (endDate) {
-        baseConditions += ` AND cc."assignedAt" <= $${paramIndex}`;
-        queryParams.push(endDate);
-        paramIndex++;
-      }
-
-      // Apply filtering based on permissions
-      if (!permissions.canReadAll && permissions.canReadOwn) {
-        baseConditions += ` AND cc."userId" = $${paramIndex}`;
-        queryParams.push(userId);
-        paramIndex++;
-      }
-
-      // Consulta para tiempo de casos
+      // Para casos: calcular tiempo solo de entries en el rango de fechas especificado
       let casesTimeQuery = `
         SELECT 
-          COALESCE(SUM(case_times.calculated_time), 0) as total_time_minutes
-        FROM (
-          SELECT 
-            cc."caseId",
-            -- Calcular tiempo dinámicamente sumando timer entries + manual entries
+          COALESCE(SUM(
+            -- Tiempo de timer entries del período
             COALESCE(
               (SELECT SUM(
                 CASE 
@@ -200,24 +177,99 @@ export class DashboardMetricsController {
                   THEN EXTRACT(EPOCH FROM (te."endTime" - te."startTime")) / 60
                   ELSE COALESCE(te."durationMinutes", 0)
                 END
-              ) FROM time_entries te WHERE te."caseControlId" = cc.id), 0
+              ) FROM time_entries te 
+               WHERE te."caseControlId" = cc.id`;
+
+      // Agregar filtros de fecha para time_entries
+      if (startDate) {
+        casesTimeQuery += ` AND te."createdAt" >= $${paramIndex}`;
+        queryParams.push(startDate);
+        paramIndex++;
+      }
+
+      if (endDate) {
+        casesTimeQuery += ` AND te."createdAt" <= $${paramIndex}`;
+        queryParams.push(endDate);
+        paramIndex++;
+      }
+
+      casesTimeQuery += `), 0
             ) +
+            -- Tiempo de manual entries del período
             COALESCE(
               (SELECT SUM(mte."durationMinutes") 
                FROM manual_time_entries mte 
-               WHERE mte."caseControlId" = cc.id), 0
-            ) as calculated_time
-          FROM case_control cc
-          WHERE ${baseConditions}
-        ) case_times
-        WHERE case_times.calculated_time > 0
-      `;
+               WHERE mte."caseControlId" = cc.id`;
 
-      // Consulta para tiempo de TODOs (usando la misma lógica de fechas si aplica)
+      // Agregar filtros de fecha para manual_time_entries
+      if (startDate) {
+        casesTimeQuery += ` AND mte."createdAt" >= $${paramIndex}`;
+        queryParams.push(startDate);
+        paramIndex++;
+      }
+
+      if (endDate) {
+        casesTimeQuery += ` AND mte."createdAt" <= $${paramIndex}`;
+        queryParams.push(endDate);
+        paramIndex++;
+      }
+
+      casesTimeQuery += `), 0
+            )
+          ), 0) as total_time_minutes
+        FROM case_control cc
+        WHERE 1=1`;
+
+      // Apply filtering based on permissions
+      if (!permissions.canReadAll && permissions.canReadOwn) {
+        casesTimeQuery += ` AND cc."userId" = $${paramIndex}`;
+        queryParams.push(userId);
+        paramIndex++;
+      }
+
+      // Solo incluir casos que tengan actividad en el período especificado
+      if (startDate || endDate) {
+        casesTimeQuery += ` AND (
+          EXISTS (
+            SELECT 1 FROM time_entries te 
+            WHERE te."caseControlId" = cc.id`;
+
+        if (startDate) {
+          casesTimeQuery += ` AND te."createdAt" >= $${paramIndex}`;
+          queryParams.push(startDate);
+          paramIndex++;
+        }
+
+        if (endDate) {
+          casesTimeQuery += ` AND te."createdAt" <= $${paramIndex}`;
+          queryParams.push(endDate);
+          paramIndex++;
+        }
+
+        casesTimeQuery += `) OR EXISTS (
+            SELECT 1 FROM manual_time_entries mte 
+            WHERE mte."caseControlId" = cc.id`;
+
+        if (startDate) {
+          casesTimeQuery += ` AND mte."createdAt" >= $${paramIndex}`;
+          queryParams.push(startDate);
+          paramIndex++;
+        }
+
+        if (endDate) {
+          casesTimeQuery += ` AND mte."createdAt" <= $${paramIndex}`;
+          queryParams.push(endDate);
+          paramIndex++;
+        }
+
+        casesTimeQuery += `))`;
+      }
+
+      // Consulta para tiempo de TODOs (filtrar por actividad reciente en time entries)
       let todosTimeQuery = `
         SELECT 
           COALESCE(SUM(
-            -- Tiempo de timer entries
+            -- Tiempo de timer entries del período
             COALESCE(
               (SELECT SUM(
                 CASE 
@@ -225,38 +277,93 @@ export class DashboardMetricsController {
                   THEN EXTRACT(EPOCH FROM (tte.end_time - tte.start_time)) / 60
                   ELSE COALESCE(tte.duration_minutes, 0)
                 END
-              ) FROM todo_time_entries tte WHERE tte.todo_control_id = tc.id), 0
-            ) +
-            -- Tiempo de manual entries
-            COALESCE(
-              (SELECT SUM(tmte.duration_minutes) 
-               FROM todo_manual_time_entries tmte 
-               WHERE tmte.todo_control_id = tc.id), 0
-            )
-          ), 0) as total_time_minutes
-        FROM todo_control tc
-        WHERE 1=1
-      `;
+              ) FROM todo_time_entries tte 
+               WHERE tte.todo_control_id = tc.id`;
 
-      // Agregar filtros de fecha para TODOs si existen
+      // Agregar filtros de fecha para TODO time entries si existen
       const todoQueryParams: any[] = [];
       let todoParamIndex = 1;
 
       if (startDate) {
-        todosTimeQuery += ` AND tc.assigned_at >= $${todoParamIndex}`;
+        todosTimeQuery += ` AND tte.created_at >= $${todoParamIndex}`;
         todoQueryParams.push(startDate);
         todoParamIndex++;
       }
 
       if (endDate) {
-        todosTimeQuery += ` AND tc.assigned_at <= $${todoParamIndex}`;
+        todosTimeQuery += ` AND tte.created_at <= $${todoParamIndex}`;
         todoQueryParams.push(endDate);
         todoParamIndex++;
       }
 
+      todosTimeQuery += `), 0
+            ) +
+            -- Tiempo de manual entries del período
+            COALESCE(
+              (SELECT SUM(tmte.duration_minutes) 
+               FROM todo_manual_time_entries tmte 
+               WHERE tmte.todo_control_id = tc.id`;
+
+      if (startDate) {
+        todosTimeQuery += ` AND tmte.created_at >= $${todoParamIndex}`;
+        todoQueryParams.push(startDate);
+        todoParamIndex++;
+      }
+
+      if (endDate) {
+        todosTimeQuery += ` AND tmte.created_at <= $${todoParamIndex}`;
+        todoQueryParams.push(endDate);
+        todoParamIndex++;
+      }
+
+      todosTimeQuery += `), 0
+            )
+          ), 0) as total_time_minutes
+        FROM todo_control tc
+        WHERE 1=1`;
+
       if (!permissions.canReadAll && permissions.canReadOwn) {
         todosTimeQuery += ` AND tc.user_id = $${todoParamIndex}`;
         todoQueryParams.push(userId);
+        todoParamIndex++;
+      }
+
+      // Solo incluir TODOs que tengan actividad en el período especificado
+      if (startDate || endDate) {
+        todosTimeQuery += ` AND (
+          EXISTS (
+            SELECT 1 FROM todo_time_entries tte 
+            WHERE tte.todo_control_id = tc.id`;
+
+        if (startDate) {
+          todosTimeQuery += ` AND tte.created_at >= $${todoParamIndex}`;
+          todoQueryParams.push(startDate);
+          todoParamIndex++;
+        }
+
+        if (endDate) {
+          todosTimeQuery += ` AND tte.created_at <= $${todoParamIndex}`;
+          todoQueryParams.push(endDate);
+          todoParamIndex++;
+        }
+
+        todosTimeQuery += `) OR EXISTS (
+            SELECT 1 FROM todo_manual_time_entries tmte 
+            WHERE tmte.todo_control_id = tc.id`;
+
+        if (startDate) {
+          todosTimeQuery += ` AND tmte.created_at >= $${todoParamIndex}`;
+          todoQueryParams.push(startDate);
+          todoParamIndex++;
+        }
+
+        if (endDate) {
+          todosTimeQuery += ` AND tmte.created_at <= $${todoParamIndex}`;
+          todoQueryParams.push(endDate);
+          todoParamIndex++;
+        }
+
+        todosTimeQuery += `))`;
       }
 
       // Consulta separada para timers activos
@@ -378,7 +485,7 @@ export class DashboardMetricsController {
           u.id as user_id,
           u."fullName" as user_name,
           COALESCE(SUM(
-            -- Calcular tiempo dinámicamente como en Control de casos
+            -- Calcular tiempo solo del período especificado
             COALESCE(
               (SELECT SUM(
                 CASE 
@@ -386,34 +493,90 @@ export class DashboardMetricsController {
                   THEN EXTRACT(EPOCH FROM (te."endTime" - te."startTime")) / 60
                   ELSE COALESCE(te."durationMinutes", 0)
                 END
-              ) FROM time_entries te WHERE te."caseControlId" = cc.id), 0
-            ) +
-            COALESCE(
-              (SELECT SUM(mte."durationMinutes") 
-               FROM manual_time_entries mte 
-               WHERE mte."caseControlId" = cc.id), 0
-            )
-          ), 0) as total_time_minutes,
-          COUNT(DISTINCT cc."caseId") as cases_worked
-        FROM user_profiles u
-        LEFT JOIN case_control cc ON u.id = cc."userId"
-        WHERE 1=1
-      `;
+              ) FROM time_entries te 
+               WHERE te."caseControlId" = cc.id`;
 
       const queryParams: any[] = [];
       let paramIndex = 1;
 
+      // Agregar filtros de fecha para time_entries
       if (startDate) {
-        userQuery += ` AND (cc."assignedAt" IS NULL OR cc."assignedAt" >= $${paramIndex})`;
+        userQuery += ` AND te."createdAt" >= $${paramIndex}`;
         queryParams.push(startDate);
         paramIndex++;
       }
 
       if (endDate) {
-        userQuery += ` AND (cc."assignedAt" IS NULL OR cc."assignedAt" <= $${paramIndex})`;
+        userQuery += ` AND te."createdAt" <= $${paramIndex}`;
         queryParams.push(endDate);
         paramIndex++;
       }
+
+      userQuery += `), 0
+            ) +
+            COALESCE(
+              (SELECT SUM(mte."durationMinutes") 
+               FROM manual_time_entries mte 
+               WHERE mte."caseControlId" = cc.id`;
+
+      // Agregar filtros de fecha para manual_time_entries
+      if (startDate) {
+        userQuery += ` AND mte."createdAt" >= $${paramIndex}`;
+        queryParams.push(startDate);
+        paramIndex++;
+      }
+
+      if (endDate) {
+        userQuery += ` AND mte."createdAt" <= $${paramIndex}`;
+        queryParams.push(endDate);
+        paramIndex++;
+      }
+
+      userQuery += `), 0
+            )
+          ), 0) as total_time_minutes,
+          COUNT(DISTINCT CASE 
+            WHEN (
+              EXISTS (
+                SELECT 1 FROM time_entries te 
+                WHERE te."caseControlId" = cc.id`;
+
+      // Contar casos solo si tienen actividad en el período
+      if (startDate) {
+        userQuery += ` AND te."createdAt" >= $${paramIndex}`;
+        queryParams.push(startDate);
+        paramIndex++;
+      }
+
+      if (endDate) {
+        userQuery += ` AND te."createdAt" <= $${paramIndex}`;
+        queryParams.push(endDate);
+        paramIndex++;
+      }
+
+      userQuery += `) OR EXISTS (
+                SELECT 1 FROM manual_time_entries mte 
+                WHERE mte."caseControlId" = cc.id`;
+
+      if (startDate) {
+        userQuery += ` AND mte."createdAt" >= $${paramIndex}`;
+        queryParams.push(startDate);
+        paramIndex++;
+      }
+
+      if (endDate) {
+        userQuery += ` AND mte."createdAt" <= $${paramIndex}`;
+        queryParams.push(endDate);
+        paramIndex++;
+      }
+
+      userQuery += `)
+            ) THEN cc."caseId" 
+            ELSE NULL 
+          END) as cases_worked
+        FROM user_profiles u
+        LEFT JOIN case_control cc ON u.id = cc."userId"
+        WHERE 1=1`;
 
       userQuery += ` GROUP BY u.id, u."fullName" ORDER BY total_time_minutes DESC`;
 
@@ -467,7 +630,7 @@ export class DashboardMetricsController {
         canReadAll: permissions.canReadAll,
       });
 
-      // Consulta que obtiene datos reales de los casos con cálculo dinámico del tiempo
+      // Consulta que obtiene casos con tiempo registrado en el período especificado
       let caseQuery = `
         SELECT 
           cc.id as case_id,
@@ -476,7 +639,7 @@ export class DashboardMetricsController {
           COALESCE(c."descripcion", 'Sin descripción') as description,
           COALESCE(cs.name, 'En progreso') as status,
           COALESCE(cs.color, '#3b82f6') as status_color,
-          -- Calcular tiempo dinámicamente como en Control de casos
+          -- Calcular tiempo solo del período especificado
           (COALESCE(
             (SELECT SUM(
               CASE 
@@ -484,32 +647,47 @@ export class DashboardMetricsController {
                 THEN EXTRACT(EPOCH FROM (te."endTime" - te."startTime")) / 60
                 ELSE COALESCE(te."durationMinutes", 0)
               END
-            ) FROM time_entries te WHERE te."caseControlId" = cc.id), 0
+            ) FROM time_entries te 
+             WHERE te."caseControlId" = cc.id`;
+
+      const queryParams: any[] = [];
+
+      // Aplicar filtros de fecha a time_entries
+      if (startDate) {
+        caseQuery += ` AND te."createdAt" >= $${queryParams.length + 1}`;
+        queryParams.push(startDate);
+      }
+
+      if (endDate) {
+        caseQuery += ` AND te."createdAt" <= $${queryParams.length + 1}`;
+        queryParams.push(endDate);
+      }
+
+      caseQuery += `), 0
           ) +
           COALESCE(
             (SELECT SUM(mte."durationMinutes") 
              FROM manual_time_entries mte 
-             WHERE mte."caseControlId" = cc.id), 0
+             WHERE mte."caseControlId" = cc.id`;
+
+      // Aplicar filtros de fecha a manual_time_entries
+      if (startDate) {
+        caseQuery += ` AND mte."createdAt" >= $${queryParams.length + 1}`;
+        queryParams.push(startDate);
+      }
+
+      if (endDate) {
+        caseQuery += ` AND mte."createdAt" <= $${queryParams.length + 1}`;
+        queryParams.push(endDate);
+      }
+
+      caseQuery += `), 0
           )) as total_time_minutes,
           c."clasificacion" as complexity
         FROM case_control cc
         LEFT JOIN cases c ON cc."caseId" = c.id
         LEFT JOIN case_status_control cs ON cc."statusId" = cs.id
-        WHERE 1=1
-      `;
-
-      const queryParams: any[] = [];
-
-      // Aplicar filtros de fecha si se proporcionan
-      if (startDate) {
-        caseQuery += ` AND cc."assignedAt" >= $${queryParams.length + 1}`;
-        queryParams.push(startDate);
-      }
-
-      if (endDate) {
-        caseQuery += ` AND cc."assignedAt" <= $${queryParams.length + 1}`;
-        queryParams.push(endDate);
-      }
+        WHERE 1=1`;
 
       // Filtrar por permisos: si no tiene permisos para ver todos, solo mostrar sus casos
       if (!permissions.canReadAll && permissions.canReadOwn) {
@@ -518,6 +696,40 @@ export class DashboardMetricsController {
         queryParams.push(userId);
       } else {
         console.log("Usuario tiene permisos para ver todos los casos");
+      }
+
+      // Solo incluir casos que tengan actividad en el período especificado
+      if (startDate || endDate) {
+        caseQuery += ` AND (
+          EXISTS (
+            SELECT 1 FROM time_entries te 
+            WHERE te."caseControlId" = cc.id`;
+
+        if (startDate) {
+          caseQuery += ` AND te."createdAt" >= $${queryParams.length + 1}`;
+          queryParams.push(startDate);
+        }
+
+        if (endDate) {
+          caseQuery += ` AND te."createdAt" <= $${queryParams.length + 1}`;
+          queryParams.push(endDate);
+        }
+
+        caseQuery += `) OR EXISTS (
+            SELECT 1 FROM manual_time_entries mte 
+            WHERE mte."caseControlId" = cc.id`;
+
+        if (startDate) {
+          caseQuery += ` AND mte."createdAt" >= $${queryParams.length + 1}`;
+          queryParams.push(startDate);
+        }
+
+        if (endDate) {
+          caseQuery += ` AND mte."createdAt" <= $${queryParams.length + 1}`;
+          queryParams.push(endDate);
+        }
+
+        caseQuery += `))`;
       }
 
       // Agregar condición WHERE para filtrar casos con tiempo > 0 y ordenar
@@ -529,12 +741,38 @@ export class DashboardMetricsController {
               THEN EXTRACT(EPOCH FROM (te."endTime" - te."startTime")) / 60
               ELSE COALESCE(te."durationMinutes", 0)
             END
-          ) FROM time_entries te WHERE te."caseControlId" = cc.id), 0
+          ) FROM time_entries te 
+           WHERE te."caseControlId" = cc.id`;
+
+      // Repetir filtros de fecha para la condición final
+      if (startDate) {
+        caseQuery += ` AND te."createdAt" >= $${queryParams.length + 1}`;
+        queryParams.push(startDate);
+      }
+
+      if (endDate) {
+        caseQuery += ` AND te."createdAt" <= $${queryParams.length + 1}`;
+        queryParams.push(endDate);
+      }
+
+      caseQuery += `), 0
         ) +
         COALESCE(
           (SELECT SUM(mte."durationMinutes") 
            FROM manual_time_entries mte 
-           WHERE mte."caseControlId" = cc.id), 0
+           WHERE mte."caseControlId" = cc.id`;
+
+      if (startDate) {
+        caseQuery += ` AND mte."createdAt" >= $${queryParams.length + 1}`;
+        queryParams.push(startDate);
+      }
+
+      if (endDate) {
+        caseQuery += ` AND mte."createdAt" <= $${queryParams.length + 1}`;
+        queryParams.push(endDate);
+      }
+
+      caseQuery += `), 0
         )) > 0
         ORDER BY total_time_minutes DESC
         LIMIT 10

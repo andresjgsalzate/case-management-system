@@ -89,10 +89,27 @@ export class KnowledgeDocumentService {
       .take(limit)
       .getManyAndCount();
 
-    // Cargar las etiquetas para todos los documentos usando el nuevo sistema
-    const documentsWithTags = await Promise.all(
-      documents.map((doc) => this.loadDocumentTags(doc))
-    );
+    // Las etiquetas ya están cargadas por el join en createQueryBuilder
+    // Mapear las etiquetas al formato que espera el frontend
+    const documentsWithTags = documents.map((doc) => {
+      if (doc.tagRelations && doc.tagRelations.length > 0) {
+        (doc as any).tags = doc.tagRelations.map((relation) => ({
+          id: relation.tag.id,
+          tagName: relation.tag.tagName,
+          color: relation.tag.color,
+          category: relation.tag.category,
+          description: relation.tag.description,
+          isActive: relation.tag.isActive,
+          createdBy: relation.tag.createdBy,
+          createdAt: relation.tag.createdAt,
+          updatedAt: relation.tag.updatedAt,
+          documentId: doc.id,
+        }));
+      } else {
+        (doc as any).tags = [];
+      }
+      return doc;
+    });
 
     return {
       documents: documentsWithTags,
@@ -494,8 +511,7 @@ export class KnowledgeDocumentService {
       foundInCases: 0,
     };
 
-    // Agregar join para tags
-    queryBuilder.leftJoinAndSelect("doc.tags", "tags");
+    // Las etiquetas ya están cargadas por el join en createQueryBuilder
 
     if (query.search) {
       const searchConditions = [];
@@ -600,8 +616,30 @@ export class KnowledgeDocumentService {
       .take(limit)
       .getManyAndCount();
 
+    // Las etiquetas ya están cargadas por el join en createQueryBuilder
+    // Mapear las etiquetas al formato que espera el frontend
+    const documentsWithTags = documents.map((doc) => {
+      if (doc.tagRelations && doc.tagRelations.length > 0) {
+        (doc as any).tags = doc.tagRelations.map((relation) => ({
+          id: relation.tag.id,
+          tagName: relation.tag.tagName,
+          color: relation.tag.color,
+          category: relation.tag.category,
+          description: relation.tag.description,
+          isActive: relation.tag.isActive,
+          createdBy: relation.tag.createdBy,
+          createdAt: relation.tag.createdAt,
+          updatedAt: relation.tag.updatedAt,
+          documentId: doc.id,
+        }));
+      } else {
+        (doc as any).tags = [];
+      }
+      return doc;
+    });
+
     return {
-      documents,
+      documents: documentsWithTags,
       total,
       searchStats,
     };
@@ -612,7 +650,9 @@ export class KnowledgeDocumentService {
       .createQueryBuilder("doc")
       .leftJoinAndSelect("doc.documentType", "type")
       .leftJoinAndSelect("doc.createdByUser", "creator")
-      .leftJoinAndSelect("doc.lastEditedByUser", "editor");
+      .leftJoinAndSelect("doc.lastEditedByUser", "editor")
+      .leftJoinAndSelect("doc.tagRelations", "tagRelations")
+      .leftJoinAndSelect("tagRelations.tag", "tags");
   }
 
   private applyFilters(

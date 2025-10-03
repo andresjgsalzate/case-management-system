@@ -53,6 +53,7 @@ export class DispositionService {
       // Crear la nueva disposición
       const disposition = this.dispositionRepository.create({
         ...createDispositionDto,
+        applicationName: application.nombre, // Agregar el nombre de la aplicación
         userId,
       });
 

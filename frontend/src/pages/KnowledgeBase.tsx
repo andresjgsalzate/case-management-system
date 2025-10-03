@@ -5,7 +5,7 @@ import SmartSearch from "../components/search/SmartSearch";
 import {
   useKnowledgeDocuments,
   useCreateKnowledgeDocument,
-  usePopularTags,
+  useDeleteKnowledgeDocument,
 } from "../hooks/useKnowledge";
 import { useCases } from "../hooks/useCases";
 import { KnowledgeDocument } from "../types/knowledge";
@@ -49,7 +49,6 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   });
 
   const { data: casesData } = useCases(); // Para obtener información de los casos
-  const { data: popularTags } = usePopularTags(10); // Obtener 10 etiquetas populares
 
   // Create document mutation
   const createDocumentMutation = useCreateKnowledgeDocument({
@@ -180,34 +179,15 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
     return associatedCases;
   };
 
-  // Helper para obtener etiquetas relacionadas/populares
-  const getRelatedTags = (doc: KnowledgeDocument) => {
-    if (!popularTags) return [];
-
-    const documentTagNames = doc.tags?.map((tag) => tag.tagName) || [];
-
-    // Obtener etiquetas populares que no están en este documento
-    const relatedTags = popularTags
-      .filter((tag) => !documentTagNames.includes(tag.tagName))
-      .slice(0, 3); // Máximo 3 etiquetas relacionadas
-
-    return relatedTags;
-  };
-
-  // Helper para obtener todas las etiquetas a mostrar (del documento + relacionadas)
+  // Helper para obtener todas las etiquetas a mostrar (solo del documento)
   const getDisplayTags = (doc: KnowledgeDocument) => {
     const docTags = doc.tags || [];
-    const maxDocTags = 4; // Mostrar hasta 4 etiquetas del documento
+    const maxDocTags = 6; // Mostrar más etiquetas ya que no hay relacionadas
     const displayDocTags = docTags.slice(0, maxDocTags);
-
-    // Si hay espacio, agregar etiquetas relacionadas
-    const remainingSpace = maxDocTags - displayDocTags.length;
-    const relatedTags =
-      remainingSpace > 0 ? getRelatedTags(doc).slice(0, remainingSpace) : [];
 
     return {
       documentTags: displayDocTags,
-      relatedTags,
+      relatedTags: [], // Eliminamos etiquetas relacionadas confusas
       totalDocTags: docTags.length,
       showMore: docTags.length > maxDocTags,
     };
@@ -496,62 +476,37 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                     {/* Tags Section */}
                     {(() => {
                       const tagInfo = getDisplayTags(doc);
-                      const hasAnyTags =
-                        tagInfo.documentTags.length > 0 ||
-                        tagInfo.relatedTags.length > 0;
+                      const hasAnyTags = tagInfo.documentTags.length > 0;
 
                       return hasAnyTags ? (
                         <div className="space-y-1">
                           {/* Document Tags */}
-                          {tagInfo.documentTags.length > 0 && (
-                            <div className="flex items-start flex-wrap gap-1">
-                              <ActionIcon
-                                action="tag"
-                                size="sm"
-                                color="gray"
-                                className="mt-0.5 mr-1 flex-shrink-0"
-                              />
-                              {tagInfo.documentTags.map((tag, index) => (
-                                <span
-                                  key={index}
-                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white"
-                                  style={{
-                                    backgroundColor: tag.color || "#6b7280",
-                                  }}
-                                >
-                                  {tag.tagName}
-                                </span>
-                              ))}
-                              {tagInfo.showMore && (
-                                <span className="text-xs text-gray-500 self-center">
-                                  +
-                                  {tagInfo.totalDocTags -
-                                    tagInfo.documentTags.length}
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Related/Popular Tags */}
-                          {tagInfo.relatedTags.length > 0 && (
-                            <div className="flex items-start flex-wrap gap-1">
-                              <span className="text-xs text-gray-400 self-center mr-1">
-                                Relacionadas:
+                          <div className="flex items-start flex-wrap gap-1">
+                            <ActionIcon
+                              action="tag"
+                              size="sm"
+                              color="gray"
+                              className="mt-0.5 mr-1 flex-shrink-0"
+                            />
+                            {tagInfo.documentTags.map((tag, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white"
+                                style={{
+                                  backgroundColor: tag.color || "#6b7280",
+                                }}
+                              >
+                                {tag.tagName}
                               </span>
-                              {tagInfo.relatedTags.map((tag, index) => (
-                                <span
-                                  key={index}
-                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-gray-300 text-gray-600 bg-gray-50"
-                                  style={{
-                                    borderColor: tag.color || "#d1d5db",
-                                    color: tag.color || "#6b7280",
-                                  }}
-                                >
-                                  {tag.tagName}
-                                </span>
-                              ))}
-                            </div>
-                          )}
+                            ))}
+                            {tagInfo.showMore && (
+                              <span className="text-xs text-gray-500 self-center">
+                                +
+                                {tagInfo.totalDocTags -
+                                  tagInfo.documentTags.length}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       ) : null;
                     })()}

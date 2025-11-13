@@ -243,6 +243,8 @@ export const exportCaseControlReport = (
         tiempoTimer: 0,
         tiempoManual: 0,
         tiempoTotal: 0,
+        descripcionTimer: "", // Nueva columna para descripción de actividades timer
+        descripcionManual: "", // Nueva columna para descripción de actividades manual
         estado: caseControl.status?.name || "N/A",
         usuarioAsignado: caseControl.user?.fullName || "N/A",
         aplicacion: caseControl.case?.aplicacion?.nombre || "N/A",
@@ -287,11 +289,22 @@ export const exportCaseControlReport = (
       }
 
       const durationToAdd = entry.durationMinutes || 0;
+      const description = entry.description || "";
 
       // Si tenemos time entries específicos, reemplazar el tiempo base
       if (durationToAdd > 0) {
         reportData[key].tiempoTimer =
           (reportData[key].tiempoTimer || 0) + durationToAdd;
+      }
+
+      // Agregar descripción (concatenar si hay múltiples entradas)
+      if (description.trim()) {
+        const existingDesc = reportData[key].descripcionTimer;
+        if (existingDesc) {
+          reportData[key].descripcionTimer = `${existingDesc} | ${description}`;
+        } else {
+          reportData[key].descripcionTimer = description;
+        }
       }
     });
 
@@ -310,7 +323,21 @@ export const exportCaseControlReport = (
       }
 
       const durationToAdd = entry.durationMinutes || 0;
+      const description = entry.description || "";
+
       reportData[key].tiempoManual += durationToAdd;
+
+      // Agregar descripción manual (concatenar si hay múltiples entradas)
+      if (description.trim()) {
+        const existingDesc = reportData[key].descripcionManual;
+        if (existingDesc) {
+          reportData[
+            key
+          ].descripcionManual = `${existingDesc} | ${description}`;
+        } else {
+          reportData[key].descripcionManual = description;
+        }
+      }
     });
 
     // Calcular tiempo total y convertir a formato Excel
@@ -327,6 +354,10 @@ export const exportCaseControlReport = (
         "Tiempo Timer (Minutos)": entry.tiempoTimer,
         "Tiempo Manual (Minutos)": entry.tiempoManual,
         "Tiempo Total (Minutos)": entry.tiempoTotal,
+        "Descripción Actividades Timer":
+          entry.descripcionTimer || "Sin descripción",
+        "Descripción Actividades Manual":
+          entry.descripcionManual || "Sin descripción",
         Estado: entry.estado,
         "Usuario Asignado": entry.usuarioAsignado,
         Aplicación: entry.aplicacion,
@@ -363,6 +394,8 @@ export const exportCaseControlReport = (
       { wch: 18 }, // Tiempo Timer (Minutos)
       { wch: 18 }, // Tiempo Manual (Minutos)
       { wch: 18 }, // Tiempo Total (Minutos)
+      { wch: 50 }, // Descripción Actividades Timer
+      { wch: 50 }, // Descripción Actividades Manual
       { wch: 15 }, // Estado
       { wch: 20 }, // Usuario Asignado
       { wch: 20 }, // Aplicación

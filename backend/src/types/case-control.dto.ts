@@ -15,10 +15,12 @@ export interface StartTimerDTO {
 
 export interface StopTimerDTO {
   caseControlId: string;
+  description?: string; // Descripción de las tareas realizadas
 }
 
 export interface PauseTimerDTO {
   caseControlId: string;
+  description?: string; // Descripción de las tareas realizadas
 }
 
 // DTOs para Time Entries

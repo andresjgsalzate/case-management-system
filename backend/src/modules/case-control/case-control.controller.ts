@@ -472,11 +472,16 @@ export class CaseControlController {
         });
       }
 
-      // Por ahora devolvemos una lista vacía ya que la tabla TimeEntry
-      // se maneja desde el módulo de timer
+      // Obtener las entradas de tiempo del cronómetro
+      const timeEntries = await this.timeEntryRepository.find({
+        where: { caseControlId: id },
+        order: { startTime: "DESC" },
+        relations: ["user"],
+      });
+
       res.json({
         success: true,
-        data: [],
+        data: timeEntries,
       });
     } catch (error) {
       console.error("Error getting time entries:", error);
@@ -505,11 +510,16 @@ export class CaseControlController {
         });
       }
 
-      // Por ahora devolvemos una lista vacía ya que la tabla ManualTimeEntry
-      // se maneja desde el módulo de timer
+      // Obtener las entradas de tiempo manual
+      const manualTimeEntries = await this.manualTimeEntryRepository.find({
+        where: { caseControlId: id },
+        order: { date: "DESC", createdAt: "DESC" },
+        relations: ["user", "creator"],
+      });
+
       res.json({
         success: true,
-        data: [],
+        data: manualTimeEntries,
       });
     } catch (error) {
       console.error("Error getting manual time entries:", error);
@@ -526,6 +536,14 @@ export class CaseControlController {
     try {
       const { id } = req.params;
       const { durationMinutes, description, date } = req.body;
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "Usuario no autenticado",
+        });
+      }
 
       // Verificar que el case control existe
       const caseControl = await this.caseControlRepository.findOne({
@@ -554,6 +572,27 @@ export class CaseControlController {
         });
       }
 
+      if (description.trim().length < 100) {
+        return res.status(400).json({
+          success: false,
+          message: "La descripción debe tener al menos 100 caracteres",
+        });
+      }
+
+      // Crear la entrada de tiempo manual
+      const manualTimeEntry = this.manualTimeEntryRepository.create({
+        caseControlId: id,
+        userId: userId,
+        date: date || new Date().toISOString().split("T")[0],
+        durationMinutes: parseInt(durationMinutes),
+        description: description.trim(),
+        createdBy: userId,
+      });
+
+      const savedEntry = await this.manualTimeEntryRepository.save(
+        manualTimeEntry
+      );
+
       // Actualizar el tiempo total del case control
       caseControl.totalTimeMinutes += parseInt(durationMinutes);
       await this.caseControlRepository.save(caseControl);
@@ -561,13 +600,7 @@ export class CaseControlController {
       res.json({
         success: true,
         message: "Entrada de tiempo manual agregada correctamente",
-        data: {
-          caseControlId: id,
-          durationMinutes: parseInt(durationMinutes),
-          description,
-          date,
-          totalTimeMinutes: caseControl.totalTimeMinutes,
-        },
+        data: savedEntry,
       });
     } catch (error) {
       console.error("Error adding manual time entry:", error);

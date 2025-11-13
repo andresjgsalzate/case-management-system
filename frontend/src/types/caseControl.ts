@@ -51,6 +51,7 @@ export interface TimeEntry {
   startTime: string;
   endTime?: string;
   durationMinutes: number;
+  description?: string; // Añadida propiedad description
   createdAt: string;
   updatedAt: string;
 }
@@ -74,10 +75,12 @@ export interface StartTimerDTO {
 
 export interface StopTimerDTO {
   caseControlId: string;
+  description?: string;
 }
 
 export interface PauseTimerDTO {
   caseControlId: string;
+  description?: string;
 }
 
 export interface UpdateCaseControlStatusDTO {

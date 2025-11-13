@@ -259,41 +259,41 @@ CREATE TRIGGER trigger_log_file_activity
 ┌─────────────────────────────────────────────────────────────────────────────────┐
 │ 📋 Caso #CMS-2025-001234 - Error al cargar dashboard       🔔 📞 ⚙️ �      │
 ├──────────────────────────────────────┬──────────────────────────────────────────┤
-│ DETALLES DEL CASO                    │ CHAT EN TIEMPO REAL                     │
+│ DETALLES DEL CASO                    │ CHAT EN TIEMPO REAL                      │
 ├──────────────────────────────────────┤                                          │
-│ 🔸 Estado: Asignado                          │ 👤 María García         10:30   │
+│ 🔸 Estado: Asignado                          │ 👤 María García         10:30    │
 │ 🔸 Prioridad: Media                          │     Hola, tengo este problema    │
-│ 🔸 Asignado: Juan Pérez (Agente)             │                                 │
-│ 🔸 Creado: 18/09/2025 10:15                  │     Hola María, revisando 10:31 │
-│ 🔸 Complejidad: Pendiente de Clasificación   │                   Juan Pérez � │
+│ 🔸 Asignado: Juan Pérez (Agente)             │                                  │
+│ 🔸 Creado: 18/09/2025 10:15                  │     Hola María, revisando 10:31  │
+│ 🔸 Complejidad: Pendiente de Clasificación   │                   Juan Pérez �   │
 │                                      │                                          │
-│ 📄 DESCRIPCIÓN:                              │ 👤 María García         10:32   │
-│ ────────────────────────────────────────     │     ¿Necesitas logs específicos?│
-│ Cuando entro al dashboard, las métricas      │                                 │
-│ aparecen en blanco. Los gráficos no cargan   │     Sí, envíame el error 10:32 │
-│ y sale error en consola. Empezó ayer tarde.  │                   Juan Pérez 👨 │
-│ - Solicitado por: María García               │                                 │
-│                                              │ 📎 error-console.txt     10:33 │
+│ 📄 DESCRIPCIÓN:                              │ 👤 María García         10:32    │
+│ ────────────────────────────────────────     │     ¿Necesitas logs específicos? │
+│ Cuando entro al dashboard, las métricas      │                                  │
+│ aparecen en blanco. Los gráficos no cargan   │     Sí, envíame el error 10:32   │
+│ y sale error en consola. Empezó ayer tarde.  │                   Juan Pérez 👨  │
+│ - Solicitado por: María García               │                                  │
+│                                              │ 📎 error-console.txt     10:33   │
 │ 📎 ARCHIVOS ADJUNTOS:                        │                   María García 👤│
-│ ──────────────────────────────────           │                                 │
-│ • screenshot.png (2.1 MB)                    │                                 │
-│   📅 18/09/2025 10:15 - María García         │                                 │
-│                                              │                                 │
-│ ⚠️ CLASIFICACIÓN PENDIENTE:                  │                                 │
-│ ──────────────────────────────────────       │                                 │
-│ 📋 Agente Juan debe completar las 5 preguntas│                                 │
-│    para determinar la complejidad del caso   │                                 │
-│ 🔗 [Clasificar Caso Ahora]                   │                                 │
-│                                              │                                 │
-│ 📊 LOG DE ACTIVIDADES:                       │                                 │
-│ ─────────────────────────────────────        │                                 │
-│ 🕐 10:15 - Caso creado por María García      │                                 │
-│ 🕐 10:16 - Archivo adjuntado por María       │                                 │
-│ 🕐 10:18 - Asignado a Juan Pérez (Agente)    │                                 │
-│ 🕐 10:20 - Estado: Pendiente Clasificación   │                                 │
-│ 🕐 10:30 - Mensaje: María García             │                                 │
-│ 🕐 10:31 - Mensaje: Juan Pérez               │                                 │
-│ 🕐 10:33 - Archivo adjuntado por María       │                                 │
+│ ──────────────────────────────────           │                                  │
+│ • screenshot.png (2.1 MB)                    │                                  │
+│   📅 18/09/2025 10:15 - María García         │                                  │
+│                                              │                                  │
+│ ⚠️ CLASIFICACIÓN PENDIENTE:                  │                                  │
+│ ──────────────────────────────────────       │                                  │
+│ 📋 Agente Juan debe completar las 5 preguntas│                                  │
+│    para determinar la complejidad del caso   │                                  │
+│ 🔗 [Clasificar Caso Ahora]                   │                                  │
+│                                              │                                  │
+│ 📊 LOG DE ACTIVIDADES:                       │                                  │
+│ ─────────────────────────────────────        │                                  │
+│ 🕐 10:15 - Caso creado por María García      │                                  │
+│ 🕐 10:16 - Archivo adjuntado por María       │                                  │
+│ 🕐 10:18 - Asignado a Juan Pérez (Agente)    │                                  │
+│ 🕐 10:20 - Estado: Pendiente Clasificación   │                                  │
+│ 🕐 10:30 - Mensaje: María García             │                                  │
+│ 🕐 10:31 - Mensaje: Juan Pérez               │                                  │
+│ 🕐 10:33 - Archivo adjuntado por María       │                                  │
 │                                      │                                          │
 │                                      ├──────────────────────────────────────────┤
 │                                      │ 💬 Escribe un mensaje...    📎 😊 ➤   │

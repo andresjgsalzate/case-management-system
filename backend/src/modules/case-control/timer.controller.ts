@@ -90,7 +90,7 @@ export class TimerController {
   // Detener timer
   async stopTimer(req: AuthRequest, res: Response) {
     try {
-      const { caseControlId } = req.body as StopTimerDTO;
+      const { caseControlId, description } = req.body as StopTimerDTO;
       const userId = req.user?.id;
 
       if (!userId) {
@@ -98,6 +98,23 @@ export class TimerController {
           success: false,
           message: "Usuario no autenticado",
         });
+      }
+
+      // Validar descripción si se proporciona
+      if (description) {
+        if (!description.trim()) {
+          return res.status(400).json({
+            success: false,
+            message: "Descripción es requerida",
+          });
+        }
+
+        if (description.trim().length < 100) {
+          return res.status(400).json({
+            success: false,
+            message: "La descripción debe tener al menos 100 caracteres",
+          });
+        }
       }
 
       const caseControl = await this.caseControlRepository.findOneBy({
@@ -134,9 +151,12 @@ export class TimerController {
       });
 
       if (activeTimeEntry) {
-        // Actualizar la entrada de tiempo
+        // Actualizar la entrada de tiempo con la descripción
         activeTimeEntry.endTime = now;
         activeTimeEntry.durationMinutes = durationMinutes;
+        if (description && description.trim()) {
+          activeTimeEntry.description = description.trim();
+        }
         await this.timeEntryRepository.save(activeTimeEntry);
       }
 
@@ -153,6 +173,7 @@ export class TimerController {
           caseControl,
           durationMinutes,
           totalMinutes: caseControl.totalTimeMinutes,
+          description: description?.trim() || null,
         },
         message: `Timer detenido. Tiempo registrado: ${durationMinutes} minutos`,
       });
@@ -169,7 +190,7 @@ export class TimerController {
   // Pausar timer (detener sin completar)
   async pauseTimer(req: AuthRequest, res: Response) {
     try {
-      const { caseControlId } = req.body as PauseTimerDTO;
+      const { caseControlId, description } = req.body as PauseTimerDTO;
       const userId = req.user?.id;
 
       if (!userId) {
@@ -177,6 +198,23 @@ export class TimerController {
           success: false,
           message: "Usuario no autenticado",
         });
+      }
+
+      // Validar descripción si se proporciona
+      if (description) {
+        if (!description.trim()) {
+          return res.status(400).json({
+            success: false,
+            message: "Descripción es requerida",
+          });
+        }
+
+        if (description.trim().length < 100) {
+          return res.status(400).json({
+            success: false,
+            message: "La descripción debe tener al menos 100 caracteres",
+          });
+        }
       }
 
       const caseControl = await this.caseControlRepository.findOneBy({
@@ -213,9 +251,12 @@ export class TimerController {
       });
 
       if (activeTimeEntry) {
-        // Actualizar la entrada de tiempo
+        // Actualizar la entrada de tiempo con la descripción
         activeTimeEntry.endTime = now;
         activeTimeEntry.durationMinutes = durationMinutes;
+        if (description && description.trim()) {
+          activeTimeEntry.description = description.trim();
+        }
         await this.timeEntryRepository.save(activeTimeEntry);
       }
 
@@ -232,6 +273,7 @@ export class TimerController {
           caseControl,
           durationMinutes,
           totalMinutes: caseControl.totalTimeMinutes,
+          description: description?.trim() || null,
         },
         message: `Timer pausado. Tiempo registrado: ${durationMinutes} minutos`,
       });

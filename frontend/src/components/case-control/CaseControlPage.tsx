@@ -9,6 +9,7 @@ import { ActionIcon } from "../ui/ActionIcons";
 import { TimerControl } from "./TimerControl";
 import { CaseControlDetailsModal } from "./CaseControlDetailsModal";
 import { CaseAssignmentModal } from "./CaseAssignmentModal";
+import { TaskDescriptionModal } from "./TaskDescriptionModal";
 import { ConfirmationModal } from "../ui/ConfirmationModal";
 import { archiveApi } from "../../services/archiveApi";
 import { useAuth } from "../../contexts/AuthContext";
@@ -40,6 +41,15 @@ export const CaseControlPage: React.FC = () => {
     useState<CaseControl | null>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
+
+  // Estados para el modal de descripción
+  const [showDescriptionModal, setShowDescriptionModal] = useState(false);
+  const [descriptionModalAction, setDescriptionModalAction] = useState<
+    "pause" | "stop"
+  >("stop");
+  const [pendingCaseControl, setPendingCaseControl] =
+    useState<CaseControl | null>(null);
+  const [calculatedTime, setCalculatedTime] = useState<string>("");
 
   // Queries
   const { data: caseControls = [], isLoading: loadingControls } = useQuery({
@@ -254,40 +264,88 @@ export const CaseControlPage: React.FC = () => {
     }
   };
 
+  // Función para calcular el tiempo transcurrido
+  const calculateElapsedTime = (startTime: string): string => {
+    const start = new Date(startTime);
+    const now = new Date();
+    const diff = now.getTime() - start.getTime();
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    } else {
+      return `${minutes}m`;
+    }
+  };
+
   const handlePauseTimer = async (control: CaseControl) => {
+    if (control.timerStartAt) {
+      const elapsed = calculateElapsedTime(control.timerStartAt);
+      setCalculatedTime(elapsed);
+    }
+    setPendingCaseControl(control);
+    setDescriptionModalAction("pause");
+    setShowDescriptionModal(true);
+  };
+
+  const handleStopTimer = async (control: CaseControl) => {
+    if (control.timerStartAt) {
+      const elapsed = calculateElapsedTime(control.timerStartAt);
+      setCalculatedTime(elapsed);
+    }
+    setPendingCaseControl(control);
+    setDescriptionModalAction("stop");
+    setShowDescriptionModal(true);
+  };
+
+  const handleDescriptionSave = async (description: string) => {
+    if (!pendingCaseControl) return;
+
     try {
-      await pauseTimerMutation.mutateAsync({ caseControlId: control.id });
-      success("Timer pausado correctamente");
+      if (descriptionModalAction === "pause") {
+        await pauseTimerMutation.mutateAsync({
+          caseControlId: pendingCaseControl.id,
+          description,
+        });
+        success("Timer pausado correctamente");
+      } else {
+        await stopTimerMutation.mutateAsync({
+          caseControlId: pendingCaseControl.id,
+          description,
+        });
+        success("Timer detenido correctamente");
+      }
+
+      setShowDescriptionModal(false);
+      setPendingCaseControl(null);
+      setCalculatedTime("");
     } catch (error) {
-      console.error("Error al pausar timer:", error);
+      console.error(
+        `Error al ${
+          descriptionModalAction === "pause" ? "pausar" : "detener"
+        } timer:`,
+        error
+      );
       if (error instanceof Error && error.message.includes("404")) {
         showErrorToast(
           "Endpoint no encontrado. El backend no está configurado para timers."
         );
       } else {
         showErrorToast(
-          "Error al pausar el timer. Verifique la conexión con el servidor."
+          `Error al ${
+            descriptionModalAction === "pause" ? "pausar" : "detener"
+          } el timer. Verifique la conexión con el servidor.`
         );
       }
     }
   };
 
-  const handleStopTimer = async (control: CaseControl) => {
-    try {
-      await stopTimerMutation.mutateAsync({ caseControlId: control.id });
-      success("Timer detenido correctamente");
-    } catch (error) {
-      console.error("Error al detener timer:", error);
-      if (error instanceof Error && error.message.includes("404")) {
-        showErrorToast(
-          "Endpoint no encontrado. El backend no está configurado para timers."
-        );
-      } else {
-        showErrorToast(
-          "Error al detener el timer. Verifique la conexión con el servidor."
-        );
-      }
-    }
+  const handleDescriptionCancel = () => {
+    setShowDescriptionModal(false);
+    setPendingCaseControl(null);
+    setCalculatedTime("");
   };
 
   const handleStatusChange = async (controlId: string, statusId: string) => {
@@ -593,6 +651,18 @@ export const CaseControlPage: React.FC = () => {
         onAssign={() => {
           queryClient.invalidateQueries({ queryKey: ["caseControls"] });
         }}
+      />
+
+      {/* Modal de descripción de tareas */}
+      <TaskDescriptionModal
+        isOpen={showDescriptionModal}
+        onClose={handleDescriptionCancel}
+        onSave={handleDescriptionSave}
+        title={`${
+          descriptionModalAction === "pause" ? "Pausar" : "Detener"
+        } Cronómetro`}
+        isLoading={pauseTimerMutation.isPending || stopTimerMutation.isPending}
+        timeRegistered={calculatedTime}
       />
 
       {/* Modal de confirmación */}

@@ -99,6 +99,12 @@ export const CaseControlDetailsModal: React.FC<
   const handleAddManualTime = async () => {
     if (!caseControl || !manualTimeForm.description.trim()) return;
 
+    // Validar descripción mínima
+    if (manualTimeForm.description.trim().length < 100) {
+      showErrorToast("La descripción debe tener al menos 100 caracteres");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await addManualTimeMutation.mutateAsync({
@@ -238,18 +244,54 @@ export const CaseControlDetailsModal: React.FC<
             </div>
 
             <div className="space-y-4">
-              <Input
-                label="Descripción"
-                value={manualTimeForm.description}
-                onChange={(e) =>
-                  setManualTimeForm((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                placeholder="Describe la actividad realizada..."
-                required
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Descripción de las tareas realizadas *
+                </label>
+                <textarea
+                  value={manualTimeForm.description}
+                  onChange={(e) =>
+                    setManualTimeForm((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  className={`
+                    w-full p-3 border rounded-lg resize-none
+                    dark:bg-gray-700 dark:border-gray-600 dark:text-white
+                    focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                    ${
+                      manualTimeForm.description.trim().length < 100 &&
+                      manualTimeForm.description.trim().length > 0
+                        ? "border-red-500 dark:border-red-400"
+                        : "border-gray-300 dark:border-gray-600"
+                    }
+                  `}
+                  rows={3}
+                  placeholder="Describe detalladamente las actividades realizadas..."
+                  required
+                />
+
+                <div className="flex justify-between items-center mt-2">
+                  <div
+                    className={`text-sm ${
+                      manualTimeForm.description.trim().length < 100
+                        ? "text-red-500 dark:text-red-400"
+                        : "text-green-600 dark:text-green-400"
+                    }`}
+                  >
+                    {manualTimeForm.description.trim().length}/100 caracteres
+                    mínimos
+                  </div>
+
+                  {manualTimeForm.description.trim().length >= 100 && (
+                    <div className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
+                      <ActionIcon action="check" size="sm" />
+                      <span>Válido</span>
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <Input
@@ -294,7 +336,12 @@ export const CaseControlDetailsModal: React.FC<
               <div className="flex gap-2">
                 <Button
                   onClick={handleAddManualTime}
-                  disabled={!manualTimeForm.description.trim() || isSubmitting}
+                  disabled={
+                    !manualTimeForm.description.trim() ||
+                    manualTimeForm.description.trim().length < 100 ||
+                    isSubmitting ||
+                    (manualTimeForm.hours === 0 && manualTimeForm.minutes === 0)
+                  }
                   className="flex-1"
                 >
                   {isSubmitting ? "Guardando..." : "Guardar Tiempo"}
@@ -377,6 +424,28 @@ export const CaseControlDetailsModal: React.FC<
                             })()}
                           </div>
                         )}
+                        {entry.description ? (
+                          <div className="text-sm text-gray-700 dark:text-gray-300 mt-2 p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                            <div className="flex items-start gap-2">
+                              <ActionIcon
+                                action="info"
+                                size="sm"
+                                className="text-blue-500 dark:text-blue-400 mt-0.5"
+                              />
+                              <div>
+                                <span className="font-medium text-gray-900 dark:text-white">
+                                  Actividades:
+                                </span>
+                                <p className="mt-1">{entry.description}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 italic flex items-center gap-1">
+                            <ActionIcon action="info" size="sm" />
+                            Sin descripción de actividades registrada
+                          </div>
+                        )}
                       </div>
                       <button
                         onClick={() => handleDeleteTimeEntry(entry.id)}
@@ -411,13 +480,27 @@ export const CaseControlDetailsModal: React.FC<
                           <ActionIcon action="calendar" size="sm" />
                           {formatDate(entry.date)}
                         </div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-                          {entry.description}
-                        </p>
-                        <div className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
+                        <div className="text-sm font-medium text-yellow-700 dark:text-yellow-300 mb-2">
                           Duración:{" "}
                           {formatTimeDetailed(entry.durationMinutes || 0)}
                         </div>
+                        {entry.description && (
+                          <div className="text-sm text-gray-700 dark:text-gray-300 p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded">
+                            <div className="flex items-start gap-2">
+                              <ActionIcon
+                                action="info"
+                                size="sm"
+                                className="text-yellow-600 dark:text-yellow-400 mt-0.5"
+                              />
+                              <div>
+                                <span className="font-medium text-gray-900 dark:text-white">
+                                  Actividades:
+                                </span>
+                                <p className="mt-1">{entry.description}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <button
                         onClick={() => handleDeleteManualEntry(entry.id)}

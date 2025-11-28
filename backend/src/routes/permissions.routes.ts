@@ -49,6 +49,33 @@ router.get("/permissions/structure", authenticateToken, (req, res) =>
 );
 
 /**
+ * @route GET /api/permissions/actions
+ * @desc Obtener todas las acciones distintas
+ * @access Requiere autenticación básica
+ */
+router.get("/permissions/actions", authenticateToken, (req, res) =>
+  permissionController.getActions(req, res)
+);
+
+/**
+ * @route PUT /api/permissions/translate-action
+ * @desc Traducir acción de español a inglés
+ * @access Requiere autenticación básica
+ */
+router.put("/permissions/translate-action", authenticateToken, (req, res) =>
+  permissionController.translateAction(req, res)
+);
+
+/**
+ * @route PUT /api/permissions/update-names-format
+ * @desc Actualizar formato de nombres de permisos
+ * @access Requiere autenticación básica
+ */
+router.put("/permissions/update-names-format", authenticateToken, (req, res) =>
+  permissionController.updateNamesFormat(req, res)
+);
+
+/**
  * @route GET /api/permissions/search
  * @desc Buscar permisos con filtros
  * @access Requiere permiso: roles.gestionar.all
@@ -207,7 +234,7 @@ router.get("/roles/:id/can-delete", requireAdmin(), (req, res) =>
 // Ejemplo para disposiciones
 router.get(
   "/example/dispositions",
-  requirePermissionWithScope("disposiciones", "ver"),
+  requirePermissionWithScope("dispositions", "view"),
   (req, res) => {
     res.json({
       message: "Lista de disposiciones según scope del usuario",
@@ -220,7 +247,7 @@ router.get(
 // Ejemplo para casos
 router.post(
   "/example/cases",
-  requirePermission("casos.crear.own"),
+  requirePermission("cases.create.own"),
   (req, res) => {
     res.json({
       message: "Crear caso - permiso específico verificado",
@@ -231,7 +258,7 @@ router.post(
 // Ejemplo para múltiples permisos
 router.get(
   "/example/admin-dashboard",
-  requirePermission("dashboard.ver.all"),
+  requirePermission("dashboard.view.all"),
   (req, res) => {
     res.json({
       message: "Dashboard administrativo - acceso completo",

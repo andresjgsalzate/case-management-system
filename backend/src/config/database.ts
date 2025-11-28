@@ -33,6 +33,8 @@ import { KnowledgeDocumentRelation } from "../entities/KnowledgeDocumentRelation
 import { KnowledgeDocumentFeedback } from "../entities/KnowledgeDocumentFeedback";
 import { KnowledgeTag } from "../entities/KnowledgeTag";
 import { KnowledgeDocumentTagRelation } from "../entities/KnowledgeDocumentTagRelation";
+import { Team } from "../entities/Team";
+import { TeamMember } from "../entities/TeamMember";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -73,6 +75,8 @@ export const AppDataSource = new DataSource({
     KnowledgeDocumentFeedback,
     KnowledgeTag,
     KnowledgeDocumentTagRelation,
+    Team,
+    TeamMember,
     AuditLog,
     AuditEntityChange,
   ],

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { caseFormSchema, type CaseFormSchema } from "../../lib/validations";
@@ -45,6 +45,13 @@ export const CaseForm: React.FC<CaseFormProps> = ({
     resolver: zodResolver(caseFormSchema),
     defaultValues,
   });
+
+  // Reset form when defaultValues change (for editing mode)
+  useEffect(() => {
+    if (defaultValues) {
+      reset(defaultValues);
+    }
+  }, [defaultValues, reset]);
 
   // Observar los valores de los criterios de calificación
   const watchedValues = watch([

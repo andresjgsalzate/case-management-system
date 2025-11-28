@@ -25,31 +25,33 @@ export const useDashboardPermissions = (): DashboardPermissions => {
 
     // Determinar permisos basados en permisos específicos de la base de datos
     const isAdmin =
-      user.roleName === "Administrador" || user.roleName === "admin";
+      hasPermission("permissions.admin.all") ||
+      hasPermission("roles.manage.all") ||
+      hasPermission("users.admin.all");
     const isSupervisor =
-      user.roleName === "Supervisor" || user.roleName === "supervisor";
+      hasPermission("metrics.view.team") || hasPermission("cases.view.team");
 
     return {
       // Verificar permisos específicos de métricas
       canReadOwnMetrics:
-        hasPermission("metrics.time.read.own") ||
-        hasPermission("metrics.cases.read.own") ||
-        hasPermission("metrics.todos.read.own"),
+        hasPermission("metrics.time.own") ||
+        hasPermission("metrics.cases.own") ||
+        hasPermission("metrics.todos.own"),
 
       // Supervisores y admins pueden ver métricas del equipo
       canReadTeamMetrics:
-        hasPermission("metrics.time.read.team") ||
-        hasPermission("metrics.cases.read.team") ||
-        hasPermission("metrics.todos.read.team") ||
-        hasPermission("metrics.users.read.team"),
+        hasPermission("metrics.time.team") ||
+        hasPermission("metrics.cases.team") ||
+        hasPermission("metrics.todos.team") ||
+        hasPermission("metrics.users.team"),
 
       // Solo admins pueden ver todas las métricas
       canReadAllMetrics:
-        hasPermission("metrics.time.read.all") ||
-        hasPermission("metrics.cases.read.all") ||
-        hasPermission("metrics.todos.read.all") ||
-        hasPermission("metrics.users.read.all") ||
-        hasPermission("metrics.applications.read.all"),
+        hasPermission("metrics.time.all") ||
+        hasPermission("metrics.cases.all") ||
+        hasPermission("metrics.todos.all") ||
+        hasPermission("metrics.users.all") ||
+        hasPermission("metrics.applications.all"),
 
       // Supervisores y admins pueden exportar
       canExportMetrics: isSupervisor || isAdmin,

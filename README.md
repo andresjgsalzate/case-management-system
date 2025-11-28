@@ -14,9 +14,36 @@ Sistema completo de gestión de casos con backend en Node.js/TypeScript y fronte
 - **Control de Tiempo**: Registro manual y automático de tiempo por caso
 - **Notas**: Sistema de anotaciones por caso
 - **Roles y Usuarios**: Administración completa de usuarios y permisos
+- **🆕 Sistema de Equipos**: Gestión completa de equipos de trabajo con roles y permisos granulares
 - **🆕 Sistema de Auditoría Completo**: Trazabilidad total de todas las operaciones del sistema
 
-### 🔍 **Sistema de Auditoría v1.1.0** _(NUEVO)_
+### � **Sistema de Equipos v1.1.0** _(NUEVO)_
+
+#### **Gestión Completa de Equipos**
+
+- ✅ **9 Equipos Predefinidos**: DEV, SUPP, INFRA, QA, BA, PM, ARCH, SEC, UNASSIGN
+- ✅ **Roles de Equipo**: Manager, Lead, Member con permisos específicos
+- ✅ **Membresía Dinámica**: Asignación y remoción de miembros en tiempo real
+- ✅ **Colores y Códigos**: Identificación visual única por equipo
+- ✅ **Estadísticas**: Métricas y reportes por equipo
+
+#### **API RESTful Completa**
+
+- **CRUD de Equipos**: Crear, leer, actualizar, eliminar equipos
+- **Gestión de Miembros**: Asignar/remover usuarios, cambiar roles
+- **Operaciones Masivas**: Asignación múltiple de miembros
+- **Transferencia de Liderazgo**: Cambio de managers
+- **Consultas Avanzadas**: Filtros, búsqueda, paginación
+
+#### **Sistema de Permisos Granular**
+
+- **15 Permisos Específicos**: Desde `equipos.ver.own` hasta `equipos.reportes.all`
+- **3 Niveles de Scope**: own (propios), team (equipo), all (todos)
+- **Integración con Middleware**: Autorización automática en todos los endpoints
+
+#### **Documentación API**: Ver [TEAMS_SYSTEM_API.md](./TEAMS_SYSTEM_API.md)
+
+### �🔍 **Sistema de Auditoría v1.1.0** _(NUEVO)_
 
 #### **Cobertura Completa de Módulos**
 

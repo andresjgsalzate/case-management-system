@@ -33,6 +33,8 @@ import { KnowledgeDocumentTagRelation } from "./entities/KnowledgeDocumentTagRel
 import { DocumentType } from "./entities/DocumentType";
 import { AuditLog } from "./entities/AuditLog";
 import { AuditEntityChange } from "./entities/AuditEntityChange";
+import { Team } from "./entities/Team";
+import { TeamMember } from "./entities/TeamMember";
 
 export default new DataSource({
   type: "postgres",
@@ -75,6 +77,8 @@ export default new DataSource({
     DocumentType,
     AuditLog,
     AuditEntityChange,
+    Team,
+    TeamMember,
   ],
   migrations: ["src/database/migrations/**/*.ts"],
   subscribers: ["src/database/subscribers/**/*.ts"],

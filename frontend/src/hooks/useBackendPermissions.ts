@@ -42,12 +42,12 @@ export const useBackendPermissions = () => {
 
   const hasPermission = (permissionName: string): boolean => {
     if (!permissions.length) return false;
-    return permissions.some(p => p.name === permissionName);
+    return permissions.some((p) => p.name === permissionName);
   };
 
   const refreshPermissions = async () => {
     if (!user) return;
-    
+
     try {
       setIsLoading(true);
       // TODO: Implementar refresh real de permisos
@@ -76,15 +76,19 @@ export const useBackendModulePermissions = () => {
   const canAccessModule = (moduleName: string): boolean => {
     const modulePermissionMap: Record<string, string[]> = {
       dashboard: [], // Siempre accesible
-      cases: ["cases.read_own", "cases.read_team", "cases.read_all"],
-      notes: ["notes.read_own", "notes.read_team", "notes.read_all"],
-      todos: ["todos.read_own", "todos.read_team", "todos.read_all"],
-      dispositions: ["dispositions.read_own", "dispositions.read_team", "dispositions.read_all"],
-      reports: ["reports.read_own", "reports.read_team", "reports.read_all"],
-      admin: ["admin.users", "admin.roles", "admin.permissions"],
-      users: ["users.read_all", "admin.users"],
-      roles: ["roles.read_all", "admin.roles"],
-      permissions: ["permissions.read_all", "admin.permissions"],
+      cases: ["cases.view.own", "cases.view.team", "cases.view.all"],
+      notes: ["notes.view.own", "notes.view.team", "notes.view.all"],
+      todos: ["todos.view.own", "todos.view.team", "todos.view.all"],
+      dispositions: [
+        "dispositions.view.own",
+        "dispositions.view.team",
+        "dispositions.view.all",
+      ],
+      reports: ["reports.view.own", "reports.view.team", "reports.view.all"],
+      admin: ["admin.users.all", "admin.roles.all", "admin.permissions.all"],
+      users: ["users.view.all", "admin.users.all"],
+      roles: ["roles.manage.all", "admin.roles.all"],
+      permissions: ["permissions.read.all", "admin.permissions.all"],
       profile: [], // Siempre accesible
     };
 
@@ -96,7 +100,7 @@ export const useBackendModulePermissions = () => {
     }
 
     // Verificar si tiene alguno de los permisos requeridos
-    return requiredPermissions.some(permission => hasPermission(permission));
+    return requiredPermissions.some((permission) => hasPermission(permission));
   };
 
   return {

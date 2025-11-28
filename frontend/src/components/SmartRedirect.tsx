@@ -38,11 +38,11 @@ export const SmartRedirect: React.FC = () => {
 
       // Verificar acceso al dashboard (usando permisos reales de la BD)
       if (
-        hasPermission("dashboard.ver.own") ||
-        hasPermission("dashboard.ver.team") ||
-        hasPermission("dashboard.ver.all") ||
-        hasPermission("metrics.time.read.own") ||
-        hasPermission("metrics.cases.read.own")
+        hasPermission("dashboard.view.own") ||
+        hasPermission("dashboard.view.team") ||
+        hasPermission("dashboard.view.all") ||
+        hasPermission("metrics.time.own") ||
+        hasPermission("metrics.cases.own")
       ) {
         targetRoute = "/dashboard";
       }
@@ -55,9 +55,6 @@ export const SmartRedirect: React.FC = () => {
               "cases.view.own",
               "cases.view.team",
               "cases.view.all",
-              "casos.ver.own",
-              "casos.ver.team",
-              "casos.ver.all",
             ],
           },
           {
@@ -77,9 +74,6 @@ export const SmartRedirect: React.FC = () => {
               "notes.view.own",
               "notes.view.team",
               "notes.view.all",
-              "notas.ver.own",
-              "notas.ver.team",
-              "notas.ver.all",
             ],
           },
           {
@@ -96,9 +90,6 @@ export const SmartRedirect: React.FC = () => {
               "case_control.view.own",
               "case_control.view.team",
               "case_control.view.all",
-              "control-casos.ver.own",
-              "control-casos.ver.team",
-              "control-casos.ver.all",
             ],
           },
           {
@@ -107,14 +98,11 @@ export const SmartRedirect: React.FC = () => {
               "dispositions.view.own",
               "dispositions.view.team",
               "dispositions.view.all",
-              "disposiciones.ver.own",
-              "disposiciones.ver.team",
-              "disposiciones.ver.all",
             ],
           },
           {
             route: "/archive",
-            permissions: ["archive.view.own", "archive.view"],
+            permissions: ["archive.view.own", "archive.view.all"],
           },
         ];
 

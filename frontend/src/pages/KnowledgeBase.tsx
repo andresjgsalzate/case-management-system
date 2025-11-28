@@ -12,6 +12,7 @@ import { KnowledgeDocument } from "../types/knowledge";
 import { Case } from "../services/api";
 import { useToast } from "../hooks/useNotification";
 import { useFeaturePermissions } from "../hooks/usePermissions";
+import { useCrudErrorHandler } from "../hooks/useErrorHandler";
 import { knowledgeApi } from "../services/knowledge.service";
 
 interface KnowledgeBaseProps {}
@@ -20,6 +21,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
   const permissions = useFeaturePermissions();
+  const { handleCreateError, handleFetchError } = useCrudErrorHandler();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"created_at" | "updated_at" | "title">(
     "updated_at"
@@ -62,7 +64,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
     },
     onError: (error) => {
       setIsCreating(false);
-      showError(`Error al crear documento: ${error.message}`);
+      handleCreateError(error as any, "documento de conocimiento");
     },
   });
 

@@ -260,19 +260,9 @@ export const exportCaseControlReport = (
       };
     }
 
-    // Crear entradas base para todos los case controls usando el tiempo total
-    caseControls.forEach((caseControl) => {
-      const today = new Date().toISOString().split("T")[0];
-      const key = `${caseControl.case?.numeroCaso || "NO-DATA"}-${today}`;
+    // No crear entradas base, solo procesaremos las entradas reales de tiempo
 
-      if (!reportData[key]) {
-        reportData[key] = createReportEntry(caseControl, today);
-        // Usar el totalTimeMinutes como tiempo base (podría ser la suma de timer + manual)
-        reportData[key].tiempoTimer = caseControl.totalTimeMinutes || 0;
-      }
-    });
-
-    // Procesar time entries
+    // Procesar time entries - agrupa por caso y fecha
     timeEntries.forEach((entry) => {
       const caseControl = caseControls.find(
         (cc) => cc.id === entry.caseControlId
@@ -282,7 +272,9 @@ export const exportCaseControlReport = (
       const date = entry.startTime
         ? new Date(entry.startTime).toISOString().split("T")[0]
         : "Sin fecha";
-      const key = `${caseControl.case?.numeroCaso || "N/A"}-${date}`;
+      const key = `${caseControl.case?.numeroCaso || "N/A"}-${
+        caseControl.id
+      }-${date}`;
 
       if (!reportData[key]) {
         reportData[key] = createReportEntry(caseControl, date);
@@ -291,11 +283,9 @@ export const exportCaseControlReport = (
       const durationToAdd = entry.durationMinutes || 0;
       const description = entry.description || "";
 
-      // Si tenemos time entries específicos, reemplazar el tiempo base
-      if (durationToAdd > 0) {
-        reportData[key].tiempoTimer =
-          (reportData[key].tiempoTimer || 0) + durationToAdd;
-      }
+      // Sumar duración al tiempo del timer
+      reportData[key].tiempoTimer =
+        (reportData[key].tiempoTimer || 0) + durationToAdd;
 
       // Agregar descripción (concatenar si hay múltiples entradas)
       if (description.trim()) {
@@ -308,7 +298,7 @@ export const exportCaseControlReport = (
       }
     });
 
-    // Procesar manual time entries
+    // Procesar manual time entries - agrupa por caso y fecha
     manualTimeEntries.forEach((entry) => {
       const caseControl = caseControls.find(
         (cc) => cc.id === entry.caseControlId
@@ -316,7 +306,9 @@ export const exportCaseControlReport = (
       if (!caseControl) return;
 
       const date = entry.date;
-      const key = `${caseControl.case?.numeroCaso || "N/A"}-${date}`;
+      const key = `${caseControl.case?.numeroCaso || "N/A"}-${
+        caseControl.id
+      }-${date}`;
 
       if (!reportData[key]) {
         reportData[key] = createReportEntry(caseControl, date);

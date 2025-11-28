@@ -5,7 +5,8 @@ export interface UserWithPermissions {
   fullName?: string;
   roleId: string;
   roleName?: string;
-  teamId?: string;
+  teamId?: string; // Para compatibilidad con código existente
+  teamIds?: string[]; // Nuevos equipos del usuario
   permissionScope?: "own" | "team" | "all";
   scopeFilters?: { [key: string]: any };
 }

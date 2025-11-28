@@ -18,7 +18,12 @@ export const authenticateToken = async (
 ): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
-    const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
+    let token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
+
+    // Si no hay token en el header, buscar en query params
+    if (!token && req.query.token) {
+      token = req.query.token as string;
+    }
 
     if (!token) {
       throw createError("Access token required", 401);
@@ -59,6 +64,7 @@ export const authenticateToken = async (
     // Asignar al request
     req.user = {
       ...user,
+      roleId: userWithRole.role.id,
       roleName: userWithRole.role.name,
       permissions: permissions,
     };

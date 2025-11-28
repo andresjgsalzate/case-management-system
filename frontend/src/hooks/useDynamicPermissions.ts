@@ -88,15 +88,15 @@ export const useDynamicPermissions = (
  */
 export const useSidebarPermissions = () => {
   const permissions = [
-    "dashboard.ver.own",
-    "dashboard.ver.all",
-    "casos.crear.all",
-    "usuarios.ver.all",
-    "roles:view:all",
-    "permissions.read_all",
-    "tags.manage",
+    "dashboard.view.own",
+    "dashboard.view.all",
+    "cases.create.all",
+    "users.view.all",
+    "roles.view.all",
+    "permissions.read.all",
+    "tags.manage.all",
     "knowledge.read.all",
-    "archive.view",
+    "archive.view.all",
   ];
 
   const modules = ["casos", "todos", "dispositions", "notas"];

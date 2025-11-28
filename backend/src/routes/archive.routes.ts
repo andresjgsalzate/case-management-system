@@ -26,7 +26,7 @@ const restoreService = new RestoreService();
 router.get(
   "/stats",
   authenticateToken,
-  requirePermission("archive.stats"),
+  requirePermission("archive.stats.all"),
   archiveController.getArchiveStats
 );
 
@@ -41,7 +41,7 @@ router.get(
 router.get(
   "/cases",
   authenticateToken,
-  requirePermission("archive.view"),
+  requirePermission("archive.view.all"),
   async (req, res, next) => {
     try {
       // En una implementación real, usarías un servicio inyectado
@@ -62,7 +62,7 @@ router.get(
 router.post(
   "/cases",
   authenticateToken,
-  requirePermission("archive.create"),
+  requirePermission("archive.create.own"),
   async (req, res, next) => {
     try {
       // En una implementación real, usarías un servicio inyectado
@@ -83,7 +83,7 @@ router.post(
 router.get(
   "/cases/:id",
   authenticateToken,
-  requirePermission("archive.view"),
+  requirePermission("archive.view.own"),
   async (req, res, next) => {
     try {
       const { id } = req.params;
@@ -105,7 +105,7 @@ router.get(
 router.put(
   "/cases/:id/restore",
   authenticateToken,
-  requirePermission("archive.restore"),
+  requirePermission("archive.restore.own"),
   async (req, res, next) => {
     try {
       const { id } = req.params;
@@ -151,7 +151,7 @@ router.put(
 router.delete(
   "/cases/:id",
   authenticateToken,
-  requirePermission("archive.delete"),
+  requirePermission("archive.delete.own"),
   archiveController.deleteArchivedCase
 );
 
@@ -166,7 +166,7 @@ router.delete(
 router.get(
   "/todos",
   authenticateToken,
-  requirePermission("archive.view"),
+  requirePermission("archive.view.all"),
   async (req, res, next) => {
     try {
       res.json({
@@ -186,7 +186,7 @@ router.get(
 router.post(
   "/todos",
   authenticateToken,
-  requirePermission("archive.create"),
+  requirePermission("archive.create.own"),
   async (req, res, next) => {
     try {
       res.status(201).json({
@@ -206,7 +206,7 @@ router.post(
 router.put(
   "/todos/:id/restore",
   authenticateToken,
-  requirePermission("archive.restore"),
+  requirePermission("archive.restore.own"),
   async (req, res, next) => {
     try {
       const { id } = req.params;
@@ -252,7 +252,7 @@ router.put(
 router.delete(
   "/todos/:id",
   authenticateToken,
-  requirePermission("archive.delete"),
+  requirePermission("archive.delete.own"),
   async (req, res, next) => {
     try {
       await archiveController.deleteArchivedTodo(req, res, next);
@@ -273,7 +273,7 @@ router.delete(
 router.get(
   "/items",
   authenticateToken,
-  requirePermission("archive.view"),
+  requirePermission("archive.view.all"),
   archiveController.getArchivedItems
 );
 
@@ -284,7 +284,7 @@ router.get(
 router.get(
   "/search",
   authenticateToken,
-  requirePermission("archive.view"),
+  requirePermission("archive.view.all"),
   async (req, res, next) => {
     try {
       res.json({

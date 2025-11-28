@@ -10,9 +10,26 @@ export class PermissionService {
   private roleRepository: Repository<Role>;
 
   constructor() {
-    this.permissionRepository = AppDataSource.getRepository(Permission);
-    this.rolePermissionRepository = AppDataSource.getRepository(RolePermission);
-    this.roleRepository = AppDataSource.getRepository(Role);
+    try {
+      console.log("=== PermissionService constructor START ===");
+      console.log("AppDataSource isInitialized:", AppDataSource.isInitialized);
+
+      this.permissionRepository = AppDataSource.getRepository(Permission);
+      this.rolePermissionRepository =
+        AppDataSource.getRepository(RolePermission);
+      this.roleRepository = AppDataSource.getRepository(Role);
+
+      console.log("Repositories initialized successfully");
+      console.log("=== PermissionService constructor END ===");
+    } catch (error) {
+      console.error("=== ERROR in PermissionService constructor ===");
+      console.error("Error:", error);
+      console.error(
+        "Stack:",
+        error instanceof Error ? error.stack : "No stack"
+      );
+      throw error;
+    }
   }
 
   /**
@@ -57,19 +74,35 @@ export class PermissionService {
     roleId: string,
     permissionName: string
   ): Promise<boolean> {
-    const permission = await this.permissionRepository.findOne({
-      where: { name: permissionName, isActive: true },
-    });
+    console.log(`=== hasPermission: ${permissionName} for role: ${roleId} ===`);
 
-    if (!permission) {
-      return false;
+    try {
+      const permission = await this.permissionRepository.findOne({
+        where: { name: permissionName, isActive: true },
+      });
+
+      console.log(
+        `Permission found:`,
+        permission ? `ID: ${permission.id}` : "NULL"
+      );
+
+      if (!permission) {
+        console.log(`Permission ${permissionName} not found or not active`);
+        return false;
+      }
+
+      const rolePermission = await this.rolePermissionRepository.findOne({
+        where: { roleId, permissionId: permission.id },
+      });
+
+      console.log(`RolePermission found:`, !!rolePermission);
+      const result = !!rolePermission;
+      console.log(`=== hasPermission result: ${result} ===`);
+      return result;
+    } catch (error) {
+      console.error(`Error in hasPermission for ${permissionName}:`, error);
+      throw error;
     }
-
-    const rolePermission = await this.rolePermissionRepository.findOne({
-      where: { roleId, permissionId: permission.id },
-    });
-
-    return !!rolePermission;
   }
 
   /**
@@ -79,12 +112,28 @@ export class PermissionService {
     roleId: string,
     permissionNames: string[]
   ): Promise<{ [key: string]: boolean }> {
+    console.log("=== hasPermissions START ===");
+    console.log("RoleId:", roleId);
+    console.log("Permission names:", permissionNames);
+
     const result: { [key: string]: boolean } = {};
 
     for (const permissionName of permissionNames) {
-      result[permissionName] = await this.hasPermission(roleId, permissionName);
+      console.log(`Checking permission: ${permissionName}`);
+      try {
+        result[permissionName] = await this.hasPermission(
+          roleId,
+          permissionName
+        );
+        console.log(`Permission ${permissionName}: ${result[permissionName]}`);
+      } catch (error) {
+        console.error(`Error checking permission ${permissionName}:`, error);
+        throw error;
+      }
     }
 
+    console.log("Final result:", result);
+    console.log("=== hasPermissions END ===");
     return result;
   }
 
@@ -274,5 +323,54 @@ export class PermissionService {
       .addOrderBy("permission.action", "ASC")
       .addOrderBy("permission.scope", "ASC")
       .getMany();
+  }
+
+  /**
+   * Obtener todas las acciones distintas
+   */
+  async getAllActions(): Promise<{ action: string }[]> {
+    const result = await this.permissionRepository
+      .createQueryBuilder("permission")
+      .select("DISTINCT permission.action", "action")
+      .orderBy("permission.action", "ASC")
+      .getRawMany();
+
+    return result;
+  }
+
+  /**
+   * Traducir acción de español a inglés
+   */
+  async translateAction(
+    fromAction: string,
+    toAction: string
+  ): Promise<{ count: number }> {
+    const result = await this.permissionRepository.update(
+      { action: fromAction },
+      { action: toAction }
+    );
+
+    return { count: result.affected || 0 };
+  }
+
+  /**
+   * Actualizar formato de nombres de permisos
+   */
+  async updateNamesFormat(): Promise<{ count: number }> {
+    const permissions = await this.permissionRepository.find();
+    let updatedCount = 0;
+
+    for (const permission of permissions) {
+      const newName = `${permission.module}.${permission.action}.${permission.scope}`;
+      if (permission.name !== newName) {
+        await this.permissionRepository.update(
+          { id: permission.id },
+          { name: newName }
+        );
+        updatedCount++;
+      }
+    }
+
+    return { count: updatedCount };
   }
 }

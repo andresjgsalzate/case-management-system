@@ -32,13 +32,24 @@ const api = axios.create({
 // Add auth token to requests
 api.interceptors.request.use((config) => {
   const tokens = securityService.getValidTokens();
+  console.log("🔍 [AUTH DEBUG] Interceptor ejecutándose...", {
+    hasTokens: !!tokens,
+    hasToken: !!tokens?.token,
+    url: config.url,
+    sessionStorageKeys: Object.keys(sessionStorage),
+    localStorageKeys: Object.keys(localStorage),
+  });
+
   if (tokens?.token) {
     config.headers.Authorization = `Bearer ${tokens.token}`;
+    console.log("✅ [AUTH DEBUG] Token agregado a la petición");
+  } else {
+    console.log("❌ [AUTH DEBUG] No se encontró token válido");
   }
   return config;
 });
 
-// Add response interceptor to handle errors
+// Add response interceptor to handle errors with better error messages
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -49,6 +60,54 @@ api.interceptors.response.use(
       data: error.response?.data,
       message: error.message,
     });
+
+    // Enhance error with more informative messages
+    if (error.response) {
+      const status = error.response.status;
+      const url = error.config?.url || "unknown";
+
+      switch (status) {
+        case 401:
+          error.userMessage =
+            "Sesión expirada. Por favor, inicia sesión nuevamente.";
+          error.technicalDetails = `Error 401 en ${url}: Token de autenticación inválido o expirado`;
+          break;
+        case 403:
+          error.userMessage = "No tienes permisos para acceder a este recurso.";
+          error.technicalDetails = `Error 403 en ${url}: Permisos insuficientes`;
+          break;
+        case 404:
+          error.userMessage = "El recurso solicitado no fue encontrado.";
+          error.technicalDetails = `Error 404 en ${url}: Recurso no encontrado`;
+          break;
+        case 500:
+          error.userMessage =
+            "Error interno del servidor. Por favor, contacta al administrador.";
+          error.technicalDetails = `Error 500 en ${url}: Error interno del servidor`;
+          break;
+        case 502:
+          error.userMessage =
+            "Error de conexión con el servidor. Inténtalo más tarde.";
+          error.technicalDetails = `Error 502 en ${url}: Bad Gateway`;
+          break;
+        case 503:
+          error.userMessage = "El servicio no está disponible temporalmente.";
+          error.technicalDetails = `Error 503 en ${url}: Service Unavailable`;
+          break;
+        default:
+          error.userMessage = `Error ${status}: ${
+            error.response?.data?.message || "Error desconocido"
+          }`;
+          error.technicalDetails = `Error ${status} en ${url}`;
+      }
+    } else if (error.request) {
+      error.userMessage = "Error de conexión. Verifica tu conexión a internet.";
+      error.technicalDetails = "No se recibió respuesta del servidor";
+    } else {
+      error.userMessage = "Error inesperado. Por favor, inténtalo nuevamente.";
+      error.technicalDetails = error.message;
+    }
+
     return Promise.reject(error);
   }
 );

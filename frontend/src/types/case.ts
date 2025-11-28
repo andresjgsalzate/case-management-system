@@ -49,7 +49,9 @@ export type CaseStatus =
   | "pendiente"
   | "resuelto"
   | "cerrado"
-  | "cancelado";
+  | "cancelado"
+  | "asignado"
+  | "restaurado";
 
 // Opciones para el formulario de casos
 export interface SelectOption {

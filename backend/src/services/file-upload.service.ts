@@ -198,9 +198,10 @@ export class FileUploadService {
   async getFileForDownload(
     fileName: string
   ): Promise<{ filePath: string; originalName: string; mimeType: string }> {
-    const attachment = await this.attachmentRepository.findOne({
-      where: { filePath: { endsWith: fileName } as any },
-    });
+    const attachment = await this.attachmentRepository
+      .createQueryBuilder("attachment")
+      .where("attachment.filePath LIKE :fileName", { fileName: `%${fileName}` })
+      .getOne();
 
     if (!attachment) {
       throw new Error("Archivo no encontrado");

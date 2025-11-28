@@ -27,7 +27,7 @@ const navigation: NavigationItem[] = [
     name: "Nuevo Caso",
     href: "/cases/new",
     icon: "add",
-    requiredPermission: "casos.crear.all",
+    requiredPermission: "cases.create.all",
   },
   {
     name: "Control de Casos",
@@ -64,7 +64,7 @@ const navigation: NavigationItem[] = [
     name: "Usuarios",
     href: "/users",
     icon: "users",
-    requiredPermission: "usuarios.ver.all",
+    requiredPermission: "users.view.all",
   },
   {
     name: "Roles",
@@ -73,10 +73,16 @@ const navigation: NavigationItem[] = [
     requiredPermission: "roles:view:all",
   },
   {
+    name: "Equipos",
+    href: "/teams",
+    icon: "users",
+    requiredModule: "teams",
+  },
+  {
     name: "Permisos",
     href: "/permissions",
     icon: "settings",
-    requiredPermission: "permissions.read_all",
+    requiredPermission: "permissions.read.all",
     subItems: [
       { name: "Gestión de Permisos", href: "/permissions" },
       { name: "Asignación por Rol", href: "/permissions/role-assignment" },
@@ -87,7 +93,7 @@ const navigation: NavigationItem[] = [
     name: "Etiquetas",
     href: "/admin/tags",
     icon: "tag",
-    requiredPermission: "tags.manage",
+    requiredPermission: "tags.manage.all",
   },
   {
     name: "Auditoría",
@@ -212,13 +218,14 @@ export const Sidebar = () => {
     // Para Dashboard, verificar el permiso específico de dashboard
     if (item.name === "Dashboard") {
       return (
-        hasPermission("dashboard.ver.own") || hasPermission("dashboard.ver.all")
+        hasPermission("dashboard.view.own") ||
+        hasPermission("dashboard.view.all")
       );
     }
 
     // Para Archivo, verificar el permiso específico
     if (item.name === "Archivo") {
-      return hasPermission("archive.view");
+      return hasPermission("archive.view.all");
     }
 
     // Si no tiene restricciones específicas, NO es accesible por defecto

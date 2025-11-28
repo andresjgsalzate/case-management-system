@@ -30,7 +30,7 @@ const router = Router();
  */
 router.get(
   "/dispositions",
-  requirePermissionWithScope("disposiciones", "ver"),
+  requirePermissionWithScope("dispositions", "read"),
   async (req: Request, res: Response) => {
     const user = req.userWithPermissions;
     const scope = user?.permissionScope;
@@ -63,7 +63,7 @@ router.get(
  */
 router.post(
   "/dispositions",
-  requirePermission("disposiciones.crear.own"),
+  requirePermission("dispositions.create.own"),
   async (req: Request, res: Response) => {
     // El usuario ya tiene permiso verificado
     res.json({
@@ -77,7 +77,7 @@ router.post(
  */
 router.put(
   "/dispositions/:id",
-  filterByScope("disposiciones", "editar", {
+  filterByScope("dispositions", "update", {
     getEntityId: (req: any) => req.params.id, // El ID de la disposición
     // getEntityTeamId: async (req) => {
     //     // Función para obtener el teamId de la disposición
@@ -103,7 +103,7 @@ router.put(
  */
 router.get(
   "/cases/dashboard",
-  requireAllPermissions(["casos.ver.all", "dashboard.ver.all"]),
+  requireAllPermissions(["cases.read.all", "dashboard.view.all"]),
   async (req: Request, res: Response) => {
     res.json({
       message: "Dashboard de casos - acceso completo",
@@ -185,7 +185,7 @@ router.get(
  */
 router.get(
   "/admin/users",
-  requirePermission("usuarios.gestionar.all"),
+  requirePermission("users.manage.all"),
   async (req: Request, res: Response) => {
     res.json({
       message: "Gestión de usuarios",
@@ -207,11 +207,11 @@ const checkComplexPermission = async (
   // Lógica personalizada de permisos
   const hasBasicAccess = await permissionService.hasPermission(
     user.roleId,
-    "casos.ver.own"
+    "cases.read.own"
   );
   const hasAdvancedAccess = await permissionService.hasPermission(
     user.roleId,
-    "reportes.generar.team"
+    "reports.generate.team"
   );
 
   // Ejemplo: requiere ambos permisos
@@ -247,21 +247,21 @@ class ExampleService {
     // Verificar permiso específico
     const canCreateCases = await permissionService.hasPermission(
       roleId,
-      "casos.crear.own"
+      "cases.create.own"
     );
 
     // Verificar scope más alto
     const highestScope = await permissionService.getHighestScope(
       roleId,
-      "disposiciones",
-      "ver"
+      "dispositions",
+      "read"
     );
 
     // Verificar múltiples permisos
     const permissions = await permissionService.hasPermissions(roleId, [
-      "casos.ver.own",
-      "disposiciones.ver.own",
-      "todos.ver.own",
+      "cases.read.own",
+      "dispositions.read.own",
+      "todos.read.own",
     ]);
 
     return {

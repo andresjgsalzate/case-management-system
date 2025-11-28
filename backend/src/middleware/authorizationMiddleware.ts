@@ -1,32 +1,77 @@
 import { Request, Response, NextFunction } from "express";
 import { PermissionService } from "../services/PermissionService";
 import { UserWithPermissions, ScopeFilterOptions } from "../types/permissions";
+import { TeamService } from "../services/TeamService";
+import AppDataSource from "../data-source";
 
 export class AuthorizationMiddleware {
   private permissionService: PermissionService;
+  private teamService: TeamService | null = null;
 
   constructor() {
     this.permissionService = new PermissionService();
   }
 
   /**
+   * Obtiene una instancia del TeamService (lazy loading)
+   */
+  private getTeamService(): TeamService {
+    if (!this.teamService) {
+      this.teamService = new TeamService();
+    }
+    return this.teamService;
+  }
+
+  /**
    * Helper para obtener el usuario con permisos desde el request
    */
-  private getUserWithPermissions(req: Request): UserWithPermissions | null {
+  private async getUserWithPermissions(
+    req: Request
+  ): Promise<UserWithPermissions | null> {
+    console.log("=== getUserWithPermissions START ===");
+    console.log("req.user exists:", !!req.user);
+
     // Convertir el usuario existente al formato con permisos
     if (req.user) {
       // Casting para acceder a las propiedades correctas del UserProfile
       const user = req.user as any;
-      return {
+      console.log("User data:", {
+        id: user.id,
+        email: user.email,
+        roleId: user.roleId,
+        roleName: user.roleName,
+      });
+
+      // Obtener equipos del usuario si no están ya cargados
+      let userTeamIds: string[] = [];
+      try {
+        console.log("Loading user teams...");
+        const teamService = this.getTeamService();
+        const userTeams = await teamService.getUserTeams(user.id);
+        userTeamIds = userTeams.map((team) => team.id);
+        console.log("User teams loaded:", userTeamIds);
+      } catch (error) {
+        console.warn("No se pudieron cargar los equipos del usuario:", error);
+      }
+
+      const userWithPermissions = {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
         roleId: user.roleId || "", // Usar roleId correcto del UserProfile
         roleName: user.roleName,
-        teamId: undefined, // Se agregará cuando tengamos equipos
+        teamId: userTeamIds[0], // Primer equipo para compatibilidad
+        teamIds: userTeamIds, // IDs de equipos del usuario
         ...req.userWithPermissions,
       };
+
+      console.log("Returning userWithPermissions:", userWithPermissions);
+      console.log("=== getUserWithPermissions END ===");
+      return userWithPermissions;
     }
+
+    console.log("No user found in req.user");
+    console.log("=== getUserWithPermissions END ===");
     return null;
   }
 
@@ -36,7 +81,7 @@ export class AuthorizationMiddleware {
   requirePermission(permissionName: string) {
     return async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const user = this.getUserWithPermissions(req);
+        const user = await this.getUserWithPermissions(req);
         if (!user) {
           return res.status(401).json({
             error: "No autenticado",
@@ -71,7 +116,7 @@ export class AuthorizationMiddleware {
   requirePermissionWithScope(module: string, action: string) {
     return async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const user = this.getUserWithPermissions(req);
+        const user = await this.getUserWithPermissions(req);
         if (!user) {
           return res.status(401).json({
             error: "No autenticado",
@@ -111,7 +156,7 @@ export class AuthorizationMiddleware {
   requireAllPermissions(permissionNames: string[]) {
     return async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const user = this.getUserWithPermissions(req);
+        const user = await this.getUserWithPermissions(req);
         if (!user) {
           return res.status(401).json({
             error: "No autenticado",
@@ -150,32 +195,57 @@ export class AuthorizationMiddleware {
   requireAnyPermission(permissionNames: string[]) {
     return async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const user = this.getUserWithPermissions(req);
+        console.log("=== DEBUGGING requireAnyPermission ===");
+        console.log("Permissions to check:", permissionNames);
+
+        const user = await this.getUserWithPermissions(req);
+        console.log(
+          "User found:",
+          user ? `ID: ${user.id}, RoleId: ${user.roleId}` : "NULL"
+        );
+
         if (!user) {
+          console.log("User not found, returning 401");
           return res.status(401).json({
             error: "No autenticado",
           });
         }
 
+        console.log(
+          "Calling hasPermissions with roleId:",
+          user.roleId,
+          "permissions:",
+          permissionNames
+        );
         const permissionResults = await this.permissionService.hasPermissions(
           user.roleId,
           permissionNames
         );
+        console.log("Permission results:", permissionResults);
 
         const hasAnyPermission = permissionNames.some(
           (permission) => permissionResults[permission]
         );
+        console.log("Has any permission:", hasAnyPermission);
 
         if (!hasAnyPermission) {
+          console.log("No permissions found, returning 403");
           return res.status(403).json({
             error: "Permisos insuficientes",
             requiredAnyOf: permissionNames,
           });
         }
 
+        console.log("Permission check passed, calling next()");
         next();
       } catch (error) {
+        console.error("=== ERROR in requireAnyPermission ===");
         console.error("Error en verificación de permisos opcionales:", error);
+        console.error(
+          "Stack trace:",
+          error instanceof Error ? error.stack : error
+        );
+        console.error("=== END ERROR ===");
         return res.status(500).json({
           error: "Error interno del servidor",
         });
@@ -193,7 +263,7 @@ export class AuthorizationMiddleware {
   ) {
     return async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const user = this.getUserWithPermissions(req);
+        const user = await this.getUserWithPermissions(req);
         if (!user) {
           return res.status(401).json({
             error: "No autenticado",
@@ -271,7 +341,7 @@ export class AuthorizationMiddleware {
    * Middleware para verificar permisos de administrador
    */
   requireAdmin() {
-    return this.requirePermission("roles.gestionar.all");
+    return this.requirePermission("roles.manage.all");
   }
 
   /**
@@ -286,7 +356,7 @@ export class AuthorizationMiddleware {
   ) {
     return async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const user = this.getUserWithPermissions(req);
+        const user = await this.getUserWithPermissions(req);
         if (!user) {
           return res.status(401).json({
             error: "No autenticado",

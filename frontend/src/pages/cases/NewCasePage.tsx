@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import CaseForm from "../../components/forms/CaseForm";
 import { type CaseFormSchema } from "../../lib/validations";
 import { origensApi, applicationsApi, caseService } from "../../services/api";
@@ -10,9 +11,10 @@ import { Button } from "../../components/ui/Button";
 import { ActionIcon } from "../../components/ui/ActionIcons";
 import { calcularPuntuacion, clasificarCaso } from "../../utils/caseUtils";
 
-export const NewCasePage: React.FC = () => {
+export default function NewCasePage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
   const isEditing = !!id;
 
   // Estados principales
@@ -61,6 +63,7 @@ export const NewCasePage: React.FC = () => {
     try {
       setIsLoading(true);
       const caseData = await caseService.getCaseById(caseId);
+      console.log("Loaded case data:", caseData);
       setExistingCase(caseData);
     } catch (error) {
       console.error("Error loading case:", error);
@@ -105,15 +108,45 @@ export const NewCasePage: React.FC = () => {
       };
 
       if (isEditing && id) {
-        await caseService.updateCase(id, formData);
-      } else {
-        await caseService.createCase(formData);
-      }
+        console.log("Updating case with ID:", id);
+        console.log("Form data:", formData);
+        const updatedCase = await caseService.updateCase(id, formData);
+        console.log("Case updated successfully:", updatedCase);
 
-      // Delay más largo para asegurar que la DB se actualice antes de navegar
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      // Navegar con estado para indicar que se debe refrescar la lista
-      navigate("/cases", { state: { refresh: true, updated: true } });
+        // Invalidar cache de React Query
+        queryClient.invalidateQueries({ queryKey: ["cases"] });
+        queryClient.invalidateQueries({ queryKey: ["case", id] });
+
+        // Mostrar mensaje de éxito específico para edición
+        setTimeout(() => {
+          navigate("/cases", {
+            state: {
+              refresh: true,
+              updated: true,
+              message: `Caso ${formData.numeroCaso} actualizado exitosamente`,
+            },
+          });
+        }, 500);
+      } else {
+        console.log("Creating new case");
+        console.log("Form data:", formData);
+        const newCase = await caseService.createCase(formData);
+        console.log("Case created successfully:", newCase);
+
+        // Invalidar cache de React Query
+        queryClient.invalidateQueries({ queryKey: ["cases"] });
+
+        // Mostrar mensaje de éxito para creación
+        setTimeout(() => {
+          navigate("/cases", {
+            state: {
+              refresh: true,
+              created: true,
+              message: `Caso ${formData.numeroCaso} creado exitosamente`,
+            },
+          });
+        }, 500);
+      }
     } catch (error) {
       console.error("Error al guardar el caso:", error);
       setError("Error al guardar el caso. Por favor, inténtelo de nuevo.");
@@ -174,6 +207,9 @@ export const NewCasePage: React.FC = () => {
           estado: "nuevo" as const,
         };
 
+  console.log("Default values for form:", defaultValues);
+  console.log("Existing case:", existingCase);
+
   return (
     <PageWrapper>
       <div className="mb-8">
@@ -221,4 +257,4 @@ export const NewCasePage: React.FC = () => {
       </div>
     </PageWrapper>
   );
-};
+}

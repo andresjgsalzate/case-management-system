@@ -22,8 +22,8 @@ export const SYSTEM_MODULES: ModulePermission[] = [
       "metrics.view.own",
       "metrics.view.team",
       "metrics.view.all",
-      "metrics.time.read.own",
-      "metrics.cases.read.own",
+      "metrics.time.own",
+      "metrics.cases.own",
     ], // Requiere permisos de métricas
   },
   {
@@ -117,6 +117,13 @@ export const ADMIN_SECTIONS: Array<{
         adminOnly: true,
       },
       {
+        name: "Equipos",
+        href: "/teams",
+        icon: "UsersIcon",
+        permissions: ["teams.view.all"],
+        adminOnly: false, // No restringido solo a administradores
+      },
+      {
         name: "Gestión de Permisos",
         href: "/permissions",
         icon: "ShieldCheckIcon",
@@ -200,65 +207,183 @@ export const useModulePermissions = () => {
   const { user, hasPermission, canAccessModule } = useAuth();
 
   return useMemo(() => {
+    console.log("🔍 useModulePermissions - Iniciando verificación de permisos");
+    console.log("🔍 useModulePermissions - Usuario actual:", user);
+
     // Verificar si el usuario tiene permisos de administrador usando el sistema dinámico
+    const adminPermissions = {
+      "permissions.admin.all": hasPermission("permissions.admin.all"),
+      "roles.manage.all": hasPermission("roles.manage.all"),
+      "users.admin.all": hasPermission("users.admin.all"),
+    };
+
+    console.log(
+      "🔍 useModulePermissions - Permisos de administrador:",
+      adminPermissions
+    );
+
     const isAdmin =
       hasPermission("permissions.admin.all") ||
       hasPermission("roles.manage.all") ||
       hasPermission("users.admin.all");
 
+    console.log("🔍 useModulePermissions - Es administrador?:", isAdmin);
+
     // Función para verificar si el usuario puede acceder a un módulo específico
     const canAccessModuleWithPermissions = (
       module: ModulePermission
     ): boolean => {
+      console.log(
+        `🔍 canAccessModuleWithPermissions - Verificando módulo: ${module.name}`
+      );
+      console.log(
+        `🔍 canAccessModuleWithPermissions - Permisos requeridos:`,
+        module.permissions
+      );
+      console.log(
+        `🔍 canAccessModuleWithPermissions - Solo admin?:`,
+        module.adminOnly
+      );
+
       // Si tiene permisos administrativos, puede acceder a todo
       if (isAdmin) {
+        console.log(
+          `✅ canAccessModuleWithPermissions - ${module.name}: Acceso permitido (es admin)`
+        );
         return true;
       }
 
       // Si el módulo es solo para administradores y el usuario no es admin
       if (module.adminOnly && !isAdmin) {
+        console.log(
+          `❌ canAccessModuleWithPermissions - ${module.name}: Acceso denegado (requiere admin)`
+        );
         return false;
       }
 
       // Si no hay permisos específicos requeridos, permitir acceso
       if (!module.permissions || module.permissions.length === 0) {
+        console.log(
+          `✅ canAccessModuleWithPermissions - ${module.name}: Acceso permitido (sin permisos requeridos)`
+        );
         return true;
       }
 
       // Verificar si tiene al menos uno de los permisos requeridos
-      return module.permissions.some((permission) => hasPermission(permission));
+      const permissionResults = module.permissions.map((permission) => ({
+        permission,
+        hasIt: hasPermission(permission),
+      }));
+
+      console.log(
+        `🔍 canAccessModuleWithPermissions - ${module.name}: Resultados de permisos:`,
+        permissionResults
+      );
+
+      const hasAccess = module.permissions.some((permission) =>
+        hasPermission(permission)
+      );
+
+      console.log(
+        `${hasAccess ? "✅" : "❌"} canAccessModuleWithPermissions - ${
+          module.name
+        }: ${hasAccess ? "Acceso permitido" : "Acceso denegado"}`
+      );
+
+      return hasAccess;
     };
 
     // Función para verificar acceso a secciones administrativas
     const canAccessAdminSection = (
       section: (typeof ADMIN_SECTIONS)[0]
     ): boolean => {
+      console.log(
+        `🔍 canAccessAdminSection - Verificando sección: ${section.title}`
+      );
+      console.log(`🔍 canAccessAdminSection - Solo admin?:`, section.adminOnly);
+
       // Si es administrador, puede ver todas las secciones
       if (isAdmin) {
+        console.log(
+          `✅ canAccessAdminSection - ${section.title}: Acceso permitido (es admin)`
+        );
         return true;
       }
 
       // Si la sección es solo para administradores
       if (section.adminOnly && !isAdmin) {
+        console.log(
+          `❌ canAccessAdminSection - ${section.title}: Acceso denegado (requiere admin)`
+        );
         return false;
       }
 
       // Verificar si tiene acceso a al menos un item de la sección
-      return section.items.some((item) => canAccessModuleWithPermissions(item));
+      const hasAccessToItems = section.items.some((item) =>
+        canAccessModuleWithPermissions(item)
+      );
+
+      console.log(
+        `${hasAccessToItems ? "✅" : "❌"} canAccessAdminSection - ${
+          section.title
+        }: ${
+          hasAccessToItems ? "Acceso permitido" : "Acceso denegado"
+        } (basado en items)`
+      );
+
+      return hasAccessToItems;
     };
 
     // Filtrar módulos permitidos
+    console.log(
+      "🔍 useModulePermissions - Iniciando filtrado de módulos del sistema..."
+    );
     const allowedModules = SYSTEM_MODULES.filter(
       canAccessModuleWithPermissions
     );
+    console.log(
+      "🔍 useModulePermissions - Módulos permitidos:",
+      allowedModules.map((m) => m.name)
+    );
 
     // Filtrar secciones administrativas permitidas
+    console.log(
+      "🔍 useModulePermissions - Iniciando filtrado de secciones administrativas..."
+    );
     const allowedAdminSections = ADMIN_SECTIONS.filter(canAccessAdminSection)
       .map((section) => ({
         ...section,
         items: section.items.filter(canAccessModuleWithPermissions),
       }))
       .filter((section) => section.items.length > 0); // Solo mantener secciones con items
+
+    console.log(
+      "🔍 useModulePermissions - Secciones administrativas permitidas:"
+    );
+    allowedAdminSections.forEach((section) => {
+      console.log(
+        `  📂 ${section.title}:`,
+        section.items.map((item) => item.name)
+      );
+    });
+
+    // Verificar específicamente el módulo de Equipos
+    const teamsModule = ADMIN_SECTIONS[0]?.items.find(
+      (item) => item.name === "Equipos"
+    );
+    if (teamsModule) {
+      console.log(
+        "🔍 useModulePermissions - Estado específico del módulo Equipos:"
+      );
+      console.log("  📋 Nombre:", teamsModule.name);
+      console.log("  🔗 URL:", teamsModule.href);
+      console.log("  🔑 Permisos requeridos:", teamsModule.permissions);
+      console.log("  👑 Solo admin?:", teamsModule.adminOnly);
+      console.log(
+        "  ✅ Puede acceder?:",
+        canAccessModuleWithPermissions(teamsModule)
+      );
+    }
 
     return {
       allowedModules,
@@ -278,7 +403,10 @@ export const useFeaturePermissions = () => {
   const { hasPermission, user } = useAuth();
 
   return useMemo(() => {
-    const isAdmin = user?.roleName === "Administrador";
+    const isAdmin =
+      hasPermission("permissions.admin.all") ||
+      hasPermission("roles.manage.all") ||
+      hasPermission("users.admin.all");
 
     return {
       // Permisos de casos (usando permisos estandarizados de BD)
@@ -386,7 +514,12 @@ export const useScopePermissions = () => {
     targetUserId?: string
   ): boolean => {
     // Si es administrador, puede hacer todo
-    if (user?.roleName === "Administrador") {
+    const isAdmin =
+      hasPermission("permissions.admin.all") ||
+      hasPermission("roles.manage.all") ||
+      hasPermission("users.admin.all");
+
+    if (isAdmin) {
       return true;
     }
 
@@ -422,24 +555,17 @@ export const useScopePermissions = () => {
 export const usePermissions = () => {
   const { user } = useAuth();
 
-  const hasPermission = (permissionKey: string): boolean => {
+  const hasPermission = (_permissionKey: string): boolean => {
     if (!user) return false;
 
-    // Si es superadmin, tiene todos los permisos
-    if (user.roleName === "superadmin") {
-      return true;
-    }
+    // DEPRECATED: Este hook usa el contexto de autenticación principal
+    // que ya maneja permisos dinámicos desde la base de datos
+    console.warn(
+      "🚨 usePermissions hook is deprecated. Use useAuth().hasPermission instead"
+    );
 
-    // Para simplificar, por ahora asumimos que algunos roles tienen permisos
-    // TODO: Implementar sistema completo de permisos cuando esté disponible
-    const allowedRoles = ["admin", "superadmin"];
-
-    // Verificar permisos específicos basados en el tipo
-    if (permissionKey.includes("todos") || permissionKey.includes("admin")) {
-      return allowedRoles.includes(user.roleName);
-    }
-
-    return allowedRoles.includes(user.roleName);
+    // Retornar false para forzar el uso del sistema principal
+    return false;
   };
 
   return {

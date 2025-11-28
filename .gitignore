@@ -102,3 +102,19 @@ temp/
 # Backup files
 *.bak
 *.backup
+
+# Temporary scripts and files (debugging, migration, etc.)
+debug-*.js
+fix-*.js
+validate-*.js
+translate-*.js
+test-*.js
+audit-*.js
+handle-*.js
+standardize-*.js
+*-report.txt
+*-permissions*.sql
+*-scopes*.sql
+
+# Chat/query editor files
+*Chat Query Editor*.sql

@@ -38,3 +38,7 @@ export { DocumentType } from "./DocumentType";
 // Audit System entities
 export { AuditLog } from "./AuditLog";
 export { AuditEntityChange } from "./AuditEntityChange";
+
+// Teams System entities
+export { Team } from "./Team";
+export { TeamMember } from "./TeamMember";

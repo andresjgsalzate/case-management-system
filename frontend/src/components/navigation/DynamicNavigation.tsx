@@ -9,7 +9,7 @@ const ICON_ACTION_MAP: Record<string, string> = {
   DocumentTextIcon: "document",
   PlusIcon: "add",
   ChartBarIcon: "dashboard",
-  UsersIcon: "user",
+  UsersIcon: "users",
   ClockIcon: "time",
   WrenchScrewdriverIcon: "tool",
   ListBulletIcon: "list",

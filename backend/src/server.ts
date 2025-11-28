@@ -28,6 +28,7 @@ import testRoutes from "./routes/test.routes";
 import authPermissionRoutes from "./routes/auth";
 import { userRoutes } from "./routes/userRoutes";
 import { roleRoutes } from "./routes/roleRoutes";
+import { teamRoutes } from "./routes/teamRoutes";
 import metricsRoutes from "./routes/metrics.routes";
 import knowledgeRoutes from "./routes/knowledge-simple.routes";
 import knowledgeTagRoutes from "./routes/knowledge.routes";
@@ -42,6 +43,8 @@ import adminStorageRoutes from "./routes/admin-storage.routes";
 import systemInfoRoutes from "./routes/systemInfo";
 import { FileUploadService } from "./services/file-upload-simple.service";
 import auditRoutes from "./routes/audit.routes";
+
+import { AppDataSource } from "./config/database";
 
 const app = express();
 
@@ -78,6 +81,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/auth", authPermissionRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/roles", roleRoutes);
+app.use("/api/teams", teamRoutes);
 app.use("/api/cases", caseRoutes);
 app.use("/api/case-control", caseControlRoutes);
 app.use("/api/time-entries", timeEntriesRoutes);
@@ -117,6 +121,8 @@ const startServer = async (): Promise<void> => {
   try {
     // Inicializar base de datos
     await initializeDatabase();
+
+    // Inicializar rutas de equipos después de que la DB esté lista
 
     // Inicializar directorios de uploads de forma automática
     await FileUploadService.initialize();

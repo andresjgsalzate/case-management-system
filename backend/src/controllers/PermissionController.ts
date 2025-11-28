@@ -281,4 +281,79 @@ export class PermissionController {
       });
     }
   }
+
+  /**
+   * Obtener todas las acciones distintas
+   */
+  async getActions(req: Request, res: Response) {
+    try {
+      const actions = await this.permissionService.getAllActions();
+
+      res.json({
+        success: true,
+        data: actions,
+        message: "Acciones obtenidas correctamente",
+      });
+    } catch (error) {
+      console.error("Error al obtener acciones:", error);
+      res.status(500).json({
+        success: false,
+        error: "Error interno del servidor",
+      });
+    }
+  }
+
+  /**
+   * Traducir acción de español a inglés
+   */
+  async translateAction(req: Request, res: Response) {
+    try {
+      const { fromAction, toAction } = req.body;
+
+      if (!fromAction || !toAction) {
+        return res.status(400).json({
+          success: false,
+          error: "fromAction y toAction son requeridos",
+        });
+      }
+
+      const result = await this.permissionService.translateAction(
+        fromAction,
+        toAction
+      );
+
+      res.json({
+        success: true,
+        data: result,
+        message: `Acción "${fromAction}" traducida a "${toAction}"`,
+      });
+    } catch (error) {
+      console.error("Error al traducir acción:", error);
+      res.status(500).json({
+        success: false,
+        error: "Error interno del servidor",
+      });
+    }
+  }
+
+  /**
+   * Actualizar formato de nombres de permisos
+   */
+  async updateNamesFormat(req: Request, res: Response) {
+    try {
+      const result = await this.permissionService.updateNamesFormat();
+
+      res.json({
+        success: true,
+        data: result,
+        message: "Formato de nombres actualizado correctamente",
+      });
+    } catch (error) {
+      console.error("Error al actualizar formato de nombres:", error);
+      res.status(500).json({
+        success: false,
+        error: "Error interno del servidor",
+      });
+    }
+  }
 }

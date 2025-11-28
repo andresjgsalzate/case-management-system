@@ -132,27 +132,35 @@ export const caseService = {
 
   // Crear un nuevo caso
   createCase: async (caseData: any): Promise<Case> => {
-    const response = await authService.authenticatedRequest<Case>("/cases", {
+    console.log("Sending create request:", caseData);
+    const response = await authService.authenticatedRequest<any>("/cases", {
       method: "POST",
       body: JSON.stringify(caseData),
     });
-    if (!response.data) {
-      throw new Error("Failed to create case");
+    console.log("Create response received:", response);
+
+    // El backend devuelve { success: true, data: case, message: string }
+    if (!response.success || !response.data) {
+      throw new Error(response.message || "Failed to create case");
     }
     return response.data;
   },
 
   // Actualizar un caso
   updateCase: async (id: string, caseData: any): Promise<Case> => {
-    const response = await authService.authenticatedRequest<Case>(
+    console.log("Sending update request for case:", id, caseData);
+    const response = await authService.authenticatedRequest<any>(
       `/cases/${id}`,
       {
         method: "PUT",
         body: JSON.stringify(caseData),
       }
     );
-    if (!response.data) {
-      throw new Error("Failed to update case");
+    console.log("Update response received:", response);
+
+    // El backend devuelve { success: true, data: case, message: string }
+    if (!response.success || !response.data) {
+      throw new Error(response.message || "Failed to update case");
     }
     return response.data;
   },

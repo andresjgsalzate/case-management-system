@@ -590,7 +590,7 @@ router.get(
 // POST /api/knowledge/tags - Crear una nueva etiqueta
 router.post(
   "/knowledge/tags",
-  requirePermission("tags.create"),
+  requirePermission("tags.create.all"),
   async (req: Request, res: Response) => {
     try {
       const { tagName, color, category, description } = req.body;
@@ -675,7 +675,7 @@ router.get(
 // PUT /api/knowledge/tags/:id - Actualizar etiqueta
 router.put(
   "/knowledge/tags/:id",
-  requirePermission("tags.update"),
+  requirePermission("tags.update.all"),
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -698,7 +698,7 @@ router.put(
 // DELETE /api/knowledge/tags/:id - Eliminar etiqueta por ID
 router.delete(
   "/knowledge/tags/:id",
-  requirePermission("tags.delete"),
+  requirePermission("tags.delete.all"),
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;

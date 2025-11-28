@@ -649,8 +649,6 @@ export class KnowledgeDocumentService {
     return this.knowledgeDocumentRepository
       .createQueryBuilder("doc")
       .leftJoinAndSelect("doc.documentType", "type")
-      .leftJoinAndSelect("doc.createdByUser", "creator")
-      .leftJoinAndSelect("doc.lastEditedByUser", "editor")
       .leftJoinAndSelect("doc.tagRelations", "tagRelations")
       .leftJoinAndSelect("tagRelations.tag", "tags");
   }

@@ -29,6 +29,7 @@ export const errorHandler = (
 
   // Respuesta de error
   const errorResponse = {
+    message: statusCode === 500 ? "Internal Server Error" : message,
     error: {
       message: statusCode === 500 ? "Internal Server Error" : message,
       statusCode,

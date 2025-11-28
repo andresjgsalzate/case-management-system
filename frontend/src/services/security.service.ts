@@ -138,7 +138,16 @@ class SecurityService {
     try {
       const encryptedData = sessionStorage.getItem(SecurityService.SESSION_KEY);
 
+      console.log("🔍 [SECURITY DEBUG] getValidTokens ejecutándose...", {
+        hasEncryptedData: !!encryptedData,
+        sessionKey: SecurityService.SESSION_KEY,
+        sessionStorageLength: sessionStorage.length,
+      });
+
       if (!encryptedData) {
+        console.log(
+          "❌ [SECURITY DEBUG] No hay datos encriptados en sessionStorage"
+        );
         return null;
       }
 

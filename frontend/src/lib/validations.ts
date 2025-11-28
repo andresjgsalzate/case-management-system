@@ -48,6 +48,8 @@ export const caseFormSchema = z.object({
       "resuelto",
       "cerrado",
       "cancelado",
+      "asignado",
+      "restaurado",
     ])
     .default("nuevo"),
   observaciones: z

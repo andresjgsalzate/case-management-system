@@ -13,8 +13,8 @@
     "emitDecoratorMetadata": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "moduleResolution": "node",
-    "ignoreDeprecations": "6.0",
+    "moduleResolution": "node10",
+
     "declaration": true,
     "removeComments": true,
     "noImplicitAny": true,

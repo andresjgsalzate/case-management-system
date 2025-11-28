@@ -16,15 +16,28 @@ const checkPermissionVariants = (
   permission: string,
   hasPermission: (perm: string) => boolean,
   userPermissions: any[],
-  userRole?: string
+  _userRole?: string
 ): boolean => {
-  // Para permisos de auditoría, también verificar el rol directamente
-  if (permission.startsWith("audit.") && userRole === "Administrador") {
-    return true;
+  console.log(`🔍 checkPermissionVariants - Verificando: ${permission}`);
+
+  // Para permisos de auditoría, verificar permisos específicos
+  if (permission.startsWith("audit.")) {
+    const hasAuditAccess = hasPermission("audit.view.all");
+    console.log(
+      `🔍 checkPermissionVariants - Permiso de auditoría: ${hasAuditAccess}`
+    );
+    if (hasAuditAccess) {
+      return true;
+    }
   }
 
   // Verificar el permiso directamente usando la función hasPermission
-  if (hasPermission(permission)) {
+  const hasDirectPermission = hasPermission(permission);
+  console.log(
+    `🔍 checkPermissionVariants - Permiso directo ${permission}: ${hasDirectPermission}`
+  );
+
+  if (hasDirectPermission) {
     return true;
   }
 
@@ -53,8 +66,12 @@ const checkModuleAccess = (
       "dispositions.view.team",
       "dispositions.view.all",
     ],
-    usuarios: ["usuarios.ver.own", "usuarios.ver.team", "usuarios.ver.all"],
-    dashboard: ["dashboard.ver.own", "dashboard.ver.team", "dashboard.ver.all"],
+    usuarios: ["users.view.own", "users.view.team", "users.view.all"],
+    dashboard: [
+      "dashboard.view.own",
+      "dashboard.view.team",
+      "dashboard.view.all",
+    ],
     knowledge: [
       "knowledge.read.own",
       "knowledge.read.team",
@@ -70,7 +87,7 @@ const checkModuleAccess = (
       "dispositions.view.team",
       "dispositions.view.all",
     ],
-    users: ["usuarios.ver.own", "usuarios.ver.team", "usuarios.ver.all"],
+    users: ["users.view.own", "users.view.team", "users.view.all"],
   };
 
   const permissions = modulePermissions[module] || [];
@@ -130,12 +147,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (adminOnly) {
     // Un admin debería tener permisos amplios como acceso al dashboard y gestión de usuarios
     const adminPermissions = [
-      "dashboard.ver.own",
-      "dashboard.ver.team",
-      "dashboard.ver.all",
-      "usuarios.ver.own",
-      "usuarios.ver.team",
-      "usuarios.ver.all",
+      "dashboard.view.own",
+      "dashboard.view.team",
+      "dashboard.view.all",
+      "users.view.own",
+      "users.view.team",
+      "users.view.all",
     ];
     const hasAdminPermission = adminPermissions.some((permission) =>
       hasPermission(permission)
@@ -147,16 +164,33 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Si requiere un permiso específico
-  if (
-    requiredPermission &&
-    !checkPermissionVariants(
+  if (requiredPermission) {
+    console.log(
+      `🔍 ProtectedRoute - Verificando permiso requerido: ${requiredPermission}`
+    );
+    console.log(`🔍 ProtectedRoute - Usuario: ${user?.fullName}`);
+
+    const hasRequiredPermission = checkPermissionVariants(
       requiredPermission,
       hasPermission,
       userPermissions || [],
       user?.roleName
-    )
-  ) {
-    return <Navigate to="/unauthorized" replace />;
+    );
+
+    console.log(
+      `${
+        hasRequiredPermission ? "✅" : "❌"
+      } ProtectedRoute - Permiso ${requiredPermission}: ${
+        hasRequiredPermission ? "PERMITIDO" : "DENEGADO"
+      }`
+    );
+
+    if (!hasRequiredPermission) {
+      console.log(
+        `❌ ProtectedRoute - Redirigiendo a /unauthorized por falta de permiso: ${requiredPermission}`
+      );
+      return <Navigate to="/unauthorized" replace />;
+    }
   }
 
   // Si requiere múltiples permisos (al menos uno debe cumplirse)
@@ -175,8 +209,27 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Si requiere acceso a un módulo específico
-  if (requiredModule && !checkModuleAccess(requiredModule, hasPermission)) {
-    return <Navigate to="/unauthorized" replace />;
+  if (requiredModule) {
+    console.log(
+      `🔍 ProtectedRoute - Verificando módulo requerido: ${requiredModule}`
+    );
+
+    const hasModuleAccess = checkModuleAccess(requiredModule, hasPermission);
+
+    console.log(
+      `${
+        hasModuleAccess ? "✅" : "❌"
+      } ProtectedRoute - Módulo ${requiredModule}: ${
+        hasModuleAccess ? "PERMITIDO" : "DENEGADO"
+      }`
+    );
+
+    if (!hasModuleAccess) {
+      console.log(
+        `❌ ProtectedRoute - Redirigiendo a /unauthorized por falta de acceso al módulo: ${requiredModule}`
+      );
+      return <Navigate to="/unauthorized" replace />;
+    }
   }
 
   // Si todo está bien, renderizar el contenido

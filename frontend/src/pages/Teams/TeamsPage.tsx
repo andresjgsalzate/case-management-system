@@ -34,28 +34,9 @@ const TeamsPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log("🔍 loadTeams - Iniciando carga de equipos...");
       const response = await teamsApi.getTeams(filters);
-      console.log("🔍 loadTeams - Equipos recibidos:", response);
-      console.log("🔍 loadTeams - Tipo de datos:", typeof response);
-      console.log("🔍 loadTeams - Es array?:", Array.isArray(response));
-      console.log("🔍 loadTeams - Cantidad de equipos:", response?.length);
-
-      // Debug detallado de cada equipo
-      // Debug: Verificar estructura de datos de equipos
-      if (Array.isArray(response)) {
-        console.log(
-          "🔍 Resumen de equipos cargados:",
-          response.map((team) => ({
-            name: team.name,
-            memberCount: team.memberCount,
-            statsActiveMembers: team.stats?.activeMembers,
-          }))
-        );
-      }
 
       setTeams(response || []);
-      console.log("✅ loadTeams - Equipos establecidos");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al cargar equipos");
       setTeams([]); // Asegurar que siempre sea un array en caso de error

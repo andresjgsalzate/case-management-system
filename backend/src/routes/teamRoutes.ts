@@ -55,6 +55,14 @@ router.delete(
   teamController.deleteTeam
 );
 
+// Alternar estado del equipo (activo/inactivo)
+router.patch(
+  "/:id/toggle-status",
+  requireAnyPermission(["teams.edit.all"]),
+  AuditMiddleware.auditUpdate("teams"),
+  teamController.toggleTeamStatus
+);
+
 // ============================================
 // RUTAS DE MIEMBROS DE EQUIPOS
 // ============================================

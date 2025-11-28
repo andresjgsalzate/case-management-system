@@ -70,7 +70,6 @@ export const useInactivityTimeout = ({
     // Timer para mostrar advertencia
     const warningTime = (timeoutDuration - warningDuration) * 60 * 1000;
     warningTimeoutRef.current = setTimeout(() => {
-      console.log("⚠️ ACTIVANDO ADVERTENCIA - showWarning será true");
       setShowWarning(true);
       showWarningRef.current = true; // Sincronizar ref
       setRemainingMinutes(warningDuration);
@@ -111,17 +110,9 @@ export const useInactivityTimeout = ({
   const resetTimerForActivity = useCallback(() => {
     // Usar la ref para evitar problemas de clausura
     if (showWarningRef.current) {
-      console.log(
-        "🚫 ACTIVIDAD IGNORADA - Modal de seguridad activo, showWarning =",
-        showWarningRef.current
-      );
       return;
     }
 
-    console.log(
-      "✅ ACTIVIDAD DETECTADA - Reiniciando timer, showWarning =",
-      showWarningRef.current
-    );
     resetTimer();
   }, [resetTimer]);
   useEffect(() => {
@@ -188,7 +179,6 @@ export const useInactivityTimeout = ({
   }, [timeUntilTimeout]);
 
   const extendSession = useCallback(() => {
-    console.log("🔄 EXTENDIENDO SESIÓN - Ocultando modal y reiniciando timer");
     // Forzar el reset del timer y ocultar la advertencia
     setShowWarning(false);
     showWarningRef.current = false; // Sincronizar ref

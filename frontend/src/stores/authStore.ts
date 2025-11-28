@@ -279,26 +279,9 @@ export const useAuthStore = create<AuthState>()(
         }
         set({ isLoadingPermissions: true });
         try {
-          console.log(
-            "🔍 loadUserPermissions - Solicitando permisos del usuario..."
-          );
           const response = await authPermissionService.getUserPermissions();
           if (response.success && response.data) {
             const { permissions, modules } = response.data;
-            console.log(
-              "✅ loadUserPermissions - Permisos recibidos:",
-              permissions
-            );
-            console.log("✅ loadUserPermissions - Módulos recibidos:", modules);
-
-            // Verificar específicamente permisos de usuarios
-            const userPermissions = permissions.filter(
-              (p: any) => p.name && p.name.includes("users")
-            );
-            console.log(
-              "🔍 loadUserPermissions - Permisos relacionados con usuarios:",
-              userPermissions
-            );
 
             set({
               userPermissions: permissions,
@@ -341,66 +324,29 @@ export const useAuthStore = create<AuthState>()(
         const state = get();
         const { user, userPermissions, permissionsLoaded } = state;
 
-        console.log(`🔍 hasPermission - Verificando permiso: ${permission}`);
-        console.log(`🔍 hasPermission - Usuario:`, user?.fullName);
-        console.log(
-          `🔍 hasPermission - Permisos cargados?:`,
-          permissionsLoaded
-        );
-        console.log(
-          `🔍 hasPermission - Total permisos:`,
-          userPermissions?.length
-        );
-
         // Si no hay usuario o permisos no están cargados, no tiene permisos
         if (!user || !permissionsLoaded) {
-          console.log(
-            `❌ hasPermission - ${permission}: Sin usuario o permisos no cargados`
-          );
           return false;
         }
 
         // Verificar permisos del usuario usando userPermissions (datos de BD)
         if (!userPermissions || !Array.isArray(userPermissions)) {
-          console.log(
-            `❌ hasPermission - ${permission}: No hay permisos válidos`
-          );
           return false;
         }
 
         // Los permisos de BD vienen como objetos con 'name'
         const permissionNames = userPermissions.map((p) => p.name || p);
-        console.log(
-          `🔍 hasPermission - Permisos disponibles:`,
-          permissionNames
-        );
-
-        // Verificar específicamente permisos relacionados con usuarios
-        const userRelatedPermissions = permissionNames.filter(
-          (p) => typeof p === "string" && p.includes("users")
-        );
-        console.log(
-          `🔍 hasPermission - Permisos de usuarios específicamente:`,
-          userRelatedPermissions
-        );
 
         // Verificar permiso directo
         if (permissionNames.includes(permission)) {
-          console.log(
-            `✅ hasPermission - ${permission}: Encontrado directamente`
-          );
           return true;
         }
 
         // Verificar permisos de admin
         if (permissionNames.includes("permissions.admin_all")) {
-          console.log(
-            `✅ hasPermission - ${permission}: Permitido por permissions.admin_all`
-          );
           return true;
         }
 
-        console.log(`❌ hasPermission - ${permission}: No encontrado`);
         return false;
       },
       // Nueva función para verificación dinámica de permisos

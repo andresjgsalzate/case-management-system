@@ -5,7 +5,6 @@ import SmartSearch from "../components/search/SmartSearch";
 import {
   useKnowledgeDocuments,
   useCreateKnowledgeDocument,
-  useDeleteKnowledgeDocument,
 } from "../hooks/useKnowledge";
 import { useCases } from "../hooks/useCases";
 import { KnowledgeDocument } from "../types/knowledge";
@@ -21,7 +20,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   const navigate = useNavigate();
   const { success, error: showError } = useToast();
   const permissions = useFeaturePermissions();
-  const { handleCreateError, handleFetchError } = useCrudErrorHandler();
+  const { handleCreateError } = useCrudErrorHandler();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"created_at" | "updated_at" | "title">(
     "updated_at"

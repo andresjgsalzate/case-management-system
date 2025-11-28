@@ -268,106 +268,115 @@ export const TodoCard: React.FC<TodoCardProps> = ({
 
         {/* Actions */}
         {showActions && (
-          <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex space-x-2">
-              {/* Timer Controls */}
-              {todo.control && !todo.isCompleted && (
-                <>
-                  {isTimerRunning ? (
-                    <Button
-                      onClick={handlePauseTimer}
-                      variant="secondary"
-                      size="sm"
-                    >
-                      <ActionIcon action="pause" size="sm" className="mr-1" />
-                      Pausar
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={handleStartTimer}
-                      variant="secondary"
-                      size="sm"
-                    >
-                      <ActionIcon action="play" size="sm" className="mr-1" />
-                      Reanudar
-                    </Button>
-                  )}
-                </>
-              )}
+          <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 min-w-0">
+                {/* Timer Controls */}
+                {todo.control && !todo.isCompleted && (
+                  <>
+                    {isTimerRunning ? (
+                      <Button
+                        onClick={handlePauseTimer}
+                        variant="secondary"
+                        size="sm"
+                        className="flex-shrink-0"
+                      >
+                        <ActionIcon action="pause" size="sm" className="mr-1" />
+                        Pausar
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleStartTimer}
+                        variant="secondary"
+                        size="sm"
+                        className="flex-shrink-0"
+                      >
+                        <ActionIcon action="play" size="sm" className="mr-1" />
+                        Reanudar
+                      </Button>
+                    )}
+                  </>
+                )}
 
-              {/* Complete Button */}
-              {todo.control && !todo.isCompleted && (
-                <Button onClick={handleComplete} variant="success" size="sm">
-                  <ActionIcon action="check" size="sm" className="mr-1" />
-                  Completar
-                </Button>
-              )}
+                {/* Complete Button */}
+                {todo.control && !todo.isCompleted && (
+                  <Button
+                    onClick={handleComplete}
+                    variant="success"
+                    size="sm"
+                    className="flex-shrink-0"
+                  >
+                    <ActionIcon action="check" size="sm" className="mr-1" />
+                    Completar
+                  </Button>
+                )}
 
-              {/* Create Control Button */}
-              {!todo.control && !todo.isCompleted && (
-                <Button
-                  onClick={handleStartTimer}
-                  variant="primary"
-                  size="sm"
-                  className="inline-flex items-center"
-                >
-                  <ActionIcon action="play" size="sm" className="mr-1" />
-                  Comenzar
-                </Button>
-              )}
-            </div>
+                {/* Create Control Button */}
+                {!todo.control && !todo.isCompleted && (
+                  <Button
+                    onClick={handleStartTimer}
+                    variant="primary"
+                    size="sm"
+                    className="inline-flex items-center flex-shrink-0"
+                  >
+                    <ActionIcon action="play" size="sm" className="mr-1" />
+                    Comenzar
+                  </Button>
+                )}
+              </div>
 
-            {/* Menu Actions */}
-            <div className="flex space-x-1">
-              {/* Ver detalles de tiempo */}
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={() => setShowTimeModal(true)}
-                className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-1"
-                title="Ver detalles de tiempo"
-              >
-                <ActionIcon action="view" size="sm" />
-              </Button>
-
-              {/* Editar */}
-              {onEdit && (
+              {/* Menu Actions */}
+              <div className="flex gap-1 flex-shrink-0">
+                {/* Ver detalles de tiempo */}
                 <Button
                   variant="ghost"
                   size="xs"
-                  onClick={() => onEdit(todo)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1"
-                  title="Editar TODO"
+                  onClick={() => setShowTimeModal(true)}
+                  className="text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-1"
+                  title="Ver detalles de tiempo"
                 >
-                  <ActionIcon action="edit" size="sm" />
+                  <ActionIcon action="view" size="sm" />
                 </Button>
-              )}
 
-              {/* Eliminar */}
-              {onDelete && !todo.isCompleted && (
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  onClick={handleDelete}
-                  className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1"
-                  title="Eliminar TODO"
-                >
-                  <ActionIcon action="delete" size="sm" />
-                </Button>
-              )}
+                {/* Editar */}
+                {onEdit && (
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => onEdit(todo)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1"
+                    title="Editar TODO"
+                  >
+                    <ActionIcon action="edit" size="sm" />
+                  </Button>
+                )}
 
-              {/* Archivar */}
-              {onArchive && todo.isCompleted && (
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => onArchive(todo)}
-                  className="text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 p-1"
-                  title="Archivar TODO"
-                >
-                  <ActionIcon action="archive" size="sm" />
-                </Button>
-              )}
+                {/* Eliminar */}
+                {onDelete && !todo.isCompleted && (
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    onClick={handleDelete}
+                    className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1"
+                    title="Eliminar TODO"
+                  >
+                    <ActionIcon action="delete" size="sm" />
+                  </Button>
+                )}
+
+                {/* Archivar */}
+                {onArchive && todo.isCompleted && (
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => onArchive(todo)}
+                    className="text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 p-1"
+                    title="Archivar TODO"
+                  >
+                    <ActionIcon action="archive" size="sm" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         )}

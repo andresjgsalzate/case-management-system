@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Modal } from "../ui/Modal";
-import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { ActionIcon } from "../ui/ActionIcons";
 

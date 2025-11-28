@@ -160,10 +160,42 @@ export class TeamController {
         });
       }
 
-      await this.teamService.deleteTeam(id);
+      const result = await this.teamService.deleteTeam(id);
 
       res.json({
-        message: "Equipo eliminado exitosamente",
+        message: result.message,
+        action: result.action,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Alternar estado del equipo (activo/inactivo)
+   * PATCH /api/teams/:id/toggle-status
+   */
+  toggleTeamStatus = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        return res.status(400).json({
+          error: "ID del equipo es requerido",
+        });
+      }
+
+      const team = await this.teamService.toggleTeamStatus(id);
+
+      res.json({
+        message: `Equipo ${
+          team.isActive ? "activado" : "desactivado"
+        } exitosamente`,
+        data: team.toJSON(),
       });
     } catch (error) {
       next(error);

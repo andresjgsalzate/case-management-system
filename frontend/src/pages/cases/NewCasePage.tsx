@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import CaseForm from "../../components/forms/CaseForm";
@@ -63,7 +63,6 @@ export default function NewCasePage() {
     try {
       setIsLoading(true);
       const caseData = await caseService.getCaseById(caseId);
-      console.log("Loaded case data:", caseData);
       setExistingCase(caseData);
     } catch (error) {
       console.error("Error loading case:", error);
@@ -108,10 +107,7 @@ export default function NewCasePage() {
       };
 
       if (isEditing && id) {
-        console.log("Updating case with ID:", id);
-        console.log("Form data:", formData);
-        const updatedCase = await caseService.updateCase(id, formData);
-        console.log("Case updated successfully:", updatedCase);
+        await caseService.updateCase(id, formData);
 
         // Invalidar cache de React Query
         queryClient.invalidateQueries({ queryKey: ["cases"] });
@@ -128,10 +124,7 @@ export default function NewCasePage() {
           });
         }, 500);
       } else {
-        console.log("Creating new case");
-        console.log("Form data:", formData);
-        const newCase = await caseService.createCase(formData);
-        console.log("Case created successfully:", newCase);
+        await caseService.createCase(formData);
 
         // Invalidar cache de React Query
         queryClient.invalidateQueries({ queryKey: ["cases"] });
@@ -206,9 +199,6 @@ export default function NewCasePage() {
           fecha: new Date().toISOString().split("T")[0], // Fecha actual por defecto
           estado: "nuevo" as const,
         };
-
-  console.log("Default values for form:", defaultValues);
-  console.log("Existing case:", existingCase);
 
   return (
     <PageWrapper>

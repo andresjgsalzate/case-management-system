@@ -217,22 +217,50 @@ export class TeamService {
   }
 
   /**
-   * Eliminar equipo (soft delete)
+   * Eliminar equipo (elimina físicamente si no tiene miembros, sino soft delete)
    */
-  async deleteTeam(id: string): Promise<void> {
+  async deleteTeam(id: string): Promise<{ message: string; action: string }> {
     const team = await this.getTeamById(id);
 
-    // Verificar que no tenga miembros activos
+    // Verificar el número de miembros activos
     const activeMembersCount = team.getActiveMembersCount();
-    if (activeMembersCount > 0) {
-      throw new Error(
-        `No se puede eliminar el equipo porque tiene ${activeMembersCount} miembros activos`
-      );
-    }
 
-    // Marcar como inactivo en lugar de eliminar físicamente
-    team.isActive = false;
-    await this.teamRepository.save(team);
+    if (activeMembersCount > 0) {
+      // Si tiene miembros activos, solo marcar como inactivo (soft delete)
+      team.isActive = false;
+      await this.teamRepository.save(team);
+
+      return {
+        message: `Equipo marcado como inactivo porque tiene ${activeMembersCount} miembros activos`,
+        action: "deactivated",
+      };
+    } else {
+      // Si no tiene miembros, eliminar físicamente
+      // Primero eliminar cualquier registro de miembros inactivos
+      if (team.members && team.members.length > 0) {
+        await this.teamMemberRepository.delete({ teamId: id });
+      }
+
+      // Luego eliminar el equipo
+      await this.teamRepository.delete(id);
+
+      return {
+        message: "Equipo eliminado permanentemente ya que no tenía miembros",
+        action: "deleted",
+      };
+    }
+  }
+
+  /**
+   * Alternar estado activo/inactivo del equipo
+   */
+  async toggleTeamStatus(id: string): Promise<Team> {
+    const team = await this.getTeamById(id);
+
+    // Alternar el estado
+    team.isActive = !team.isActive;
+
+    return await this.teamRepository.save(team);
   }
 
   // ============================================

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ActionIcon } from "../../components/ui/ActionIcons";
 import { useCases } from "../../hooks/useCases";
@@ -10,7 +9,6 @@ import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
 export const CaseDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [isEditing, setIsEditing] = useState(false);
   const { data: cases, isLoading, error } = useCases();
 
   const { success, error: showErrorToast } = useToast();

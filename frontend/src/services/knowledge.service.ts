@@ -32,19 +32,9 @@ const api = axios.create({
 // Add auth token to requests
 api.interceptors.request.use((config) => {
   const tokens = securityService.getValidTokens();
-  console.log("🔍 [AUTH DEBUG] Interceptor ejecutándose...", {
-    hasTokens: !!tokens,
-    hasToken: !!tokens?.token,
-    url: config.url,
-    sessionStorageKeys: Object.keys(sessionStorage),
-    localStorageKeys: Object.keys(localStorage),
-  });
 
   if (tokens?.token) {
     config.headers.Authorization = `Bearer ${tokens.token}`;
-    console.log("✅ [AUTH DEBUG] Token agregado a la petición");
-  } else {
-    console.log("❌ [AUTH DEBUG] No se encontró token válido");
   }
   return config;
 });

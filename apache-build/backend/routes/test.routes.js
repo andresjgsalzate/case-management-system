@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const TestController_1 = require("../controllers/TestController");
+const router = (0, express_1.Router)();
+const testController = new TestController_1.TestController();
+router.get("/permissions", testController.getPermissionsTest.bind(testController));
+router.get("/roles", testController.getRolesTest.bind(testController));
+router.get("/permissions/module/:module", testController.getPermissionsByModule.bind(testController));
+router.get("/roles/:roleId/permissions", testController.getRolePermissions.bind(testController));
+router.get("/system-status", testController.getSystemStatus.bind(testController));
+exports.default = router;

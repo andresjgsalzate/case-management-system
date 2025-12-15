@@ -1,0 +1,18 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const DashboardMetricsController_1 = require("../controllers/DashboardMetricsController");
+const auth_1 = require("../middleware/auth");
+const auditMiddleware_1 = require("../middleware/auditMiddleware");
+const router = (0, express_1.Router)();
+router.use(auth_1.authenticateToken);
+router.use(auditMiddleware_1.AuditMiddleware.initializeAuditContext);
+router.get("/general", auditMiddleware_1.AuditMiddleware.auditCreate("report_access"), DashboardMetricsController_1.DashboardMetricsController.getGeneralMetrics);
+router.get("/dashboard-stats", auditMiddleware_1.AuditMiddleware.auditCreate("report_access"), DashboardMetricsController_1.DashboardMetricsController.getDashboardStats);
+router.get("/time", auditMiddleware_1.AuditMiddleware.auditCreate("report_access"), DashboardMetricsController_1.DashboardMetricsController.getTimeMetrics);
+router.get("/users/time", auditMiddleware_1.AuditMiddleware.auditCreate("report_access"), DashboardMetricsController_1.DashboardMetricsController.getUserTimeMetrics);
+router.get("/cases/time", auditMiddleware_1.AuditMiddleware.auditCreate("report_access"), DashboardMetricsController_1.DashboardMetricsController.getCaseTimeMetrics);
+router.get("/status", auditMiddleware_1.AuditMiddleware.auditCreate("report_access"), DashboardMetricsController_1.DashboardMetricsController.getStatusMetrics);
+router.get("/applications", auditMiddleware_1.AuditMiddleware.auditCreate("report_access"), DashboardMetricsController_1.DashboardMetricsController.getApplicationMetrics);
+router.get("/performance", auditMiddleware_1.AuditMiddleware.auditCreate("report_access"), DashboardMetricsController_1.DashboardMetricsController.getPerformanceMetrics);
+exports.default = router;

@@ -63,81 +63,130 @@ export class PasswordDecryptor {
   }
 
   /**
-   * Verifica si una contraseña está encriptada con PBKDF2
+   * Verifica si una contraseña está encriptada
    */
   static isEncrypted(password: string): boolean {
-    return password.startsWith("pbkdf2:");
+    return password.startsWith("pbkdf2:") || password.startsWith("aes256:");
   }
 
   /**
    * Método que maneja la contraseña de base de datos de forma segura
-   * - Si está encriptada con pbkdf2: usa clave maestra para desencriptar
+   * - Si está encriptada: desencripta usando AES reversible
    * - Si no está encriptada: la devuelve tal como está
    */
   static getDecryptedDbPassword(): string {
     const password = process.env.DB_PASSWORD || "";
+    // Para desarrollo, usar variable específica si no estamos en production
+    const devPassword = process.env.DB_PASSWORD_DEV;
+    if (devPassword && process.env.NODE_ENV !== "production") {
+      console.log("🔧 Usando contraseña de desarrollo");
+      return devPassword;
+    }
 
-    // Si no está encriptada, devolverla tal como está (desarrollo)
+    // Si la contraseña no está encriptada, devolverla tal como está (puede ser la contraseña real)
     if (!this.isEncrypted(password)) {
+      // Si en producción se configuró DB_SYSTEM_PASSWORD explícitamente, úsala
+      const systemPassword = process.env.DB_SYSTEM_PASSWORD;
+      if (systemPassword) {
+        console.log("🔒 Usando contraseña del sistema (no encriptada)");
+        return systemPassword;
+      }
       return password;
     }
 
-    // Para contraseñas encriptadas, usar clave maestra del sistema
-    const masterKey = process.env.DB_MASTER_KEY || process.env.JWT_SECRET;
-
-    if (!masterKey) {
-      console.error(
-        "❌ No se encontró clave maestra para desencriptar contraseña de BD"
-      );
-      throw new Error("Master key required for database password decryption");
+    // Si es formato AES, intentar desencriptar usando la clave maestra
+    if (password.startsWith("aes256:")) {
+      try {
+        return this.decryptAES(password);
+      } catch (err) {
+        console.error("❌ Falló desencriptación AES:", err);
+        // Si la desencriptación falla pero existe DB_SYSTEM_PASSWORD, usarla como fallback
+        const systemPassword = process.env.DB_SYSTEM_PASSWORD;
+        if (systemPassword) {
+          console.log("� Usando contraseña del sistema como fallback");
+          return systemPassword;
+        }
+        throw err;
+      }
     }
 
-    return this.decryptWithMasterKey(password, masterKey);
+    // Formato legacy (pbkdf2) o no reconocido: intentar usar DB_SYSTEM_PASSWORD
+    const systemPassword = process.env.DB_SYSTEM_PASSWORD;
+    if (systemPassword) {
+      console.log("🔒 Usando contraseña del sistema (legacy)");
+      return systemPassword;
+    }
+
+    // Si no hay nada que hacer, devolver el valor original (posiblemente encriptado)
+    return password;
   }
 
   /**
-   * Desencripta usando AES con clave maestra del sistema
+   * Desencripta contraseña usando AES-256-GCM (reversible y seguro)
+   * NOTA: Esta función invierte EXACTAMENTE el proceso de encrypt-db-password-auto.js
    */
-  private static decryptWithMasterKey(
-    encryptedPassword: string,
-    masterKey: string
-  ): string {
+  private static decryptAES(encryptedPassword: string): string {
     try {
-      // Parsear el formato encriptado PBKDF2
+      // Parsear el formato: aes256:salt:iv:authTag:encrypted
       const parts = encryptedPassword.split(":");
-      if (parts.length !== 5) {
-        throw new Error("Formato de contraseña encriptada inválido");
+
+      if (parts.length !== 5 || parts[0] !== "aes256") {
+        throw new Error(
+          "Formato AES inválido - debe ser aes256:salt:iv:authTag:encrypted"
+        );
       }
 
-      const [, digest, iterations, salt, hash] = parts;
+      const [, salt, ivHex, authTagHex, encryptedHex] = parts;
 
-      // Validar parámetros
-      if (!salt || !hash) {
-        throw new Error("Parámetros de encriptación inválidos");
+      if (!salt || !ivHex || !authTagHex || !encryptedHex) {
+        throw new Error("Parámetros de encriptación AES incompletos");
       }
 
-      // Para desarrollo/testing, permitir variables de entorno específicas
-      const devPassword = process.env.DB_PASSWORD_DEV;
-      if (devPassword && process.env.NODE_ENV !== "production") {
-        console.log("🔧 Usando contraseña de desarrollo");
-        return devPassword;
+      // PASO 1: Usar la misma clave maestra que utilizó el script de encriptación
+      // Esto permite desencriptar sin necesidad de conocer la contraseña original
+      const masterKey =
+        process.env.ENCRYPTION_MASTER_KEY || process.env.JWT_SECRET;
+      if (!masterKey) {
+        throw new Error(
+          "ENCRYPTION_MASTER_KEY o JWT_SECRET requerida para desencriptar"
+        );
       }
 
-      // En producción, la contraseña debe ser proporcionada por variables de sistema
-      // NO por archivos de configuración
-      const systemPassword = process.env.DB_SYSTEM_PASSWORD;
-      if (systemPassword) {
-        console.log("🔒 Usando contraseña del sistema");
-        return systemPassword;
-      }
+      // PASO 2: Recrear exactamente la misma clave que se usó para encriptar
+      const key = crypto.scryptSync(
+        masterKey + "case-management-key",
+        salt,
+        32
+      );
 
-      // Como último recurso, derivar de la clave JWT (método seguro)
-      const derivedPassword = this.derivePasswordFromMasterKey(masterKey, salt);
-      console.log("🔑 Usando contraseña derivada de clave maestra");
-      return derivedPassword;
+      // PASO 3: Desencriptar usando createDecipheriv y setAuthTag
+      const algorithm = "aes-256-gcm";
+      const iv = Buffer.from(ivHex as string, "hex");
+      const authTag = Buffer.from(authTagHex as string, "hex");
+
+      const decipher = crypto.createDecipheriv(algorithm, key, iv);
+      decipher.setAuthTag(authTag);
+
+      let decrypted = decipher.update(encryptedHex, "hex", "utf8");
+      decrypted += decipher.final("utf8");
+
+      console.log("✅ Contraseña desencriptada exitosamente con AES-256-GCM");
+      return decrypted;
     } catch (error) {
-      console.error("❌ Error desencriptando contraseña:", error);
-      throw new Error("Failed to decrypt database password");
+      console.error("❌ Error desencriptando contraseña AES:", error);
+      console.error("Detalles:", {
+        format: encryptedPassword.substring(0, 20) + "...",
+        parts: encryptedPassword.split(":").length,
+      });
+
+      // Si falla la desencriptación, puede ser que necesitemos la contraseña del sistema
+      console.error("");
+      console.error("💡 SUGERENCIA: Asegúrate de tener configurado:");
+      console.error("   export DB_SYSTEM_PASSWORD='tu-contraseña-original'");
+      console.error("   o");
+      console.error("   DB_PASSWORD_DEV=tu-contraseña-original (en .env)");
+
+      throw new Error(`Failed to decrypt AES password: ${error}`);
     }
   }
 

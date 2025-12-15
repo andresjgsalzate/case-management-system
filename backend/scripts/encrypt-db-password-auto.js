@@ -9,11 +9,20 @@ const path = require("path");
  * Uso: node backend/scripts/encrypt-db-password-auto.js
  */
 
-// Crear interfaz para leer input del usuario
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+// Uso alternativo:
+// - No interactivo (recomendado en CI/servidor):
+//   node scripts/encrypt-db-password-auto.js --password "mi-contraseña"
+// - Fallback por variable de entorno:
+//   ENCRYPT_DB_PASSWORD="mi-contraseña" node scripts/encrypt-db-password-auto.js
+// - Interactivo (si terminal soporta TTY): el script pedirá la contraseña y no la mostrará
+//
+// Clave maestra (automática):
+// - Usa ENCRYPTION_MASTER_KEY si está disponible
+// - Si no, usa JWT_SECRET del entorno
+// - Si no, carga JWT_SECRET desde .env.production automáticamente
+
+// Nota: No creamos una interfaz global aquí. La función readPassword
+// gestionará TTY / no-TTY y cerrará cualquier interfaz localmente.
 
 console.log("🔐 Encriptador AUTOMÁTICO de Contraseña de Base de Datos");
 console.log("========================================================");
@@ -24,47 +33,77 @@ console.log(
 console.log("el desencriptador para que funcione sin intervención manual.");
 console.log("");
 
-// Función para leer contraseña sin mostrarla en pantalla
+// Función para leer contraseña sin mostrarla en pantalla.
+// - Soporta ENCRYPT_DB_PASSWORD env var
+// - Soporta --password="..." o --password value
+// - Si hay TTY y setRawMode disponible, usa modo silencioso (asteriscos)
+// - Si no hay TTY, hace un fallback usando readline.question (mostrará entrada)
 function readPassword(prompt) {
   return new Promise((resolve) => {
+    // 1) Variable de entorno (no interactivo)
+    if (process.env.ENCRYPT_DB_PASSWORD) {
+      return resolve(process.env.ENCRYPT_DB_PASSWORD);
+    }
+
+    // 2) Argumento CLI --password or --password=...
+    const pwArgEq = process.argv.find((a) => a.startsWith("--password="));
+    if (pwArgEq) return resolve(pwArgEq.split("=")[1]);
+    const idx = process.argv.indexOf("--password");
+    if (idx !== -1 && process.argv.length > idx + 1) {
+      return resolve(process.argv[idx + 1]);
+    }
+
+    // 3) Si stdin soporta setRawMode (TTY), usar modo silencioso
     const stdin = process.stdin;
-    stdin.setRawMode(true);
-    stdin.resume();
-    stdin.setEncoding("utf8");
+    if (stdin && typeof stdin.setRawMode === "function" && stdin.isTTY) {
+      stdin.setRawMode(true);
+      stdin.resume();
+      stdin.setEncoding("utf8");
 
-    let password = "";
+      let password = "";
+      process.stdout.write(prompt);
 
-    process.stdout.write(prompt);
+      const onData = function (char) {
+        char = char.toString();
+        switch (char) {
+          case "\n":
+          case "\r":
+          case "\u0004":
+            stdin.setRawMode(false);
+            stdin.pause();
+            stdin.removeListener("data", onData);
+            console.log("");
+            return resolve(password);
+          case "\u0003": // Ctrl+C
+            console.log("\n❌ Operación cancelada");
+            process.exit(1);
+            break;
+          case "\u007f":
+          case "\b":
+            if (password.length > 0) {
+              password = password.slice(0, -1);
+              process.stdout.write("\b \b");
+            }
+            break;
+          default:
+            password += char;
+            process.stdout.write("*");
+            break;
+        }
+      };
 
-    stdin.on("data", function (char) {
-      char = char.toString();
+      stdin.on("data", onData);
+      return;
+    }
 
-      switch (char) {
-        case "\n":
-        case "\r":
-        case "\u0004": // Ctrl+D
-          stdin.setRawMode(false);
-          stdin.pause();
-          stdin.removeAllListeners("data");
-          console.log(""); // Nueva línea
-          resolve(password);
-          break;
-        case "\u0003": // Ctrl+C
-          console.log("\n❌ Operación cancelada");
-          process.exit(1);
-          break;
-        case "\u007f": // Backspace
-        case "\b":
-          if (password.length > 0) {
-            password = password.slice(0, -1);
-            process.stdout.write("\b \b");
-          }
-          break;
-        default:
-          password += char;
-          process.stdout.write("*");
-          break;
-      }
+    // 4) Fallback no-TTY: readline.question (mostrará la contraseña)
+    const rlLocal = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+    rlLocal.question(prompt, (answer) => {
+      rlLocal.close();
+      resolve(answer);
     });
   });
 }
@@ -184,19 +223,56 @@ async function main() {
     // Generar salt aleatorio
     const salt = crypto.randomBytes(32).toString("hex");
 
-    // Encriptar contraseña usando PBKDF2
-    const iterations = 100000;
-    const keyLength = 64;
-    const digest = "sha512";
-
     console.log("🔐 Encriptando contraseña...");
 
-    const encryptedPassword = crypto
-      .pbkdf2Sync(password, salt, iterations, keyLength, digest)
-      .toString("hex");
+    // Usar encriptación AES reversible con GCM (recomendado)
+    const algorithm = "aes-256-gcm";
 
-    // Crear formato para almacenar
-    const securePassword = `pbkdf2:${digest}:${iterations}:${salt}:${encryptedPassword}`;
+    // Obtener clave maestra desde variable de entorno o cargar JWT_SECRET de .env.production
+    let masterKey = process.env.ENCRYPTION_MASTER_KEY || process.env.JWT_SECRET;
+
+    // Si no hay clave maestra, intentar cargar JWT_SECRET desde .env.production
+    if (!masterKey) {
+      try {
+        const envProductionPath = path.join(__dirname, "..", ".env.production");
+        if (fs.existsSync(envProductionPath)) {
+          const envContent = fs.readFileSync(envProductionPath, "utf8");
+          const jwtSecretMatch = envContent.match(/^JWT_SECRET=(.+)$/m);
+          if (jwtSecretMatch) {
+            masterKey = jwtSecretMatch[1];
+            console.log(
+              "🔑 Usando JWT_SECRET desde .env.production como clave maestra"
+            );
+          }
+        }
+      } catch (error) {
+        console.error("⚠️  Error leyendo .env.production:", error.message);
+      }
+    }
+
+    if (!masterKey) {
+      console.error(
+        "❌ Se requiere ENCRYPTION_MASTER_KEY, JWT_SECRET en el entorno, o JWT_SECRET en .env.production para encriptar"
+      );
+      process.exit(1);
+    }
+
+    // Derivar la clave de encriptación a partir de la clave maestra y el salt
+    // (Esto permite desencriptar sin conocer la contraseña original)
+    const key = crypto.scryptSync(masterKey + "case-management-key", salt, 32);
+    // Para GCM se recomienda IV de 12 bytes
+    const iv = crypto.randomBytes(12);
+
+    // createCipheriv y obtener authTag
+    const cipher = crypto.createCipheriv(algorithm, key, iv);
+    let encrypted = cipher.update(password, "utf8", "hex");
+    encrypted += cipher.final("hex");
+    const authTag = cipher.getAuthTag().toString("hex");
+
+    // Formato para almacenar: aes256:salt:iv:authTag:encrypted
+    const securePassword = `aes256:${salt}:${iv.toString(
+      "hex"
+    )}:${authTag}:${encrypted}`;
 
     console.log("✅ Contraseña encriptada correctamente");
     console.log("");
@@ -229,8 +305,6 @@ async function main() {
   } catch (error) {
     console.error("❌ Error:", error.message);
     process.exit(1);
-  } finally {
-    rl.close();
   }
 }
 

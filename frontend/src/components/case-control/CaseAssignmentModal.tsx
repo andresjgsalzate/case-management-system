@@ -8,6 +8,7 @@ import { Card } from "../ui/Card";
 import { Badge } from "../ui/Badge";
 import { Modal } from "../ui/Modal";
 import { useAuth } from "../../contexts/AuthContext";
+import config from "../../config/config";
 import { securityService } from "../../services/security.service";
 import {
   createCaseControl,
@@ -61,7 +62,7 @@ export const CaseAssignmentModal: React.FC<CaseAssignmentModalProps> = ({
         throw new Error("No valid authentication token");
       }
 
-      const response = await fetch("http://localhost:3000/api/cases", {
+      const response = await fetch(`${config.api.backendUrl}/api/cases`, {
         headers: {
           Authorization: `Bearer ${tokens.token}`,
         },
@@ -88,7 +89,7 @@ export const CaseAssignmentModal: React.FC<CaseAssignmentModalProps> = ({
         throw new Error("No valid authentication token");
       }
 
-      const response = await fetch("http://localhost:3000/api/auth/users", {
+      const response = await fetch(`${config.api.backendUrl}/api/auth/users`, {
         headers: {
           Authorization: `Bearer ${tokens.token}`,
         },

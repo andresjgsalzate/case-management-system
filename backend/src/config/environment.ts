@@ -1,13 +1,16 @@
-import dotenv from "dotenv";
+import { EnvironmentService } from "./environment-simple";
 
-dotenv.config();
+// Cargar variables de entorno de forma simple
+const envService = EnvironmentService.getInstance();
+envService.loadEnvironment();
+envService.validateRequiredVariables();
 
 export const config = {
   env: process.env.NODE_ENV || "development",
   port: parseInt(process.env.PORT || "3000", 10),
 
   database: {
-    host: process.env.DB_HOST || "localhost",
+    host: process.env.DB_HOST || "127.0.0.1",
     port: parseInt(process.env.DB_PORT || "5432", 10),
     username: process.env.DB_USERNAME || "postgres",
     password: process.env.DB_PASSWORD || "password",
@@ -24,7 +27,7 @@ export const config = {
   cors: {
     origin: process.env.CORS_ORIGIN
       ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim())
-      : ["http://localhost:5173"],
+      : ["http://127.0.0.1:5173"],
   },
 
   upload: {

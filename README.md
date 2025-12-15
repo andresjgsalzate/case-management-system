@@ -1,4 +1,4 @@
-# Case Management System v1.1.0
+# Case Management System v1.0.0
 
 Sistema completo de gestión de casos con backend en Node.js/TypeScript y frontend en React/TypeScript.
 
@@ -17,7 +17,7 @@ Sistema completo de gestión de casos con backend en Node.js/TypeScript y fronte
 - **🆕 Sistema de Equipos**: Gestión completa de equipos de trabajo con roles y permisos granulares
 - **🆕 Sistema de Auditoría Completo**: Trazabilidad total de todas las operaciones del sistema
 
-### � **Sistema de Equipos v1.1.0** _(NUEVO)_
+### � **Sistema de Equipos v1.0.0** _(NUEVO)_
 
 #### **Gestión Completa de Equipos**
 
@@ -43,7 +43,7 @@ Sistema completo de gestión de casos con backend en Node.js/TypeScript y fronte
 
 #### **Documentación API**: Ver [TEAMS_SYSTEM_API.md](./TEAMS_SYSTEM_API.md)
 
-### �🔍 **Sistema de Auditoría v1.1.0** _(NUEVO)_
+### �🔍 **Sistema de Auditoría v1.0.0** _(NUEVO)_
 
 #### **Cobertura Completa de Módulos**
 
@@ -249,5 +249,5 @@ Andres Jurgensen Alzate - [@andresjgsalzate](https://github.com/andresjgsalzate)
 
 ---
 
-**Fecha de última actualización**: Septiembre 2025
+**Fecha de última actualización**: Diciembre 2025
 **Estado**: ✅ **Producción Ready** - Todos los errores de TypeScript corregidos

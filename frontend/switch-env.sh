@@ -7,11 +7,11 @@ ENV_TYPE=${1:-localhost}
 
 case $ENV_TYPE in
   "localhost")
-    echo "🔄 Cambiando a configuración LOCAL (localhost)..."
+    echo "🔄 Cambiando a configuración LOCAL (127.0.0.1)..."
     cp .env.local.localhost .env.local
     echo "✅ Configurado para desarrollo local"
-    echo "   Frontend: http://localhost:5173"
-    echo "   Backend:  http://localhost:3000"
+    echo "   Frontend: http://127.0.0.1:5173"
+    echo "   Backend:  http://127.0.0.1:3000"
     ;;
   
   "network")

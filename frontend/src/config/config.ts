@@ -34,7 +34,7 @@ export const config = {
   },
   app: {
     name: import.meta.env.VITE_APP_NAME || "Case Management System",
-    version: import.meta.env.VITE_APP_VERSION || "1.1.0",
+    version: import.meta.env.VITE_APP_VERSION || "1.0.0",
     nodeEnv: import.meta.env.VITE_NODE_ENV || "development",
   },
 } as const;

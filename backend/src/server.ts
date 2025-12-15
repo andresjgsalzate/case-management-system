@@ -133,7 +133,7 @@ const startServer = async (): Promise<void> => {
       logger.info(`🚀 Server running on port ${config.port}`);
       logger.info(`📝 Environment: ${config.env}`);
       logger.info(
-        `🏥 Health check: http://localhost:${config.port}/api/health`
+        `🏥 Health check: http://127.0.0.1:${config.port}/api/health`
       );
     });
   } catch (error) {

@@ -1,12 +1,15 @@
 {
     "name": "case-management-backend",
-    "version": "1.1.0",
+    "version": "1.0.0",
     "description": "Backend API para sistema de gestión de casos",
     "main": "dist/server.js",
     "scripts": {
-        "dev": "nodemon src/server.ts",
+        "dev": "npm run setup:dev && nodemon src/server.ts",
         "build": "tsc",
         "start": "node dist/server.js",
+        "setup:dev": "cp .env.example .env 2>/dev/null || true",
+        "setup:prod": "cp .env.production.example .env.production 2>/dev/null || true",
+        "generate-keys": "node scripts/generate-keys.js",
         "typeorm": "typeorm-ts-node-commonjs",
         "migration:generate": "typeorm-ts-node-commonjs migration:generate",
         "migration:run": "typeorm-ts-node-commonjs migration:run",
@@ -20,12 +23,14 @@
         "lint:fix": "eslint src/**/*.ts --fix"
     },
     "dependencies": {
+        "@types/crypto-js": "^4.2.2",
         "@types/jsonwebtoken": "^9.0.6",
         "bcryptjs": "^2.4.3",
         "class-transformer": "^0.5.1",
         "class-validator": "^0.14.2",
         "cors": "^2.8.5",
         "crypto": "^1.0.1",
+        "crypto-js": "^4.2.0",
         "date-fns": "^2.30.0",
         "dotenv": "^16.3.1",
         "express": "^4.18.2",

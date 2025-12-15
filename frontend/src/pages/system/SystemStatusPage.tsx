@@ -3,6 +3,7 @@ import { useServerStatus } from "../../hooks/useServerStatus";
 import { ActionIcon } from "../../components/ui/ActionIcons";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import config from "../../config/config";
 
 export const SystemStatusPage: React.FC = () => {
   const { isOnline, lastChecked, responseTime, error, manualCheck } =
@@ -17,7 +18,7 @@ export const SystemStatusPage: React.FC = () => {
 
       // Si el servidor está online, obtener datos detallados de health
       if (status.isOnline) {
-        const response = await fetch("http://localhost:3000/api/health");
+        const response = await fetch(`${config.api.backendUrl}/api/health`);
         if (response.ok) {
           const data = await response.json();
           setHealthData(data);
@@ -258,7 +259,7 @@ export const SystemStatusPage: React.FC = () => {
               URL del servidor
             </p>
             <p className="font-medium text-gray-900 dark:text-white">
-              http://localhost:3000
+              {config.api.backendUrl}
             </p>
           </div>
 

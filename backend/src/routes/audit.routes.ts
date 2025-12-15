@@ -175,7 +175,7 @@ router.get("/health", async (req, res) => {
       status: "ok",
       timestamp: new Date().toISOString(),
       database: "connected",
-      version: "1.1.0",
+      version: "1.0.0",
     };
 
     res.json({

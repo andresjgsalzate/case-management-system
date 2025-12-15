@@ -13,7 +13,7 @@
     "emitDecoratorMetadata": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "moduleResolution": "node10",
+    "moduleResolution": "node",
 
     "declaration": true,
     "removeComments": true,
@@ -26,9 +26,8 @@
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": false,
     "strictPropertyInitialization": false,
-    "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"],
+      "@/*": ["./src/*"],
       "@/shared/*": ["../shared/*"]
     },
     "typeRoots": ["./node_modules/@types", "./src/types"]

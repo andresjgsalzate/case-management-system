@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TimeEntry, ManualTimeEntry } from "../types/caseControl";
 import { securityService } from "../services/security.service";
 import { apiService } from "../services/api.service";
+import config from "../config/config";
 
 // API functions (usando el servicio centralizado)
 const api = {
@@ -52,7 +53,7 @@ const api = {
     }
 
     const response = await fetch(
-      "http://localhost:3000/api/manual-time-entries",
+      `${config.api.backendUrl}/api/manual-time-entries`,
       {
         method: "POST",
         headers: {
@@ -78,7 +79,7 @@ const api = {
     }
 
     const response = await fetch(
-      `http://localhost:3000/api/time-entries/${entryId}`,
+      `${config.api.backendUrl}/api/time-entries/${entryId}`,
       {
         method: "DELETE",
         headers: {
@@ -96,7 +97,7 @@ const api = {
     }
 
     const response = await fetch(
-      `http://localhost:3000/api/manual-time-entries/${entryId}`,
+      `${config.api.backendUrl}/api/manual-time-entries/${entryId}`,
       {
         method: "DELETE",
         headers: {

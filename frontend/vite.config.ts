@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "");
-  const backendUrl = env.VITE_BACKEND_URL || "http://localhost:3000";
+  const backendUrl = env.VITE_BACKEND_URL || "http://127.0.0.1:3000";
 
   console.log(`🔧 Vite Config - Mode: ${mode}`);
   console.log(`🎯 Backend URL: ${backendUrl}`);
@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5173,
-      host: true, // Permite acceso desde la red
+      host: "127.0.0.1", // Configurado específicamente para 127.0.0.1
       proxy: {
         "/api": {
           target: backendUrl,

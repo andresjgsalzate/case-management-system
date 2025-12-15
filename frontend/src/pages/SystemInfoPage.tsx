@@ -429,7 +429,7 @@ export const SystemInfoPage: React.FC = () => {
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              v{systemInfo?.version || "1.1.0"}
+              v{systemInfo?.version || "1.0.0"}
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
               {systemInfo?.environment || "production"}

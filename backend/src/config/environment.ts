@@ -1,4 +1,5 @@
 import { EnvironmentService } from "./environment-simple";
+import { PasswordDecryptor } from "../utils/password-decryptor";
 
 // Cargar variables de entorno de forma simple
 const envService = EnvironmentService.getInstance();
@@ -13,7 +14,7 @@ export const config = {
     host: process.env.DB_HOST || "127.0.0.1",
     port: parseInt(process.env.DB_PORT || "5432", 10),
     username: process.env.DB_USERNAME || "postgres",
-    password: process.env.DB_PASSWORD || "password",
+    password: PasswordDecryptor.getDecryptedDbPassword() || "password",
     database: process.env.DB_DATABASE || "case_management",
   },
 

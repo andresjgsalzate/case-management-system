@@ -43,6 +43,7 @@ import adminStorageRoutes from "./routes/admin-storage.routes";
 import systemInfoRoutes from "./routes/systemInfo";
 import { FileUploadService } from "./services/file-upload-simple.service";
 import auditRoutes from "./routes/audit.routes";
+import { SessionCleanupJob } from "./jobs/session-cleanup.job";
 
 import { AppDataSource } from "./config/database";
 
@@ -136,11 +137,67 @@ const startServer = async (): Promise<void> => {
     // Inicializar base de datos
     await initializeDatabase();
 
+    // Esperar a que las entidades estén completamente cargadas
+    let retries = 0;
+    const maxRetries = 10;
+    while (AppDataSource.entityMetadatas.length === 0 && retries < maxRetries) {
+      console.log(
+        `⏳ Esperando carga de entidades... intento ${
+          retries + 1
+        }/${maxRetries}`
+      );
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      retries++;
+    }
+
+    if (AppDataSource.entityMetadatas.length === 0) {
+      throw new Error(
+        "Las entidades no se cargaron correctamente después de varios intentos"
+      );
+    }
+
+    console.log(
+      `✅ Entidades cargadas: ${AppDataSource.entityMetadatas
+        .map((meta) => meta.name)
+        .join(", ")}`
+    );
+
+    // Inicializar controlador de autenticación después de que la DB esté lista
+    const { initializeAuthController } = await import(
+      "./modules/auth/auth.routes"
+    );
+    initializeAuthController();
+    logger.info("🔐 Auth controller initialized");
+
     // Inicializar rutas de equipos después de que la DB esté lista
 
     // Inicializar directorios de uploads de forma automática
     await FileUploadService.initialize();
     logger.info("📁 Upload directories initialized successfully");
+
+    // Inicializar job de limpieza de sesiones después de un pequeño delay
+    // para asegurar que todas las entidades estén cargadas
+    let sessionCleanupJob: SessionCleanupJob | null = null;
+
+    setTimeout(() => {
+      sessionCleanupJob = new SessionCleanupJob();
+      sessionCleanupJob.start(30); // Limpieza cada 30 minutos
+    }, 5000); // 5 segundos de delay
+
+    // Manejar shutdown graceful del job
+    process.on("SIGINT", () => {
+      if (sessionCleanupJob) {
+        sessionCleanupJob.stop();
+      }
+      process.exit(0);
+    });
+
+    process.on("SIGTERM", () => {
+      if (sessionCleanupJob) {
+        sessionCleanupJob.stop();
+      }
+      process.exit(0);
+    });
 
     // Iniciar servidor
     app.listen(config.port, () => {

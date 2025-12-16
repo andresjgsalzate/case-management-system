@@ -283,6 +283,7 @@ export enum AuditModule {
   AUTH = "auth",
   ARCHIVE = "archive",
   DASHBOARD = "dashboard",
+  SESSION_MANAGEMENT = "SessionManagement",
 }
 
 export enum AuditEntityType {

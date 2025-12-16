@@ -49,6 +49,8 @@ export enum AuditAction {
   DELETE = "DELETE",
   LOGIN = "LOGIN",
   LOGOUT = "LOGOUT",
+  LOGOUT_ALL = "LOGOUT_ALL",
+  FORCE_LOGOUT = "FORCE_LOGOUT",
   PASSWORD_CHANGE = "PASSWORD_CHANGE",
   PERMISSION_CHANGE = "PERMISSION_CHANGE",
   BULK_OPERATION = "BULK_OPERATION",
@@ -88,6 +90,7 @@ export enum AuditModule {
   ADMIN = "ADMIN",
   FILES = "FILES",
   REPORTS = "REPORTS",
+  SESSION_MANAGEMENT = "SessionManagement",
 }
 
 export enum AuditEntityType {
@@ -273,6 +276,8 @@ export const getActionLabel = (action: AuditAction): string => {
     [AuditAction.DELETE]: "Eliminar",
     [AuditAction.LOGIN]: "Iniciar Sesión",
     [AuditAction.LOGOUT]: "Cerrar Sesión",
+    [AuditAction.LOGOUT_ALL]: "Cerrar Todas las Sesiones",
+    [AuditAction.FORCE_LOGOUT]: "Forzar Cierre de Sesión",
     [AuditAction.PASSWORD_CHANGE]: "Cambiar Contraseña",
     [AuditAction.PERMISSION_CHANGE]: "Cambiar Permisos",
     [AuditAction.BULK_OPERATION]: "Operación Masiva",
@@ -305,6 +310,7 @@ export const getModuleLabel = (module: AuditModule): string => {
     [AuditModule.ADMIN]: "Administración",
     [AuditModule.FILES]: "Archivos",
     [AuditModule.REPORTS]: "Reportes",
+    [AuditModule.SESSION_MANAGEMENT]: "Gestión de Sesiones",
   };
   return labels[module] || module;
 };
@@ -348,6 +354,8 @@ export const getActionColor = (action: AuditAction): string => {
     [AuditAction.DELETE]: "text-red-600 bg-red-100",
     [AuditAction.LOGIN]: "text-indigo-600 bg-indigo-100",
     [AuditAction.LOGOUT]: "text-gray-600 bg-gray-100",
+    [AuditAction.LOGOUT_ALL]: "text-red-700 bg-red-200",
+    [AuditAction.FORCE_LOGOUT]: "text-red-800 bg-red-300",
     [AuditAction.PASSWORD_CHANGE]: "text-yellow-600 bg-yellow-100",
     [AuditAction.PERMISSION_CHANGE]: "text-orange-600 bg-orange-100",
     [AuditAction.BULK_OPERATION]: "text-purple-600 bg-purple-100",

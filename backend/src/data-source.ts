@@ -35,6 +35,7 @@ import { AuditLog } from "./entities/AuditLog";
 import { AuditEntityChange } from "./entities/AuditEntityChange";
 import { Team } from "./entities/Team";
 import { TeamMember } from "./entities/TeamMember";
+import { UserSession } from "./entities/UserSession";
 
 export default new DataSource({
   type: "postgres",
@@ -79,6 +80,7 @@ export default new DataSource({
     AuditEntityChange,
     Team,
     TeamMember,
+    UserSession,
   ],
   migrations: ["src/database/migrations/**/*.ts"],
   subscribers: ["src/database/subscribers/**/*.ts"],

@@ -24,6 +24,7 @@ import {
   AuditLog,
   AuditEntityChange,
 } from "../entities";
+import { UserSession } from "../entities/UserSession";
 import { DocumentType } from "../entities/DocumentType";
 import { KnowledgeDocument } from "../entities/KnowledgeDocument";
 import { KnowledgeDocumentTag } from "../entities/KnowledgeDocumentTag";
@@ -79,6 +80,7 @@ export const AppDataSource = new DataSource({
     TeamMember,
     AuditLog,
     AuditEntityChange,
+    UserSession,
   ],
   migrations: ["src/database/migrations/**/*.ts"],
   subscribers: ["src/database/subscribers/**/*.ts"],

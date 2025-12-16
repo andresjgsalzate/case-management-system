@@ -21,6 +21,11 @@ export enum AuditAction {
   DOWNLOAD = "DOWNLOAD",
   VIEW = "VIEW",
   EXPORT = "EXPORT",
+  // Acciones de sesión
+  LOGIN = "LOGIN",
+  LOGOUT = "LOGOUT",
+  LOGOUT_ALL = "LOGOUT_ALL",
+  FORCE_LOGOUT = "FORCE_LOGOUT",
 }
 
 @Entity("audit_logs")
@@ -139,6 +144,10 @@ export class AuditLog {
       [AuditAction.DOWNLOAD]: "descargó",
       [AuditAction.VIEW]: "visualizó",
       [AuditAction.EXPORT]: "exportó",
+      [AuditAction.LOGIN]: "inició sesión en",
+      [AuditAction.LOGOUT]: "cerró sesión de",
+      [AuditAction.LOGOUT_ALL]: "cerró todas las sesiones de",
+      [AuditAction.FORCE_LOGOUT]: "forzó el cierre de sesión en",
     };
 
     return actionDescriptions[this.action] || this.action;

@@ -22,7 +22,17 @@ export class AuthController {
       });
     }
 
-    const result = await this.authService.login(loginDto);
+    // Capturar información de sesión
+    const sessionInfo = {
+      userAgent: req.headers["user-agent"],
+      ip:
+        req.ip ||
+        req.connection.remoteAddress ||
+        req.socket.remoteAddress ||
+        "unknown",
+    };
+
+    const result = await this.authService.login(loginDto, sessionInfo);
 
     res.json({
       success: true,
@@ -148,6 +158,60 @@ export class AuthController {
         fullName: user.fullName,
         roleName: user.roleName,
       },
+    });
+  });
+
+  logout = asyncHandler(async (req: Request, res: Response) => {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({
+        error: "Access token required",
+      });
+    }
+
+    await this.authService.logout(token);
+
+    res.json({
+      success: true,
+      message: "Logout successful",
+    });
+  });
+
+  logoutAllSessions = asyncHandler(async (req: any, res: Response) => {
+    // Este endpoint requiere autenticación previa (middleware)
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    await this.authService.logoutAllSessions(userId);
+
+    res.json({
+      success: true,
+      message: "All sessions logged out successfully",
+    });
+  });
+
+  getActiveSessions = asyncHandler(async (req: any, res: Response) => {
+    // Este endpoint requiere autenticación previa (middleware)
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const sessions = await this.authService.getUserActiveSessions(userId);
+
+    res.json({
+      success: true,
+      data: sessions,
     });
   });
 }

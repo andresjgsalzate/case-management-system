@@ -6,16 +6,40 @@ import { UserProfile } from "../../entities/UserProfile";
 import { config } from "../../config/environment";
 import { createError } from "../../middleware/errorHandler";
 import { LoginDto, RegisterDto, AuthResponse } from "./auth.dto";
+import { SessionService, SessionInfo } from "../../services/session.service";
 
 export class AuthService {
   private userRepository: Repository<UserProfile>;
+  private sessionService: SessionService;
 
   constructor() {
-    this.userRepository = AppDataSource.getRepository(UserProfile);
+    console.log(
+      "🔍 AuthService constructor - AppDataSource initialized:",
+      AppDataSource.isInitialized
+    );
+    try {
+      this.userRepository = AppDataSource.getRepository(UserProfile);
+      console.log("✅ AuthService UserProfile repository initialized");
+      this.sessionService = new SessionService();
+      console.log("✅ AuthService SessionService initialized");
+    } catch (error) {
+      console.error("❌ Error in AuthService constructor:", error);
+      throw error;
+    }
   }
 
-  async login(loginDto: LoginDto): Promise<AuthResponse> {
+  async login(
+    loginDto: LoginDto,
+    sessionInfo?: SessionInfo
+  ): Promise<AuthResponse> {
     const { email, password } = loginDto;
+
+    console.log("🔍 AuthService.login - Iniciando búsqueda de usuario");
+    console.log("🔍 AppDataSource initialized:", AppDataSource.isInitialized);
+    console.log(
+      "🔍 Entidades disponibles:",
+      AppDataSource.entityMetadatas?.map((meta: any) => meta.name) || []
+    );
 
     // Buscar usuario por email
     const user = await this.userRepository.findOne({
@@ -39,6 +63,14 @@ export class AuthService {
     // Generar tokens
     const token = this.generateToken(user.id);
     const refreshToken = this.generateRefreshToken(user.id);
+
+    // Crear sesión única (esto invalidará todas las sesiones anteriores)
+    await this.sessionService.createUniqueSession(
+      user.id,
+      token,
+      refreshToken,
+      sessionInfo || {}
+    );
 
     return {
       user: {
@@ -142,6 +174,14 @@ export class AuthService {
         userId: string;
       };
 
+      // Primero verificar si el token está en una sesión activa
+      const activeSession = await this.sessionService.validateActiveSession(
+        token
+      );
+      if (!activeSession) {
+        return null; // Token no está en una sesión activa o la sesión expiró
+      }
+
       const user = await this.userRepository.findOne({
         where: { id: decoded.userId, isActive: true },
       });
@@ -183,5 +223,31 @@ export class AuthService {
     });
 
     return user;
+  }
+
+  /**
+   * Cerrar sesión del usuario (invalida la sesión actual)
+   */
+  async logout(token: string): Promise<void> {
+    const activeSession = await this.sessionService.validateActiveSession(
+      token
+    );
+    if (activeSession) {
+      await this.sessionService.invalidateSession(activeSession.id, "manual");
+    }
+  }
+
+  /**
+   * Cerrar todas las sesiones del usuario (útil para forzar logout global)
+   */
+  async logoutAllSessions(userId: string): Promise<void> {
+    await this.sessionService.invalidateAllUserSessions(userId, "forced");
+  }
+
+  /**
+   * Obtener sesiones activas de un usuario (para administración)
+   */
+  async getUserActiveSessions(userId: string) {
+    return this.sessionService.getUserActiveSessions(userId);
   }
 }

@@ -105,11 +105,11 @@ __decorate([
     __metadata("design:type", Date)
 ], UserProfile.prototype, "lastLoginAt", void 0);
 __decorate([
-    (0, typeorm_1.CreateDateColumn)({ type: "timestamptz", name: "created_at" }),
+    (0, typeorm_1.CreateDateColumn)({ type: "timestamptz", name: "createdAt" }),
     __metadata("design:type", Date)
 ], UserProfile.prototype, "createdAt", void 0);
 __decorate([
-    (0, typeorm_1.UpdateDateColumn)({ type: "timestamptz", name: "updated_at" }),
+    (0, typeorm_1.UpdateDateColumn)({ type: "timestamptz", name: "updatedAt" }),
     __metadata("design:type", Date)
 ], UserProfile.prototype, "updatedAt", void 0);
 __decorate([

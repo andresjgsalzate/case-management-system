@@ -5,11 +5,11 @@ import {
   formatFileSize,
   getFileIcon,
   getDownloadUrl,
-  getViewUrl,
   isImageFile,
 } from "../hooks/useFileUpload";
 import DeleteAttachmentModal from "./DeleteAttachmentModal";
 import { useToast } from "../contexts/ToastContext";
+import { securityService } from "../services/security.service";
 
 interface AttachmentsListProps {
   documentId: string;
@@ -60,7 +60,37 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
 
   const handlePreviewFile = (attachment: any) => {
     if (isImageFile(attachment.mimeType)) {
-      setPreviewFile(getViewUrl(getDownloadUrl(attachment.downloadUrl)));
+      // Construir URL de vista con token de autenticación (igual que en BlockNoteEditor)
+      const tokens = securityService.getValidTokens();
+      const token = tokens?.token;
+
+      if (!token) {
+        console.warn(
+          "⚠️ [AttachmentsList] No hay token válido disponible para vista previa"
+        );
+        showError("Sesión expirada. Por favor, inicia sesión nuevamente.");
+        return;
+      }
+
+      // Extraer el nombre del archivo físico de la URL de descarga
+      const downloadUrl = getDownloadUrl(attachment.downloadUrl);
+      const urlParts = downloadUrl.split("/");
+      const physicalFileName = urlParts[urlParts.length - 1];
+
+      // Construir URL de vista con token
+      const viewUrl = `${
+        window.location.origin
+      }/api/files/knowledge/view/${physicalFileName}?token=${encodeURIComponent(
+        token
+      )}`;
+
+      console.log("🖼️ [AttachmentsList] Vista previa de imagen:", {
+        originalUrl: attachment.downloadUrl,
+        physicalFileName,
+        viewUrl,
+      });
+
+      setPreviewFile(viewUrl);
     } else {
       // Para archivos que no son imágenes, descargar directamente
       window.open(getDownloadUrl(attachment.downloadUrl), "_blank");

@@ -37,127 +37,12 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
 
   // Cleanup blob URLs when component unmounts
   useEffect(() => {
-    console.log("🧹 [AttachmentsList] useEffect cleanup configurado:", {
-      previewFile: previewFile,
-      isBlob: previewFile && previewFile.startsWith("blob:"),
-    });
-
     return () => {
       if (previewFile && previewFile.startsWith("blob:")) {
-        console.log("🧹 [AttachmentsList] Limpiando blob URL:", previewFile);
         URL.revokeObjectURL(previewFile);
       }
     };
   }, [previewFile]);
-
-  // Interceptor de red para detectar requests duplicados
-  useEffect(() => {
-    // Interceptor de Fetch API
-    const originalFetch = window.fetch;
-
-    window.fetch = function (...args) {
-      const url = args[0] as string;
-      const options = args[1] as RequestInit;
-
-      if (url && url.includes("/api/files/knowledge/view/")) {
-        console.log("🌐 [FETCH INTERCEPTOR] Request detectado:", {
-          url: url,
-          method: options?.method || "GET",
-          headers: options?.headers || {},
-          hasAuth: !!(options?.headers as any)?.Authorization,
-          timestamp: new Date().toISOString(),
-          stackTrace: new Error().stack?.split("\n").slice(1, 5), // Primeras 4 líneas del stack
-        });
-      }
-
-      return originalFetch.apply(this, args);
-    };
-
-    // Interceptor de XMLHttpRequest
-    const originalXHROpen = XMLHttpRequest.prototype.open;
-    const originalXHRSend = XMLHttpRequest.prototype.send;
-
-    XMLHttpRequest.prototype.open = function (
-      method: string,
-      url: string | URL,
-      async?: boolean,
-      username?: string | null,
-      password?: string | null
-    ) {
-      (this as any)._method = method;
-      (this as any)._url = url.toString();
-
-      if (url.toString().includes("/api/files/knowledge/view/")) {
-        console.log("🌐 [XHR INTERCEPTOR] Request abierto:", {
-          method: method,
-          url: url.toString(),
-          timestamp: new Date().toISOString(),
-          stackTrace: new Error().stack?.split("\n").slice(1, 5),
-        });
-      }
-
-      return originalXHROpen.call(
-        this,
-        method,
-        url,
-        async ?? true,
-        username,
-        password
-      );
-    };
-
-    XMLHttpRequest.prototype.send = function (
-      body?: Document | XMLHttpRequestBodyInit | null
-    ) {
-      if (
-        (this as any)._url &&
-        (this as any)._url.includes("/api/files/knowledge/view/")
-      ) {
-        console.log("🌐 [XHR INTERCEPTOR] Request enviado:", {
-          method: (this as any)._method,
-          url: (this as any)._url,
-          timestamp: new Date().toISOString(),
-        });
-      }
-
-      return originalXHRSend.call(this, body);
-    };
-
-    return () => {
-      window.fetch = originalFetch;
-      XMLHttpRequest.prototype.open = originalXHROpen;
-      XMLHttpRequest.prototype.send = originalXHRSend;
-    };
-  }, []);
-
-  // Log de mounting/unmounting del componente
-  useEffect(() => {
-    console.log("🏁 [AttachmentsList] Componente montado:", {
-      documentId: documentId,
-      attachmentsCount: attachments?.length || 0,
-      isReadOnly: readOnly,
-    });
-
-    return () => {
-      console.log("🔚 [AttachmentsList] Componente desmontado:", {
-        documentId: documentId,
-      });
-    };
-  }, []);
-
-  // Log de cambios en attachments
-  useEffect(() => {
-    console.log("📎 [AttachmentsList] Attachments actualizados:", {
-      documentId: documentId,
-      attachmentsCount: attachments?.length || 0,
-      attachmentFiles:
-        attachments?.map((a) => ({
-          id: a.id,
-          fileName: a.fileName,
-          mimeType: a.mimeType,
-        })) || [],
-    });
-  }, [attachments]);
 
   const handleDeleteClick = (attachment: any) => {
     setAttachmentToDelete(attachment);
@@ -183,41 +68,17 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
   };
 
   const handlePreviewFile = async (attachment: any) => {
-    console.log("🖼️ [AttachmentsList] handlePreviewFile iniciado:", {
-      attachmentId: attachment.id,
-      fileName: attachment.fileName,
-      mimeType: attachment.mimeType,
-      downloadUrl: attachment.downloadUrl,
-      isImage: isImageFile(attachment.mimeType),
-      timestamp: new Date().toISOString(),
-    });
-
     if (isImageFile(attachment.mimeType)) {
       try {
-        // Paso 1: Validar token de autenticación
-        console.log(
-          "🔐 [AttachmentsList] Obteniendo tokens de autenticación..."
-        );
+        // Obtener tokens de autenticación
         const tokens = securityService.getValidTokens();
 
-        console.log("🔐 [AttachmentsList] Tokens obtenidos:", {
-          hasTokens: !!tokens,
-          hasToken: !!tokens?.token,
-          tokenLength: tokens?.token ? tokens.token.length : 0,
-          hasRefreshToken: !!tokens?.refreshToken,
-          currentTime: new Date().toISOString(),
-        });
-
         if (!tokens?.token) {
-          console.warn(
-            "⚠️ [AttachmentsList] No hay token válido disponible para vista previa"
-          );
           showError("Sesión expirada. Por favor, inicia sesión nuevamente.");
           return;
         }
 
-        // Paso 2: Construir URLs
-        console.log("🔗 [AttachmentsList] Construyendo URLs...");
+        // Construir URL de vista con token
         const downloadUrl = getDownloadUrl(attachment.downloadUrl);
         const urlParts = downloadUrl.split("/");
         const physicalFileName = urlParts[urlParts.length - 1];
@@ -228,108 +89,28 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
           tokens.token
         )}`;
 
-        console.log("🔗 [AttachmentsList] URLs construidas:", {
-          originalDownloadUrl: attachment.downloadUrl,
-          processedDownloadUrl: downloadUrl,
-          physicalFileName: physicalFileName,
-          finalViewUrl: viewUrl,
-          urlParts: urlParts,
-          tokenInQuery: viewUrl.includes("token="),
-        });
-
-        // Paso 3: Preparar headers de la petición
-        const fetchHeaders = {
-          Authorization: `Bearer ${tokens.token}`,
-          "Content-Type": "application/json",
-          Accept: "image/*,*/*",
-        };
-
-        console.log("📡 [AttachmentsList] Preparando petición fetch:", {
-          url: viewUrl,
-          method: "GET",
-          headers: {
-            ...fetchHeaders,
-            Authorization: `Bearer ${tokens.token.substring(0, 20)}...`, // Log solo inicio del token
-          },
-          cache: "no-cache",
-        });
-
-        // Paso 4: Realizar petición fetch
-        console.log("📡 [AttachmentsList] Realizando petición fetch...");
-        const fetchStartTime = performance.now();
-
+        // Fetch de la imagen con autenticación y crear blob URL
         const response = await fetch(viewUrl, {
           method: "GET",
-          headers: fetchHeaders,
+          headers: {
+            Authorization: `Bearer ${tokens.token}`,
+            "Content-Type": "application/json",
+            Accept: "image/*,*/*",
+          },
           cache: "no-cache",
           credentials: "include",
         });
 
-        const fetchEndTime = performance.now();
-
-        console.log("📡 [AttachmentsList] Respuesta fetch recibida:", {
-          status: response.status,
-          statusText: response.statusText,
-          ok: response.ok,
-          headers: Object.fromEntries(response.headers.entries()),
-          type: response.type,
-          url: response.url,
-          redirected: response.redirected,
-          fetchDuration: `${(fetchEndTime - fetchStartTime).toFixed(2)}ms`,
-        });
-
         if (!response.ok) {
-          const errorText = await response
-            .text()
-            .catch(() => "No error text available");
-          console.error(
-            "❌ [AttachmentsList] Respuesta de error del servidor:",
-            {
-              status: response.status,
-              statusText: response.statusText,
-              errorText: errorText,
-              headers: Object.fromEntries(response.headers.entries()),
-            }
-          );
-          throw new Error(
-            `Error ${response.status}: ${response.statusText} - ${errorText}`
-          );
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
         }
 
-        // Paso 5: Crear blob desde la respuesta
-        console.log("💾 [AttachmentsList] Creando blob desde respuesta...");
         const blob = await response.blob();
-
-        console.log("💾 [AttachmentsList] Blob creado:", {
-          size: blob.size,
-          type: blob.type,
-          hasSize: blob.size > 0,
-        });
-
-        // Paso 6: Crear blob URL
-        console.log("🔗 [AttachmentsList] Creando blob URL...");
         const blobUrl = URL.createObjectURL(blob);
 
-        console.log("✅ [AttachmentsList] Blob URL creada exitosamente:", {
-          blobUrl: blobUrl,
-          blobSize: blob.size,
-          blobType: blob.type,
-        });
-
         setPreviewFile(blobUrl);
-
-        console.log(
-          "✅ [AttachmentsList] Vista previa configurada exitosamente"
-        );
       } catch (error) {
-        console.error("❌ [AttachmentsList] Error completo en vista previa:", {
-          error: error,
-          errorMessage:
-            error instanceof Error ? error.message : "Error desconocido",
-          errorStack: error instanceof Error ? error.stack : undefined,
-          attachmentId: attachment.id,
-          fileName: attachment.fileName,
-        });
+        console.error("Error cargando imagen:", error);
         showError(
           `Error al cargar la imagen para vista previa: ${
             error instanceof Error ? error.message : "Error desconocido"
@@ -337,9 +118,6 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
         );
       }
     } else {
-      console.log(
-        "📄 [AttachmentsList] Archivo no es imagen, abriendo descarga directa"
-      );
       // Para archivos que no son imágenes, descargar directamente
       window.open(getDownloadUrl(attachment.downloadUrl), "_blank");
     }
@@ -540,13 +318,6 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
         <div
           className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
           onClick={() => {
-            console.log(
-              "🖼️ [AttachmentsList] Cerrando modal de preview (click overlay):",
-              {
-                previewFile: previewFile,
-                isBlob: previewFile.startsWith("blob:"),
-              }
-            );
             // Limpiar blob URL si es una blob URL
             if (previewFile.startsWith("blob:")) {
               URL.revokeObjectURL(previewFile);
@@ -560,33 +331,10 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
               alt="Vista previa"
               className="max-w-full max-h-full object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
-              onLoad={() => {
-                console.log("🖼️ [AttachmentsList] Imagen cargada en modal:", {
-                  src: previewFile,
-                  isBlob: previewFile.startsWith("blob:"),
-                });
-              }}
-              onError={(e) => {
-                console.error(
-                  "❌ [AttachmentsList] Error cargando imagen en modal:",
-                  {
-                    src: previewFile,
-                    error: e,
-                    isBlob: previewFile.startsWith("blob:"),
-                  }
-                );
-              }}
             />
             <button
               type="button"
               onClick={() => {
-                console.log(
-                  "🖼️ [AttachmentsList] Cerrando modal de preview (botón cerrar):",
-                  {
-                    previewFile: previewFile,
-                    isBlob: previewFile.startsWith("blob:"),
-                  }
-                );
                 // Limpiar blob URL si es una blob URL
                 if (previewFile.startsWith("blob:")) {
                   URL.revokeObjectURL(previewFile);

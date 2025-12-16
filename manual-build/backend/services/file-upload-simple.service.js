@@ -362,7 +362,11 @@ class FileUploadService {
         }
     }
     async getFileForDownload(fileName) {
-        console.log("� [FILE SERVICE] Searching for file ending with:", fileName);
+        const decodedFileName = decodeURIComponent(fileName);
+        console.log("🔍 [FILE SERVICE] Searching for file:", {
+            original: fileName,
+            decoded: decodedFileName,
+        });
         try {
             if (!database_1.AppDataSource.isInitialized) {
                 console.log("⚠️ [FILE SERVICE] DataSource not initialized, initializing...");
@@ -371,11 +375,13 @@ class FileUploadService {
             const query = `
         SELECT id, file_name as "fileName", file_path as "filePath", mime_type as "mimeType"
         FROM knowledge_document_attachments 
-        WHERE file_path LIKE $1 OR file_path LIKE $2
+        WHERE file_path LIKE $1 OR file_path LIKE $2 OR file_path LIKE $3 OR file_path LIKE $4
       `;
             const attachments = await database_1.AppDataSource.manager.query(query, [
                 `%/${fileName}`,
                 `%${fileName}`,
+                `%/${decodedFileName}`,
+                `%${decodedFileName}`,
             ]);
             console.log("📊 [FILE SERVICE] EntityManager query results:", {
                 fileName,

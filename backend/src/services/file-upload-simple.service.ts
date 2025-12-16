@@ -542,7 +542,12 @@ export class FileUploadService {
   async getFileForDownload(
     fileName: string
   ): Promise<{ filePath: string; originalName: string; mimeType: string }> {
-    console.log("� [FILE SERVICE] Searching for file ending with:", fileName);
+    // Decodificar la URL para manejar espacios y caracteres especiales
+    const decodedFileName = decodeURIComponent(fileName);
+    console.log("🔍 [FILE SERVICE] Searching for file:", {
+      original: fileName,
+      decoded: decodedFileName,
+    });
 
     try {
       // Verificar y asegurar conexión antes de la consulta
@@ -553,17 +558,18 @@ export class FileUploadService {
         await AppDataSource.initialize();
       }
 
-      // Usar EntityManager que maneja conexiones automáticamente
-      // Buscar por el nombre final del archivo (que coincide con la URL)
+      // Buscar por múltiples patrones para cubrir todas las posibilidades
       const query = `
         SELECT id, file_name as "fileName", file_path as "filePath", mime_type as "mimeType"
         FROM knowledge_document_attachments 
-        WHERE file_path LIKE $1 OR file_path LIKE $2
+        WHERE file_path LIKE $1 OR file_path LIKE $2 OR file_path LIKE $3 OR file_path LIKE $4
       `;
 
       const attachments = await AppDataSource.manager.query(query, [
-        `%/${fileName}`,
-        `%${fileName}`,
+        `%/${fileName}`, // /path/filename.jpg
+        `%${fileName}`, // path/filename.jpg
+        `%/${decodedFileName}`, // /path/filename with spaces.jpg
+        `%${decodedFileName}`, // path/filename with spaces.jpg
       ]);
 
       console.log("📊 [FILE SERVICE] EntityManager query results:", {

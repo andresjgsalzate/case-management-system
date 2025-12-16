@@ -1,14 +1,11 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fileUploadService = exports.FileUploadService = exports.uploadConfig = exports.initializeUploadDirectories = void 0;
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs").promises;
 const { v4: uuidv4 } = require("uuid");
-const data_source_1 = __importDefault(require("../data-source"));
+const database_1 = require("../config/database");
 const KnowledgeDocumentAttachment_1 = require("../entities/KnowledgeDocumentAttachment");
 const UserProfile_1 = require("../entities/UserProfile");
 const file_processing_service_1 = require("./file-processing.service");
@@ -172,13 +169,13 @@ class FileUploadService {
     }
     getAttachmentRepository() {
         if (!this.attachmentRepository) {
-            this.attachmentRepository = data_source_1.default.getRepository(KnowledgeDocumentAttachment_1.KnowledgeDocumentAttachment);
+            this.attachmentRepository = database_1.AppDataSource.getRepository(KnowledgeDocumentAttachment_1.KnowledgeDocumentAttachment);
         }
         return this.attachmentRepository;
     }
     getUserRepository() {
         if (!this.userRepository) {
-            this.userRepository = data_source_1.default.getRepository(UserProfile_1.UserProfile);
+            this.userRepository = database_1.AppDataSource.getRepository(UserProfile_1.UserProfile);
         }
         return this.userRepository;
     }
@@ -222,12 +219,12 @@ class FileUploadService {
             const attachmentId = uuidv4();
             const now = new Date().toISOString();
             console.log("📡 Verificando conexión de base de datos...");
-            if (!data_source_1.default.isInitialized) {
+            if (!database_1.AppDataSource.isInitialized) {
                 console.log("⚠️ DataSource no inicializado, inicializando...");
-                await data_source_1.default.initialize();
+                await database_1.AppDataSource.initialize();
             }
             console.log("💾 Insertando registro en base de datos...");
-            await data_source_1.default.manager.query(`
+            await database_1.AppDataSource.manager.query(`
         INSERT INTO knowledge_document_attachments (
           id, document_id, file_name, file_path, file_size, mime_type, 
           file_type, file_hash, thumbnail_path, processed_path, 
@@ -367,16 +364,16 @@ class FileUploadService {
     async getFileForDownload(fileName) {
         console.log("� [FILE SERVICE] Searching for file ending with:", fileName);
         try {
-            if (!data_source_1.default.isInitialized) {
+            if (!database_1.AppDataSource.isInitialized) {
                 console.log("⚠️ [FILE SERVICE] DataSource not initialized, initializing...");
-                await data_source_1.default.initialize();
+                await database_1.AppDataSource.initialize();
             }
             const query = `
         SELECT id, file_name as "fileName", file_path as "filePath", mime_type as "mimeType"
         FROM knowledge_document_attachments 
         WHERE file_path LIKE $1
       `;
-            const attachments = await data_source_1.default.manager.query(query, [
+            const attachments = await database_1.AppDataSource.manager.query(query, [
                 `%${fileName}`,
             ]);
             console.log("📊 [FILE SERVICE] EntityManager query results:", {

@@ -2,7 +2,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs").promises;
 const { v4: uuidv4 } = require("uuid");
-import dataSource from "../data-source";
+import { AppDataSource } from "../config/database";
 import {
   KnowledgeDocumentAttachment,
   FileType,
@@ -222,7 +222,7 @@ export class FileUploadService {
    */
   private getAttachmentRepository() {
     if (!this.attachmentRepository) {
-      this.attachmentRepository = dataSource.getRepository(
+      this.attachmentRepository = AppDataSource.getRepository(
         KnowledgeDocumentAttachment
       );
     }
@@ -234,7 +234,7 @@ export class FileUploadService {
    */
   private getUserRepository() {
     if (!this.userRepository) {
-      this.userRepository = dataSource.getRepository(UserProfile);
+      this.userRepository = AppDataSource.getRepository(UserProfile);
     }
     return this.userRepository;
   }
@@ -342,15 +342,15 @@ export class FileUploadService {
       console.log("📡 Verificando conexión de base de datos...");
 
       // Verificar que la conexión esté inicializada
-      if (!dataSource.isInitialized) {
+      if (!AppDataSource.isInitialized) {
         console.log("⚠️ DataSource no inicializado, inicializando...");
-        await dataSource.initialize();
+        await AppDataSource.initialize();
       }
 
       console.log("💾 Insertando registro en base de datos...");
 
       // Usar el manager directamente sin transacción para simplificar
-      await dataSource.manager.query(
+      await AppDataSource.manager.query(
         `
         INSERT INTO knowledge_document_attachments (
           id, document_id, file_name, file_path, file_size, mime_type, 
@@ -546,11 +546,11 @@ export class FileUploadService {
 
     try {
       // Verificar y asegurar conexión antes de la consulta
-      if (!dataSource.isInitialized) {
+      if (!AppDataSource.isInitialized) {
         console.log(
           "⚠️ [FILE SERVICE] DataSource not initialized, initializing..."
         );
-        await dataSource.initialize();
+        await AppDataSource.initialize();
       }
 
       // Usar EntityManager que maneja conexiones automáticamente
@@ -560,7 +560,7 @@ export class FileUploadService {
         WHERE file_path LIKE $1
       `;
 
-      const attachments = await dataSource.manager.query(query, [
+      const attachments = await AppDataSource.manager.query(query, [
         `%${fileName}`,
       ]);
 

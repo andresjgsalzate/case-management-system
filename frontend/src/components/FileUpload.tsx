@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useUploadFiles, formatFileSize } from "../hooks/useFileUpload";
 import { ActionIcon } from "./ui/ActionIcons";
+import { useToast } from "../contexts/ToastContext";
 
 interface FileUploadProps {
   documentId: string;
@@ -21,6 +22,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadFiles = useUploadFiles();
+  const { error: showError, warning: showWarning } = useToast();
 
   const allowedTypes = [
     // Imágenes
@@ -90,7 +92,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const handleFileSelection = (files: File[]) => {
     // Validar número de archivos
     if (files.length > maxFiles) {
-      alert(`Solo se pueden subir máximo ${maxFiles} archivos a la vez.`);
+      showWarning(`Solo se pueden subir máximo ${maxFiles} archivos a la vez.`);
       return;
     }
 
@@ -119,7 +121,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
     }
 
     if (errors.length > 0) {
-      alert(`Errores de validación:\n${errors.join("\n")}`);
+      showError(`Errores de validación: ${errors.join(", ")}`);
     }
 
     if (validFiles.length > 0) {
@@ -150,12 +152,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
       if (result.errors.length > 0) {
         const errorMessages = result.errors
           .map((err) => `${err.fileName}: ${err.error}`)
-          .join("\n");
-        alert(`Algunos archivos no se pudieron subir:\n${errorMessages}`);
+          .join(", ");
+        showWarning(`Algunos archivos no se pudieron subir: ${errorMessages}`);
       }
     } catch (error) {
       console.error("Error subiendo archivos:", error);
-      alert("Error subiendo archivos. Inténtalo de nuevo.");
+      showError("Error subiendo archivos. Inténtalo de nuevo.");
     }
   };
 

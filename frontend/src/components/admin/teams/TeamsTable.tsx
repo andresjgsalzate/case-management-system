@@ -59,11 +59,6 @@ export default function TeamsTable({
 
   const handleToggleStatus = async (team: Team) => {
     const action = team.isActive ? "desactivar" : "activar";
-    const confirmMessage = `¿Estás seguro de que quieres ${action} el equipo "${team.name}"?`;
-
-    if (!confirm(confirmMessage)) {
-      return;
-    }
 
     try {
       setToggleLoading(team.id);

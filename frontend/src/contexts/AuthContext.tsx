@@ -27,6 +27,7 @@ interface AuthContextType {
   canAccessModule: (module: string) => boolean; // Deprecado
   hasPermissionAsync: (permission: string) => Promise<boolean>; // Nueva función dinámica
   canAccessModuleAsync: (module: string) => Promise<boolean>; // Nueva función dinámica
+  refreshPermissions: () => Promise<void>; // Nueva función para recargar permisos
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,6 +61,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     hasPermissionAsync,
     canAccessModuleAsync,
     refreshTokens,
+    refreshPermissions,
   } = useAuthStore();
 
   // Efecto para inicializar la autenticación
@@ -108,6 +110,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     canAccessModule,
     hasPermissionAsync,
     canAccessModuleAsync,
+    refreshPermissions,
   };
 
   return (

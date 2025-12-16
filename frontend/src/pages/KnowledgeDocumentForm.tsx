@@ -59,23 +59,34 @@ const KnowledgeDocumentForm: React.FC = () => {
   // Notificaciones
   const { success, error: showError } = useToast();
 
+  // Estado para controlar cuándo navegar después de guardar
+  const [shouldNavigateAfterSave, setShouldNavigateAfterSave] = useState(false);
+
   // Mutations
   const createMutation = useCreateKnowledgeDocument({
     onSuccess: () => {
       success("Documento creado exitosamente");
-      navigate("/knowledge");
+      if (shouldNavigateAfterSave) {
+        navigate("/knowledge");
+      }
+      setShouldNavigateAfterSave(false);
     },
     onError: (error: any) => {
       showError(`Error al crear documento: ${error.message}`);
+      setShouldNavigateAfterSave(false);
     },
   });
   const updateMutation = useUpdateKnowledgeDocument({
     onSuccess: () => {
       success("Documento actualizado exitosamente");
-      navigate("/knowledge");
+      if (shouldNavigateAfterSave) {
+        navigate("/knowledge");
+      }
+      setShouldNavigateAfterSave(false);
     },
     onError: (error: any) => {
       showError(`Error al actualizar documento: ${error.message}`);
+      setShouldNavigateAfterSave(false);
     },
   });
   // TODO: Implementar hooks de tags
@@ -328,6 +339,9 @@ const KnowledgeDocumentForm: React.FC = () => {
     };
 
     try {
+      // Indicar que queremos navegar después de guardar exitosamente
+      setShouldNavigateAfterSave(true);
+
       if (isEditing) {
         await updateMutation.mutateAsync({
           id: id!,
@@ -339,9 +353,10 @@ const KnowledgeDocumentForm: React.FC = () => {
         );
       }
 
-      navigate("/knowledge");
+      // La navegación ahora se maneja en los callbacks onSuccess de las mutaciones
     } catch (error) {
       console.error("Error saving document:", error);
+      setShouldNavigateAfterSave(false);
     }
   };
 

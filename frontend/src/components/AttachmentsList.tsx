@@ -8,6 +8,8 @@ import {
   getViewUrl,
   isImageFile,
 } from "../hooks/useFileUpload";
+import DeleteAttachmentModal from "./DeleteAttachmentModal";
+import { useToast } from "../contexts/ToastContext";
 
 interface AttachmentsListProps {
   documentId: string;
@@ -26,21 +28,34 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
     error,
   } = useDocumentAttachments(documentId);
   const deleteFile = useDeleteFile();
+  const { error: showError } = useToast();
   const [deletingFile, setDeletingFile] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<string | null>(null);
+  const [attachmentToDelete, setAttachmentToDelete] = useState<any | null>(
+    null
+  );
 
-  const handleDeleteFile = async (attachmentId: string) => {
-    if (window.confirm("¿Estás seguro de que quieres eliminar este archivo?")) {
-      setDeletingFile(attachmentId);
-      try {
-        await deleteFile.mutateAsync(attachmentId);
-      } catch (error) {
-        console.error("Error eliminando archivo:", error);
-        alert("Error eliminando el archivo. Inténtalo de nuevo.");
-      } finally {
-        setDeletingFile(null);
-      }
+  const handleDeleteClick = (attachment: any) => {
+    setAttachmentToDelete(attachment);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!attachmentToDelete) return;
+
+    setDeletingFile(attachmentToDelete.id);
+    try {
+      await deleteFile.mutateAsync(attachmentToDelete.id);
+      setAttachmentToDelete(null);
+    } catch (error) {
+      console.error("Error eliminando archivo:", error);
+      showError("Error eliminando el archivo. Inténtalo de nuevo.");
+    } finally {
+      setDeletingFile(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setAttachmentToDelete(null);
   };
 
   const handlePreviewFile = (attachment: any) => {
@@ -188,7 +203,7 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
                 {/* Botón de eliminar - Solo mostrar si no está en modo readOnly */}
                 {!readOnly && (
                   <button
-                    onClick={() => handleDeleteFile(attachment.id)}
+                    onClick={() => handleDeleteClick(attachment)}
                     disabled={deletingFile === attachment.id}
                     className="p-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Eliminar archivo"
@@ -269,6 +284,18 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Modal de confirmación de eliminación */}
+      {attachmentToDelete && (
+        <DeleteAttachmentModal
+          isOpen={!!attachmentToDelete}
+          onClose={handleCancelDelete}
+          onConfirm={handleConfirmDelete}
+          fileName={attachmentToDelete.name}
+          fileSize={formatFileSize(attachmentToDelete.size)}
+          mimeType={attachmentToDelete.mimeType}
+        />
       )}
     </>
   );

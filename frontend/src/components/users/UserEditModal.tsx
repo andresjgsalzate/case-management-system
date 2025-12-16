@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ActionIcon } from "../ui/ActionIcons";
 import { User, UpdateUserRequest, Role } from "../../types/user";
 import { userService } from "../../services/userService";
+import { useAuth } from "../../contexts/AuthContext";
 import { Modal } from "../ui/Modal";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -19,6 +20,11 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const {
+    user: currentUser,
+    updateUser: updateAuthUser,
+    refreshPermissions,
+  } = useAuth();
   const [formData, setFormData] = useState<UpdateUserRequest>({
     email: user.email,
     fullName: user.fullName,
@@ -90,7 +96,34 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
       setLoading(true);
       setError(null);
 
+      // Guardamos el rol anterior para comparar
+      const previousRole = user.roleName;
+      const isCurrentUser = currentUser && user.id === currentUser.id;
+
       await userService.updateUser(user.id, formData);
+
+      // Si el usuario editado es el usuario actual y cambió su rol,
+      // actualizamos su información en el contexto de auth y refrescamos permisos
+      if (
+        isCurrentUser &&
+        formData.roleName &&
+        formData.roleName !== previousRole
+      ) {
+        updateAuthUser({
+          roleName: formData.roleName,
+        });
+
+        // Recargar los permisos del usuario con el nuevo rol
+        try {
+          await refreshPermissions();
+          console.log(
+            "Permisos del usuario actual actualizados correctamente."
+          );
+        } catch (refreshError) {
+          console.error("Error al actualizar permisos:", refreshError);
+        }
+      }
+
       onSuccess();
     } catch (err) {
       setError(

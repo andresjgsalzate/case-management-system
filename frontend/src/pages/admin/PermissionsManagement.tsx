@@ -8,6 +8,7 @@ import { Modal } from "../../components/ui/Modal";
 import { Select } from "../../components/ui/Select";
 import { ActionIcon } from "../../components/ui/ActionIcons";
 import { authPermissionService } from "../../services/authPermission.service";
+import DeletePermissionModal from "../../components/admin/DeletePermissionModal";
 import { Permission } from "../../types/auth";
 import { useToast as useToastContext } from "../../contexts/ToastContext";
 import RolePermissionsTab from "../../components/admin/RolePermissionsTab";
@@ -33,6 +34,8 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
   const [editingPermission, setEditingPermission] = useState<Permission | null>(
     null
   );
+  const [permissionToDelete, setPermissionToDelete] =
+    useState<Permission | null>(null);
 
   const { success, error: showErrorToast } = useToastContext();
 
@@ -124,20 +127,29 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
     }
   };
 
-  const handleDeletePermission = async (_id: string) => {
-    if (confirm("¿Estás seguro de que deseas eliminar este permiso?")) {
-      try {
-        // TODO: Implementar deletePermission en el servicio
-        /*
-        await authPermissionService.deletePermission(id);
-        setPermissions(permissions.filter((p) => p.id !== id));
-        */
-        success("Funcionalidad en desarrollo - Permiso no eliminado");
-      } catch (error) {
-        console.error("Error al eliminar permiso:", error);
-        showErrorToast("Error al eliminar el permiso");
-      }
+  const handleDeleteClick = (permission: Permission) => {
+    setPermissionToDelete(permission);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!permissionToDelete) return;
+
+    try {
+      // TODO: Implementar deletePermission en el servicio
+      /*
+      await authPermissionService.deletePermission(permissionToDelete.id);
+      setPermissions(permissions.filter((p) => p.id !== permissionToDelete.id));
+      */
+      success("Funcionalidad en desarrollo - Permiso no eliminado");
+      setPermissionToDelete(null);
+    } catch (error) {
+      console.error("Error al eliminar permiso:", error);
+      showErrorToast("Error al eliminar el permiso");
     }
+  };
+
+  const handleCancelDelete = () => {
+    setPermissionToDelete(null);
   };
 
   return (
@@ -318,9 +330,7 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
                               <ActionIcon action="edit" size="sm" />
                             </button>
                             <button
-                              onClick={() =>
-                                handleDeletePermission(permission.id)
-                              }
+                              onClick={() => handleDeleteClick(permission)}
                               className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                               title="Eliminar permiso"
                             >
@@ -568,6 +578,17 @@ const PermissionsManagement: React.FC<PermissionsManagementProps> = () => {
             </Button>
           </div>
         </Modal>
+
+        {/* Modal de confirmación de eliminación */}
+        {permissionToDelete && (
+          <DeletePermissionModal
+            isOpen={!!permissionToDelete}
+            onClose={handleCancelDelete}
+            onConfirm={handleConfirmDelete}
+            permissionName={permissionToDelete.name}
+            permissionDescription={permissionToDelete.description || ""}
+          />
+        )}
       </div>
     </div>
   );

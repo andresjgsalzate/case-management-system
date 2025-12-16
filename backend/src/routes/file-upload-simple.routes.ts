@@ -119,6 +119,14 @@ router.use(flexibleAuth);
 router.get(
   "/knowledge/view/:fileName",
   async (req: AuthRequest, res: Response) => {
+    console.log("🎯 [FILE VIEW] Request received:", {
+      fileName: req.params.fileName,
+      hasToken: !!(req.query.token || req.headers.authorization),
+      userId: (req as any).user?.id,
+      userAgent: req.headers["user-agent"],
+      referer: req.headers.referer,
+    });
+
     try {
       const { fileName } = req.params;
       const { token } = req.query;
@@ -128,7 +136,14 @@ router.get(
         return res.status(400).json({ error: "Nombre del archivo requerido" });
       }
 
+      console.log("🔍 [FILE VIEW] Searching for file:", fileName);
       const fileInfo = await fileUploadService.getFileForDownload(fileName);
+
+      console.log("📄 [FILE VIEW] File info retrieved:", {
+        filePath: fileInfo.filePath,
+        originalName: fileInfo.originalName,
+        mimeType: fileInfo.mimeType,
+      });
 
       // Verificar que el archivo existe
       if (!fs.existsSync(fileInfo.filePath)) {
@@ -138,6 +153,8 @@ router.get(
         );
         return res.status(404).json({ error: "Archivo no encontrado" });
       }
+
+      console.log("✅ [FILE VIEW] File exists, sending response");
 
       // Configurar headers para visualización
       res.setHeader("Content-Type", fileInfo.mimeType);

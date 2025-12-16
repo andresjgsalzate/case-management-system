@@ -17,18 +17,22 @@ manual-build/
 
 ## Estado del Build
 
-✅ **Backend compilado correctamente** (TypeScript → JavaScript)  
-✅ **Frontend compilado correctamente** (React/Vite → archivos estáticos)  
+✅ **Backend compilado correctamente** (TypeScript → JavaScript) - **ACTUALIZADO**  
+✅ **Frontend compilado correctamente** (React/Vite → archivos estáticos) - **ACTUALIZADO**  
 ✅ **Archivos de configuración copiados**  
-✅ **Scripts de inicio creados**
+✅ **Scripts de inicio creados**  
+✅ **Configuración multi-dominio aplicada**
 
 ## Configuración de Apache
 
 ### 1. Configurar Virtual Host
 
-```apache
+````apache
 <VirtualHost *:80>
-    ServerName tu-dominio.com
+    ServerName casemanagement.todosistemassti.co
+    ServerAlias www.casemanagement.todosistemassti.co
+    ServerAlias 23.0.125.32
+    ServerAlias 127.0.0.1
     DocumentRoot /ruta/a/manual-build/public
 
     # Proxy para API del backend
@@ -40,10 +44,13 @@ manual-build/
         AllowOverride All
         Require all granted
     </Directory>
-</VirtualHost>
-```
 
-### 2. Módulos requeridos de Apache
+    # Headers para CORS y compatibilidad
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+</VirtualHost>
+```### 2. Módulos requeridos de Apache
 
 ```bash
 sudo a2enmod rewrite
@@ -51,7 +58,7 @@ sudo a2enmod proxy
 sudo a2enmod proxy_http
 sudo a2enmod headers
 sudo systemctl restart apache2
-```
+````
 
 ## Configuración del Backend
 
@@ -93,9 +100,19 @@ sudo systemctl start case-management
 
 ## Verificación
 
-1. **Frontend**: http://tu-dominio.com
-2. **Backend Health**: http://tu-dominio.com/api/health
-3. **Logs del backend**: `sudo journalctl -u case-management -f`
+### URLs de Acceso Configuradas:
+
+1. **http://23.0.125.32** (IP directa)
+2. **http://casemanagement.todosistemassti.co** (dominio principal)
+3. **http://127.0.0.1** (local)
+4. **http://www.casemanagement.todosistemassti.co** (con www)
+
+### Endpoints de Verificación:
+
+- **Frontend**: Cualquiera de las URLs de arriba
+- **Backend Health**: `[URL]/api/health`
+- **API**: `[URL]/api/`
+- **Logs del backend**: `sudo journalctl -u case-management -f`
 
 ## Troubleshooting
 

@@ -554,13 +554,15 @@ export class FileUploadService {
       }
 
       // Usar EntityManager que maneja conexiones automáticamente
+      // Buscar por el nombre final del archivo (que coincide con la URL)
       const query = `
         SELECT id, file_name as "fileName", file_path as "filePath", mime_type as "mimeType"
         FROM knowledge_document_attachments 
-        WHERE file_path LIKE $1
+        WHERE file_path LIKE $1 OR file_path LIKE $2
       `;
 
       const attachments = await AppDataSource.manager.query(query, [
+        `%/${fileName}`,
         `%${fileName}`,
       ]);
 

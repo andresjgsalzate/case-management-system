@@ -371,9 +371,10 @@ class FileUploadService {
             const query = `
         SELECT id, file_name as "fileName", file_path as "filePath", mime_type as "mimeType"
         FROM knowledge_document_attachments 
-        WHERE file_path LIKE $1
+        WHERE file_path LIKE $1 OR file_path LIKE $2
       `;
             const attachments = await database_1.AppDataSource.manager.query(query, [
+                `%/${fileName}`,
                 `%${fileName}`,
             ]);
             console.log("📊 [FILE SERVICE] EntityManager query results:", {

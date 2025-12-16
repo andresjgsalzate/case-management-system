@@ -1,9 +1,9 @@
-# Despliegue en Apache - Case Management System
+# Despliegue Manual en Apache - Case Management System
 
 ## Estructura del despliegue
 
 ```
-apache-build/
+manual-build/
 ├── public/           # Frontend (archivos estáticos para Apache)
 │   ├── index.html
 │   ├── assets/
@@ -15,6 +15,13 @@ apache-build/
     └── uploads/     # Directorio para archivos
 ```
 
+## Estado del Build
+
+✅ **Backend compilado correctamente** (TypeScript → JavaScript)  
+✅ **Frontend compilado correctamente** (React/Vite → archivos estáticos)  
+✅ **Archivos de configuración copiados**  
+✅ **Scripts de inicio creados**
+
 ## Configuración de Apache
 
 ### 1. Configurar Virtual Host
@@ -22,14 +29,14 @@ apache-build/
 ```apache
 <VirtualHost *:80>
     ServerName tu-dominio.com
-    DocumentRoot /ruta/a/apache-build/public
-    
+    DocumentRoot /ruta/a/manual-build/public
+
     # Proxy para API del backend
     ProxyPass /api/ http://127.0.0.1:3000/api/
     ProxyPassReverse /api/ http://127.0.0.1:3000/api/
-    
+
     # Configuración de archivos estáticos
-    <Directory "/ruta/a/apache-build/public">
+    <Directory "/ruta/a/manual-build/public">
         AllowOverride All
         Require all granted
     </Directory>
@@ -51,7 +58,7 @@ sudo systemctl restart apache2
 ### 1. Iniciar el backend
 
 ```bash
-cd /ruta/a/apache-build/backend
+cd /ruta/a/manual-build/backend
 ./start.sh
 ```
 
@@ -69,8 +76,8 @@ After=network.target
 [Service]
 Type=simple
 User=www-data
-WorkingDirectory=/ruta/a/apache-build/backend
-ExecStart=/ruta/a/apache-build/backend/start.sh
+WorkingDirectory=/ruta/a/manual-build/backend
+ExecStart=/ruta/a/manual-build/backend/start.sh
 Restart=always
 RestartSec=10
 Environment=NODE_ENV=production
@@ -95,3 +102,10 @@ sudo systemctl start case-management
 - Si el backend no inicia, verifica las variables de entorno en .env.production
 - Si el frontend no carga rutas, verifica que mod_rewrite esté habilitado
 - Si hay errores de CORS, verifica la configuración de proxy en Apache
+
+## Archivos importantes
+
+- `.env.production` contiene las configuraciones de producción
+- `start.sh` es el script de inicio del backend
+- `.htaccess` maneja las rutas de React y CORS
+- `uploads/` directorio para archivos subidos por usuarios

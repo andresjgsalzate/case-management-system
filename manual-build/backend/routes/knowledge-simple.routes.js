@@ -277,16 +277,6 @@ router.put("/knowledge/:id", (0, authorizationMiddleware_1.requireAnyPermission)
         handleError(res, error, 400);
     }
 });
-router.put("/knowledge/:id", auth_1.authenticateToken, async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const document = await knowledgeDocumentService.update(req.params.id, req.body, userId);
-        res.json(document);
-    }
-    catch (error) {
-        handleError(res, error, 400);
-    }
-});
 router.put("/knowledge/:id/publish", auth_1.authenticateToken, auditMiddleware_1.AuditMiddleware.auditUpdate("knowledge_documents"), async (req, res) => {
     try {
         const userId = req.user.id;

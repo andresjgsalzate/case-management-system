@@ -50,17 +50,31 @@ class SecurityService {
   }
 
   /**
-   * Genera una huella digital única del dispositivo/navegador
+   * Genera una huella digital estable del dispositivo/navegador
+   * Versión mejorada que evita elementos volátiles
    */
   private generateFingerprint(): DeviceFingerprint {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.textBaseline = "top";
-      ctx.font = "14px Arial";
-      ctx.fillText("Device fingerprint", 2, 2);
+    // Solo usar elementos estables que no cambien entre sesiones
+    const stableElements = {
+      userAgent: navigator.userAgent,
+      screen: `${screen.width}x${screen.height}`,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      language: navigator.language,
+      platform: navigator.platform,
+    };
+
+    // Generar hash de elementos estables
+    const fpString = JSON.stringify(stableElements);
+    let hash = 0;
+    for (let i = 0; i < fpString.length; i++) {
+      const char = fpString.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convertir a 32bit integer
     }
 
+    const stableHash = hash.toString(36);
+
+    // Mantener interfaz original pero usar elementos estables
     const fingerprint = {
       userAgent: navigator.userAgent,
       screen: `${screen.width}x${screen.height}x${screen.colorDepth}`,
@@ -71,19 +85,9 @@ class SecurityService {
       doNotTrack: navigator.doNotTrack,
       hardwareConcurrency: navigator.hardwareConcurrency || 0,
       maxTouchPoints: navigator.maxTouchPoints || 0,
-      hash: "",
+      hash: stableHash, // Usar hash estable
     };
 
-    // Generar hash simple de la huella digital
-    const fpString = JSON.stringify(fingerprint);
-    let hash = 0;
-    for (let i = 0; i < fpString.length; i++) {
-      const char = fpString.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convertir a 32bit integer
-    }
-
-    fingerprint.hash = hash.toString(36);
     return fingerprint;
   }
 

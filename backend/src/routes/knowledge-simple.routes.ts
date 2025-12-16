@@ -443,24 +443,7 @@ router.put(
   }
 );
 
-// PUT /api/knowledge/:id - Actualizar documento
-router.put(
-  "/knowledge/:id",
-  authenticateToken,
-  async (req: Request, res: Response) => {
-    try {
-      const userId = (req as any).user.id;
-      const document = await knowledgeDocumentService.update(
-        req.params.id!,
-        req.body,
-        userId
-      );
-      res.json(document);
-    } catch (error) {
-      handleError(res, error, 400);
-    }
-  }
-);
+// NOTA: Esta ruta ya está definida arriba con middleware de autorización - eliminar duplicado
 
 // PUT /api/knowledge/:id/publish - Publicar/despublicar documento
 router.put(

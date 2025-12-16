@@ -134,6 +134,11 @@ router.get("/knowledge/view/:fileName", async (req, res) => {
         console.log("✅ [FILE VIEW] File exists, sending response");
         res.setHeader("Content-Type", fileInfo.mimeType);
         res.setHeader("Content-Disposition", `inline; filename="${fileInfo.originalName}"`);
+        res.setHeader("Cache-Control", "private, no-cache, no-store, must-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        res.setHeader("X-Frame-Options", "SAMEORIGIN");
         res.sendFile(path.resolve(fileInfo.filePath));
     }
     catch (error) {

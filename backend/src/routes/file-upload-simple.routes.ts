@@ -181,6 +181,16 @@ router.get(
         `inline; filename="${fileInfo.originalName}"`
       );
 
+      // Headers de cache y seguridad para evitar peticiones duplicadas
+      res.setHeader(
+        "Cache-Control",
+        "private, no-cache, no-store, must-revalidate"
+      );
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("X-Frame-Options", "SAMEORIGIN");
+
       // Enviar el archivo para visualización
       res.sendFile(path.resolve(fileInfo.filePath));
     } catch (error) {

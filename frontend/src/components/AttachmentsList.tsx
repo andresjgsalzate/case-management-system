@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   useDocumentAttachments,
   useDeleteFile,
@@ -35,6 +35,15 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
     null
   );
 
+  // Cleanup blob URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      if (previewFile && previewFile.startsWith("blob:")) {
+        URL.revokeObjectURL(previewFile);
+      }
+    };
+  }, [previewFile]);
+
   const handleDeleteClick = (attachment: any) => {
     setAttachmentToDelete(attachment);
   };
@@ -58,39 +67,60 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
     setAttachmentToDelete(null);
   };
 
-  const handlePreviewFile = (attachment: any) => {
+  const handlePreviewFile = async (attachment: any) => {
     if (isImageFile(attachment.mimeType)) {
-      // Construir URL de vista con token de autenticación (igual que en BlockNoteEditor)
-      const tokens = securityService.getValidTokens();
-      const token = tokens?.token;
+      try {
+        // Construir URL de vista con token de autenticación (igual que en BlockNoteEditor)
+        const tokens = securityService.getValidTokens();
+        const token = tokens?.token;
 
-      if (!token) {
-        console.warn(
-          "⚠️ [AttachmentsList] No hay token válido disponible para vista previa"
-        );
-        showError("Sesión expirada. Por favor, inicia sesión nuevamente.");
-        return;
+        if (!token) {
+          console.warn(
+            "⚠️ [AttachmentsList] No hay token válido disponible para vista previa"
+          );
+          showError("Sesión expirada. Por favor, inicia sesión nuevamente.");
+          return;
+        }
+
+        // Extraer el nombre del archivo físico de la URL de descarga
+        const downloadUrl = getDownloadUrl(attachment.downloadUrl);
+        const urlParts = downloadUrl.split("/");
+        const physicalFileName = urlParts[urlParts.length - 1];
+
+        // Construir URL de vista con token
+        const viewUrl = `${
+          window.location.origin
+        }/api/files/knowledge/view/${physicalFileName}?token=${encodeURIComponent(
+          token
+        )}`;
+
+        console.log("🖼️ [AttachmentsList] Vista previa de imagen:", {
+          originalUrl: attachment.downloadUrl,
+          physicalFileName,
+          viewUrl,
+        });
+
+        // Fetch de la imagen con autenticación y crear blob URL para evitar peticiones duplicadas
+        const response = await fetch(viewUrl, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          cache: "no-cache",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
+        console.log("✅ [AttachmentsList] Blob URL creada para vista previa");
+        setPreviewFile(blobUrl);
+      } catch (error) {
+        console.error("❌ [AttachmentsList] Error cargando imagen:", error);
+        showError("Error al cargar la imagen para vista previa");
       }
-
-      // Extraer el nombre del archivo físico de la URL de descarga
-      const downloadUrl = getDownloadUrl(attachment.downloadUrl);
-      const urlParts = downloadUrl.split("/");
-      const physicalFileName = urlParts[urlParts.length - 1];
-
-      // Construir URL de vista con token
-      const viewUrl = `${
-        window.location.origin
-      }/api/files/knowledge/view/${physicalFileName}?token=${encodeURIComponent(
-        token
-      )}`;
-
-      console.log("🖼️ [AttachmentsList] Vista previa de imagen:", {
-        originalUrl: attachment.downloadUrl,
-        physicalFileName,
-        viewUrl,
-      });
-
-      setPreviewFile(viewUrl);
     } else {
       // Para archivos que no son imágenes, descargar directamente
       window.open(getDownloadUrl(attachment.downloadUrl), "_blank");
@@ -291,7 +321,13 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
       {previewFile && (
         <div
           className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
-          onClick={() => setPreviewFile(null)}
+          onClick={() => {
+            // Limpiar blob URL si es una blob URL
+            if (previewFile.startsWith("blob:")) {
+              URL.revokeObjectURL(previewFile);
+            }
+            setPreviewFile(null);
+          }}
         >
           <div className="relative max-w-4xl max-h-full">
             <img
@@ -302,7 +338,13 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
             />
             <button
               type="button"
-              onClick={() => setPreviewFile(null)}
+              onClick={() => {
+                // Limpiar blob URL si es una blob URL
+                if (previewFile.startsWith("blob:")) {
+                  URL.revokeObjectURL(previewFile);
+                }
+                setPreviewFile(null);
+              }}
               className="absolute top-4 right-4 text-white bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full p-2 transition-all"
             >
               <svg

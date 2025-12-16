@@ -133,6 +133,7 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
               <div className="flex items-center space-x-2 ml-4">
                 {/* Botón de vista previa/descarga */}
                 <button
+                  type="button"
                   onClick={() => handlePreviewFile(attachment)}
                   className="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
                   title={
@@ -203,7 +204,12 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
                 {/* Botón de eliminar - Solo mostrar si no está en modo readOnly */}
                 {!readOnly && (
                   <button
-                    onClick={() => handleDeleteClick(attachment)}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDeleteClick(attachment);
+                    }}
                     disabled={deletingFile === attachment.id}
                     className="p-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Eliminar archivo"
@@ -265,6 +271,7 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
               onClick={(e) => e.stopPropagation()}
             />
             <button
+              type="button"
               onClick={() => setPreviewFile(null)}
               className="absolute top-4 right-4 text-white bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full p-2 transition-all"
             >
@@ -292,8 +299,8 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
           isOpen={!!attachmentToDelete}
           onClose={handleCancelDelete}
           onConfirm={handleConfirmDelete}
-          fileName={attachmentToDelete.name}
-          fileSize={formatFileSize(attachmentToDelete.size)}
+          fileName={attachmentToDelete.fileName}
+          fileSize={formatFileSize(attachmentToDelete.fileSize)}
           mimeType={attachmentToDelete.mimeType}
         />
       )}

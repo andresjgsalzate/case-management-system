@@ -236,6 +236,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
               Archivos seleccionados ({selectedFiles.length})
             </h4>
             <button
+              type="button"
               onClick={clearSelection}
               className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             >
@@ -262,6 +263,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => removeSelectedFile(index)}
                   className="p-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30"
                   title="Remover archivo"
@@ -287,6 +289,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
           {/* Botón de subida */}
           <div className="flex items-center justify-end space-x-3">
             <button
+              type="button"
               onClick={clearSelection}
               disabled={uploadFiles.isPending}
               className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
@@ -294,7 +297,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
               Cancelar
             </button>
             <button
-              onClick={handleUpload}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleUpload();
+              }}
               disabled={uploadFiles.isPending}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-700 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >

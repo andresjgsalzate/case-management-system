@@ -16,7 +16,14 @@ class AuthController {
                     details: errors,
                 });
             }
-            const result = await this.authService.login(loginDto);
+            const sessionInfo = {
+                userAgent: req.headers["user-agent"],
+                ip: req.ip ||
+                    req.connection.remoteAddress ||
+                    req.socket.remoteAddress ||
+                    "unknown",
+            };
+            const result = await this.authService.login(loginDto, sessionInfo);
             res.json({
                 success: true,
                 data: result,
@@ -114,6 +121,46 @@ class AuthController {
                     fullName: user.fullName,
                     roleName: user.roleName,
                 },
+            });
+        });
+        this.logout = (0, errorHandler_1.asyncHandler)(async (req, res) => {
+            const authHeader = req.headers.authorization;
+            const token = authHeader && authHeader.split(" ")[1];
+            if (!token) {
+                return res.status(401).json({
+                    error: "Access token required",
+                });
+            }
+            await this.authService.logout(token);
+            res.json({
+                success: true,
+                message: "Logout successful",
+            });
+        });
+        this.logoutAllSessions = (0, errorHandler_1.asyncHandler)(async (req, res) => {
+            const userId = req.user?.id;
+            if (!userId) {
+                return res.status(401).json({
+                    error: "Authentication required",
+                });
+            }
+            await this.authService.logoutAllSessions(userId);
+            res.json({
+                success: true,
+                message: "All sessions logged out successfully",
+            });
+        });
+        this.getActiveSessions = (0, errorHandler_1.asyncHandler)(async (req, res) => {
+            const userId = req.user?.id;
+            if (!userId) {
+                return res.status(401).json({
+                    error: "Authentication required",
+                });
+            }
+            const sessions = await this.authService.getUserActiveSessions(userId);
+            res.json({
+                success: true,
+                data: sessions,
             });
         });
         this.authService = new auth_service_1.AuthService();

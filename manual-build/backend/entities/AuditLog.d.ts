@@ -9,7 +9,11 @@ export declare enum AuditAction {
     READ = "READ",
     DOWNLOAD = "DOWNLOAD",
     VIEW = "VIEW",
-    EXPORT = "EXPORT"
+    EXPORT = "EXPORT",
+    LOGIN = "LOGIN",
+    LOGOUT = "LOGOUT",
+    LOGOUT_ALL = "LOGOUT_ALL",
+    FORCE_LOGOUT = "FORCE_LOGOUT"
 }
 export declare class AuditLog {
     id: string;

@@ -24,6 +24,10 @@ var AuditAction;
     AuditAction["DOWNLOAD"] = "DOWNLOAD";
     AuditAction["VIEW"] = "VIEW";
     AuditAction["EXPORT"] = "EXPORT";
+    AuditAction["LOGIN"] = "LOGIN";
+    AuditAction["LOGOUT"] = "LOGOUT";
+    AuditAction["LOGOUT_ALL"] = "LOGOUT_ALL";
+    AuditAction["FORCE_LOGOUT"] = "FORCE_LOGOUT";
 })(AuditAction || (exports.AuditAction = AuditAction = {}));
 let AuditLog = class AuditLog {
     getEntityDisplayName() {
@@ -40,6 +44,10 @@ let AuditLog = class AuditLog {
             [AuditAction.DOWNLOAD]: "descargó",
             [AuditAction.VIEW]: "visualizó",
             [AuditAction.EXPORT]: "exportó",
+            [AuditAction.LOGIN]: "inició sesión en",
+            [AuditAction.LOGOUT]: "cerró sesión de",
+            [AuditAction.LOGOUT_ALL]: "cerró todas las sesiones de",
+            [AuditAction.FORCE_LOGOUT]: "forzó el cierre de sesión en",
         };
         return actionDescriptions[this.action] || this.action;
     }

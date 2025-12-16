@@ -217,7 +217,8 @@ export declare enum AuditModule {
     ADMIN = "admin",
     AUTH = "auth",
     ARCHIVE = "archive",
-    DASHBOARD = "dashboard"
+    DASHBOARD = "dashboard",
+    SESSION_MANAGEMENT = "SessionManagement"
 }
 export declare enum AuditEntityType {
     CASE = "cases",

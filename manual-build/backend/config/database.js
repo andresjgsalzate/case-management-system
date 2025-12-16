@@ -4,6 +4,7 @@ exports.initializeDatabase = exports.AppDataSource = void 0;
 const typeorm_1 = require("typeorm");
 const environment_1 = require("./environment");
 const entities_1 = require("../entities");
+const UserSession_1 = require("../entities/UserSession");
 const DocumentType_1 = require("../entities/DocumentType");
 const KnowledgeDocument_1 = require("../entities/KnowledgeDocument");
 const KnowledgeDocumentTag_1 = require("../entities/KnowledgeDocumentTag");
@@ -58,6 +59,7 @@ exports.AppDataSource = new typeorm_1.DataSource({
         TeamMember_1.TeamMember,
         entities_1.AuditLog,
         entities_1.AuditEntityChange,
+        UserSession_1.UserSession,
     ],
     migrations: ["src/database/migrations/**/*.ts"],
     subscribers: ["src/database/subscribers/**/*.ts"],

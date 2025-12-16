@@ -10,12 +10,26 @@ const database_1 = require("../../config/database");
 const UserProfile_1 = require("../../entities/UserProfile");
 const environment_1 = require("../../config/environment");
 const errorHandler_1 = require("../../middleware/errorHandler");
+const session_service_1 = require("../../services/session.service");
 class AuthService {
     constructor() {
-        this.userRepository = database_1.AppDataSource.getRepository(UserProfile_1.UserProfile);
+        console.log("🔍 AuthService constructor - AppDataSource initialized:", database_1.AppDataSource.isInitialized);
+        try {
+            this.userRepository = database_1.AppDataSource.getRepository(UserProfile_1.UserProfile);
+            console.log("✅ AuthService UserProfile repository initialized");
+            this.sessionService = new session_service_1.SessionService();
+            console.log("✅ AuthService SessionService initialized");
+        }
+        catch (error) {
+            console.error("❌ Error in AuthService constructor:", error);
+            throw error;
+        }
     }
-    async login(loginDto) {
+    async login(loginDto, sessionInfo) {
         const { email, password } = loginDto;
+        console.log("🔍 AuthService.login - Iniciando búsqueda de usuario");
+        console.log("🔍 AppDataSource initialized:", database_1.AppDataSource.isInitialized);
+        console.log("🔍 Entidades disponibles:", database_1.AppDataSource.entityMetadatas?.map((meta) => meta.name) || []);
         const user = await this.userRepository.findOne({
             where: { email, isActive: true },
         });
@@ -30,6 +44,7 @@ class AuthService {
         await this.userRepository.save(user);
         const token = this.generateToken(user.id);
         const refreshToken = this.generateRefreshToken(user.id);
+        await this.sessionService.createUniqueSession(user.id, token, refreshToken, sessionInfo || {});
         return {
             user: {
                 id: user.id,
@@ -107,6 +122,10 @@ class AuthService {
         try {
             const secret = environment_1.config.jwt.secret || "default-secret";
             const decoded = jsonwebtoken_1.default.verify(token, secret);
+            const activeSession = await this.sessionService.validateActiveSession(token);
+            if (!activeSession) {
+                return null;
+            }
             const user = await this.userRepository.findOne({
                 where: { id: decoded.userId, isActive: true },
             });
@@ -140,6 +159,18 @@ class AuthService {
             where: { email, isActive: true },
         });
         return user;
+    }
+    async logout(token) {
+        const activeSession = await this.sessionService.validateActiveSession(token);
+        if (activeSession) {
+            await this.sessionService.invalidateSession(activeSession.id, "manual");
+        }
+    }
+    async logoutAllSessions(userId) {
+        await this.sessionService.invalidateAllUserSessions(userId, "forced");
+    }
+    async getUserActiveSessions(userId) {
+        return this.sessionService.getUserActiveSessions(userId);
     }
 }
 exports.AuthService = AuthService;

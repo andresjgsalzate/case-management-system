@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -38,6 +71,8 @@ const file_upload_simple_routes_1 = __importDefault(require("./routes/file-uploa
 const systemInfo_1 = __importDefault(require("./routes/systemInfo"));
 const file_upload_simple_service_1 = require("./services/file-upload-simple.service");
 const audit_routes_1 = __importDefault(require("./routes/audit.routes"));
+const session_cleanup_job_1 = require("./jobs/session-cleanup.job");
+const database_2 = require("./config/database");
 const app = (0, express_1.default)();
 const limiter = (0, express_rate_limit_1.default)({
     windowMs: environment_1.config.rateLimit.windowMs,
@@ -103,8 +138,41 @@ app.use("*", (req, res) => {
 const startServer = async () => {
     try {
         await (0, database_1.initializeDatabase)();
+        let retries = 0;
+        const maxRetries = 10;
+        while (database_2.AppDataSource.entityMetadatas.length === 0 && retries < maxRetries) {
+            console.log(`⏳ Esperando carga de entidades... intento ${retries + 1}/${maxRetries}`);
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            retries++;
+        }
+        if (database_2.AppDataSource.entityMetadatas.length === 0) {
+            throw new Error("Las entidades no se cargaron correctamente después de varios intentos");
+        }
+        console.log(`✅ Entidades cargadas: ${database_2.AppDataSource.entityMetadatas
+            .map((meta) => meta.name)
+            .join(", ")}`);
+        const { initializeAuthController } = await Promise.resolve().then(() => __importStar(require("./modules/auth/auth.routes")));
+        initializeAuthController();
+        logger_1.logger.info("🔐 Auth controller initialized");
         await file_upload_simple_service_1.FileUploadService.initialize();
         logger_1.logger.info("📁 Upload directories initialized successfully");
+        let sessionCleanupJob = null;
+        setTimeout(() => {
+            sessionCleanupJob = new session_cleanup_job_1.SessionCleanupJob();
+            sessionCleanupJob.start(30);
+        }, 5000);
+        process.on("SIGINT", () => {
+            if (sessionCleanupJob) {
+                sessionCleanupJob.stop();
+            }
+            process.exit(0);
+        });
+        process.on("SIGTERM", () => {
+            if (sessionCleanupJob) {
+                sessionCleanupJob.stop();
+            }
+            process.exit(0);
+        });
         app.listen(environment_1.config.port, () => {
             logger_1.logger.info(`🚀 Server running on port ${environment_1.config.port}`);
             logger_1.logger.info(`📝 Environment: ${environment_1.config.env}`);

@@ -9,4 +9,7 @@ export declare class AuthController {
     getUsers: (req: Request, res: Response, next: import("express").NextFunction) => void;
     updateUserRole: (req: Request, res: Response, next: import("express").NextFunction) => void;
     getUserByEmail: (req: Request, res: Response, next: import("express").NextFunction) => void;
+    logout: (req: Request, res: Response, next: import("express").NextFunction) => void;
+    logoutAllSessions: (req: Request, res: Response, next: import("express").NextFunction) => void;
+    getActiveSessions: (req: Request, res: Response, next: import("express").NextFunction) => void;
 }

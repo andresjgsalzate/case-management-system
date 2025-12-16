@@ -15,6 +15,7 @@ var AuditModule;
     AuditModule["AUTH"] = "auth";
     AuditModule["ARCHIVE"] = "archive";
     AuditModule["DASHBOARD"] = "dashboard";
+    AuditModule["SESSION_MANAGEMENT"] = "SessionManagement";
 })(AuditModule || (exports.AuditModule = AuditModule = {}));
 var AuditEntityType;
 (function (AuditEntityType) {

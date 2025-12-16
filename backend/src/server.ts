@@ -61,6 +61,20 @@ const limiter = rateLimit({
 app.use(helmet());
 // app.use(limiter); // Desactivado temporalmente para desarrollo
 
+// Log de debug para todas las solicitudes que llegan al servidor
+app.use((req, res, next) => {
+  if (req.url.includes("/api/files")) {
+    console.log("🌐 [SERVER] Request received:", {
+      method: req.method,
+      url: req.url,
+      originalUrl: req.originalUrl,
+      userAgent: req.headers["user-agent"]?.substring(0, 50),
+      authorization: req.headers.authorization ? "present" : "missing",
+    });
+  }
+  next();
+});
+
 // Configuración de CORS
 app.use(
   cors({

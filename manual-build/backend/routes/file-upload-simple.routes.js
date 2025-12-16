@@ -88,6 +88,22 @@ const flexibleAuth = async (req, res, next) => {
         return res.status(403).json({ error: "Invalid or expired token" });
     }
 };
+router.use((req, res, next) => {
+    console.log("📡 [FILES ROUTER] Request:", {
+        method: req.method,
+        url: req.url,
+        originalUrl: req.originalUrl,
+        baseUrl: req.baseUrl,
+        path: req.path,
+        params: req.params,
+        query: req.query,
+        headers: {
+            userAgent: req.headers["user-agent"],
+            authorization: req.headers.authorization ? "present" : "missing",
+        },
+    });
+    next();
+});
 router.use(flexibleAuth);
 router.get("/knowledge/view/:fileName", async (req, res) => {
     console.log("🎯 [FILE VIEW] Request received:", {

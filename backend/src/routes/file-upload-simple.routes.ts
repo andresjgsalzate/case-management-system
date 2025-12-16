@@ -108,6 +108,24 @@ const flexibleAuth = async (req: Request, res: Response, next: any) => {
   }
 };
 
+// Log de debug para todas las solicitudes a /api/files
+router.use((req, res, next) => {
+  console.log("📡 [FILES ROUTER] Request:", {
+    method: req.method,
+    url: req.url,
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl,
+    path: req.path,
+    params: req.params,
+    query: req.query,
+    headers: {
+      userAgent: req.headers["user-agent"],
+      authorization: req.headers.authorization ? "present" : "missing",
+    },
+  });
+  next();
+});
+
 // Aplicar autenticación flexible a TODAS las rutas
 router.use(flexibleAuth);
 

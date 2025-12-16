@@ -47,6 +47,18 @@ const limiter = (0, express_rate_limit_1.default)({
     legacyHeaders: false,
 });
 app.use((0, helmet_1.default)());
+app.use((req, res, next) => {
+    if (req.url.includes("/api/files")) {
+        console.log("🌐 [SERVER] Request received:", {
+            method: req.method,
+            url: req.url,
+            originalUrl: req.originalUrl,
+            userAgent: req.headers["user-agent"]?.substring(0, 50),
+            authorization: req.headers.authorization ? "present" : "missing",
+        });
+    }
+    next();
+});
 app.use((0, cors_1.default)({
     origin: environment_1.config.cors.origin,
     credentials: true,

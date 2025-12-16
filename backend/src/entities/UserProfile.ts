@@ -39,10 +39,10 @@ export class UserProfile {
   @Column({ type: "timestamptz", nullable: true })
   lastLoginAt?: Date;
 
-  @CreateDateColumn({ type: "timestamptz" })
+  @CreateDateColumn({ type: "timestamptz", name: "created_at" })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: "timestamptz" })
+  @UpdateDateColumn({ type: "timestamptz", name: "updated_at" })
   updatedAt!: Date;
 
   // Relaciones

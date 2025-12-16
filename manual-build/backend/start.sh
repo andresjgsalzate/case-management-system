@@ -15,4 +15,3 @@ fi
 # Iniciar aplicación
 echo "✅ Iniciando servidor..."
 node server.js
-node server.js

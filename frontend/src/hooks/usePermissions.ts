@@ -18,13 +18,7 @@ export const SYSTEM_MODULES: ModulePermission[] = [
     name: "Dashboard",
     href: "/",
     icon: "HomeIcon",
-    permissions: [
-      "metrics.view.own",
-      "metrics.view.team",
-      "metrics.view.all",
-      "metrics.time.own",
-      "metrics.cases.own",
-    ], // Requiere permisos de métricas
+    permissions: ["dashboard.read.own", "dashboard.read.all"], // Requiere permisos específicos de dashboard
   },
   {
     name: "Casos",

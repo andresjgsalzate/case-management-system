@@ -10,9 +10,15 @@ class AuthPermissionService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    // Usar SecurityService para obtener el token de forma segura
-    const tokens = securityService.getValidTokens();
-    const token = tokens?.token;
+    // Prioridad 1: Usar token del authStore (más rápido)
+    const { useAuthStore } = await import("../stores/authStore");
+    let token = useAuthStore.getState().token;
+
+    // Prioridad 2: Si no hay token en authStore, usar SecurityService
+    if (!token) {
+      const tokens = securityService.getValidTokens();
+      token = tokens?.token || null;
+    }
 
     const config: RequestInit = {
       headers: {

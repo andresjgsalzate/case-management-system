@@ -223,32 +223,52 @@ export const useAuthStore = create<AuthState>()(
           localStorage.setItem("user", JSON.stringify(updatedUser));
         }
       },
-      // Inicializar desde SecurityService
+      // Inicializar desde SecurityService o localStorage
       initializeFromSecurityService: async () => {
         set({ isLoading: true }); // Importante: marcar como cargando
         try {
+          const currentState = get();
+
+          // Prioridad 1: Si ya hay token en el estado persistido, usarlo
+          if (
+            currentState.token &&
+            currentState.isAuthenticated &&
+            currentState.user
+          ) {
+            console.log("✅ Usando token persistido en localStorage");
+            set({ isLoading: false });
+            // Cargar permisos si no están ya cargados
+            if (!currentState.permissionsLoaded) {
+              await get().loadUserPermissions();
+            }
+            return;
+          }
+
+          // Prioridad 2: Intentar obtener tokens del SecurityService
           const tokens = securityService.getValidTokens();
           const userString = localStorage.getItem("user");
           if (tokens && userString) {
+            console.log("✅ Usando token de SecurityService");
             const user = JSON.parse(userString);
             set({
               user,
               token: tokens.token,
               refreshToken: tokens.refreshToken,
               isAuthenticated: true,
-              isLoading: false, // Terminar la carga
+              isLoading: false,
               error: null,
             });
             // Cargar permisos
             await get().loadUserPermissions();
           } else {
+            console.log("❌ No hay sesión válida disponible");
             // No hay sesión válida, limpiar estado
             set({
               user: null,
               token: null,
               refreshToken: null,
               isAuthenticated: false,
-              isLoading: false, // Terminar la carga
+              isLoading: false,
               userPermissions: [],
               userModules: [],
               permissionsLoaded: false,
@@ -261,7 +281,7 @@ export const useAuthStore = create<AuthState>()(
             token: null,
             refreshToken: null,
             isAuthenticated: false,
-            isLoading: false, // Terminar la carga incluso en error
+            isLoading: false,
             error: "Error de inicialización",
           });
         }
@@ -403,9 +423,13 @@ export const useAuthStore = create<AuthState>()(
       name: "auth-storage",
       partialize: (state) => ({
         user: state.user,
+        token: state.token,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
-        // NO persistir tokens - estos se manejan via SecurityService
         // NO persistir permisos ni módulos - siempre deben consultarse dinámicamente
+        userPermissions: state.userPermissions,
+        userModules: state.userModules,
+        permissionsLoaded: state.permissionsLoaded,
       }),
     }
   )

@@ -20,7 +20,7 @@ const navigation: NavigationItem[] = [
     name: "Dashboard",
     href: "/",
     icon: "home",
-    requiredPermission: "dashboard.view.own",
+    requiredPermission: "dashboard.read.own",
   },
   {
     name: "Casos",
@@ -107,9 +107,6 @@ const navigation: NavigationItem[] = [
     requiredPermission: "audit.view.all",
   },
 ];
-
-// Debug log para verificar que el archivo se está cargando
-console.log("Navigation items loaded:", navigation);
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(" ");
@@ -223,8 +220,8 @@ export const Sidebar = () => {
     // Para Dashboard, verificar el permiso específico de dashboard
     if (item.name === "Dashboard") {
       return (
-        hasPermission("dashboard.view.own") ||
-        hasPermission("dashboard.view.all")
+        hasPermission("dashboard.read.own") ||
+        hasPermission("dashboard.read.all")
       );
     }
 
@@ -251,11 +248,6 @@ export const Sidebar = () => {
       </div>
     );
   }
-
-  console.log(
-    "🔍 Permisos verificados - Navegación filtrada:",
-    filteredNavigation.map((item) => item.name)
-  );
 
   return (
     <>

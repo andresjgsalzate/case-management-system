@@ -16,7 +16,12 @@ interface NavigationItem {
 }
 
 const navigation: NavigationItem[] = [
-  { name: "Dashboard", href: "/", icon: "home" },
+  {
+    name: "Dashboard",
+    href: "/",
+    icon: "home",
+    requiredPermission: "dashboard.view.own",
+  },
   {
     name: "Casos",
     href: "/cases",
@@ -27,7 +32,7 @@ const navigation: NavigationItem[] = [
     name: "Nuevo Caso",
     href: "/cases/new",
     icon: "add",
-    requiredPermission: "cases.create.all",
+    requiredPermission: "cases.create.own",
   },
   {
     name: "Control de Casos",

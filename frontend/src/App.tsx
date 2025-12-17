@@ -63,7 +63,7 @@ function App() {
               <Route
                 path="/"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredPermission="dashboard.view.own">
                     <Layout>
                       <SmartRedirect />
                     </Layout>
@@ -96,7 +96,7 @@ function App() {
               <Route
                 path="/cases/new"
                 element={
-                  <ProtectedRoute requiredPermission="cases.create.all">
+                  <ProtectedRoute requiredPermission="cases.create.own">
                     <Layout>
                       <NewCasePage />
                     </Layout>
@@ -107,7 +107,7 @@ function App() {
               <Route
                 path="/cases/edit/:id"
                 element={
-                  <ProtectedRoute requiredPermission="cases.edit.all">
+                  <ProtectedRoute requiredPermission="cases.edit.own">
                     <Layout>
                       <NewCasePage />
                     </Layout>
@@ -118,7 +118,7 @@ function App() {
               <Route
                 path="/cases/view/:id"
                 element={
-                  <ProtectedRoute requiredPermission="cases.view.all">
+                  <ProtectedRoute requiredPermission="cases.view.own">
                     <Layout>
                       <CaseDetailPage />
                     </Layout>

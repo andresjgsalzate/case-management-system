@@ -102,9 +102,9 @@ export default function TeamMembersModal({
 
     try {
       setLoading(true);
-      const result = await teamsApi.addTeamMember(team.id, memberData);
+      await teamsApi.addTeamMember(team.id, memberData);
 
-      console.log("✅ Miembro agregado exitosamente:", result);
+      // Team member added successfully
       showSuccess("Miembro agregado exitosamente");
       setSelectedUserId("");
       setSelectedRole(TeamRole.MEMBER);
@@ -197,13 +197,13 @@ export default function TeamMembersModal({
   );
 
   // Debug logging para entender el filtrado
-  console.log("🔍 Debug filtrado de usuarios:", {
-    totalAvailableUsers: availableUsers.length,
-    currentMembers: members.length,
-    memberUserIds: Array.from(memberUserIds),
-    usersToAdd: usersToAdd.length,
-    searchTerm,
-  });
+  // User filtering debug info
+  if (false) {
+    console.log("User filtering:", {
+      total: availableUsers.length,
+      filtered: usersToAdd.length,
+    });
+  }
 
   return (
     <>

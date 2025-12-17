@@ -19,9 +19,7 @@ export class AuthService {
     );
     try {
       this.userRepository = AppDataSource.getRepository(UserProfile);
-      console.log("✅ AuthService UserProfile repository initialized");
       this.sessionService = new SessionService();
-      console.log("✅ AuthService SessionService initialized");
     } catch (error) {
       console.error("❌ Error in AuthService constructor:", error);
       throw error;
@@ -33,13 +31,6 @@ export class AuthService {
     sessionInfo?: SessionInfo
   ): Promise<AuthResponse> {
     const { email, password } = loginDto;
-
-    console.log("🔍 AuthService.login - Iniciando búsqueda de usuario");
-    console.log("🔍 AppDataSource initialized:", AppDataSource.isInitialized);
-    console.log(
-      "🔍 Entidades disponibles:",
-      AppDataSource.entityMetadatas?.map((meta: any) => meta.name) || []
-    );
 
     // Buscar usuario por email
     const user = await this.userRepository.findOne({

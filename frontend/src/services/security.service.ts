@@ -142,13 +142,10 @@ class SecurityService {
     try {
       const encryptedData = sessionStorage.getItem(SecurityService.SESSION_KEY);
 
-      console.log("🔍 [SecurityService] Debug getValidTokens:", {
-        hasSessionData: !!encryptedData,
-        sessionDataLength: encryptedData?.length,
-      });
+      // Validating session data availability
 
       if (!encryptedData) {
-        console.log("🔍 [SecurityService] No session data found");
+        // No session data found
         return null;
       }
 
@@ -157,16 +154,10 @@ class SecurityService {
       );
 
       const now = Date.now();
-      const timeUntilExpiry = secureData.expiresAt - now;
-      const minutesUntilExpiry = Math.floor(timeUntilExpiry / (1000 * 60));
+      // const timeUntilExpiry = secureData.expiresAt - now;
+      // const minutesUntilExpiry = Math.floor(timeUntilExpiry / (1000 * 60));
 
-      console.log("🔍 [SecurityService] Token expiry check:", {
-        now,
-        expiresAt: secureData.expiresAt,
-        timeUntilExpiry,
-        minutesUntilExpiry,
-        isExpired: now > secureData.expiresAt,
-      });
+      // Checking token expiration
 
       // Verificar expiración
       if (now > secureData.expiresAt) {
@@ -179,16 +170,19 @@ class SecurityService {
       const currentFingerprint = this.generateFingerprint().hash;
       const storedFingerprint = localStorage.getItem("__fp__");
 
-      console.log("🔍 [SecurityService] Fingerprint check:", {
-        hasStoredFingerprint: !!storedFingerprint,
-        currentFingerprint,
-        storedFingerprintMatch: storedFingerprint
-          ? this.decrypt(storedFingerprint) === currentFingerprint
-          : false,
-        secureDataFingerprint: secureData.fingerprint,
-        secureDataFingerprintMatch:
-          secureData.fingerprint === currentFingerprint,
-      });
+      // Fingerprint validation check
+      if (false) {
+        console.log("🔍 Fingerprint check:", {
+          hasStoredFingerprint: !!storedFingerprint,
+          currentFingerprint,
+          storedFingerprintMatch: storedFingerprint
+            ? this.decrypt(storedFingerprint!) === currentFingerprint
+            : false,
+          secureDataFingerprint: secureData.fingerprint,
+          secureDataFingerprintMatch:
+            secureData.fingerprint === currentFingerprint,
+        });
+      }
 
       if (
         !storedFingerprint ||

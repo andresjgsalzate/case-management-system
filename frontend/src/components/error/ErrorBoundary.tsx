@@ -29,7 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
     this.props.onError?.(error, errorInfo);
 
     // En desarrollo, mostrar detalles completos
-    if (import.meta.env.DEV) {
+    if (false) {
       console.group("🔍 Error Boundary - Detalles completos:");
       console.error("Error:", error);
       console.error("Component Stack:", errorInfo.componentStack);
@@ -68,13 +68,13 @@ export class ErrorBoundary extends Component<Props, State> {
               recargar la página o contactar al soporte técnico.
             </p>
 
-            {import.meta.env.DEV && this.state.error && (
+            {false && this.state.error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-left">
                 <h3 className="font-medium text-red-800 mb-2">
                   Detalles del error (desarrollo):
                 </h3>
                 <code className="text-sm text-red-700 break-all">
-                  {this.state.error.message}
+                  {this.state.error?.message || "Error desconocido"}
                 </code>
               </div>
             )}
@@ -102,7 +102,7 @@ export class ErrorBoundary extends Component<Props, State> {
               </button>
             </div>
 
-            {!import.meta.env.DEV && (
+            {!false && (
               <p className="text-xs text-gray-500 mt-4">
                 ID del error: {Date.now().toString(36)}
               </p>

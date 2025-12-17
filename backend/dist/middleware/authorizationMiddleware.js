@@ -16,7 +16,8 @@ class AuthorizationMiddleware {
     }
     async getUserWithPermissions(req) {
         console.log("=== getUserWithPermissions START ===");
-        console.log("req.user exists:", !!req.user);
+        if (process.env.NODE_ENV === "development")
+            console.log("req.user exists:", !!req.user);
         if (req.user) {
             const user = req.user;
             console.log("User data:", {
@@ -50,7 +51,8 @@ class AuthorizationMiddleware {
             console.log("=== getUserWithPermissions END ===");
             return userWithPermissions;
         }
-        console.log("No user found in req.user");
+        if (process.env.NODE_ENV === "development")
+            console.log("No user found in req.user");
         console.log("=== getUserWithPermissions END ===");
         return null;
     }

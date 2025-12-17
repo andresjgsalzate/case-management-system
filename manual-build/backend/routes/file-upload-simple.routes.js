@@ -89,19 +89,9 @@ const flexibleAuth = async (req, res, next) => {
     }
 };
 router.use((req, res, next) => {
-    console.log("📡 [FILES ROUTER] Request:", {
-        method: req.method,
-        url: req.url,
-        originalUrl: req.originalUrl,
-        baseUrl: req.baseUrl,
-        path: req.path,
-        params: req.params,
-        query: req.query,
-        headers: {
-            userAgent: req.headers["user-agent"],
-            authorization: req.headers.authorization ? "present" : "missing",
-        },
-    });
+    if (process.env.NODE_ENV === "development") {
+        console.log(`📁 [FILES] ${req.method} ${req.path}`);
+    }
     next();
 });
 router.use(flexibleAuth);
@@ -131,7 +121,6 @@ router.get("/knowledge/view/:fileName", async (req, res) => {
             console.error("❌ [FILE VIEW] File not found on filesystem:", fileInfo.filePath);
             return res.status(404).json({ error: "Archivo no encontrado" });
         }
-        console.log("✅ [FILE VIEW] File exists, sending response");
         res.setHeader("Content-Type", fileInfo.mimeType);
         res.setHeader("Content-Disposition", `inline; filename="${fileInfo.originalName}"`);
         res.setHeader("Cache-Control", "private, no-cache, no-store, must-revalidate");

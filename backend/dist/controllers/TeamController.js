@@ -231,11 +231,7 @@ class TeamController {
             try {
                 const { teamId, memberId: userId } = req.params;
                 const { role } = req.body;
-                console.log("🔍 UpdateMemberRole - Params:", { teamId, userId, role });
-                console.log("🔍 UpdateMemberRole - All params:", req.params);
-                console.log("🔍 UpdateMemberRole - Body:", req.body);
                 if (!teamId || !userId) {
-                    console.log("❌ Missing params validation failed:", { teamId, userId });
                     return res.status(400).json({
                         error: "ID del equipo y ID del usuario son requeridos",
                     });

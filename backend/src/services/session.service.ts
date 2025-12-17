@@ -22,20 +22,10 @@ export class SessionService {
   private auditService: AuditService;
 
   constructor() {
-    console.log(
-      "🔍 SessionService constructor - AppDataSource initialized:",
-      AppDataSource.isInitialized
-    );
-    console.log(
-      "🔍 Available entities:",
-      AppDataSource.entityMetadatas?.map((meta) => meta.name)
-    );
-
     try {
       this.sessionRepository = AppDataSource.getRepository(UserSession);
       this.userRepository = AppDataSource.getRepository(UserProfile);
       this.auditService = new AuditService();
-      console.log("✅ SessionService repositories initialized successfully");
     } catch (error) {
       console.error("❌ Error initializing SessionService:", error);
       throw new Error(
@@ -330,14 +320,6 @@ export class SessionService {
     sessionInfo?: SessionInfo
   ): Promise<void> {
     try {
-      console.log("🔍 Intentando registrar actividad de sesión:", {
-        userId,
-        action,
-        entityType,
-        entityId,
-        module: "SessionManagement",
-      });
-
       // Obtener el email del usuario
       const userProfileRepo = AppDataSource.getRepository(UserProfile);
       const userProfile = await userProfileRepo.findOne({
@@ -366,7 +348,7 @@ export class SessionService {
         userAgent: sessionInfo?.userAgent,
       });
 
-      console.log("✅ Actividad de sesión registrada exitosamente");
+      // Session activity logged
     } catch (error) {
       console.error("❌ Error registrando actividad de sesión:", error);
       console.error("❌ Stack trace:", (error as Error)?.stack);

@@ -674,7 +674,7 @@ export class AuditMiddleware {
         }
 
         await auditChangeRepository.save(auditChanges);
-        console.log(`✅ ${auditChanges.length} cambios de auditoría guardados`);
+        // Audit changes saved
       }
     } catch (error) {
       console.error("❌ Error guardando auditoría:", error);

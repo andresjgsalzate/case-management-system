@@ -377,11 +377,7 @@ export class DashboardMetricsController {
         activeTimersQuery += ` AND cc."userId" = $1`;
       }
 
-      console.log("Executing cases time query:", casesTimeQuery);
-      console.log("Cases query parameters:", queryParams);
-      console.log("Executing todos time query:", todosTimeQuery);
-      console.log("TODOs query parameters:", todoQueryParams);
-      console.log("Executing active timers query:", activeTimersQuery);
+      // Query execution logged for debugging if needed
 
       // Ejecutar consulta para tiempo de casos
       const casesTimeResult = await AppDataSource.query(

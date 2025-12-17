@@ -182,7 +182,6 @@ class FileUploadService {
     static async initialize() {
         await (0, exports.initializeUploadDirectories)();
         file_cleanup_service_1.FileCleanupService.initialize(UPLOADS_BASE_DIR);
-        console.log("🔧 Servicios de procesamiento avanzado inicializados");
     }
     static async createDocumentDirectories(noteId) {
         const now = new Date();
@@ -220,7 +219,8 @@ class FileUploadService {
             const now = new Date().toISOString();
             console.log("📡 Verificando conexión de base de datos...");
             if (!database_1.AppDataSource.isInitialized) {
-                console.log("⚠️ DataSource no inicializado, inicializando...");
+                if (process.env.NODE_ENV === "development")
+                    console.log("⚠️ DataSource initializing...");
                 await database_1.AppDataSource.initialize();
             }
             console.log("💾 Insertando registro en base de datos...");
@@ -245,7 +245,6 @@ class FileUploadService {
                 now,
                 now,
             ]);
-            console.log("✅ Registro insertado correctamente en BD");
             const savedAttachment = {
                 id: attachmentId,
                 documentId: knowledgeDocumentId,
@@ -363,10 +362,6 @@ class FileUploadService {
     }
     async getFileForDownload(fileName) {
         const decodedFileName = decodeURIComponent(fileName);
-        console.log("🔍 [FILE SERVICE] Searching for file:", {
-            original: fileName,
-            decoded: decodedFileName,
-        });
         try {
             if (!database_1.AppDataSource.isInitialized) {
                 console.log("⚠️ [FILE SERVICE] DataSource not initialized, initializing...");

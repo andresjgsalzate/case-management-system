@@ -38,7 +38,7 @@ const navigation: NavigationItem[] = [
     name: "Control de Casos",
     href: "/case-control",
     icon: "time",
-    requiredPermission: "case_control.view.own",
+    requiredModule: "cases",
   },
   {
     name: "TODOs",

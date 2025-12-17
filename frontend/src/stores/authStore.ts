@@ -235,7 +235,7 @@ export const useAuthStore = create<AuthState>()(
             currentState.isAuthenticated &&
             currentState.user
           ) {
-            console.log("✅ Usando token persistido en localStorage");
+            // Using persisted token from localStorage
             set({ isLoading: false });
             // Cargar permisos si no están ya cargados
             if (!currentState.permissionsLoaded) {
@@ -248,7 +248,7 @@ export const useAuthStore = create<AuthState>()(
           const tokens = securityService.getValidTokens();
           const userString = localStorage.getItem("user");
           if (tokens && userString) {
-            console.log("✅ Usando token de SecurityService");
+            // Using token from SecurityService
             const user = JSON.parse(userString);
             set({
               user,
@@ -261,7 +261,7 @@ export const useAuthStore = create<AuthState>()(
             // Cargar permisos
             await get().loadUserPermissions();
           } else {
-            console.log("❌ No hay sesión válida disponible");
+            // No valid session available
             // No hay sesión válida, limpiar estado
             set({
               user: null,

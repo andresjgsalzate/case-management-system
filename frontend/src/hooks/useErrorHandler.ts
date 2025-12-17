@@ -91,15 +91,14 @@ export const useErrorHandler = () => {
     showError(title, description);
 
     // En desarrollo, mostrar detalles técnicos en consola
-    if (import.meta.env.DEV) {
-      console.group("🔍 Detalles técnicos del error:");
-      console.log("URL:", error.config?.url);
-      console.log("Método:", error.config?.method);
-      console.log("Estado:", error.response?.status);
-      console.log("Datos de respuesta:", error.response?.data);
-      console.log("Headers:", error.response?.headers);
-      console.log("Detalles técnicos:", error.technicalDetails);
-      console.groupEnd();
+    if (false) {
+      if (false) {
+        console.group("🔍 Error Details:");
+        console.log("URL:", error.config?.url);
+        console.log("Status:", error.response?.status);
+        console.log("Data:", error.response?.data);
+        console.groupEnd();
+      }
     }
   };
 

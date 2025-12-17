@@ -16,9 +16,7 @@ class AuthService {
         console.log("🔍 AuthService constructor - AppDataSource initialized:", database_1.AppDataSource.isInitialized);
         try {
             this.userRepository = database_1.AppDataSource.getRepository(UserProfile_1.UserProfile);
-            console.log("✅ AuthService UserProfile repository initialized");
             this.sessionService = new session_service_1.SessionService();
-            console.log("✅ AuthService SessionService initialized");
         }
         catch (error) {
             console.error("❌ Error in AuthService constructor:", error);
@@ -27,9 +25,6 @@ class AuthService {
     }
     async login(loginDto, sessionInfo) {
         const { email, password } = loginDto;
-        console.log("🔍 AuthService.login - Iniciando búsqueda de usuario");
-        console.log("🔍 AppDataSource initialized:", database_1.AppDataSource.isInitialized);
-        console.log("🔍 Entidades disponibles:", database_1.AppDataSource.entityMetadatas?.map((meta) => meta.name) || []);
         const user = await this.userRepository.findOne({
             where: { email, isActive: true },
         });

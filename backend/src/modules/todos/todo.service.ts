@@ -209,16 +209,20 @@ export class TodoService {
       });
 
       if (!todo) {
-        console.log(`DEBUG - TODO not found with ID: ${id}`);
+        if (process.env.NODE_ENV === "development")
+          console.log(`DEBUG - TODO not found: ${id}`);
         return null;
       }
 
-      console.log(`DEBUG - TODO found:`, {
-        id: todo.id,
-        title: todo.title,
-        isCompleted: todo.isCompleted,
-        priority: todo.priority?.name,
-      });
+      // TODO found - details logged for debugging
+      if (process.env.NODE_ENV === "development") {
+        console.log(`DEBUG - TODO found:`, {
+          id: todo.id,
+          title: todo.title,
+          isCompleted: todo.isCompleted,
+          priority: todo.priority?.name,
+        });
+      }
 
       // Solo se pueden archivar TODOs completados
       if (!todo.isCompleted) {
@@ -733,7 +737,7 @@ export class TodoService {
           : undefined;
 
       if (!control) {
-        console.log("Control not found for TODO:", todoId);
+        // Control not found
         return null;
       }
 
@@ -816,7 +820,8 @@ export class TodoService {
       });
 
       console.log(`DEBUG - TodoControl ID: ${todoControl.id}`);
-      console.log(`DEBUG - Automatic entries found: ${timeEntries.length}`);
+      if (process.env.NODE_ENV === "development")
+        console.log(`Automatic entries: ${timeEntries.length}`);
 
       timeEntries.forEach((entry, index) => {
         console.log(`DEBUG - Automatic entry ${index + 1}:`, {

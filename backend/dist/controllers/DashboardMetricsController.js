@@ -260,11 +260,6 @@ class DashboardMetricsController {
             if (!permissions.canReadAll && permissions.canReadOwn) {
                 activeTimersQuery += ` AND cc."userId" = $1`;
             }
-            console.log("Executing cases time query:", casesTimeQuery);
-            console.log("Cases query parameters:", queryParams);
-            console.log("Executing todos time query:", todosTimeQuery);
-            console.log("TODOs query parameters:", todoQueryParams);
-            console.log("Executing active timers query:", activeTimersQuery);
             const casesTimeResult = await database_1.AppDataSource.query(casesTimeQuery, queryParams);
             const todosTimeResult = await database_1.AppDataSource.query(todosTimeQuery, todoQueryParams);
             const activeTimersParams = permissions.canReadAll ? [] : [userId];

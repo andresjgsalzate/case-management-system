@@ -149,15 +149,18 @@ class TodoService {
                 relations: ["priority", "assignedUser", "createdByUser", "controls"],
             });
             if (!todo) {
-                console.log(`DEBUG - TODO not found with ID: ${id}`);
+                if (process.env.NODE_ENV === "development")
+                    console.log(`DEBUG - TODO not found: ${id}`);
                 return null;
             }
-            console.log(`DEBUG - TODO found:`, {
-                id: todo.id,
-                title: todo.title,
-                isCompleted: todo.isCompleted,
-                priority: todo.priority?.name,
-            });
+            if (process.env.NODE_ENV === "development") {
+                console.log(`DEBUG - TODO found:`, {
+                    id: todo.id,
+                    title: todo.title,
+                    isCompleted: todo.isCompleted,
+                    priority: todo.priority?.name,
+                });
+            }
             if (!todo.isCompleted) {
                 console.log(`DEBUG - TODO is not completed, cannot archive`);
                 throw new Error("Solo se pueden archivar TODOs completados");
@@ -552,7 +555,6 @@ class TodoService {
                 ? todo.controls[0]
                 : undefined;
             if (!control) {
-                console.log("Control not found for TODO:", todoId);
                 return null;
             }
             if (control.userId !== userId) {
@@ -607,7 +609,8 @@ class TodoService {
                 order: { startTime: "DESC" },
             });
             console.log(`DEBUG - TodoControl ID: ${todoControl.id}`);
-            console.log(`DEBUG - Automatic entries found: ${timeEntries.length}`);
+            if (process.env.NODE_ENV === "development")
+                console.log(`Automatic entries: ${timeEntries.length}`);
             timeEntries.forEach((entry, index) => {
                 console.log(`DEBUG - Automatic entry ${index + 1}:`, {
                     id: entry.id,

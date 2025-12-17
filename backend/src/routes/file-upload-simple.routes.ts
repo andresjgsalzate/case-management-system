@@ -108,21 +108,11 @@ const flexibleAuth = async (req: Request, res: Response, next: any) => {
   }
 };
 
-// Log de debug para todas las solicitudes a /api/files
+// Log reducido para requests de archivos
 router.use((req, res, next) => {
-  console.log("📡 [FILES ROUTER] Request:", {
-    method: req.method,
-    url: req.url,
-    originalUrl: req.originalUrl,
-    baseUrl: req.baseUrl,
-    path: req.path,
-    params: req.params,
-    query: req.query,
-    headers: {
-      userAgent: req.headers["user-agent"],
-      authorization: req.headers.authorization ? "present" : "missing",
-    },
-  });
+  if (process.env.NODE_ENV === "development") {
+    console.log(`📁 [FILES] ${req.method} ${req.path}`);
+  }
   next();
 });
 
@@ -172,7 +162,7 @@ router.get(
         return res.status(404).json({ error: "Archivo no encontrado" });
       }
 
-      console.log("✅ [FILE VIEW] File exists, sending response");
+      // File found and sent
 
       // Configurar headers para visualización
       res.setHeader("Content-Type", fileInfo.mimeType);

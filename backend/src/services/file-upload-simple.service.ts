@@ -247,7 +247,7 @@ export class FileUploadService {
 
     // Inicializar servicios de procesamiento y limpieza automática
     FileCleanupService.initialize(UPLOADS_BASE_DIR);
-    console.log("🔧 Servicios de procesamiento avanzado inicializados");
+    // Advanced processing services initialized
   }
 
   /**
@@ -343,7 +343,8 @@ export class FileUploadService {
 
       // Verificar que la conexión esté inicializada
       if (!AppDataSource.isInitialized) {
-        console.log("⚠️ DataSource no inicializado, inicializando...");
+        if (process.env.NODE_ENV === "development")
+          console.log("⚠️ DataSource initializing...");
         await AppDataSource.initialize();
       }
 
@@ -375,7 +376,7 @@ export class FileUploadService {
         ]
       );
 
-      console.log("✅ Registro insertado correctamente en BD");
+      // Database record inserted successfully
 
       // Retornar el attachment creado
       const savedAttachment = {
@@ -544,10 +545,7 @@ export class FileUploadService {
   ): Promise<{ filePath: string; originalName: string; mimeType: string }> {
     // Decodificar la URL para manejar espacios y caracteres especiales
     const decodedFileName = decodeURIComponent(fileName);
-    console.log("🔍 [FILE SERVICE] Searching for file:", {
-      original: fileName,
-      decoded: decodedFileName,
-    });
+    // File search initiated for decoded filename
 
     try {
       // Verificar y asegurar conexión antes de la consulta

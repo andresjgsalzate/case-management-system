@@ -147,7 +147,6 @@ class AuditMiddleware {
                     return;
                 }
                 await auditChangeRepository.save(auditChanges);
-                console.log(`✅ ${auditChanges.length} cambios de auditoría guardados`);
             }
         }
         catch (error) {

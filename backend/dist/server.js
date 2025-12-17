@@ -83,14 +83,9 @@ const limiter = (0, express_rate_limit_1.default)({
 });
 app.use((0, helmet_1.default)());
 app.use((req, res, next) => {
-    if (req.url.includes("/api/files")) {
-        console.log("🌐 [SERVER] Request received:", {
-            method: req.method,
-            url: req.url,
-            originalUrl: req.originalUrl,
-            userAgent: req.headers["user-agent"]?.substring(0, 50),
-            authorization: req.headers.authorization ? "present" : "missing",
-        });
+    if (process.env.NODE_ENV === "development" &&
+        req.url.includes("/api/files")) {
+        console.log(`📁 [FILES] ${req.method} ${req.url}`);
     }
     next();
 });

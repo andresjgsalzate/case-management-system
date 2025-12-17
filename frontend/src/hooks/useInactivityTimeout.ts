@@ -21,11 +21,11 @@ export const useInactivityTimeout = ({
   const [remainingMinutes, setRemainingMinutes] = useState(0);
   const [timeUntilTimeout, setTimeUntilTimeout] = useState(0);
 
-  const timeoutRef = useRef<number>();
-  const warningTimeoutRef = useRef<number>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>();
+  const warningTimeoutRef = useRef<NodeJS.Timeout | undefined>();
   const lastActivityRef = useRef<number>(Date.now());
-  const warningIntervalRef = useRef<number>();
-  const countdownIntervalRef = useRef<number>();
+  const warningIntervalRef = useRef<NodeJS.Timeout | undefined>();
+  const countdownIntervalRef = useRef<NodeJS.Timeout | undefined>();
   const showWarningRef = useRef<boolean>(false); // Ref para evitar problemas de clausura
 
   const resetTimer = useCallback(() => {
@@ -142,12 +142,12 @@ export const useInactivityTimeout = ({
     ];
 
     // Throttle para evitar demasiadas llamadas
-    let throttleTimer: number;
+    let throttleTimer: NodeJS.Timeout | null;
     const throttledResetTimer = () => {
       if (!throttleTimer) {
         resetTimerForActivity(); // Usar la función que respeta el estado de advertencia
         throttleTimer = setTimeout(() => {
-          throttleTimer = null as any;
+          throttleTimer = null;
         }, 1000); // Throttle de 1 segundo
       }
     };

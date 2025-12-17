@@ -132,12 +132,14 @@ export const caseService = {
 
   // Crear un nuevo caso
   createCase: async (caseData: any): Promise<Case> => {
-    console.log("Sending create request:", caseData);
+    if (false)
+      console.log("Creating case:", caseData.title);
     const response = await authService.authenticatedRequest<any>("/cases", {
       method: "POST",
       body: JSON.stringify(caseData),
     });
-    console.log("Create response received:", response);
+    if (false)
+      console.log("Case created:", response.data?.id);
 
     // El backend devuelve { success: true, data: case, message: string }
     if (!response.success || !response.data) {
@@ -148,7 +150,8 @@ export const caseService = {
 
   // Actualizar un caso
   updateCase: async (id: string, caseData: any): Promise<Case> => {
-    console.log("Sending update request for case:", id, caseData);
+    if (false)
+      console.log("Updating case:", id);
     const response = await authService.authenticatedRequest<any>(
       `/cases/${id}`,
       {
@@ -156,7 +159,8 @@ export const caseService = {
         body: JSON.stringify(caseData),
       }
     );
-    console.log("Update response received:", response);
+    if (false)
+      console.log("Case updated successfully");
 
     // El backend devuelve { success: true, data: case, message: string }
     if (!response.success || !response.data) {

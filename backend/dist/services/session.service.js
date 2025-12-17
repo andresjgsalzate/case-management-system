@@ -10,13 +10,10 @@ const UserProfile_1 = require("../entities/UserProfile");
 const AuditService_1 = require("./AuditService");
 class SessionService {
     constructor() {
-        console.log("🔍 SessionService constructor - AppDataSource initialized:", database_1.AppDataSource.isInitialized);
-        console.log("🔍 Available entities:", database_1.AppDataSource.entityMetadatas?.map((meta) => meta.name));
         try {
             this.sessionRepository = database_1.AppDataSource.getRepository(UserSession_1.UserSession);
             this.userRepository = database_1.AppDataSource.getRepository(UserProfile_1.UserProfile);
             this.auditService = new AuditService_1.AuditService();
-            console.log("✅ SessionService repositories initialized successfully");
         }
         catch (error) {
             console.error("❌ Error initializing SessionService:", error);
@@ -191,13 +188,6 @@ class SessionService {
     }
     async logSessionActivity(userId, action, entityType, entityId, details, sessionInfo) {
         try {
-            console.log("🔍 Intentando registrar actividad de sesión:", {
-                userId,
-                action,
-                entityType,
-                entityId,
-                module: "SessionManagement",
-            });
             const userProfileRepo = database_1.AppDataSource.getRepository(UserProfile_1.UserProfile);
             const userProfile = await userProfileRepo.findOne({
                 where: { id: userId },
@@ -219,7 +209,6 @@ class SessionService {
                 ipAddress: sessionInfo?.ip,
                 userAgent: sessionInfo?.userAgent,
             });
-            console.log("✅ Actividad de sesión registrada exitosamente");
         }
         catch (error) {
             console.error("❌ Error registrando actividad de sesión:", error);

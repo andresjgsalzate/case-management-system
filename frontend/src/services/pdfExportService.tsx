@@ -754,48 +754,57 @@ const renderHeadingInlineContent = (
             blockProps?.backgroundColor ||
             item.styles?.backgroundColor ||
             item.backgroundColor;
-          console.log("🎨 [PDF DEBUG] Colores en heading:", {
-            blockPropsTextColor: blockProps?.textColor,
-            blockPropsBackgroundColor: blockProps?.backgroundColor,
-            itemStylesTextColor: item.styles?.textColor,
-            itemTextColor: item.textColor,
-            finalTextColor: textColor,
-            finalBackgroundColor: backgroundColor,
-            text: item.text?.substring(0, 30) + "...",
-          });
+          false &&
+            console.log("🎨 [PDF DEBUG] Colores en heading:", {
+              blockPropsTextColor: blockProps?.textColor,
+              blockPropsBackgroundColor: blockProps?.backgroundColor,
+              itemStylesTextColor: item.styles?.textColor,
+              itemTextColor: item.textColor,
+              finalTextColor: textColor,
+              finalBackgroundColor: backgroundColor,
+              text: item.text?.substring(0, 30) + "...",
+            });
           if (textColor && textColor !== "default") {
             const normalizedColor = normalizeColor(textColor);
             combinedStyles.color = normalizedColor;
-            console.log("🎨 [PDF] Aplicando color personalizado en heading:", {
-              originalColor: baseStyle.color,
-              textColor: textColor,
-              normalizedColor: normalizedColor,
-              source: item.styles?.textColor ? "styles.textColor" : "textColor",
-              text: item.text?.substring(0, 30) + "...",
-            });
+            false &&
+              console.log(
+                "🎨 [PDF] Aplicando color personalizado en heading:",
+                {
+                  originalColor: baseStyle.color,
+                  textColor: textColor,
+                  normalizedColor: normalizedColor,
+                  source: item.styles?.textColor
+                    ? "styles.textColor"
+                    : "textColor",
+                  text: item.text?.substring(0, 30) + "...",
+                }
+              );
           }
           // Aplicar color de fondo en heading si existe
           if (backgroundColor && backgroundColor !== "default") {
             const normalizedBgColor = normalizeColor(backgroundColor);
             combinedStyles.backgroundColor = normalizedBgColor;
-            console.log("🎨 [PDF] Aplicando color de fondo en heading:", {
-              originalBgColor: backgroundColor,
-              normalizedBgColor: normalizedBgColor,
-              source: item.styles?.backgroundColor
-                ? "styles.backgroundColor"
-                : "backgroundColor",
-              text: item.text?.substring(0, 30) + "...",
-            });
+            false &&
+              console.log("🎨 [PDF] Aplicando color de fondo en heading:", {
+                originalBgColor: backgroundColor,
+                normalizedBgColor: normalizedBgColor,
+                source: item.styles?.backgroundColor
+                  ? "styles.backgroundColor"
+                  : "backgroundColor",
+                text: item.text?.substring(0, 30) + "...",
+              });
           }
           // Determinar la fuente apropiada para el texto del heading
           const fontFamily = getFontFamily(baseStyle.fontFamily);
           combinedStyles.fontFamily = fontFamily;
-          console.log("🔤 [PDF] Fuente para heading:", {
-            text: text.substring(0, 20) + "...",
-            containsEmoji: containsEmoji(text),
-            baseFontFamily: baseStyle.fontFamily,
-            selectedFontFamily: fontFamily,
-          });
+          false &&
+            console.log("🔤 [PDF] Fuente para heading:", {
+              text: text.substring(0, 20) + "...",
+              containsEmoji: containsEmoji(text),
+              baseFontFamily: baseStyle.fontFamily,
+              selectedFontFamily: fontFamily,
+            });
           return renderTextWithEmojiSupport(text, combinedStyles);
         }
         if (item.text) {
@@ -817,12 +826,13 @@ const renderHeadingInlineContent = (
       ...baseStyle,
       fontFamily: fontFamily,
     };
-    console.log("🔤 [PDF] Fuente final para heading:", {
-      allText: allText.substring(0, 30) + "...",
-      containsEmoji: containsEmoji(allText),
-      baseFontFamily: baseStyle.fontFamily,
-      finalFontFamily: fontFamily,
-    });
+    false &&
+      console.log("🔤 [PDF] Fuente final para heading:", {
+        allText: allText.substring(0, 30) + "...",
+        containsEmoji: containsEmoji(allText),
+        baseFontFamily: baseStyle.fontFamily,
+        finalFontFamily: fontFamily,
+      });
     return renderedItems.length > 0 ? (
       <Text style={finalStyle}>
         {renderedItems
@@ -866,39 +876,41 @@ const renderInlineContent = (
   }
   // Debug: Mostrar estructura completa del contenido para troubleshooting
   if (Array.isArray(content) && content.length > 0) {
-    console.log("🔍 [PDF DEBUG] Estructura completa del contenido:", {
-      length: content.length,
-      sampleItem: content[0]
-        ? {
-            allProperties: Object.keys(content[0]),
-            type: content[0]?.type,
-            text: content[0]?.text?.substring(0, 30),
-            styles: content[0]?.styles,
-            textColor: content[0]?.textColor,
-            backgroundColor: content[0]?.backgroundColor,
-            props: content[0]?.props,
-            fullItem: content[0],
-          }
-        : null,
-    });
+    false &&
+      console.log("🔍 [PDF DEBUG] Estructura completa del contenido:", {
+        length: content.length,
+        sampleItem: content[0]
+          ? {
+              allProperties: Object.keys(content[0]),
+              type: content[0]?.type,
+              text: content[0]?.text?.substring(0, 30),
+              styles: content[0]?.styles,
+              textColor: content[0]?.textColor,
+              backgroundColor: content[0]?.backgroundColor,
+              props: content[0]?.props,
+              fullItem: content[0],
+            }
+          : null,
+      });
     const hasStyles = content.some(
       (item) => item?.styles?.textColor || item?.textColor
     );
     if (hasStyles) {
-      console.log("🔍 [PDF DEBUG] Contenido con estilos detectado:", {
-        items: content.map((item) => ({
-          type: item?.type,
-          text: item?.text?.substring(0, 20) + "...",
-          textColor: item?.styles?.textColor || item?.textColor,
-          backgroundColor:
-            item?.styles?.backgroundColor || item?.backgroundColor,
-          hasStyles: !!(
-            item?.styles ||
-            item?.textColor ||
-            item?.backgroundColor
-          ),
-        })),
-      });
+      false &&
+        console.log("🔍 [PDF DEBUG] Contenido con estilos detectado:", {
+          items: content.map((item: any) => ({
+            type: item?.type,
+            text: item?.text?.substring(0, 20) + "...",
+            textColor: item?.styles?.textColor || item?.textColor,
+            backgroundColor:
+              item?.styles?.backgroundColor || item?.backgroundColor,
+            hasStyles: !!(
+              item?.styles ||
+              item?.textColor ||
+              item?.backgroundColor
+            ),
+          })),
+        });
     }
   }
   if (typeof content === "string") {
@@ -906,11 +918,12 @@ const renderInlineContent = (
     const trimmedContent = content.trim();
     if (trimmedContent) {
       const fontFamily = getFontFamily(trimmedContent);
-      console.log("🔤 [PDF] Detectando fuente para texto:", {
-        text: trimmedContent.substring(0, 20) + "...",
-        containsEmoji: containsEmoji(trimmedContent),
-        fontFamily: fontFamily,
-      });
+      false &&
+        console.log("🔤 [PDF] Detectando fuente para texto:", {
+          text: trimmedContent.substring(0, 20) + "...",
+          containsEmoji: containsEmoji(trimmedContent),
+          fontFamily: fontFamily,
+        });
       return (
         <Text
           style={{
@@ -947,11 +960,12 @@ const renderInlineContent = (
           if (!trimmedText) return null;
           // Determinar la fuente apropiada según el contenido
           const fontFamily = getFontFamily(trimmedText);
-          console.log("🔤 [PDF] Fuente para texto con estilos:", {
-            text: trimmedText.substring(0, 20) + "...",
-            containsEmoji: containsEmoji(trimmedText),
-            fontFamily: fontFamily,
-          });
+          false &&
+            console.log("🔤 [PDF] Fuente para texto con estilos:", {
+              text: trimmedText.substring(0, 20) + "...",
+              containsEmoji: containsEmoji(trimmedText),
+              fontFamily: fontFamily,
+            });
           // Aplicar estilos según las propiedades del texto
           const textStyles: any = {
             fontSize: 12,
@@ -979,45 +993,48 @@ const renderInlineContent = (
               blockProps?.backgroundColor ||
               item.styles?.backgroundColor ||
               item.backgroundColor;
-            console.log("🎨 [PDF DEBUG] Colores en párrafo:", {
-              blockPropsTextColor: blockProps?.textColor,
-              blockPropsBackgroundColor: blockProps?.backgroundColor,
-              itemStylesTextColor: item.styles?.textColor,
-              itemTextColor: item.textColor,
-              finalTextColor: textColor,
-              finalBackgroundColor: backgroundColor,
-              text: trimmedText.substring(0, 30) + "...",
-            });
+            false &&
+              console.log("🎨 [PDF DEBUG] Colores en párrafo:", {
+                blockPropsTextColor: blockProps?.textColor,
+                blockPropsBackgroundColor: blockProps?.backgroundColor,
+                itemStylesTextColor: item.styles?.textColor,
+                itemTextColor: item.textColor,
+                finalTextColor: textColor,
+                finalBackgroundColor: backgroundColor,
+                text: trimmedText.substring(0, 30) + "...",
+              });
             if (textColor && textColor !== "default") {
               const normalizedColor = normalizeColor(textColor);
               textStyles.color = normalizedColor;
-              console.log("🎨 [PDF] Aplicando color de texto:", {
-                text:
-                  trimmedText.substring(0, 30) +
-                  (trimmedText.length > 30 ? "..." : ""),
-                originalColor: textColor,
-                normalizedColor: normalizedColor,
-                source: blockProps?.textColor
-                  ? "blockProps.textColor"
-                  : item.styles?.textColor
-                  ? "styles.textColor"
-                  : "textColor",
-              });
+              false &&
+                console.log("🎨 [PDF] Aplicando color de texto:", {
+                  text:
+                    trimmedText.substring(0, 30) +
+                    (trimmedText.length > 30 ? "..." : ""),
+                  originalColor: textColor,
+                  normalizedColor: normalizedColor,
+                  source: blockProps?.textColor
+                    ? "blockProps.textColor"
+                    : item.styles?.textColor
+                    ? "styles.textColor"
+                    : "textColor",
+                });
             }
             // Aplicar color de fondo si existe
             if (backgroundColor && backgroundColor !== "default") {
               const normalizedBgColor = normalizeColor(backgroundColor);
               textStyles.backgroundColor = normalizedBgColor;
-              console.log("🎨 [PDF] Aplicando color de fondo:", {
-                text:
-                  trimmedText.substring(0, 30) +
-                  (trimmedText.length > 30 ? "..." : ""),
-                originalBgColor: backgroundColor,
-                normalizedBgColor: normalizedBgColor,
-                source: item.styles?.backgroundColor
-                  ? "styles.backgroundColor"
-                  : "backgroundColor",
-              });
+              false &&
+                console.log("🎨 [PDF] Aplicando color de fondo:", {
+                  text:
+                    trimmedText.substring(0, 30) +
+                    (trimmedText.length > 30 ? "..." : ""),
+                  originalBgColor: backgroundColor,
+                  normalizedBgColor: normalizedBgColor,
+                  source: item.styles?.backgroundColor
+                    ? "styles.backgroundColor"
+                    : "backgroundColor",
+                });
             }
           }
           return (
@@ -1071,12 +1088,13 @@ const renderInlineContent = (
       })
       .join("");
     const fontFamily = getFontFamily(allText);
-    console.log("🔤 [PDF] Fuente para contenido combinado:", {
-      allText: allText.substring(0, 50) + "...",
-      containsEmoji: containsEmoji(allText),
-      fontFamily: fontFamily,
-      validItemsCount: renderedItems.length,
-    });
+    false &&
+      console.log("🔤 [PDF] Fuente para contenido combinado:", {
+        allText: allText.substring(0, 50) + "...",
+        containsEmoji: containsEmoji(allText),
+        fontFamily: fontFamily,
+        validItemsCount: renderedItems.length,
+      });
     return (
       <Text
         style={{
@@ -1178,11 +1196,12 @@ const renderBlock = (
         headingStyle,
         block.props
       );
-      console.log(`📝 [PDF] Renderizando H${headingLevel} con estilos:`, {
-        fontSize: headingStyle.fontSize,
-        level: headingLevel,
-        hasContent: !!headingContent,
-      });
+      false &&
+        console.log(`📝 [PDF] Renderizando H${headingLevel} con estilos:`, {
+          fontSize: headingStyle.fontSize,
+          level: headingLevel,
+          hasContent: !!headingContent,
+        });
       // renderHeadingInlineContent ya devuelve un Text component con los estilos aplicados
       const headingElement = renderHeadingInlineContent(
         block.content,
@@ -1354,17 +1373,19 @@ const convertImageToDataUrl = async (
       return null;
     }
     const blob = await response.blob();
-    console.log(
-      "✅ [PDF] Imagen obtenida exitosamente, convirtiendo a data URL"
-    );
+    false &&
+      console.log(
+        "✅ [PDF] Imagen obtenida exitosamente, convirtiendo a data URL"
+      );
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = () => {
         const result = reader.result as string;
-        console.log(
-          "✅ [PDF] Imagen convertida a data URL:",
-          result.substring(0, 50) + "..."
-        );
+        false &&
+          console.log(
+            "✅ [PDF] Imagen convertida a data URL:",
+            result.substring(0, 50) + "..."
+          );
         resolve(result);
       };
       reader.onerror = () => {
@@ -1392,12 +1413,13 @@ const renderImage = (
   if (!src) {
     return <View key={index} />;
   }
-  console.log("🖼️ [PDF] Renderizando imagen:", {
-    src: src.substring(0, 100) + (src.length > 100 ? "..." : ""),
-    isProcessed,
-    alt,
-    caption,
-  });
+  false &&
+    console.log("🖼️ [PDF] Renderizando imagen:", {
+      src: src.substring(0, 100) + (src.length > 100 ? "..." : ""),
+      isProcessed,
+      alt,
+      caption,
+    });
   // Si la imagen fue procesada, usar directamente la URL
   let finalImageSrc = src;
   // Si no fue procesada y es imagen local, aplicar lógica de fallback
@@ -1435,12 +1457,13 @@ const renderImage = (
       }
     }
   }
-  console.log("🎯 [PDF] URL final de imagen:", {
-    original: src.substring(0, 50) + "...",
-    final: finalImageSrc.substring(0, 50) + "...",
-    isData: finalImageSrc.startsWith("data:"),
-    isProcessed,
-  });
+  false &&
+    console.log("🎯 [PDF] URL final de imagen:", {
+      original: src.substring(0, 50) + "...",
+      final: finalImageSrc.substring(0, 50) + "...",
+      isData: finalImageSrc.startsWith("data:"),
+      isProcessed,
+    });
   // Detectar si es imagen local vs externa
   const isLocalImage =
     isProcessed ||
@@ -1520,9 +1543,10 @@ const preprocessDocumentWithSyntaxHighlighting = async (
   document: KnowledgeDocumentPDF
 ): Promise<KnowledgeDocumentPDF> => {
   try {
-    console.log(
-      "🎨 [PDF] Iniciando preprocesamiento con syntax highlighting e imágenes..."
-    );
+    false &&
+      console.log(
+        "🎨 [PDF] Iniciando preprocesamiento con syntax highlighting e imágenes..."
+      );
     if (!document.content || !Array.isArray(document.content)) {
       console.warn("⚠️ [PDF] Documento sin contenido válido");
       return document;
@@ -1591,9 +1615,10 @@ const preprocessDocumentWithSyntaxHighlighting = async (
               try {
                 const dataUrl = await convertImageToDataUrl(finalImageSrc);
                 if (dataUrl) {
-                  console.log(
-                    "✅ [PDF] Imagen convertida a data URL exitosamente"
-                  );
+                  false &&
+                    console.log(
+                      "✅ [PDF] Imagen convertida a data URL exitosamente"
+                    );
                   return {
                     ...block,
                     props: {
@@ -1682,18 +1707,20 @@ const PDFDocumentComponent: React.FC<PDFDocumentProps> = ({
     }
   );
   // Debug: Log de los adjuntos filtrados
-  console.log(
-    "📎 [PDF DEBUG] Adjuntos documentales encontrados:",
-    documentAttachments.length
-  );
+  false &&
+    console.log(
+      "📎 [PDF DEBUG] Adjuntos documentales encontrados:",
+      documentAttachments.length
+    );
   documentAttachments.forEach((att: any, idx: number) => {
-    console.log(`Adjunto ${idx + 1}:`, {
-      fileName: att.file_name || att.fileName || att.name,
-      fileType: att.file_type || att.fileType,
-      mimeType: att.mime_type || att.mimeType,
-      fileSize: att.file_size || att.fileSize || att.size,
-      allProps: Object.keys(att),
-    });
+    false &&
+      console.log(`Adjunto ${idx + 1}:`, {
+        fileName: att.file_name || att.fileName || att.name,
+        fileType: att.file_type || att.fileType,
+        mimeType: att.mime_type || att.mimeType,
+        fileSize: att.file_size || att.fileSize || att.size,
+        allProps: Object.keys(att),
+      });
   });
   // Calcular tamaño de fuente dinámico basado en cantidad de etiquetas
   const getTagFontSize = (tagCount: number) => {
@@ -1946,9 +1973,10 @@ export const getPDFPreview = async (
   document: KnowledgeDocumentPDF
 ): Promise<string> => {
   try {
-    console.log(
-      "👁️ [PDF Preview] Generando vista previa con syntax highlighting..."
-    );
+    false &&
+      console.log(
+        "👁️ [PDF Preview] Generando vista previa con syntax highlighting..."
+      );
     // Preprocesar documento con syntax highlighting
     const preprocessedDocument = await preprocessDocumentWithSyntaxHighlighting(
       document

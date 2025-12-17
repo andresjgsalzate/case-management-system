@@ -14,11 +14,19 @@ export const useAllDashboardMetrics = () => {
       try {
         // Verificar permisos antes de hacer las llamadas
         const canReadUserMetrics =
-          hasPermission("metrics.users.team") ||
-          hasPermission("metrics.users.all") ||
-          hasPermission("admin.full");
+          hasPermission("metrics.read.own") ||
+          hasPermission("metrics.read.team") ||
+          hasPermission("metrics.read.all") ||
+          hasPermission("dashboard.read.own") ||
+          hasPermission("dashboard.read.team") ||
+          hasPermission("dashboard.read.all");
         const canReadTimeMetrics =
-          hasPermission("metrics.time.all") || hasPermission("admin.full");
+          hasPermission("metrics.read.own") ||
+          hasPermission("metrics.read.team") ||
+          hasPermission("metrics.read.all") ||
+          hasPermission("dashboard.read.own") ||
+          hasPermission("dashboard.read.team") ||
+          hasPermission("dashboard.read.all");
 
         // Cargar métricas básicas que siempre están disponibles
         const [

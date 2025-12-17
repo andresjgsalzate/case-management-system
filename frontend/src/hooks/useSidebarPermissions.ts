@@ -29,17 +29,38 @@ export const useSidebarPermissions = (): SidebarPermissions => {
       if (!isAuthenticated || isLoading) return false;
 
       const modulePermissions: Record<string, string[]> = {
-        dashboard: ["dashboard:view", "metrics:view"],
-        cases: ["cases:view", "cases:read"],
-        todos: ["todos:view", "todos:read"],
-        notes: ["notes:view", "notes:read"],
-        knowledge: ["knowledge:view", "knowledge:read"],
-        archive: ["archive:view", "archive:read"],
-        dispositions: ["dispositions:view", "dispositions:read"],
-        users: ["users:view", "users:read"],
-        roles: ["roles:view", "roles:read"],
-        permissions: ["permissions:view", "permissions:read"],
-        admin: ["admin:access", "system:admin"],
+        dashboard: [
+          "dashboard.read.own",
+          "dashboard.read.all",
+          "dashboard.view.own",
+          "dashboard.view.all",
+        ],
+        cases: ["cases.view.own", "cases.view.team", "cases.view.all"],
+        todos: ["todos.view.own", "todos.view.team", "todos.view.all"],
+        notes: ["notes.view.own", "notes.view.team", "notes.view.all"],
+        knowledge: [
+          "knowledge.read.own",
+          "knowledge.read.team",
+          "knowledge.read.all",
+          "knowledge.view.own",
+          "knowledge.view.team",
+          "knowledge.view.all",
+        ],
+        archive: ["archive.view.own", "archive.view.team", "archive.view.all"],
+        dispositions: [
+          "dispositions.view.own",
+          "dispositions.view.team",
+          "dispositions.view.all",
+        ],
+        users: ["users.view.own", "users.view.team", "users.view.all"],
+        roles: ["roles.view.own", "roles.view.team", "roles.view.all"],
+        permissions: [
+          "permissions.read.own",
+          "permissions.read.team",
+          "permissions.read.all",
+        ],
+        teams: ["teams.view.own", "teams.view.team", "teams.view.all"],
+        admin: ["permissions.admin.all", "roles.manage.all", "users.admin.all"],
       };
 
       const requiredPermissions = modulePermissions[module] || [];

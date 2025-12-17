@@ -33,18 +33,6 @@ export const SYSTEM_MODULES: ModulePermission[] = [
     permissions: ["cases.create.own", "cases.create.team", "cases.create.all"],
   },
   {
-    name: "Notas",
-    href: "/notes",
-    icon: "DocumentDuplicateIcon",
-    permissions: ["notes.view.own", "notes.view.team", "notes.view.all"],
-  },
-  {
-    name: "TODOs",
-    href: "/todos",
-    icon: "ListBulletIcon",
-    permissions: ["todos.view.own", "todos.view.team", "todos.view.all"],
-  },
-  {
     name: "Control de Casos",
     href: "/case-control",
     icon: "ClockIcon",
@@ -65,10 +53,16 @@ export const SYSTEM_MODULES: ModulePermission[] = [
     ],
   },
   {
-    name: "Archivo",
-    href: "/archive",
-    icon: "ArchiveBoxIcon",
-    permissions: ["archive.view.own"],
+    name: "TODOs",
+    href: "/todos",
+    icon: "ListBulletIcon",
+    permissions: ["todos.view.own", "todos.view.team", "todos.view.all"],
+  },
+  {
+    name: "Notas",
+    href: "/notes",
+    icon: "DocumentDuplicateIcon",
+    permissions: ["notes.view.own", "notes.view.team", "notes.view.all"],
   },
   {
     name: "Base de Conocimiento",
@@ -79,6 +73,12 @@ export const SYSTEM_MODULES: ModulePermission[] = [
       "knowledge.read.team",
       "knowledge.read.all",
     ],
+  },
+  {
+    name: "Archivo",
+    href: "/archive",
+    icon: "ArchiveBoxIcon",
+    permissions: ["archive.view.own"],
   },
 ];
 

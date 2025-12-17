@@ -26,7 +26,7 @@ const navigation: NavigationItem[] = [
     name: "Casos",
     href: "/cases",
     icon: "document",
-    requiredModule: "casos",
+    requiredModule: "cases",
   },
   {
     name: "Nuevo Caso",
@@ -38,7 +38,7 @@ const navigation: NavigationItem[] = [
     name: "Control de Casos",
     href: "/case-control",
     icon: "time",
-    requiredModule: "casos",
+    requiredPermission: "case_control.view.own",
   },
   {
     name: "TODOs",
@@ -56,7 +56,7 @@ const navigation: NavigationItem[] = [
     name: "Notas",
     href: "/notes",
     icon: "document",
-    requiredModule: "notas",
+    requiredModule: "notes",
   },
   {
     name: "Base de Conocimiento",

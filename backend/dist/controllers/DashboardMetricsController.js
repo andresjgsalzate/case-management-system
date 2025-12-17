@@ -121,12 +121,12 @@ class DashboardMetricsController {
                FROM manual_time_entries mte 
                WHERE mte."caseControlId" = cc.id`;
             if (startDate) {
-                casesTimeQuery += ` AND mte."createdAt" >= $${paramIndex}`;
+                casesTimeQuery += ` AND mte."date" >= $${paramIndex}`;
                 queryParams.push(startDate);
                 paramIndex++;
             }
             if (endDate) {
-                casesTimeQuery += ` AND mte."createdAt" <= $${paramIndex}`;
+                casesTimeQuery += ` AND mte."date" <= $${paramIndex}`;
                 queryParams.push(endDate);
                 paramIndex++;
             }
@@ -159,12 +159,12 @@ class DashboardMetricsController {
             SELECT 1 FROM manual_time_entries mte 
             WHERE mte."caseControlId" = cc.id`;
                 if (startDate) {
-                    casesTimeQuery += ` AND mte."createdAt" >= $${paramIndex}`;
+                    casesTimeQuery += ` AND mte."date" >= $${paramIndex}`;
                     queryParams.push(startDate);
                     paramIndex++;
                 }
                 if (endDate) {
-                    casesTimeQuery += ` AND mte."createdAt" <= $${paramIndex}`;
+                    casesTimeQuery += ` AND mte."date" <= $${paramIndex}`;
                     queryParams.push(endDate);
                     paramIndex++;
                 }
@@ -258,7 +258,7 @@ class DashboardMetricsController {
         WHERE cc."isTimerActive" = true
       `;
             if (!permissions.canReadAll && permissions.canReadOwn) {
-                activeTimersQuery += ` AND cc."userId" = $${queryParams.length}`;
+                activeTimersQuery += ` AND cc."userId" = $1`;
             }
             console.log("Executing cases time query:", casesTimeQuery);
             console.log("Cases query parameters:", queryParams);
@@ -303,6 +303,7 @@ class DashboardMetricsController {
         }
     }
     static async getUserTimeMetrics(req, res) {
+        console.log("🔍 [getUserTimeMetrics] Starting request with userId:", req.user?.id);
         try {
             const { startDate, endDate } = req.query;
             const userId = req.user?.id;
@@ -318,10 +319,21 @@ class DashboardMetricsController {
                     "role.rolePermissions.permission",
                 ],
             });
-            const canReadUserMetrics = user?.role?.rolePermissions?.some((rp) => rp.permission.name === "metrics.users.read.team" ||
-                rp.permission.name === "metrics.users.read.all" ||
+            console.log("User permissions debug:", {
+                userId,
+                roleId: user?.role?.id,
+                roleName: user?.role?.name,
+                permissions: user?.role?.rolePermissions?.map((rp) => rp.permission.name),
+            });
+            const canReadUserMetrics = user?.role?.rolePermissions?.some((rp) => rp.permission.name === "metrics.users.team" ||
+                rp.permission.name === "metrics.users.all" ||
+                rp.permission.name === "metrics.read.team" ||
+                rp.permission.name === "metrics.read.all" ||
                 rp.permission.name === "admin.full");
-            if (!canReadUserMetrics) {
+            const canReadOwnMetrics = user?.role?.rolePermissions?.some((rp) => rp.permission.name === "metrics.users.own" ||
+                rp.permission.name === "metrics.read.own");
+            if (!canReadUserMetrics && !canReadOwnMetrics) {
+                console.log("Access denied: No user metrics permissions found");
                 return res
                     .status(403)
                     .json({ error: "Sin permisos para ver métricas de usuarios" });
@@ -360,12 +372,12 @@ class DashboardMetricsController {
                FROM manual_time_entries mte 
                WHERE mte."caseControlId" = cc.id`;
             if (startDate) {
-                userQuery += ` AND mte."createdAt" >= $${paramIndex}`;
+                userQuery += ` AND mte."date" >= $${paramIndex}`;
                 queryParams.push(startDate);
                 paramIndex++;
             }
             if (endDate) {
-                userQuery += ` AND mte."createdAt" <= $${paramIndex}`;
+                userQuery += ` AND mte."date" <= $${paramIndex}`;
                 queryParams.push(endDate);
                 paramIndex++;
             }
@@ -391,12 +403,12 @@ class DashboardMetricsController {
                 SELECT 1 FROM manual_time_entries mte 
                 WHERE mte."caseControlId" = cc.id`;
             if (startDate) {
-                userQuery += ` AND mte."createdAt" >= $${paramIndex}`;
+                userQuery += ` AND mte."date" >= $${paramIndex}`;
                 queryParams.push(startDate);
                 paramIndex++;
             }
             if (endDate) {
-                userQuery += ` AND mte."createdAt" <= $${paramIndex}`;
+                userQuery += ` AND mte."date" <= $${paramIndex}`;
                 queryParams.push(endDate);
                 paramIndex++;
             }
@@ -407,6 +419,11 @@ class DashboardMetricsController {
         FROM user_profiles u
         LEFT JOIN case_control cc ON u.id = cc."userId"
         WHERE 1=1`;
+            if (!canReadUserMetrics && canReadOwnMetrics) {
+                console.log("Limiting to own metrics only for user:", userId);
+                userQuery += ` AND u.id = $${paramIndex}`;
+                queryParams.push(userId);
+            }
             userQuery += ` GROUP BY u.id, u."fullName" ORDER BY total_time_minutes DESC`;
             const result = await database_1.AppDataSource.query(userQuery, queryParams);
             const userTimeMetrics = result.map((row) => ({
@@ -479,11 +496,11 @@ class DashboardMetricsController {
              FROM manual_time_entries mte 
              WHERE mte."caseControlId" = cc.id`;
             if (startDate) {
-                caseQuery += ` AND mte."createdAt" >= $${queryParams.length + 1}`;
+                caseQuery += ` AND mte."date" >= $${queryParams.length + 1}`;
                 queryParams.push(startDate);
             }
             if (endDate) {
-                caseQuery += ` AND mte."createdAt" <= $${queryParams.length + 1}`;
+                caseQuery += ` AND mte."date" <= $${queryParams.length + 1}`;
                 queryParams.push(endDate);
             }
             caseQuery += `), 0
@@ -518,11 +535,11 @@ class DashboardMetricsController {
             SELECT 1 FROM manual_time_entries mte 
             WHERE mte."caseControlId" = cc.id`;
                 if (startDate) {
-                    caseQuery += ` AND mte."createdAt" >= $${queryParams.length + 1}`;
+                    caseQuery += ` AND mte."date" >= $${queryParams.length + 1}`;
                     queryParams.push(startDate);
                 }
                 if (endDate) {
-                    caseQuery += ` AND mte."createdAt" <= $${queryParams.length + 1}`;
+                    caseQuery += ` AND mte."date" <= $${queryParams.length + 1}`;
                     queryParams.push(endDate);
                 }
                 caseQuery += `))`;
@@ -552,11 +569,11 @@ class DashboardMetricsController {
            FROM manual_time_entries mte 
            WHERE mte."caseControlId" = cc.id`;
             if (startDate) {
-                caseQuery += ` AND mte."createdAt" >= $${queryParams.length + 1}`;
+                caseQuery += ` AND mte."date" >= $${queryParams.length + 1}`;
                 queryParams.push(startDate);
             }
             if (endDate) {
-                caseQuery += ` AND mte."createdAt" <= $${queryParams.length + 1}`;
+                caseQuery += ` AND mte."date" <= $${queryParams.length + 1}`;
                 queryParams.push(endDate);
             }
             caseQuery += `), 0

@@ -23,10 +23,10 @@ export class UserSession {
   @JoinColumn({ name: "user_id" })
   user: UserProfile;
 
-  @Column({ name: "token_hash", unique: true })
+  @Column({ name: "token_hash", length: 64, unique: true })
   tokenHash: string; // Hash del JWT token para identificación única
 
-  @Column({ name: "refresh_token_hash", nullable: true })
+  @Column({ name: "refresh_token_hash", length: 64, nullable: true })
   refreshTokenHash?: string; // Hash del refresh token
 
   @Column({ name: "device_info", type: "jsonb", nullable: true })
@@ -38,7 +38,7 @@ export class UserSession {
     ip?: string;
   };
 
-  @Column({ name: "ip_address", nullable: true })
+  @Column({ name: "ip_address", type: "inet", nullable: true })
   ipAddress?: string;
 
   @Column({ name: "location_info", type: "jsonb", nullable: true })
@@ -51,17 +51,17 @@ export class UserSession {
   @Column({ name: "is_active", default: true })
   isActive: boolean;
 
-  @Column({ name: "expires_at", type: "timestamp" })
+  @Column({ name: "expires_at", type: "timestamp without time zone" })
   expiresAt: Date;
 
   @Column({
     name: "last_activity_at",
-    type: "timestamp",
+    type: "timestamp without time zone",
     default: () => "CURRENT_TIMESTAMP",
   })
   lastActivityAt: Date;
 
-  @Column({ name: "logout_reason", nullable: true })
+  @Column({ name: "logout_reason", length: 50, nullable: true })
   logoutReason?: string; // 'manual', 'forced', 'expired', 'new_login'
 
   @CreateDateColumn({ name: "created_at" })

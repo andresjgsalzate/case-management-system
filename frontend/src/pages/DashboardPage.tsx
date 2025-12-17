@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ActionIcon } from "../components/ui/ActionIcons";
 import { useAuth } from "../contexts/AuthContext";
 import { useCases } from "../hooks/useCases";
-import { useDashboardMetrics } from "../hooks/useDashboardMetrics";
+import { useAllDashboardMetrics } from "../hooks/useDashboardMetrics";
 import { useDashboardPermissions } from "../hooks/useDashboardPermissions";
 import { LoadingSpinner } from "../components/ui/LoadingSpinner";
 
@@ -14,6 +14,9 @@ export const DashboardPage: React.FC = () => {
     isLoading: casesLoading,
     error: casesError,
   } = useCases();
+  const allDashboardMetrics = useAllDashboardMetrics();
+
+  // Destructurar datos de métricas con validación de permisos incluida
   const {
     timeMetrics,
     userTimeMetrics,
@@ -22,14 +25,15 @@ export const DashboardPage: React.FC = () => {
     todoMetrics,
     dashboardStats,
     caseTimeMetrics,
-    isLoading: metricsLoading,
-  } = useDashboardMetrics();
+  } = allDashboardMetrics.data || {};
+
+  const metricsLoading = allDashboardMetrics.isLoading;
   const dashboardPermissions = useDashboardPermissions();
 
   // Calcular estadísticas desde los casos reales
   const stats = React.useMemo(() => {
-    if (dashboardStats.data) {
-      return dashboardStats.data;
+    if (dashboardStats) {
+      return dashboardStats;
     }
 
     if (!cases)
@@ -69,7 +73,7 @@ export const DashboardPage: React.FC = () => {
       thisMonth,
       thisWeek,
     };
-  }, [cases, dashboardStats.data]);
+  }, [cases, dashboardStats]);
 
   // Mostrar los casos más recientes
   const recentCases = React.useMemo(() => {
@@ -232,10 +236,9 @@ export const DashboardPage: React.FC = () => {
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               Métricas de Tiempo
             </h2>
-            {timeMetrics.data && (
+            {timeMetrics && (
               <div className="text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
-                📅 {timeMetrics.data.currentMonth}{" "}
-                {timeMetrics.data.currentYear}
+                📅 {timeMetrics.currentMonth} {timeMetrics.currentYear}
               </div>
             )}
           </div>
@@ -250,22 +253,22 @@ export const DashboardPage: React.FC = () => {
                     Tiempo Total (Este Mes)
                   </p>
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {timeMetrics.isLoading ? (
+                    {metricsLoading ? (
                       <div className="flex items-center">
                         <LoadingSpinner />
                         <span className="ml-2">...</span>
                       </div>
-                    ) : timeMetrics.data ? (
-                      `${timeMetrics.data.totalHours.toFixed(1)}h`
+                    ) : timeMetrics ? (
+                      `${timeMetrics.totalHours?.toFixed(1) || 0}h`
                     ) : (
                       "0h"
                     )}
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {timeMetrics.isLoading
+                    {metricsLoading
                       ? "..."
-                      : timeMetrics.data
-                      ? `${timeMetrics.data.totalTimeMinutes} min`
+                      : timeMetrics
+                      ? `${timeMetrics.currentMonth} ${timeMetrics.currentYear}`
                       : "0 min"}
                   </p>
                 </div>
@@ -282,22 +285,22 @@ export const DashboardPage: React.FC = () => {
                     Tiempo por Casos (Este Mes)
                   </p>
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {timeMetrics.isLoading ? (
+                    {metricsLoading ? (
                       <div className="flex items-center">
                         <LoadingSpinner />
                         <span className="ml-2">...</span>
                       </div>
-                    ) : timeMetrics.data ? (
-                      `${timeMetrics.data.casesTimeHours.toFixed(1)}h`
+                    ) : timeMetrics ? (
+                      `${timeMetrics.casesTimeHours?.toFixed(1) || 0}h`
                     ) : (
                       "0h"
                     )}
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {timeMetrics.isLoading
+                    {metricsLoading
                       ? "..."
-                      : timeMetrics.data
-                      ? `${timeMetrics.data.casesTimeMinutes} min`
+                      : timeMetrics
+                      ? `${timeMetrics.casesTimeMinutes || 0} min`
                       : "0 min"}
                   </p>
                 </div>
@@ -314,22 +317,22 @@ export const DashboardPage: React.FC = () => {
                     Tiempo por TODOs (Este Mes)
                   </p>
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {timeMetrics.isLoading ? (
+                    {metricsLoading ? (
                       <div className="flex items-center">
                         <LoadingSpinner />
                         <span className="ml-2">...</span>
                       </div>
-                    ) : timeMetrics.data ? (
-                      `${timeMetrics.data.todosTimeHours.toFixed(1)}h`
+                    ) : timeMetrics ? (
+                      `${timeMetrics.todosTimeHours?.toFixed(1) || 0}h`
                     ) : (
                       "0h"
                     )}
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {timeMetrics.isLoading
+                    {metricsLoading
                       ? "..."
-                      : timeMetrics.data
-                      ? `${timeMetrics.data.todosTimeMinutes} min`
+                      : timeMetrics
+                      ? `${timeMetrics.todosTimeMinutes || 0} min`
                       : "0 min"}
                   </p>
                 </div>
@@ -346,13 +349,13 @@ export const DashboardPage: React.FC = () => {
                     Aplicaciones (Este Mes)
                   </p>
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {applicationTimeMetrics.isLoading ? (
+                    {metricsLoading ? (
                       <div className="flex items-center">
                         <LoadingSpinner />
                         <span className="ml-2">...</span>
                       </div>
-                    ) : applicationTimeMetrics.data ? (
-                      applicationTimeMetrics.data.length
+                    ) : applicationTimeMetrics ? (
+                      applicationTimeMetrics.length || 0
                     ) : (
                       "0"
                     )}
@@ -379,13 +382,13 @@ export const DashboardPage: React.FC = () => {
                     Total TODOs
                   </p>
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {todoMetrics.isLoading ? (
+                    {metricsLoading ? (
                       <div className="flex items-center">
                         <LoadingSpinner />
                         <span className="ml-2">...</span>
                       </div>
                     ) : (
-                      todoMetrics.data?.totalTodos || "0"
+                      todoMetrics?.totalTodos || "0"
                     )}
                   </div>
                 </div>
@@ -402,13 +405,13 @@ export const DashboardPage: React.FC = () => {
                     En Progreso
                   </p>
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {todoMetrics.isLoading ? (
+                    {metricsLoading ? (
                       <div className="flex items-center">
                         <LoadingSpinner />
                         <span className="ml-2">...</span>
                       </div>
                     ) : (
-                      todoMetrics.data?.inProgressTodos || "0"
+                      todoMetrics?.inProgressTodos || "0"
                     )}
                   </div>
                 </div>
@@ -425,13 +428,13 @@ export const DashboardPage: React.FC = () => {
                     Completados
                   </p>
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {todoMetrics.isLoading ? (
+                    {metricsLoading ? (
                       <div className="flex items-center">
                         <LoadingSpinner />
                         <span className="ml-2">...</span>
                       </div>
                     ) : (
-                      todoMetrics.data?.completedTodos || "0"
+                      todoMetrics?.completedTodos || "0"
                     )}
                   </div>
                 </div>
@@ -448,13 +451,13 @@ export const DashboardPage: React.FC = () => {
                     Vencidos
                   </p>
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {todoMetrics.isLoading ? (
+                    {metricsLoading ? (
                       <div className="flex items-center">
                         <LoadingSpinner />
                         <span className="ml-2">...</span>
                       </div>
                     ) : (
-                      todoMetrics.data?.overdueTodos || "0"
+                      todoMetrics?.overdueTodos || "0"
                     )}
                   </div>
                 </div>
@@ -470,7 +473,7 @@ export const DashboardPage: React.FC = () => {
               Tiempo por Usuario
             </h2>
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-              {userTimeMetrics.isLoading ? (
+              {metricsLoading ? (
                 <div className="p-6 text-center">
                   <LoadingSpinner />
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
@@ -497,9 +500,8 @@ export const DashboardPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {userTimeMetrics.data &&
-                      userTimeMetrics.data.length > 0 ? (
-                        userTimeMetrics.data.map((userMetric) => (
+                      {userTimeMetrics && userTimeMetrics.length > 0 ? (
+                        userTimeMetrics.map((userMetric) => (
                           <tr
                             key={userMetric.userId}
                             className="hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -555,15 +557,15 @@ export const DashboardPage: React.FC = () => {
               Métricas por Estado
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {statusMetrics.isLoading ? (
+              {metricsLoading ? (
                 <div className="col-span-full text-center py-8">
                   <LoadingSpinner />
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                     Cargando métricas por estado...
                   </p>
                 </div>
-              ) : statusMetrics.data && statusMetrics.data.length > 0 ? (
-                statusMetrics.data.map((status, index) => (
+              ) : statusMetrics && statusMetrics.length > 0 ? (
+                statusMetrics.map((status, index) => (
                   <div
                     key={status.statusId || `status-${index}`}
                     className="bg-white dark:bg-gray-800 shadow rounded-lg p-6"
@@ -637,7 +639,7 @@ export const DashboardPage: React.FC = () => {
               Tiempo por Aplicación
             </h2>
             <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-              {applicationTimeMetrics.isLoading ? (
+              {metricsLoading ? (
                 <div className="p-6 text-center">
                   <LoadingSpinner />
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
@@ -664,9 +666,9 @@ export const DashboardPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {applicationTimeMetrics.data &&
-                      applicationTimeMetrics.data.length > 0 ? (
-                        applicationTimeMetrics.data.map((app) => (
+                      {applicationTimeMetrics &&
+                      applicationTimeMetrics.length > 0 ? (
+                        applicationTimeMetrics.map((app: any) => (
                           <tr
                             key={app.applicationId}
                             className="hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -743,7 +745,7 @@ export const DashboardPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {caseTimeMetrics.isLoading ? (
+                    {metricsLoading ? (
                       <tr>
                         <td
                           colSpan={5}
@@ -757,9 +759,8 @@ export const DashboardPage: React.FC = () => {
                           </div>
                         </td>
                       </tr>
-                    ) : caseTimeMetrics.data &&
-                      caseTimeMetrics.data.length > 0 ? (
-                      caseTimeMetrics.data.map((caso: any, index: number) => (
+                    ) : caseTimeMetrics && caseTimeMetrics.length > 0 ? (
+                      caseTimeMetrics.map((caso: any, index: number) => (
                         <tr
                           key={caso.caseId || `case-${index}`}
                           className="hover:bg-gray-50 dark:hover:bg-gray-700"

@@ -31,7 +31,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     {
       timeoutDuration: 30, // 30 minutos de inactividad total
       warningDuration: 3, // 3 minutos de advertencia antes del cierre
-      onTimeout: logout,
+      onTimeout: () => navigate("/force-logout"), // Usar force-logout por inactividad
     }
   );
 
@@ -48,8 +48,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, []);
 
   const handleSignOut = useCallback(() => {
-    logout();
-  }, [logout]);
+    // Navegar a la página de force-logout para limpiar completamente la sesión
+    navigate("/force-logout");
+  }, [navigate]);
 
   const handleVersionClick = useCallback(() => {
     navigate("/system/info");

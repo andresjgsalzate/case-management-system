@@ -59,56 +59,31 @@ export const DynamicNavigation: React.FC<DynamicNavigationProps> = ({
         isCollapsed ? "px-1" : "px-4"
       } overflow-hidden`}
     >
-      {/* Navegación básica - Orden específico solicitado */}
-      {[
-        { name: "Dashboard", href: "/", icon: "HomeIcon" },
-        { name: "Casos", href: "/cases", icon: "DocumentTextIcon" },
-        { name: "Nuevo Caso", href: "/cases/new", icon: "PlusIcon" },
-        { name: "Control de Casos", href: "/case-control", icon: "ClockIcon" },
-        {
-          name: "Disposiciones",
-          href: "/dispositions",
-          icon: "WrenchScrewdriverIcon",
-        },
-        { name: "TODOs", href: "/todos", icon: "ListBulletIcon" },
-        { name: "Notas", href: "/notes", icon: "DocumentDuplicateIcon" },
-        {
-          name: "Base de Conocimiento",
-          href: "/knowledge",
-          icon: "BookOpenIcon",
-        },
-        { name: "Archivo", href: "/archive", icon: "ArchiveBoxIcon" },
-      ]
-        .filter((menuItem) => {
-          // Filtrar por permisos usando allowedModules
-          return allowedModules.some((module) => module.href === menuItem.href);
-        })
-        .map((item) => {
-          const iconAction = getIconAction(item.icon);
-          return (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={`flex items-center ${
-                isCollapsed
-                  ? "justify-center p-2 w-12 h-12 mx-auto"
-                  : "px-3 py-2"
-              } text-sm font-medium rounded-md transition-colors duration-200 focus:ring-0 focus:ring-offset-0 ${
-                isActive(item.href)
-                  ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              }`}
-              title={isCollapsed ? item.name : undefined}
-            >
-              <ActionIcon
-                action={iconAction as any}
-                size="sm"
-                className="flex-shrink-0"
-              />
-              {!isCollapsed && <span className="ml-3">{item.name}</span>}
-            </Link>
-          );
-        })}
+      {/* Navegación básica - Usar allowedModules directamente */}
+      {allowedModules.map((item) => {
+        const iconAction = getIconAction(item.icon);
+        return (
+          <Link
+            key={item.name}
+            to={item.href}
+            className={`flex items-center ${
+              isCollapsed ? "justify-center p-2 w-12 h-12 mx-auto" : "px-3 py-2"
+            } text-sm font-medium rounded-md transition-colors duration-200 focus:ring-0 focus:ring-offset-0 ${
+              isActive(item.href)
+                ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
+                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            }`}
+            title={isCollapsed ? item.name : undefined}
+          >
+            <ActionIcon
+              action={iconAction as any}
+              size="sm"
+              className="flex-shrink-0"
+            />
+            {!isCollapsed && <span className="ml-3">{item.name}</span>}
+          </Link>
+        );
+      })}
 
       {/* Separador */}
       {allowedAdminSections.length > 0 && !isCollapsed && (

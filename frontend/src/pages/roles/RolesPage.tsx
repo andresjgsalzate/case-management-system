@@ -38,11 +38,11 @@ export const RolesPage: React.FC = () => {
   const [showStats, setShowStats] = useState(true);
 
   // Permisos (temporal hasta implementar el hook completo)
-  const canCreate = true; // hasPermission("roles:create:all");
-  // const canEdit = true; // hasPermission("roles:edit:all");
-  // const canDelete = true; // hasPermission("roles:delete:all");
-  // const canManagePermissions = true; // hasPermission("roles:manage:permissions");
-  // const canClone = true; // hasPermission("roles:clone:all");
+  const canCreate = true; // hasPermission("roles.create.all");
+  // const canEdit = true; // hasPermission("roles.edit.all");
+  // const canDelete = true; // hasPermission("roles.delete.all");
+  // const canManagePermissions = true; // hasPermission("roles.manage.all");
+  // const canClone = true; // hasPermission("roles.clone.all");
 
   useEffect(() => {
     loadRoles();

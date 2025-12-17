@@ -35,11 +35,11 @@ export const UsersPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   // Permisos (temporal hasta implementar el hook completo)
-  const canCreate = true; // hasPermission("users:create:all");
-  const canEdit = true; // hasPermission("users:edit:all") || hasPermission("users:edit:team");
-  const canDelete = true; // hasPermission("users:delete:all");
-  const canManageStatus = true; // hasPermission("users:manage:status");
-  const canManagePasswords = true; // hasPermission("users:manage:passwords");
+  const canCreate = true; // hasPermission("users.create.all");
+  const canEdit = true; // hasPermission("users.edit.all") || hasPermission("users.edit.team");
+  const canDelete = true; // hasPermission("users.delete.all");
+  const canManageStatus = true; // hasPermission("users.manage.all");
+  const canManagePasswords = true; // hasPermission("users.manage.all");
 
   useEffect(() => {
     loadUsers();

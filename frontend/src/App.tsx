@@ -7,6 +7,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { SmartRedirect } from "./components/SmartRedirect";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { ForceLogout } from "./pages/ForceLogout";
 import { DashboardContainer } from "./pages/dashboard/DashboardContainer";
 import { CasesPage, NewCasePage, CaseDetailPage } from "./pages/cases";
 import { CaseControlPage } from "./pages/cases/CaseControlPage";
@@ -57,6 +58,7 @@ function App() {
               {/* Rutas públicas */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/force-logout" element={<ForceLogout />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
               {/* Rutas protegidas */}

@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { ActionIcon } from "../ui/ActionIcons";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Button } from "../ui/Button";
 
 export const Header = () => {
   const { isDark, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -101,7 +103,10 @@ export const Header = () => {
                   <a
                     href="#"
                     className="block px-3 py-1 text-sm leading-6 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    onClick={() => setDropdownOpen(false)}
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      navigate("/force-logout");
+                    }}
                   >
                     Cerrar sesión
                   </a>

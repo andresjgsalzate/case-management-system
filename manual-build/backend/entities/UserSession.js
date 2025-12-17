@@ -29,11 +29,11 @@ __decorate([
     __metadata("design:type", UserProfile_1.UserProfile)
 ], UserSession.prototype, "user", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: "token_hash", unique: true }),
+    (0, typeorm_1.Column)({ name: "token_hash", length: 64, unique: true }),
     __metadata("design:type", String)
 ], UserSession.prototype, "tokenHash", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: "refresh_token_hash", nullable: true }),
+    (0, typeorm_1.Column)({ name: "refresh_token_hash", length: 64, nullable: true }),
     __metadata("design:type", String)
 ], UserSession.prototype, "refreshTokenHash", void 0);
 __decorate([
@@ -41,7 +41,7 @@ __decorate([
     __metadata("design:type", Object)
 ], UserSession.prototype, "deviceInfo", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: "ip_address", nullable: true }),
+    (0, typeorm_1.Column)({ name: "ip_address", type: "inet", nullable: true }),
     __metadata("design:type", String)
 ], UserSession.prototype, "ipAddress", void 0);
 __decorate([
@@ -53,19 +53,19 @@ __decorate([
     __metadata("design:type", Boolean)
 ], UserSession.prototype, "isActive", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: "expires_at", type: "timestamp" }),
+    (0, typeorm_1.Column)({ name: "expires_at", type: "timestamp without time zone" }),
     __metadata("design:type", Date)
 ], UserSession.prototype, "expiresAt", void 0);
 __decorate([
     (0, typeorm_1.Column)({
         name: "last_activity_at",
-        type: "timestamp",
+        type: "timestamp without time zone",
         default: () => "CURRENT_TIMESTAMP",
     }),
     __metadata("design:type", Date)
 ], UserSession.prototype, "lastActivityAt", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ name: "logout_reason", nullable: true }),
+    (0, typeorm_1.Column)({ name: "logout_reason", length: 50, nullable: true }),
     __metadata("design:type", String)
 ], UserSession.prototype, "logoutReason", void 0);
 __decorate([

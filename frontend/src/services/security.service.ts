@@ -142,7 +142,13 @@ class SecurityService {
     try {
       const encryptedData = sessionStorage.getItem(SecurityService.SESSION_KEY);
 
+      console.log("🔍 [SecurityService] Debug getValidTokens:", {
+        hasSessionData: !!encryptedData,
+        sessionDataLength: encryptedData?.length,
+      });
+
       if (!encryptedData) {
+        console.log("🔍 [SecurityService] No session data found");
         return null;
       }
 
@@ -151,9 +157,20 @@ class SecurityService {
       );
 
       const now = Date.now();
+      const timeUntilExpiry = secureData.expiresAt - now;
+      const minutesUntilExpiry = Math.floor(timeUntilExpiry / (1000 * 60));
+
+      console.log("🔍 [SecurityService] Token expiry check:", {
+        now,
+        expiresAt: secureData.expiresAt,
+        timeUntilExpiry,
+        minutesUntilExpiry,
+        isExpired: now > secureData.expiresAt,
+      });
 
       // Verificar expiración
       if (now > secureData.expiresAt) {
+        console.warn("🚨 Token expirado, limpiando sesión");
         this.clearSession();
         return null;
       }
@@ -161,6 +178,17 @@ class SecurityService {
       // Verificar huella digital
       const currentFingerprint = this.generateFingerprint().hash;
       const storedFingerprint = localStorage.getItem("__fp__");
+
+      console.log("🔍 [SecurityService] Fingerprint check:", {
+        hasStoredFingerprint: !!storedFingerprint,
+        currentFingerprint,
+        storedFingerprintMatch: storedFingerprint
+          ? this.decrypt(storedFingerprint) === currentFingerprint
+          : false,
+        secureDataFingerprint: secureData.fingerprint,
+        secureDataFingerprintMatch:
+          secureData.fingerprint === currentFingerprint,
+      });
 
       if (
         !storedFingerprint ||

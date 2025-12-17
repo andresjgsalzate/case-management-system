@@ -99,7 +99,7 @@ export const useSidebarPermissions = () => {
     "archive.view.all",
   ];
 
-  const modules = ["casos", "todos", "dispositions", "notas"];
+  const modules = ["cases", "todos", "dispositions", "notes"];
 
   return useDynamicPermissions(permissions, modules);
 };

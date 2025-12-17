@@ -17,6 +17,17 @@ const metricsRequest = async <T>(
     ? "?" + new URLSearchParams(params).toString()
     : "";
 
+  console.log("🔍 [MetricsRequest] Debug info:", {
+    url: `${API_BASE_URL}${url}${queryString}`,
+    hasToken: !!token,
+    tokenStart: token ? token.substring(0, 20) + "..." : "no token",
+    fullToken: token, // Log del token completo para debugging
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+
   const response = await fetch(`${API_BASE_URL}${url}${queryString}`, {
     method: "GET",
     headers: {

@@ -288,38 +288,21 @@ export const useAuthStore = create<AuthState>()(
       },
       // Cargar permisos del usuario desde el backend
       loadUserPermissions: async () => {
-        const { isLoadingPermissions, isAuthenticated, user } = get();
-        console.log("🔄 loadUserPermissions called for user:", user?.email);
-
+        const { isLoadingPermissions, isAuthenticated } = get();
         // Solo cargar si el usuario está autenticado
         if (!isAuthenticated) {
-          console.log("❌ loadUserPermissions: User not authenticated");
           return;
         }
         // Evitar cargas múltiples
         if (isLoadingPermissions) {
-          console.log("⏳ loadUserPermissions: Already loading");
           return;
         }
 
-        console.log("🚀 loadUserPermissions: Starting load process");
         set({ isLoadingPermissions: true });
         try {
           const response = await authPermissionService.getUserPermissions();
-          console.log("📡 loadUserPermissions: Response received", response);
-
           if (response.success && response.data) {
             const { permissions, modules } = response.data;
-            console.log("✅ loadUserPermissions: Success");
-            console.log("📋 Permissions count:", permissions?.length);
-            console.log(
-              "🔍 cases.create.own present:",
-              permissions?.find((p) => (p.name || p) === "cases.create.own")
-            );
-            console.log(
-              "📊 All permissions:",
-              permissions?.map((p) => p.name || p)
-            );
 
             set({
               userPermissions: permissions,
@@ -362,68 +345,29 @@ export const useAuthStore = create<AuthState>()(
         const state = get();
         const { user, userPermissions, permissionsLoaded } = state;
 
-        // DEBUG: Log para debugging "Nuevo Caso"
-        if (permission === "cases.create.own") {
-          console.log("🏪 authStore.hasPermission called for cases.create.own");
-          console.log("👤 User:", user?.email);
-          console.log("📋 Permissions loaded:", permissionsLoaded);
-          console.log("📊 UserPermissions count:", userPermissions?.length);
-          console.log("🔍 Full userPermissions:", userPermissions);
-        }
-
         // Si no hay usuario o permisos no están cargados, no tiene permisos
         if (!user || !permissionsLoaded) {
-          if (permission === "cases.create.own") {
-            console.log(
-              "❌ authStore.hasPermission: No user or permissions not loaded"
-            );
-          }
           return false;
         }
 
         // Verificar permisos del usuario usando userPermissions (datos de BD)
         if (!userPermissions || !Array.isArray(userPermissions)) {
-          if (permission === "cases.create.own") {
-            console.log(
-              "❌ authStore.hasPermission: No userPermissions or not array"
-            );
-          }
           return false;
         }
 
         // Los permisos de BD vienen como objetos con 'name'
         const permissionNames = userPermissions.map((p) => p.name || p);
 
-        if (permission === "cases.create.own") {
-          console.log("🔍 Permission names array:", permissionNames);
-          console.log("🔍 Looking for:", permission);
-          console.log(
-            "🔍 Includes check:",
-            permissionNames.includes(permission)
-          );
-        }
-
         // Verificar permiso directo
         if (permissionNames.includes(permission)) {
-          if (permission === "cases.create.own") {
-            console.log("✅ authStore.hasPermission: FOUND direct permission");
-          }
           return true;
         }
 
         // Verificar permisos de admin
         if (permissionNames.includes("permissions.admin_all")) {
-          if (permission === "cases.create.own") {
-            console.log(
-              "✅ authStore.hasPermission: FOUND via admin permissions"
-            );
-          }
           return true;
         }
 
-        if (permission === "cases.create.own") {
-          console.log("❌ authStore.hasPermission: PERMISSION NOT FOUND");
-        }
         return false;
       },
       // Nueva función para verificación dinámica de permisos

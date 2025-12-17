@@ -31,6 +31,16 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Función para limpieza completa (útil para debug)
+force_clean() {
+    print_warning "Ejecutando limpieza forzada..."
+    sudo rm -rf manual-build/backend 2>/dev/null || true
+    sudo rm -rf public 2>/dev/null || true
+    rm -rf backend/dist 2>/dev/null || true
+    rm -rf frontend/dist 2>/dev/null || true
+    print_success "Limpieza forzada completada"
+}
+
 # Verificar que estamos en el directorio correcto
 if [ ! -f "package.json" ] || [ ! -d "backend" ] || [ ! -d "frontend" ]; then
     print_error "Este script debe ejecutarse desde el directorio raíz del proyecto"
@@ -40,13 +50,27 @@ fi
 PROJECT_ROOT=$(pwd)
 print_step "Directorio del proyecto: $PROJECT_ROOT"
 
+# Verificar si se pasó el parámetro --force-clean
+if [ "$1" = "--force-clean" ]; then
+    force_clean
+fi
+
 # 1. LIMPIAR BUILDS ANTERIORES
 print_step "Limpiando builds anteriores..."
+# Limpiar builds compilados
 rm -rf backend/dist
 rm -rf frontend/dist
-rm -rf manual-build/backend/*
-rm -rf public/*
-print_success "Builds anteriores limpiados"
+
+# LIMPIEZA COMPLETA: Eliminar y recrear directorios de producción
+print_step "Eliminando directorios de producción anteriores..."
+rm -rf manual-build/backend
+rm -rf public
+
+# Recrear directorios limpios
+mkdir -p manual-build/backend
+mkdir -p public
+
+print_success "Builds anteriores limpiados completamente"
 
 # 2. BUILD DEL BACKEND
 print_step "Compilando backend TypeScript..."
@@ -90,14 +114,45 @@ mkdir -p public
 
 # Copiar backend compilado
 print_step "Copiando backend compilado a manual-build..."
-cp -r backend/dist/* manual-build/backend/
-cp backend/package.json manual-build/backend/
-cp -r backend/node_modules manual-build/backend/
+
+# Verificar que existe el directorio dist
+if [ ! -d "backend/dist" ]; then
+    print_error "No se encontró el directorio backend/dist"
+    exit 1
+fi
+
+# Copia forzada y recursiva
+cp -rf backend/dist/* manual-build/backend/
+cp -f backend/package.json manual-build/backend/
+
+# Copiar node_modules si existe
+if [ -d "backend/node_modules" ]; then
+    print_step "Copiando node_modules del backend..."
+    cp -rf backend/node_modules manual-build/backend/
+else
+    print_warning "No se encontró node_modules en backend, se instalará en producción"
+fi
+
 print_success "Backend copiado a manual-build/"
 
 # Copiar frontend compilado
 print_step "Copiando frontend compilado a public..."
-cp -r frontend/dist/* public/
+
+# Verificar que existe el directorio dist
+if [ ! -d "frontend/dist" ]; then
+    print_error "No se encontró el directorio frontend/dist"
+    exit 1
+fi
+
+# Copia forzada y recursiva
+cp -rf frontend/dist/* public/
+
+# Verificar que se copió correctamente
+if [ ! -f "public/index.html" ]; then
+    print_error "Error: No se copió correctamente el frontend"
+    exit 1
+fi
+
 print_success "Frontend copiado a public/"
 
 # 5. CREAR/RECREAR start.sh
@@ -129,6 +184,15 @@ print_success "Script start.sh creado y configurado"
 # 6. VERIFICAR ESTRUCTURA FINAL
 print_step "Verificando estructura de producción..."
 
+# Mostrar información de debug
+print_step "Información de archivos copiados:"
+echo "📊 Backend build info:"
+ls -la manual-build/backend/ | head -10
+echo "📊 Frontend build info:"
+ls -la public/ | head -10
+echo "📊 Tamaño total del backend: $(du -sh manual-build/backend/ | cut -f1)"
+echo "📊 Tamaño total del frontend: $(du -sh public/ | cut -f1)"
+
 if [ ! -f "manual-build/backend/server.js" ]; then
     print_error "No se encontró server.js compilado"
     exit 1
@@ -145,9 +209,15 @@ if [ ! -f "manual-build/backend/start.sh" ]; then
 fi
 
 # 7. MOSTRAR RESUMEN
+# Crear archivo de timestamp para tracking
+echo "$(date): Build completado exitosamente" > manual-build/build-info.txt
+echo "Backend: $(du -sh manual-build/backend/ | cut -f1)" >> manual-build/build-info.txt
+echo "Frontend: $(du -sh public/ | cut -f1)" >> manual-build/build-info.txt
+
 echo ""
 echo "🎉 BUILD DE PRODUCCIÓN COMPLETADO"
-echo "================================="
+echo "=================================="
+echo "🕒 Timestamp: $(date)"
 print_success "Backend compilado: manual-build/backend/"
 print_success "Frontend compilado: public/"
 print_success "Script de inicio: manual-build/backend/start.sh"
@@ -170,5 +240,14 @@ echo ""
 
 print_success "¡Listo para producción! 🚀"
 echo ""
+echo "📋 COMANDOS ÚTILES:"
 echo "Para iniciar en producción:"
 echo "  cd manual-build/backend && ./start.sh"
+echo ""
+echo "Para limpiar todo y rebuild:"
+echo "  ./build-production.sh"
+echo ""
+echo "Para verificar archivos copiados:"
+echo "  ls -la manual-build/backend/ && ls -la public/"
+echo ""
+echo "ℹ️  Info del build guardada en: manual-build/build-info.txt"

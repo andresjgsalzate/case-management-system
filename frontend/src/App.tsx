@@ -1,5 +1,4 @@
-import { Routes, Route, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
@@ -49,26 +48,6 @@ import { ErrorBoundary } from "./components/error/ErrorBoundary";
 function App() {
   // Inicializar el sistema de seguridad
   useSecureAuth();
-
-  // DEBUG: Monitor route changes
-  const location = useLocation();
-
-  useEffect(() => {
-    console.log("🌐 Route changed to:", location.pathname);
-
-    // Special logging for cases/new navigation
-    if (location.pathname === "/cases/new") {
-      console.log("🏥 NAVEGANDO A NUEVO CASO - Route change detected");
-      console.log("📍 Full location:", location);
-      console.log("⏰ Timestamp:", new Date().toISOString());
-    }
-
-    if (location.pathname === "/unauthorized") {
-      console.error("🚫 NAVEGANDO A UNAUTHORIZED");
-      console.error("📍 Previous path: (check browser history)");
-      console.error("⏰ Timestamp:", new Date().toISOString());
-    }
-  }, [location]);
 
   return (
     <ErrorBoundary>

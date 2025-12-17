@@ -127,7 +127,25 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
     return (
       <NavLink
         to={item.href}
-        onClick={onItemClick}
+        onClick={(_e) => {
+          // DEBUG: Log navigation click
+          console.log("🖱️ Sidebar NavLink clicked:", item.name, "→", item.href);
+          console.log("📝 Item requires:", {
+            permission: item.requiredPermission,
+            module: item.requiredModule,
+          });
+
+          // Special logging for "Nuevo Caso"
+          if (item.href === "/cases/new") {
+            console.log("🏥 NUEVO CASO clicked - starting navigation debug");
+            console.log("🎯 Target route:", item.href);
+            console.log("🔐 Required permission:", item.requiredPermission);
+          }
+
+          if (onItemClick) {
+            onItemClick();
+          }
+        }}
         className={({ isActive }) =>
           classNames(
             isActive

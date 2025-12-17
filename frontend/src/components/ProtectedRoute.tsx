@@ -18,9 +18,16 @@ const checkPermissionVariants = (
   userPermissions: any[],
   _userRole?: string
 ): boolean => {
+  console.log("🔍 checkPermissionVariants ENTRY:", permission);
+  console.log(
+    "📊 Available permissions:",
+    userPermissions?.map((p) => p.name || p)
+  );
+
   // Para permisos de auditoría, verificar permisos específicos
   if (permission.startsWith("audit.")) {
     const hasAuditAccess = hasPermission("audit.view.all");
+    console.log("🔍 Audit permission check:", hasAuditAccess);
     if (hasAuditAccess) {
       return true;
     }
@@ -28,6 +35,7 @@ const checkPermissionVariants = (
 
   // Verificar el permiso directamente usando la función hasPermission
   const hasDirectPermission = hasPermission(permission);
+  console.log("✅ hasPermission() result:", hasDirectPermission);
 
   if (hasDirectPermission) {
     return true;
@@ -36,9 +44,15 @@ const checkPermissionVariants = (
   // Fallback: verificar directamente en los permisos del usuario
   if (userPermissions && Array.isArray(userPermissions)) {
     const permissionNames = userPermissions.map((p) => p.name || p);
-    return permissionNames.includes(permission);
+    console.log("🔍 Fallback check - permission names:", permissionNames);
+    const fallbackResult = permissionNames.includes(permission);
+    console.log("🔍 Fallback includes result:", fallbackResult);
+    if (fallbackResult) {
+      return true;
+    }
   }
 
+  console.log("❌ checkPermissionVariants: NO MATCH for", permission);
   return false;
 };
 
@@ -102,8 +116,31 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     user,
   } = useAuthStore();
 
+  // DEBUG: Estado inicial del ProtectedRoute
+  console.log("🚀 ProtectedRoute ENTRY - Path:", window.location.pathname);
+  console.log("🔐 Auth State:", { isAuthenticated, isLoading });
+  console.log("📋 Permissions State:", {
+    permissionsLoaded,
+    isLoadingPermissions,
+  });
+  console.log(
+    "👤 User State:",
+    user ? { email: user.email, role: user.roleName } : "null"
+  );
+  console.log("🎯 Route Requirements:", {
+    requiredPermission,
+    requiredPermissions,
+    requiredModule,
+    adminOnly,
+  });
+
   // CRUCIAL: Mostrar loading mientras se verifica la autenticación O se cargan los permisos
   if (isLoading || (isAuthenticated && isLoadingPermissions)) {
+    console.log("⏳ LOADING STATE:", {
+      isLoading,
+      isAuthenticated,
+      isLoadingPermissions,
+    });
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -118,6 +155,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Si no está autenticado después de cargar, redirigir al login
   if (!isAuthenticated) {
+    console.log("🚫 REDIRECTING TO LOGIN - Not authenticated");
     return <Navigate to="/login" replace />;
   }
 
@@ -157,12 +195,63 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Si requiere un permiso específico
   if (requiredPermission) {
+    // DEBUG: Logging detallado para "Nuevo Caso" issue
+    console.log(
+      "🔍 ProtectedRoute DEBUG - Checking permission:",
+      requiredPermission
+    );
+    console.log("👤 User:", user?.email, user?.roleName);
+    console.log("📋 UserPermissions loaded:", permissionsLoaded);
+    console.log("🔄 IsLoadingPermissions:", isLoadingPermissions);
+    console.log(
+      "📊 UserPermissions array:",
+      userPermissions?.map((p) => p.name || p)
+    );
+
+    // Verificar hasPermission directamente
+    const directCheck = hasPermission(requiredPermission);
+    console.log("✅ hasPermission direct check:", directCheck);
+
     const hasRequiredPermission = checkPermissionVariants(
       requiredPermission,
       hasPermission,
       userPermissions || [],
       user?.roleName
     );
+
+    console.log("🎯 checkPermissionVariants result:", hasRequiredPermission);
+
+    // Debug adicional: verificar casos específicos
+    if (requiredPermission === "cases.create.own") {
+      console.log("🏥 CASO ESPECÍFICO: cases.create.own debugging");
+      const exactMatch = userPermissions?.find(
+        (p) => (p.name || p) === "cases.create.own"
+      );
+      console.log("🔍 Exact permission object:", exactMatch);
+      console.log(
+        "🔍 All cases permissions:",
+        userPermissions?.filter((p) => String(p.name || p).startsWith("cases."))
+      );
+    }
+
+    if (!hasRequiredPermission) {
+      console.error(
+        "❌ REDIRECTING TO /unauthorized - Permission check failed!"
+      );
+      console.error("Required:", requiredPermission);
+      console.error("Path:", window.location.pathname);
+      console.error(
+        "User permissions:",
+        userPermissions?.map((p) => p.name || p)
+      );
+      console.error("hasPermission function result:", directCheck);
+      console.error("User object:", user);
+      console.error("Auth states:", {
+        isAuthenticated,
+        permissionsLoaded,
+        isLoadingPermissions,
+      });
+    }
 
     if (!hasRequiredPermission) {
       return <Navigate to="/unauthorized" replace />;
@@ -194,5 +283,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Si todo está bien, renderizar el contenido
+  console.log(
+    "✅ ProtectedRoute SUCCESS - Rendering content for:",
+    window.location.pathname
+  );
+  console.log("🎉 Final state:", {
+    requiredPermission,
+    user: user?.email,
+    hasAccess: true,
+  });
   return children ? <>{children}</> : <Outlet />;
 };

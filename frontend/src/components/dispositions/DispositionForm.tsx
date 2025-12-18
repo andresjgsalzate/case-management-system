@@ -119,11 +119,9 @@ export const DispositionForm: React.FC<DispositionFormProps> = ({
     }
   }, [watchedCaseNumber, cases, selectedCase, setValue]);
 
-  // Filtrar casos basado en la búsqueda
-  const filteredCases = cases.filter(
-    (caso) =>
-      caso.numeroCaso.toLowerCase().includes(caseSearch.toLowerCase()) ||
-      caso.descripcion.toLowerCase().includes(caseSearch.toLowerCase())
+  // Filtrar casos basado en la búsqueda - Solo por número de caso
+  const filteredCases = cases.filter((caso) =>
+    caso.numeroCaso.toLowerCase().includes(caseSearch.toLowerCase())
   );
 
   const handleCaseSelect = (caso: Case) => {
@@ -194,7 +192,7 @@ export const DispositionForm: React.FC<DispositionFormProps> = ({
             <Input
               value={caseSearch}
               onChange={(e) => handleCaseSearchChange(e.target.value)}
-              placeholder="Buscar caso por número o descripción..."
+              placeholder="Buscar caso por número..."
               error={errors.caseNumber?.message}
               onFocus={() => setShowCaseDropdown(true)}
             />
@@ -216,14 +214,9 @@ export const DispositionForm: React.FC<DispositionFormProps> = ({
                       size="sm"
                       className="w-full px-4 py-2 text-left justify-start h-auto"
                     >
-                      <div className="text-left">
-                        <div className="font-medium text-gray-900 dark:text-white">
-                          {caso.numeroCaso}
-                        </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                          {caso.descripcion}
-                        </div>
-                      </div>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {caso.numeroCaso}
+                      </span>
                     </Button>
                   ))
                 ) : (

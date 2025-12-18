@@ -4,7 +4,12 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from "typeorm";
+import { Application } from "./Application";
+import { UserProfile } from "./UserProfile";
+import { Case } from "./Case";
 
 @Entity("dispositions")
 export class Disposition {
@@ -48,4 +53,17 @@ export class Disposition {
 
   @UpdateDateColumn({ name: "updated_at" })
   updatedAt: Date;
+
+  // Relaciones
+  @ManyToOne(() => Application, { nullable: true })
+  @JoinColumn({ name: "application_id" })
+  application?: Application;
+
+  @ManyToOne(() => UserProfile, { nullable: true })
+  @JoinColumn({ name: "user_id" })
+  user?: UserProfile;
+
+  @ManyToOne(() => Case, { nullable: true })
+  @JoinColumn({ name: "case_id" })
+  case?: Case;
 }

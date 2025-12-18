@@ -9,6 +9,7 @@ export interface Disposition {
   scriptName: string;
   svnRevisionNumber: string | null;
   applicationId: string;
+  applicationName: string; // Nombre de la aplicación guardado directamente
   observations: string | null;
   userId: string;
   createdAt: string;

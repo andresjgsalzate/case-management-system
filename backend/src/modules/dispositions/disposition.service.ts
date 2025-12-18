@@ -83,6 +83,12 @@ export class DispositionService {
       const queryBuilder =
         this.dispositionRepository.createQueryBuilder("disposition");
 
+      // Cargar relaciones
+      queryBuilder
+        .leftJoinAndSelect("disposition.application", "application")
+        .leftJoinAndSelect("disposition.user", "user")
+        .leftJoinAndSelect("disposition.case", "case");
+
       // Filtro por usuario (si está proporcionado)
       if (userId) {
         queryBuilder.andWhere("disposition.userId = :userId", { userId });
@@ -134,6 +140,9 @@ export class DispositionService {
     try {
       const disposition = await this.dispositionRepository
         .createQueryBuilder("disposition")
+        .leftJoinAndSelect("disposition.application", "application")
+        .leftJoinAndSelect("disposition.user", "user")
+        .leftJoinAndSelect("disposition.case", "case")
         .where("disposition.id = :id", { id })
         .getOne();
 

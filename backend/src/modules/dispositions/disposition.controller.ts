@@ -8,8 +8,6 @@ import {
   DispositionFiltersDto,
 } from "../../dto/disposition.dto";
 import { createError } from "../../middleware/errorHandler";
-import { AppDataSource } from "../../config/database";
-import { UserProfile } from "../../entities/UserProfile";
 
 export class DispositionController {
   private dispositionService: DispositionService;
@@ -30,15 +28,12 @@ export class DispositionController {
         throw createError(errorMessages, 400);
       }
 
-      // Temporal: usar el primer usuario de la base de datos hasta que tengamos autenticación
-      const userRepository = AppDataSource.getRepository(UserProfile);
-      const firstUser = await userRepository.findOne({ where: {} });
+      // Obtener el usuario autenticado de la sesión
+      const userId = (req as any).user?.id;
 
-      if (!firstUser) {
-        throw createError("No hay usuarios disponibles en el sistema", 500);
+      if (!userId) {
+        throw createError("Usuario no autenticado", 401);
       }
-
-      const userId = firstUser.id;
 
       const newDisposition = await this.dispositionService.create(
         createDispositionDto,

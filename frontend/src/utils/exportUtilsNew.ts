@@ -675,3 +675,237 @@ export const exportTodosToCSV = (
     }
   }
 };
+
+// =====================================================
+// EXPORTACIÓN DE NOTAS
+// =====================================================
+
+// Tipo flexible para Notas que acepta diferentes estructuras
+interface FlexibleNote {
+  id: string;
+  title: string;
+  content: string;
+  noteType: string;
+  priority: string;
+  difficultyLevel: number;
+  tags: string[];
+  caseId?: string;
+  createdBy: string;
+  assignedTo?: string;
+  isImportant: boolean;
+  isArchived: boolean;
+  isTemplate: boolean;
+  isPublished: boolean;
+  viewCount: number;
+  helpfulCount: number;
+  notHelpfulCount: number;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+  archivedAt?: string;
+  // Relaciones opcionales
+  author?: {
+    fullName?: string;
+    email?: string;
+  };
+  assignedUser?: {
+    fullName?: string;
+    email?: string;
+  };
+  case?: {
+    numeroCaso?: string;
+  };
+}
+
+/**
+ * Obtiene el texto del tipo de nota
+ */
+function getNoteTypeText(noteType: string): string {
+  const types: Record<string, string> = {
+    note: "Nota",
+    solution: "Solución",
+    guide: "Guía",
+    faq: "FAQ",
+    template: "Plantilla",
+    procedure: "Procedimiento",
+  };
+  return types[noteType] || noteType;
+}
+
+/**
+ * Obtiene el texto de la prioridad de la nota
+ */
+function getNotePriorityText(priority: string): string {
+  const priorities: Record<string, string> = {
+    low: "Baja",
+    medium: "Media",
+    high: "Alta",
+    urgent: "Urgente",
+  };
+  return priorities[priority] || priority;
+}
+
+/**
+ * Obtiene el texto del nivel de dificultad
+ */
+function getDifficultyText(level: number): string {
+  const levels: Record<number, string> = {
+    1: "Muy Fácil",
+    2: "Fácil",
+    3: "Intermedio",
+    4: "Difícil",
+    5: "Muy Difícil",
+  };
+  return levels[level] || `Nivel ${level}`;
+}
+
+/**
+ * Obtiene el estado de la nota
+ */
+function getNoteStatus(note: FlexibleNote): string {
+  if (note.isArchived) return "Archivada";
+  if (!note.isPublished) return "Borrador";
+  if (note.isTemplate) return "Plantilla";
+  return "Publicada";
+}
+
+/**
+ * Exporta una lista de Notas a un archivo Excel
+ */
+export const exportNotesToExcel = (
+  notes: FlexibleNote[],
+  filename: string = "notas.xlsx",
+  onSuccess?: NotificationFn
+) => {
+  try {
+    // Preparar los datos para el Excel
+    const excelData = notes.map((note) => ({
+      Título: note.title,
+      Contenido:
+        note.content.substring(0, 500) +
+        (note.content.length > 500 ? "..." : ""),
+      Tipo: getNoteTypeText(note.noteType),
+      Prioridad: getNotePriorityText(note.priority),
+      Dificultad: getDifficultyText(note.difficultyLevel),
+      Etiquetas: note.tags?.join(", ") || "Sin etiquetas",
+      "Caso Asociado": note.case?.numeroCaso || "Sin caso",
+      Autor: note.author?.fullName || "N/A",
+      "Asignado a": note.assignedUser?.fullName || "Sin asignar",
+      Estado: getNoteStatus(note),
+      Importante: note.isImportant ? "Sí" : "No",
+      Vistas: note.viewCount || 0,
+      "Votos Positivos": note.helpfulCount || 0,
+      "Votos Negativos": note.notHelpfulCount || 0,
+      Versión: note.version || 1,
+      "Fecha de Creación": formatDatePreservingDay(note.createdAt),
+      "Última Actualización": formatDatePreservingDay(note.updatedAt),
+    }));
+
+    // Crear el libro de Excel
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+
+    // Añadir la hoja al libro
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Notas");
+
+    // Configurar el ancho de las columnas
+    const columnWidths = [
+      { wch: 30 }, // Título
+      { wch: 60 }, // Contenido
+      { wch: 15 }, // Tipo
+      { wch: 12 }, // Prioridad
+      { wch: 15 }, // Dificultad
+      { wch: 30 }, // Etiquetas
+      { wch: 15 }, // Caso Asociado
+      { wch: 20 }, // Autor
+      { wch: 20 }, // Asignado a
+      { wch: 12 }, // Estado
+      { wch: 12 }, // Importante
+      { wch: 10 }, // Vistas
+      { wch: 15 }, // Votos Positivos
+      { wch: 15 }, // Votos Negativos
+      { wch: 10 }, // Versión
+      { wch: 18 }, // Fecha de Creación
+      { wch: 18 }, // Última Actualización
+    ];
+
+    worksheet["!cols"] = columnWidths;
+
+    // Escribir el archivo
+    XLSX.writeFile(workbook, filename);
+
+    // Mostrar notificación de éxito
+    if (onSuccess) {
+      onSuccess(`✅ ${notes.length} notas exportadas a Excel exitosamente`);
+    }
+  } catch (error) {
+    console.error("Error al exportar notas a Excel:", error);
+    if (onSuccess) {
+      onSuccess("❌ Error al exportar notas a Excel");
+    }
+  }
+};
+
+/**
+ * Exporta una lista de Notas a un archivo CSV
+ */
+export const exportNotesToCSV = (
+  notes: FlexibleNote[],
+  filename: string = "notas.csv",
+  onSuccess?: NotificationFn
+) => {
+  try {
+    // Preparar los datos para CSV
+    const csvData = notes.map((note) => ({
+      Titulo: note.title.replace(/["\n\r]/g, " "),
+      Contenido:
+        note.content.substring(0, 500).replace(/["\n\r]/g, " ") +
+        (note.content.length > 500 ? "..." : ""),
+      Tipo: getNoteTypeText(note.noteType),
+      Prioridad: getNotePriorityText(note.priority),
+      Dificultad: getDifficultyText(note.difficultyLevel),
+      Etiquetas: note.tags?.join("; ") || "Sin etiquetas",
+      "Caso Asociado": note.case?.numeroCaso || "Sin caso",
+      Autor: note.author?.fullName || "N/A",
+      "Asignado a": note.assignedUser?.fullName || "Sin asignar",
+      Estado: getNoteStatus(note),
+      Importante: note.isImportant ? "Si" : "No",
+      Vistas: note.viewCount || 0,
+      "Votos Positivos": note.helpfulCount || 0,
+      "Votos Negativos": note.notHelpfulCount || 0,
+      Version: note.version || 1,
+      "Fecha de Creacion": formatDatePreservingDay(note.createdAt),
+      "Ultima Actualizacion": formatDatePreservingDay(note.updatedAt),
+    }));
+
+    // Crear encabezados
+    const headers = Object.keys(csvData[0] || {});
+
+    // Convertir datos a CSV
+    const csvContent = [
+      headers.join(","),
+      ...csvData.map((row) =>
+        headers
+          .map((header) => {
+            const value = row[header as keyof typeof row];
+            // Escapar comillas y comas
+            return `"${String(value).replace(/"/g, '""')}"`;
+          })
+          .join(",")
+      ),
+    ].join("\n");
+
+    // Crear Blob y descargar
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    saveAs(blob, filename);
+
+    if (onSuccess) {
+      onSuccess(`✅ ${notes.length} notas exportadas a CSV exitosamente`);
+    }
+  } catch (error) {
+    console.error("Error al exportar notas a CSV:", error);
+    if (onSuccess) {
+      onSuccess("❌ Error al exportar notas a CSV");
+    }
+  }
+};

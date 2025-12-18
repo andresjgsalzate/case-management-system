@@ -11,6 +11,7 @@ import {
 } from "../../hooks/useNotes";
 import { NoteCard } from "../../components/notes/NoteCard";
 import { NoteFormModal } from "../../components/notes/NoteFormModal";
+import { NoteExportButtons } from "../../components/notes/NoteExportButtons";
 import { Button } from "../../components/ui/Button";
 import { useToast } from "../../contexts/ToastContext";
 import { useConfirmationModal } from "../../hooks/useConfirmationModal";
@@ -229,7 +230,12 @@ export const NotesPage: React.FC = () => {
               Administra y organiza todas las notas del sistema
             </p>
           </div>
-          <div className="mt-4 sm:mt-0">
+          <div className="mt-4 sm:mt-0 flex space-x-2">
+            <NoteExportButtons
+              filteredNotes={notes}
+              onSuccess={success}
+              onError={showErrorToast}
+            />
             <Button onClick={() => setShowForm(true)} variant="primary">
               <ActionIcon action="add" size="sm" color="primary" />
               Nueva Nota

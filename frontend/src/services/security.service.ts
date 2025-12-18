@@ -157,60 +157,55 @@ class SecurityService {
       );
 
       const now = Date.now();
-      // const timeUntilExpiry = secureData.expiresAt - now;
-      // const minutesUntilExpiry = Math.floor(timeUntilExpiry / (1000 * 60));
 
-      // Checking token expiration
-
-      // Verificar expiración
+      // 1. PRIMERO: Verificar expiración del token
       if (now > secureData.expiresAt) {
         console.warn("🚨 Token expirado, limpiando sesión");
         this.clearSession();
         return null;
       }
 
-      // Verificar huella digital
-      const currentFingerprint = this.generateFingerprint().hash;
-      const storedFingerprint = localStorage.getItem("__fp__");
-
-      // Fingerprint validation check
-      if (false) {
-        console.log("🔍 Fingerprint check:", {
-          hasStoredFingerprint: !!storedFingerprint,
-          currentFingerprint,
-          storedFingerprintMatch: storedFingerprint
-            ? this.decrypt(storedFingerprint!) === currentFingerprint
-            : false,
-          secureDataFingerprint: secureData.fingerprint,
-          secureDataFingerprintMatch:
-            secureData.fingerprint === currentFingerprint,
-        });
-      }
-
-      if (
-        !storedFingerprint ||
-        this.decrypt(storedFingerprint) !== currentFingerprint
-      ) {
-        console.warn(
-          "🚨 Token comprometido: Huella digital no coincide en localStorage"
-        );
-        this.clearSession();
-        return null;
-      }
-
-      if (secureData.fingerprint !== currentFingerprint) {
-        console.warn("🚨 Token comprometido: Cambio de dispositivo detectado");
-        this.clearSession();
-        return null;
-      }
-
-      // Verificar inactividad
+      // 2. SEGUNDO: Verificar inactividad (ANTES del fingerprint)
       const timeSinceActivity = now - secureData.lastActivity;
-
       if (timeSinceActivity > SecurityService.INACTIVITY_TIMEOUT) {
         console.warn("🚨 Sesión expirada por inactividad");
         this.clearSession();
         return null;
+      }
+
+      // 3. TERCERO: Verificar huella digital
+      const currentFingerprint = this.generateFingerprint().hash;
+
+      // Priorizar el fingerprint de sessionStorage (más confiable)
+      // porque se genera al momento del login y vive solo en esta sesión
+      if (secureData.fingerprint !== currentFingerprint) {
+        console.warn("🚨 Token comprometido: Cambio de dispositivo detectado", {
+          stored: secureData.fingerprint,
+          current: currentFingerprint,
+        });
+        this.clearSession();
+        return null;
+      }
+
+      // Validación secundaria con localStorage (solo si está disponible)
+      // Si localStorage no tiene el fingerprint pero sessionStorage sí coincide,
+      // regeneramos el de localStorage en lugar de cerrar sesión
+      const storedFingerprint = localStorage.getItem("__fp__");
+      if (!storedFingerprint) {
+        // Regenerar fingerprint en localStorage si no existe
+        localStorage.setItem("__fp__", this.encrypt(currentFingerprint));
+      } else {
+        try {
+          const decryptedFp = this.decrypt(storedFingerprint);
+          if (decryptedFp !== currentFingerprint) {
+            // Si no coincide, actualizar localStorage con el fingerprint correcto
+            // (el de sessionStorage ya fue validado)
+            localStorage.setItem("__fp__", this.encrypt(currentFingerprint));
+          }
+        } catch {
+          // Si hay error al descifrar, regenerar
+          localStorage.setItem("__fp__", this.encrypt(currentFingerprint));
+        }
       }
 
       // Actualizar última actividad

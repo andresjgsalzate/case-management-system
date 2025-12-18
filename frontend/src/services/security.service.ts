@@ -33,7 +33,7 @@ interface SecureTokenData {
 }
 
 class SecurityService {
-  private static readonly INACTIVITY_TIMEOUT = 3 * 60 * 1000; // 3 minutos para pruebas
+  private static readonly INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutos
   private static readonly TOKEN_REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutos
   private static readonly SESSION_KEY = "__secure_session__";
   private static readonly ACTIVITY_KEY = "__last_activity__";

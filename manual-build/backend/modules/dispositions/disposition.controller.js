@@ -6,8 +6,6 @@ const class_transformer_1 = require("class-transformer");
 const disposition_service_1 = require("./disposition.service");
 const disposition_dto_1 = require("../../dto/disposition.dto");
 const errorHandler_1 = require("../../middleware/errorHandler");
-const database_1 = require("../../config/database");
-const UserProfile_1 = require("../../entities/UserProfile");
 class DispositionController {
     constructor() {
         this.dispositionService = new disposition_service_1.DispositionService();
@@ -22,12 +20,10 @@ class DispositionController {
                     .join("; ");
                 throw (0, errorHandler_1.createError)(errorMessages, 400);
             }
-            const userRepository = database_1.AppDataSource.getRepository(UserProfile_1.UserProfile);
-            const firstUser = await userRepository.findOne({ where: {} });
-            if (!firstUser) {
-                throw (0, errorHandler_1.createError)("No hay usuarios disponibles en el sistema", 500);
+            const userId = req.user?.id;
+            if (!userId) {
+                throw (0, errorHandler_1.createError)("Usuario no autenticado", 401);
             }
-            const userId = firstUser.id;
             const newDisposition = await this.dispositionService.create(createDispositionDto, userId);
             res.status(201).json({
                 success: true,

@@ -11,6 +11,9 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Disposition = void 0;
 const typeorm_1 = require("typeorm");
+const Application_1 = require("./Application");
+const UserProfile_1 = require("./UserProfile");
+const Case_1 = require("./Case");
 let Disposition = class Disposition {
 };
 exports.Disposition = Disposition;
@@ -67,6 +70,21 @@ __decorate([
     (0, typeorm_1.UpdateDateColumn)({ name: "updated_at" }),
     __metadata("design:type", Date)
 ], Disposition.prototype, "updatedAt", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => Application_1.Application, { nullable: true }),
+    (0, typeorm_1.JoinColumn)({ name: "application_id" }),
+    __metadata("design:type", Application_1.Application)
+], Disposition.prototype, "application", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => UserProfile_1.UserProfile, { nullable: true }),
+    (0, typeorm_1.JoinColumn)({ name: "user_id" }),
+    __metadata("design:type", UserProfile_1.UserProfile)
+], Disposition.prototype, "user", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => Case_1.Case, { nullable: true }),
+    (0, typeorm_1.JoinColumn)({ name: "case_id" }),
+    __metadata("design:type", Case_1.Case)
+], Disposition.prototype, "case", void 0);
 exports.Disposition = Disposition = __decorate([
     (0, typeorm_1.Entity)("dispositions")
 ], Disposition);

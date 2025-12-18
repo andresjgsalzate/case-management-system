@@ -165,6 +165,63 @@ class TodoService {
                 console.log(`DEBUG - TODO is not completed, cannot archive`);
                 throw new Error("Solo se pueden archivar TODOs completados");
             }
+            const todoControlIds = await database_1.AppDataSource.getRepository("TodoControl")
+                .createQueryBuilder("control")
+                .select("control.id")
+                .where("control.todo_id = :todoId", { todoId: todo.id })
+                .getRawMany();
+            const controlIds = todoControlIds.map((item) => item.control_id);
+            console.log(`DEBUG - Found ${controlIds.length} todo_control records`);
+            const timerEntries = [];
+            const manualTimeEntries = [];
+            let timerTimeMinutes = 0;
+            let manualTimeMinutes = 0;
+            if (controlIds.length > 0) {
+                const timerEntriesData = await database_1.AppDataSource.getRepository("TodoTimeEntry")
+                    .createQueryBuilder("entry")
+                    .leftJoinAndSelect("entry.user", "user")
+                    .where("entry.todo_control_id IN (:...controlIds)", { controlIds })
+                    .getMany();
+                console.log(`DEBUG - Timer entries found: ${timerEntriesData.length}`);
+                for (const entry of timerEntriesData) {
+                    timerEntries.push({
+                        id: entry.id,
+                        todoControlId: entry.todoControlId,
+                        userId: entry.userId,
+                        userEmail: entry.user?.email,
+                        startTime: entry.startTime,
+                        endTime: entry.endTime,
+                        durationMinutes: entry.durationMinutes,
+                        entryType: entry.entryType,
+                        description: entry.description,
+                        createdAt: entry.createdAt,
+                        updatedAt: entry.updatedAt,
+                    });
+                    timerTimeMinutes += entry.durationMinutes || 0;
+                }
+                const manualEntriesData = await database_1.AppDataSource.getRepository("TodoManualTimeEntry")
+                    .createQueryBuilder("entry")
+                    .leftJoinAndSelect("entry.user", "user")
+                    .where("entry.todo_control_id IN (:...controlIds)", { controlIds })
+                    .getMany();
+                console.log(`DEBUG - Manual entries found: ${manualEntriesData.length}`);
+                for (const entry of manualEntriesData) {
+                    manualTimeEntries.push({
+                        id: entry.id,
+                        todoControlId: entry.todoControlId,
+                        userId: entry.userId,
+                        userEmail: entry.user?.email,
+                        date: entry.date,
+                        durationMinutes: entry.durationMinutes,
+                        description: entry.description,
+                        createdBy: entry.createdBy,
+                        createdAt: entry.createdAt,
+                    });
+                    manualTimeMinutes += entry.durationMinutes || 0;
+                }
+            }
+            const totalTimeMinutes = timerTimeMinutes + manualTimeMinutes;
+            console.log(`DEBUG - Time totals: timer=${timerTimeMinutes}, manual=${manualTimeMinutes}, total=${totalTimeMinutes}`);
             const { ArchivedTodo, } = require("../../entities/archive/ArchivedTodo.entity");
             const archivedTodoRepository = database_1.AppDataSource.getRepository(ArchivedTodo);
             const archivedTodo = archivedTodoRepository.create({
@@ -185,23 +242,23 @@ class TodoService {
                 archiveReason: "TODO completado y archivado automáticamente",
                 originalData: todo,
                 controlData: todo.controls || [],
-                totalTimeMinutes: todo.estimatedMinutes,
+                timerEntries: timerEntries,
+                manualTimeEntries: manualTimeEntries,
+                totalTimeMinutes: totalTimeMinutes,
+                timerTimeMinutes: timerTimeMinutes,
+                manualTimeMinutes: manualTimeMinutes,
             });
             console.log(`DEBUG - Created archived todo object:`, {
                 originalTodoId: archivedTodo.originalTodoId,
                 title: archivedTodo.title,
                 priority: archivedTodo.priority,
+                timerEntriesCount: timerEntries.length,
+                manualEntriesCount: manualTimeEntries.length,
+                totalTimeMinutes: totalTimeMinutes,
             });
             await archivedTodoRepository.save(archivedTodo);
             console.log(`DEBUG - Archived todo saved successfully`);
             console.log(`DEBUG - Deleting dependent relations for TODO ID: ${todo.id}`);
-            const todoControlIds = await database_1.AppDataSource.getRepository("TodoControl")
-                .createQueryBuilder("control")
-                .select("control.id")
-                .where("control.todo_id = :todoId", { todoId: todo.id })
-                .getRawMany();
-            const controlIds = todoControlIds.map((item) => item.control_id);
-            console.log(`DEBUG - Found ${controlIds.length} todo_control records to delete`);
             if (controlIds.length > 0) {
                 await database_1.AppDataSource.getRepository("TodoTimeEntry")
                     .createQueryBuilder()

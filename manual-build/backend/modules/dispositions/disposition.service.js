@@ -53,6 +53,10 @@ class DispositionService {
     async findAll(filters, userId) {
         try {
             const queryBuilder = this.dispositionRepository.createQueryBuilder("disposition");
+            queryBuilder
+                .leftJoinAndSelect("disposition.application", "application")
+                .leftJoinAndSelect("disposition.user", "user")
+                .leftJoinAndSelect("disposition.case", "case");
             if (userId) {
                 queryBuilder.andWhere("disposition.userId = :userId", { userId });
             }
@@ -89,6 +93,9 @@ class DispositionService {
         try {
             const disposition = await this.dispositionRepository
                 .createQueryBuilder("disposition")
+                .leftJoinAndSelect("disposition.application", "application")
+                .leftJoinAndSelect("disposition.user", "user")
+                .leftJoinAndSelect("disposition.case", "case")
                 .where("disposition.id = :id", { id })
                 .getOne();
             return disposition;

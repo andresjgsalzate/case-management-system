@@ -115,8 +115,13 @@ class RestoreService {
                 }
             }
             if (savedCaseControl) {
+                console.log(`🔍 Restaurando entradas de tiempo para CASO ${archivedCase.caseNumber}:`, {
+                    timerEntriesCount: archivedCase.timerEntries?.length || 0,
+                    manualEntriesCount: archivedCase.manualTimeEntries?.length || 0,
+                });
                 if (archivedCase.manualTimeEntries &&
-                    Array.isArray(archivedCase.manualTimeEntries)) {
+                    Array.isArray(archivedCase.manualTimeEntries) &&
+                    archivedCase.manualTimeEntries.length > 0) {
                     for (const timeEntry of archivedCase.manualTimeEntries) {
                         const newTimeEntry = queryRunner.manager.create(ManualTimeEntry_1.ManualTimeEntry, {
                             id: timeEntry.id,
@@ -141,7 +146,8 @@ class RestoreService {
                     }
                 }
                 if (archivedCase.timerEntries &&
-                    Array.isArray(archivedCase.timerEntries)) {
+                    Array.isArray(archivedCase.timerEntries) &&
+                    archivedCase.timerEntries.length > 0) {
                     for (const timeEntry of archivedCase.timerEntries) {
                         const newTimeEntry = new TimeEntry_1.TimeEntry();
                         newTimeEntry.id = timeEntry.id;
@@ -158,9 +164,16 @@ class RestoreService {
                         newTimeEntry.updatedAt = new Date(timeEntry.updatedAt);
                         await queryRunner.manager.save(newTimeEntry);
                     }
+                    console.log(`✅ Restauradas ${archivedCase.timerEntries.length} entradas de timer para CASO`);
+                }
+                if (archivedCase.manualTimeEntries &&
+                    archivedCase.manualTimeEntries.length > 0) {
+                    console.log(`✅ Restauradas ${archivedCase.manualTimeEntries.length} entradas manuales para CASO`);
                 }
             }
             archivedCase.isRestored = true;
+            archivedCase.restoredAt = new Date();
+            archivedCase.restoredBy = restoredBy;
             await queryRunner.manager.save(ArchivedCase_1.ArchivedCase, archivedCase);
             await queryRunner.commitTransaction();
             try {
@@ -241,10 +254,18 @@ class RestoreService {
                 newTodoControl.isTimerActive = false;
                 newTodoControl.timerStartAt = undefined;
                 savedTodoControl = await queryRunner.manager.save(newTodoControl);
-                if (controlData.timerEntries &&
-                    Array.isArray(controlData.timerEntries)) {
-                    for (const timerEntry of controlData.timerEntries) {
+            }
+            if (savedTodoControl) {
+                console.log(`🔍 Restaurando entradas de tiempo para TODO ${archivedTodo.title}:`, {
+                    timerEntriesCount: archivedTodo.timerEntries?.length || 0,
+                    manualEntriesCount: archivedTodo.manualTimeEntries?.length || 0,
+                });
+                if (archivedTodo.timerEntries &&
+                    Array.isArray(archivedTodo.timerEntries) &&
+                    archivedTodo.timerEntries.length > 0) {
+                    for (const timerEntry of archivedTodo.timerEntries) {
                         const newTimeEntry = new TodoTimeEntry_1.TodoTimeEntry();
+                        newTimeEntry.id = timerEntry.id;
                         newTimeEntry.todoControlId = savedTodoControl.id;
                         newTimeEntry.userId = timerEntry.userId || restoredBy;
                         newTimeEntry.startTime = new Date(timerEntry.startTime);
@@ -255,13 +276,22 @@ class RestoreService {
                         newTimeEntry.entryType = timerEntry.entryType || "automatic";
                         newTimeEntry.description =
                             timerEntry.description || "Entrada de timer restaurada";
+                        newTimeEntry.createdAt = timerEntry.createdAt
+                            ? new Date(timerEntry.createdAt)
+                            : new Date();
+                        newTimeEntry.updatedAt = timerEntry.updatedAt
+                            ? new Date(timerEntry.updatedAt)
+                            : new Date();
                         await queryRunner.manager.save(TodoTimeEntry_1.TodoTimeEntry, newTimeEntry);
                     }
+                    console.log(`✅ Restauradas ${archivedTodo.timerEntries.length} entradas de timer para TODO`);
                 }
-                if (controlData.manualEntries &&
-                    Array.isArray(controlData.manualEntries)) {
-                    for (const manualEntry of controlData.manualEntries) {
+                if (archivedTodo.manualTimeEntries &&
+                    Array.isArray(archivedTodo.manualTimeEntries) &&
+                    archivedTodo.manualTimeEntries.length > 0) {
+                    for (const manualEntry of archivedTodo.manualTimeEntries) {
                         const newManualEntry = new TodoManualTimeEntry_1.TodoManualTimeEntry();
+                        newManualEntry.id = manualEntry.id;
                         newManualEntry.todoControlId = savedTodoControl.id;
                         newManualEntry.userId = manualEntry.userId || restoredBy;
                         newManualEntry.date = manualEntry.date
@@ -270,8 +300,13 @@ class RestoreService {
                         newManualEntry.durationMinutes = manualEntry.durationMinutes || 0;
                         newManualEntry.description =
                             manualEntry.description || "Entrada manual restaurada";
+                        newManualEntry.createdBy = manualEntry.createdBy || restoredBy;
+                        newManualEntry.createdAt = manualEntry.createdAt
+                            ? new Date(manualEntry.createdAt)
+                            : new Date();
                         await queryRunner.manager.save(TodoManualTimeEntry_1.TodoManualTimeEntry, newManualEntry);
                     }
+                    console.log(`✅ Restauradas ${archivedTodo.manualTimeEntries.length} entradas manuales para TODO`);
                 }
             }
             archivedTodo.isRestored = true;

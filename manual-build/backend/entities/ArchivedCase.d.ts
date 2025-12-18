@@ -63,6 +63,8 @@ export declare class ArchivedCase {
     }>;
     metadata?: Record<string, any>;
     isRestored: boolean;
+    restoredAt?: Date;
+    restoredBy?: string;
     createdAt: Date;
     updatedAt: Date;
     archivedByUser: UserProfile;

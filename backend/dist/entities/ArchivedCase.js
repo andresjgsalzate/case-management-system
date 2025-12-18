@@ -150,6 +150,14 @@ __decorate([
     __metadata("design:type", Boolean)
 ], ArchivedCase.prototype, "isRestored", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: "restored_at", type: "timestamptz", nullable: true }),
+    __metadata("design:type", Date)
+], ArchivedCase.prototype, "restoredAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: "restored_by", type: "uuid", nullable: true }),
+    __metadata("design:type", String)
+], ArchivedCase.prototype, "restoredBy", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)({ name: "created_at", type: "timestamptz" }),
     __metadata("design:type", Date)
 ], ArchivedCase.prototype, "createdAt", void 0);

@@ -42,6 +42,7 @@ const Todo_1 = require("../../entities/Todo");
 const CaseControl_1 = require("../../entities/CaseControl");
 const TimeEntry_1 = require("../../entities/TimeEntry");
 const ManualTimeEntry_1 = require("../../entities/ManualTimeEntry");
+const Disposition_1 = require("../../entities/Disposition");
 const restore_service_1 = require("./restore-service");
 class ArchiveServiceExpress {
     constructor() {
@@ -93,8 +94,12 @@ class ArchiveServiceExpress {
         try {
             const archivedCaseRepository = database_1.AppDataSource.getRepository(ArchivedCase_1.ArchivedCase);
             const archivedTodoRepository = database_1.AppDataSource.getRepository(ArchivedTodo_entity_1.ArchivedTodo);
-            const totalArchivedCases = await archivedCaseRepository.count();
-            const totalArchivedTodos = await archivedTodoRepository.count();
+            const totalArchivedCases = await archivedCaseRepository.count({
+                where: { isRestored: false },
+            });
+            const totalArchivedTodos = await archivedTodoRepository.count({
+                where: { isRestored: false },
+            });
             const totalArchivedTimeMinutes = 0;
             const currentMonth = new Date();
             currentMonth.setDate(1);
@@ -104,8 +109,19 @@ class ArchiveServiceExpress {
                 .where("archived_case.archivedAt >= :startOfMonth", {
                 startOfMonth: currentMonth,
             })
+                .andWhere("archived_case.isRestored = :isRestored", {
+                isRestored: false,
+            })
                 .getCount();
-            const restoredThisMonth = 0;
+            const restoredThisMonth = await archivedCaseRepository
+                .createQueryBuilder("archived_case")
+                .where("archived_case.restoredAt >= :startOfMonth", {
+                startOfMonth: currentMonth,
+            })
+                .andWhere("archived_case.isRestored = :isRestored", {
+                isRestored: true,
+            })
+                .getCount();
             return {
                 totalArchivedCases,
                 totalArchivedTodos,
@@ -128,9 +144,12 @@ class ArchiveServiceExpress {
             if (!type || type === "case" || type === "all") {
                 const queryBuilder = archivedCaseRepository
                     .createQueryBuilder("archived_case")
-                    .leftJoinAndSelect("archived_case.archivedByUser", "archivedByUser");
+                    .leftJoinAndSelect("archived_case.archivedByUser", "archivedByUser")
+                    .where("archived_case.isRestored = :isRestored", {
+                    isRestored: false,
+                });
                 if (search) {
-                    queryBuilder.where("archived_case.title ILIKE :search OR archived_case.caseNumber ILIKE :search", { search: `%${search}%` });
+                    queryBuilder.andWhere("(archived_case.title ILIKE :search OR archived_case.caseNumber ILIKE :search)", { search: `%${search}%` });
                 }
                 if (sortBy === "title") {
                     queryBuilder.orderBy("archived_case.title", sortOrder);
@@ -182,9 +201,12 @@ class ArchiveServiceExpress {
             if (type === "todo" || type === "all") {
                 const todoQueryBuilder = archivedTodoRepository
                     .createQueryBuilder("archived_todo")
-                    .leftJoinAndSelect("archived_todo.archivedByUser", "archivedByUser");
+                    .leftJoinAndSelect("archived_todo.archivedByUser", "archivedByUser")
+                    .where("archived_todo.isRestored = :isRestored", {
+                    isRestored: false,
+                });
                 if (search) {
-                    todoQueryBuilder.where("archived_todo.title ILIKE :search OR archived_todo.description ILIKE :search", { search: `%${search}%` });
+                    todoQueryBuilder.andWhere("(archived_todo.title ILIKE :search OR archived_todo.description ILIKE :search)", { search: `%${search}%` });
                 }
                 if (sortBy === "title") {
                     todoQueryBuilder.orderBy("archived_todo.title", sortOrder);
@@ -256,13 +278,19 @@ class ArchiveServiceExpress {
                 where: { caseId: caseId },
                 relations: ["user", "status"],
             });
+            console.log(`🔍 Archivando CASO ${caseId} (${originalCase.numeroCaso}):`, {
+                caseControlRecordsFound: caseControlRecords.length,
+                caseControlIds: caseControlRecords.map((cc) => cc.id),
+            });
             const timerEntries = [];
             const manualEntries = [];
             for (const caseControl of caseControlRecords) {
+                console.log(`🔍 Buscando entradas de tiempo para CaseControl ${caseControl.id}`);
                 const automaticEntries = await timeEntriesRepository.find({
                     where: { caseControlId: caseControl.id },
                     relations: ["user"],
                 });
+                console.log(`   - Timer entries encontradas: ${automaticEntries.length}`);
                 for (const entry of automaticEntries) {
                     timerEntries.push({
                         id: entry.id,
@@ -281,6 +309,7 @@ class ArchiveServiceExpress {
                     where: { caseControlId: caseControl.id },
                     relations: ["user", "creator"],
                 });
+                console.log(`   - Manual entries encontradas: ${manualTimeEntries.length}`);
                 for (const entry of manualTimeEntries) {
                     manualEntries.push({
                         id: entry.id,
@@ -297,6 +326,18 @@ class ArchiveServiceExpress {
                     });
                 }
             }
+            console.log(`📊 Resumen de entradas recolectadas para CASO:`, {
+                timerEntriesTotal: timerEntries.length,
+                manualEntriesTotal: manualEntries.length,
+            });
+            const timerTimeMinutes = timerEntries.reduce((total, entry) => total + (entry.durationMinutes || 0), 0);
+            const manualTimeMinutes = manualEntries.reduce((total, entry) => total + (entry.durationMinutes || 0), 0);
+            const calculatedTotalTime = timerTimeMinutes + manualTimeMinutes;
+            console.log(`⏱️ Tiempos calculados para CASO:`, {
+                timerTimeMinutes,
+                manualTimeMinutes,
+                calculatedTotalTime,
+            });
             const archivedCase = new ArchivedCase_1.ArchivedCase();
             archivedCase.originalCaseId = caseId;
             archivedCase.caseNumber = originalCase.numeroCaso;
@@ -353,6 +394,7 @@ class ArchiveServiceExpress {
                     await manager.delete(TimeEntry_1.TimeEntry, { caseControlId: caseControl.id });
                 }
                 await manager.delete(CaseControl_1.CaseControl, { caseId: caseId });
+                await manager.update(Disposition_1.Disposition, { caseId: caseId }, { caseId: null });
                 await manager.delete(Case_1.Case, { id: caseId });
                 return savedArchivedCase;
             });
@@ -416,13 +458,19 @@ class ArchiveServiceExpress {
                 where: { todoId: todoIdStr },
                 relations: ["user", "status"],
             });
+            console.log(`🔍 Archivando TODO ${todoIdStr}:`, {
+                todoControlRecordsFound: todoControlRecords.length,
+                todoControlIds: todoControlRecords.map((tc) => tc.id),
+            });
             const timerEntries = [];
             const manualEntries = [];
             for (const todoControl of todoControlRecords) {
+                console.log(`🔍 Buscando entradas de tiempo para TodoControl ${todoControl.id}`);
                 const automaticEntries = await todoTimeEntriesRepository.find({
                     where: { todoControlId: todoControl.id },
                     relations: ["user"],
                 });
+                console.log(`   - Timer entries encontradas: ${automaticEntries.length}`);
                 for (const entry of automaticEntries) {
                     timerEntries.push({
                         id: entry.id,
@@ -441,6 +489,7 @@ class ArchiveServiceExpress {
                     where: { todoControlId: todoControl.id },
                     relations: ["user"],
                 });
+                console.log(`   - Manual entries encontradas: ${manualTimeEntries.length}`);
                 for (const entry of manualTimeEntries) {
                     manualEntries.push({
                         id: entry.id,
@@ -455,9 +504,18 @@ class ArchiveServiceExpress {
                     });
                 }
             }
+            console.log(`📊 Resumen de entradas recolectadas:`, {
+                timerEntriesTotal: timerEntries.length,
+                manualEntriesTotal: manualEntries.length,
+            });
             const timerTimeMinutes = timerEntries.reduce((total, entry) => total + (entry.durationMinutes || 0), 0);
             const manualTimeMinutes = manualEntries.reduce((total, entry) => total + (entry.durationMinutes || 0), 0);
             const totalTimeMinutes = timerTimeMinutes + manualTimeMinutes;
+            console.log(`⏱️ Tiempos calculados:`, {
+                timerTimeMinutes,
+                manualTimeMinutes,
+                totalTimeMinutes,
+            });
             const archivedTodo = new ArchivedTodo_entity_1.ArchivedTodo();
             archivedTodo.originalTodoId = todoIdStr;
             archivedTodo.title = originalTodo.title;

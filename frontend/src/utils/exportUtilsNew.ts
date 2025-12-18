@@ -485,3 +485,193 @@ export const generateCaseControlReport = async (
     }
   }
 };
+
+// =====================================================
+// EXPORTACIÓN DE TODOS
+// =====================================================
+
+// Tipo flexible para TODOs que acepta diferentes estructuras
+interface FlexibleTodo {
+  id: string;
+  title: string;
+  description?: string;
+  priorityId: string;
+  assignedUserId?: string;
+  createdByUserId: string;
+  dueDate?: string;
+  estimatedMinutes: number;
+  isCompleted: boolean;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  priority?: {
+    name?: string;
+    level?: number;
+    color?: string;
+  };
+  assignedUser?: {
+    fullName?: string;
+    email?: string;
+  };
+  createdByUser?: {
+    fullName?: string;
+    email?: string;
+  };
+  control?: {
+    totalTimeMinutes?: number;
+    isTimerActive?: boolean;
+    status?: {
+      name?: string;
+    };
+  };
+}
+
+/**
+ * Formatea minutos a formato de horas y minutos legible
+ */
+function formatMinutesToTime(minutes: number): string {
+  if (!minutes || minutes === 0) return "0h 0m";
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours}h ${mins}m`;
+}
+
+/**
+ * Obtiene el estado del TODO basado en sus propiedades
+ */
+function getTodoStatus(todo: FlexibleTodo): string {
+  if (todo.isCompleted) return "Completado";
+  if (todo.control?.isTimerActive) return "En Progreso";
+  if (todo.control?.status?.name) return todo.control.status.name;
+  if (todo.dueDate && new Date(todo.dueDate) < new Date()) return "Vencido";
+  return "Pendiente";
+}
+
+/**
+ * Exporta una lista de TODOs a un archivo Excel
+ */
+export const exportTodosToExcel = (
+  todos: FlexibleTodo[],
+  filename: string = "todos.xlsx",
+  onSuccess?: NotificationFn
+) => {
+  try {
+    // Preparar los datos para el Excel
+    const excelData = todos.map((todo) => ({
+      Título: todo.title,
+      Descripción: todo.description || "N/A",
+      Prioridad: todo.priority?.name || "N/A",
+      "Asignado a": todo.assignedUser?.fullName || "Sin asignar",
+      "Creado por": todo.createdByUser?.fullName || "N/A",
+      Estado: getTodoStatus(todo),
+      "Fecha de Vencimiento": todo.dueDate
+        ? formatDatePreservingDay(todo.dueDate)
+        : "Sin fecha",
+      "Tiempo Estimado": formatMinutesToTime(todo.estimatedMinutes),
+      "Tiempo Trabajado": formatMinutesToTime(
+        todo.control?.totalTimeMinutes || 0
+      ),
+      "Fecha de Creación": formatDatePreservingDay(todo.createdAt),
+      "Fecha de Completado": todo.completedAt
+        ? formatDatePreservingDay(todo.completedAt)
+        : "N/A",
+    }));
+
+    // Crear el libro de Excel
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+
+    // Añadir la hoja al libro
+    XLSX.utils.book_append_sheet(workbook, worksheet, "TODOs");
+
+    // Configurar el ancho de las columnas
+    const columnWidths = [
+      { wch: 30 }, // Título
+      { wch: 50 }, // Descripción
+      { wch: 15 }, // Prioridad
+      { wch: 25 }, // Asignado a
+      { wch: 25 }, // Creado por
+      { wch: 15 }, // Estado
+      { wch: 18 }, // Fecha de Vencimiento
+      { wch: 15 }, // Tiempo Estimado
+      { wch: 15 }, // Tiempo Trabajado
+      { wch: 18 }, // Fecha de Creación
+      { wch: 18 }, // Fecha de Completado
+    ];
+
+    worksheet["!cols"] = columnWidths;
+
+    // Escribir el archivo
+    XLSX.writeFile(workbook, filename);
+
+    // Mostrar notificación de éxito
+    if (onSuccess) {
+      onSuccess(`✅ ${todos.length} TODOs exportados a Excel exitosamente`);
+    }
+  } catch (error) {
+    console.error("Error al exportar TODOs a Excel:", error);
+    if (onSuccess) {
+      onSuccess("❌ Error al exportar TODOs a Excel");
+    }
+  }
+};
+
+/**
+ * Exporta una lista de TODOs a un archivo CSV
+ */
+export const exportTodosToCSV = (
+  todos: FlexibleTodo[],
+  filename: string = "todos.csv",
+  onSuccess?: NotificationFn
+) => {
+  try {
+    // Preparar los datos para CSV
+    const csvData = todos.map((todo) => ({
+      Titulo: todo.title.replace(/["\n\r]/g, " "),
+      Descripcion: (todo.description || "").replace(/["\n\r]/g, " "),
+      Prioridad: todo.priority?.name || "N/A",
+      "Asignado a": todo.assignedUser?.fullName || "Sin asignar",
+      "Creado por": todo.createdByUser?.fullName || "N/A",
+      Estado: getTodoStatus(todo),
+      "Fecha de Vencimiento": todo.dueDate
+        ? formatDatePreservingDay(todo.dueDate)
+        : "Sin fecha",
+      "Tiempo Estimado (min)": todo.estimatedMinutes || 0,
+      "Tiempo Trabajado (min)": todo.control?.totalTimeMinutes || 0,
+      "Fecha de Creacion": formatDatePreservingDay(todo.createdAt),
+      "Fecha de Completado": todo.completedAt
+        ? formatDatePreservingDay(todo.completedAt)
+        : "N/A",
+    }));
+
+    // Crear encabezados
+    const headers = Object.keys(csvData[0] || {});
+
+    // Convertir datos a CSV
+    const csvContent = [
+      headers.join(","),
+      ...csvData.map((row) =>
+        headers
+          .map((header) => {
+            const value = row[header as keyof typeof row];
+            // Escapar comillas y comas
+            return `"${String(value).replace(/"/g, '""')}"`;
+          })
+          .join(",")
+      ),
+    ].join("\n");
+
+    // Crear Blob y descargar
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    saveAs(blob, filename);
+
+    if (onSuccess) {
+      onSuccess(`✅ ${todos.length} TODOs exportados a CSV exitosamente`);
+    }
+  } catch (error) {
+    console.error("Error al exportar TODOs a CSV:", error);
+    if (onSuccess) {
+      onSuccess("❌ Error al exportar TODOs a CSV");
+    }
+  }
+};

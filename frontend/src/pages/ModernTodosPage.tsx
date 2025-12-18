@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useTodos } from "../hooks/useTodos";
 import { TodoCard, TodoCreateModal, TodoEditModal } from "../components/todos";
+import { TodoExportButtons } from "../components/todos/TodoExportButtons";
 import { Button } from "../components/ui/Button";
 import { todoAPI } from "../services/todoAPI";
 import {
@@ -90,10 +91,6 @@ const ModernTodosPage: React.FC = () => {
     setShowFilters(false);
   };
 
-  const generateReport = () => {
-    // TODO: Implement report generation
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -122,10 +119,11 @@ const ModernTodosPage: React.FC = () => {
               </p>
             </div>
             <div className="flex space-x-4">
-              <Button onClick={generateReport} variant="secondary">
-                <ActionIcon action="analytics" size="sm" color="secondary" />
-                Reporte
-              </Button>
+              <TodoExportButtons
+                filteredTodos={todos}
+                onSuccess={(message) => console.log(message)}
+                onError={(message) => console.error(message)}
+              />
               <Button
                 onClick={() => setShowFilters(!showFilters)}
                 variant="secondary"

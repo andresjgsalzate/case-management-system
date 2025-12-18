@@ -9,6 +9,35 @@ import {
 
 type NotificationFn = (message: string) => void;
 
+/**
+ * Formatea una fecha preservando el día exacto de la base de datos.
+ * Evita problemas de timezone que pueden alterar el día.
+ * Extrae directamente los componentes de la fecha del string ISO.
+ */
+function formatDatePreservingDay(dateValue: string | Date): string {
+  if (!dateValue) return "N/A";
+
+  try {
+    // Si es un string ISO (ej: "2025-12-17T05:00:00.000Z" o "2025-12-17")
+    const dateStr =
+      typeof dateValue === "string" ? dateValue : dateValue.toISOString();
+
+    // Extraer directamente año, mes, día del string ISO sin conversión de timezone
+    const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      const [, year, month, day] = match;
+      // Formato dd/mm/yyyy
+      return `${day}/${month}/${year}`;
+    }
+
+    // Fallback: usar toLocaleDateString pero con UTC
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("es-ES", { timeZone: "UTC" });
+  } catch {
+    return "N/A";
+  }
+}
+
 // Tipo flexible para casos que acepta diferentes estructuras
 interface FlexibleCase {
   id: string;
@@ -46,7 +75,6 @@ export const exportCasesToExcel = (
     const excelData = cases.map((caso) => ({
       "Número de Caso": caso.numeroCaso,
       Descripción: caso.descripcion || "N/A",
-      Fecha: new Date(caso.fecha).toLocaleDateString("es-ES"),
       Origen: caso.origin?.nombre || "No especificado",
       Aplicación: caso.application?.nombre || "No especificado",
       "Historial del Caso": getHistorialCasoText(caso.historialCaso),
@@ -61,7 +89,7 @@ export const exportCasesToExcel = (
       "Puntuación Total": caso.puntuacion || 0,
       Clasificación: caso.clasificacion || "N/A",
       Estado: caso.estado || "N/A",
-      "Fecha de Creación": new Date(caso.createdAt).toLocaleDateString("es-ES"),
+      "Fecha de Creación": formatDatePreservingDay(caso.createdAt),
     }));
 
     // Crear el libro de Excel
@@ -75,7 +103,6 @@ export const exportCasesToExcel = (
     const columnWidths = [
       { wch: 15 }, // Número de Caso
       { wch: 40 }, // Descripción
-      { wch: 12 }, // Fecha
       { wch: 20 }, // Origen
       { wch: 20 }, // Aplicación
       { wch: 25 }, // Historial del Caso
@@ -119,7 +146,6 @@ export const exportCasesToCSV = (
     const csvData = cases.map((caso) => ({
       "Numero de Caso": caso.numeroCaso,
       Descripcion: (caso.descripcion || "").replace(/["\n\r]/g, " "), // Limpiar caracteres problemáticos
-      Fecha: new Date(caso.fecha).toLocaleDateString("es-ES"),
       Origen: caso.origin?.nombre || "No especificado",
       Aplicacion: caso.application?.nombre || "No especificado",
       "Historial del Caso": getHistorialCasoText(caso.historialCaso),
@@ -134,7 +160,7 @@ export const exportCasesToCSV = (
       "Puntuacion Total": caso.puntuacion || 0,
       Clasificacion: caso.clasificacion || "N/A",
       Estado: caso.estado || "N/A",
-      "Fecha de Creacion": new Date(caso.createdAt).toLocaleDateString("es-ES"),
+      "Fecha de Creacion": formatDatePreservingDay(caso.createdAt),
     }));
 
     // Crear encabezados

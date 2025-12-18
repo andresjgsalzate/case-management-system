@@ -230,6 +230,85 @@ export class TodoService {
         throw new Error("Solo se pueden archivar TODOs completados");
       }
 
+      // Obtener los IDs de los controles del TODO ANTES de archivar
+      const todoControlIds = await AppDataSource.getRepository("TodoControl")
+        .createQueryBuilder("control")
+        .select("control.id")
+        .where("control.todo_id = :todoId", { todoId: todo.id })
+        .getRawMany();
+
+      const controlIds = todoControlIds.map((item) => item.control_id);
+      console.log(`DEBUG - Found ${controlIds.length} todo_control records`);
+
+      // Recolectar entradas de tiempo ANTES de eliminarlas
+      const timerEntries: any[] = [];
+      const manualTimeEntries: any[] = [];
+      let timerTimeMinutes = 0;
+      let manualTimeMinutes = 0;
+
+      if (controlIds.length > 0) {
+        // Obtener entradas de tiempo automáticas (timer)
+        const timerEntriesData = await AppDataSource.getRepository(
+          "TodoTimeEntry"
+        )
+          .createQueryBuilder("entry")
+          .leftJoinAndSelect("entry.user", "user")
+          .where("entry.todo_control_id IN (:...controlIds)", { controlIds })
+          .getMany();
+
+        console.log(`DEBUG - Timer entries found: ${timerEntriesData.length}`);
+
+        for (const entry of timerEntriesData) {
+          timerEntries.push({
+            id: entry.id,
+            todoControlId: entry.todoControlId,
+            userId: entry.userId,
+            userEmail: entry.user?.email,
+            startTime: entry.startTime,
+            endTime: entry.endTime,
+            durationMinutes: entry.durationMinutes,
+            entryType: entry.entryType,
+            description: entry.description,
+            createdAt: entry.createdAt,
+            updatedAt: entry.updatedAt,
+          });
+          timerTimeMinutes += entry.durationMinutes || 0;
+        }
+
+        // Obtener entradas de tiempo manuales
+        const manualEntriesData = await AppDataSource.getRepository(
+          "TodoManualTimeEntry"
+        )
+          .createQueryBuilder("entry")
+          .leftJoinAndSelect("entry.user", "user")
+          .where("entry.todo_control_id IN (:...controlIds)", { controlIds })
+          .getMany();
+
+        console.log(
+          `DEBUG - Manual entries found: ${manualEntriesData.length}`
+        );
+
+        for (const entry of manualEntriesData) {
+          manualTimeEntries.push({
+            id: entry.id,
+            todoControlId: entry.todoControlId,
+            userId: entry.userId,
+            userEmail: entry.user?.email,
+            date: entry.date,
+            durationMinutes: entry.durationMinutes,
+            description: entry.description,
+            createdBy: entry.createdBy,
+            createdAt: entry.createdAt,
+          });
+          manualTimeMinutes += entry.durationMinutes || 0;
+        }
+      }
+
+      const totalTimeMinutes = timerTimeMinutes + manualTimeMinutes;
+      console.log(
+        `DEBUG - Time totals: timer=${timerTimeMinutes}, manual=${manualTimeMinutes}, total=${totalTimeMinutes}`
+      );
+
       const {
         ArchivedTodo,
       } = require("../../entities/archive/ArchivedTodo.entity");
@@ -254,13 +333,22 @@ export class TodoService {
         archiveReason: "TODO completado y archivado automáticamente",
         originalData: todo,
         controlData: todo.controls || [],
-        totalTimeMinutes: todo.estimatedMinutes,
+        // Entradas de tiempo archivadas
+        timerEntries: timerEntries,
+        manualTimeEntries: manualTimeEntries,
+        // Tiempos calculados
+        totalTimeMinutes: totalTimeMinutes,
+        timerTimeMinutes: timerTimeMinutes,
+        manualTimeMinutes: manualTimeMinutes,
       });
 
       console.log(`DEBUG - Created archived todo object:`, {
         originalTodoId: archivedTodo.originalTodoId,
         title: archivedTodo.title,
         priority: archivedTodo.priority,
+        timerEntriesCount: timerEntries.length,
+        manualEntriesCount: manualTimeEntries.length,
+        totalTimeMinutes: totalTimeMinutes,
       });
 
       // Guardar en tabla de archivados
@@ -270,18 +358,6 @@ export class TodoService {
       // Eliminar relaciones dependientes antes del TODO principal
       console.log(
         `DEBUG - Deleting dependent relations for TODO ID: ${todo.id}`
-      );
-
-      // Primero obtener los IDs de los controles del TODO
-      const todoControlIds = await AppDataSource.getRepository("TodoControl")
-        .createQueryBuilder("control")
-        .select("control.id")
-        .where("control.todo_id = :todoId", { todoId: todo.id })
-        .getRawMany();
-
-      const controlIds = todoControlIds.map((item) => item.control_id);
-      console.log(
-        `DEBUG - Found ${controlIds.length} todo_control records to delete`
       );
 
       if (controlIds.length > 0) {

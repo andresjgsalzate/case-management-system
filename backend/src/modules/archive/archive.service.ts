@@ -17,6 +17,7 @@ import { Todo } from "../../entities/Todo";
 import { CaseControl } from "../../entities/CaseControl";
 import { TimeEntry } from "../../entities/TimeEntry";
 import { ManualTimeEntry } from "../../entities/ManualTimeEntry";
+import { Disposition } from "../../entities/Disposition";
 import { RestoreService } from "./restore-service";
 
 export class ArchiveServiceExpress {
@@ -92,16 +93,20 @@ export class ArchiveServiceExpress {
       const archivedCaseRepository = AppDataSource.getRepository(ArchivedCase);
       const archivedTodoRepository = AppDataSource.getRepository(ArchivedTodo);
 
-      // Contar casos archivados
-      const totalArchivedCases = await archivedCaseRepository.count();
+      // Contar casos archivados (excluir restaurados)
+      const totalArchivedCases = await archivedCaseRepository.count({
+        where: { isRestored: false },
+      });
 
-      // Contar todos archivados
-      const totalArchivedTodos = await archivedTodoRepository.count();
+      // Contar todos archivados (excluir restaurados)
+      const totalArchivedTodos = await archivedTodoRepository.count({
+        where: { isRestored: false },
+      });
 
       // Para ahora, el tiempo total será 0 ya que no tenemos esta propiedad en ArchivedCase
       const totalArchivedTimeMinutes = 0;
 
-      // Contar archivados este mes
+      // Contar archivados este mes (excluir restaurados)
       const currentMonth = new Date();
       currentMonth.setDate(1);
       currentMonth.setHours(0, 0, 0, 0);
@@ -111,10 +116,21 @@ export class ArchiveServiceExpress {
         .where("archived_case.archivedAt >= :startOfMonth", {
           startOfMonth: currentMonth,
         })
+        .andWhere("archived_case.isRestored = :isRestored", {
+          isRestored: false,
+        })
         .getCount();
 
-      // Contar restaurados este mes (por implementar cuando tengamos la funcionalidad)
-      const restoredThisMonth = 0;
+      // Contar restaurados este mes
+      const restoredThisMonth = await archivedCaseRepository
+        .createQueryBuilder("archived_case")
+        .where("archived_case.restoredAt >= :startOfMonth", {
+          startOfMonth: currentMonth,
+        })
+        .andWhere("archived_case.isRestored = :isRestored", {
+          isRestored: true,
+        })
+        .getCount();
 
       return {
         totalArchivedCases,
@@ -151,11 +167,14 @@ export class ArchiveServiceExpress {
       if (!type || type === "case" || type === "all") {
         const queryBuilder = archivedCaseRepository
           .createQueryBuilder("archived_case")
-          .leftJoinAndSelect("archived_case.archivedByUser", "archivedByUser");
+          .leftJoinAndSelect("archived_case.archivedByUser", "archivedByUser")
+          .where("archived_case.isRestored = :isRestored", {
+            isRestored: false,
+          });
 
         if (search) {
-          queryBuilder.where(
-            "archived_case.title ILIKE :search OR archived_case.caseNumber ILIKE :search",
+          queryBuilder.andWhere(
+            "(archived_case.title ILIKE :search OR archived_case.caseNumber ILIKE :search)",
             { search: `%${search}%` }
           );
         }
@@ -230,11 +249,14 @@ export class ArchiveServiceExpress {
       if (type === "todo" || type === "all") {
         const todoQueryBuilder = archivedTodoRepository
           .createQueryBuilder("archived_todo")
-          .leftJoinAndSelect("archived_todo.archivedByUser", "archivedByUser");
+          .leftJoinAndSelect("archived_todo.archivedByUser", "archivedByUser")
+          .where("archived_todo.isRestored = :isRestored", {
+            isRestored: false,
+          });
 
         if (search) {
-          todoQueryBuilder.where(
-            "archived_todo.title ILIKE :search OR archived_todo.description ILIKE :search",
+          todoQueryBuilder.andWhere(
+            "(archived_todo.title ILIKE :search OR archived_todo.description ILIKE :search)",
             { search: `%${search}%` }
           );
         }
@@ -344,16 +366,32 @@ export class ArchiveServiceExpress {
         relations: ["user", "status"],
       });
 
+      console.log(
+        `🔍 Archivando CASO ${caseId} (${originalCase.numeroCaso}):`,
+        {
+          caseControlRecordsFound: caseControlRecords.length,
+          caseControlIds: caseControlRecords.map((cc) => cc.id),
+        }
+      );
+
       // Recolectar todas las entradas de tiempo automáticas
       const timerEntries = [];
       const manualEntries = [];
 
       for (const caseControl of caseControlRecords) {
+        console.log(
+          `🔍 Buscando entradas de tiempo para CaseControl ${caseControl.id}`
+        );
+
         // Entradas de tiempo automáticas (cronómetro)
         const automaticEntries = await timeEntriesRepository.find({
           where: { caseControlId: caseControl.id },
           relations: ["user"],
         });
+
+        console.log(
+          `   - Timer entries encontradas: ${automaticEntries.length}`
+        );
 
         for (const entry of automaticEntries) {
           timerEntries.push({
@@ -376,6 +414,10 @@ export class ArchiveServiceExpress {
           relations: ["user", "creator"],
         });
 
+        console.log(
+          `   - Manual entries encontradas: ${manualTimeEntries.length}`
+        );
+
         for (const entry of manualTimeEntries) {
           manualEntries.push({
             id: entry.id,
@@ -392,6 +434,28 @@ export class ArchiveServiceExpress {
           });
         }
       }
+
+      console.log(`📊 Resumen de entradas recolectadas para CASO:`, {
+        timerEntriesTotal: timerEntries.length,
+        manualEntriesTotal: manualEntries.length,
+      });
+
+      // Calcular tiempos totales
+      const timerTimeMinutes = timerEntries.reduce(
+        (total, entry) => total + (entry.durationMinutes || 0),
+        0
+      );
+      const manualTimeMinutes = manualEntries.reduce(
+        (total, entry) => total + (entry.durationMinutes || 0),
+        0
+      );
+      const calculatedTotalTime = timerTimeMinutes + manualTimeMinutes;
+
+      console.log(`⏱️ Tiempos calculados para CASO:`, {
+        timerTimeMinutes,
+        manualTimeMinutes,
+        calculatedTotalTime,
+      });
 
       // Crear el caso archivado con mapeo de tipos
       const archivedCase = new ArchivedCase();
@@ -469,6 +533,14 @@ export class ArchiveServiceExpress {
 
         // Eliminar registros de control de caso
         await manager.delete(CaseControl, { caseId: caseId });
+
+        // Desvincular disposiciones del caso (mantener historial, solo quitar la relación)
+        // El caseNumber ya está guardado en dispositions, así que el historial se mantiene
+        await manager.update(
+          Disposition,
+          { caseId: caseId },
+          { caseId: null as any }
+        );
 
         // Finalmente, eliminar el caso original
         await manager.delete(Case, { id: caseId });
@@ -564,16 +636,29 @@ export class ArchiveServiceExpress {
         relations: ["user", "status"],
       });
 
+      console.log(`🔍 Archivando TODO ${todoIdStr}:`, {
+        todoControlRecordsFound: todoControlRecords.length,
+        todoControlIds: todoControlRecords.map((tc) => tc.id),
+      });
+
       // Recolectar todas las entradas de tiempo
       const timerEntries = [];
       const manualEntries = [];
 
       for (const todoControl of todoControlRecords) {
+        console.log(
+          `🔍 Buscando entradas de tiempo para TodoControl ${todoControl.id}`
+        );
+
         // Entradas de tiempo automáticas (cronómetro)
         const automaticEntries = await todoTimeEntriesRepository.find({
           where: { todoControlId: todoControl.id },
           relations: ["user"],
         });
+
+        console.log(
+          `   - Timer entries encontradas: ${automaticEntries.length}`
+        );
 
         for (const entry of automaticEntries) {
           timerEntries.push({
@@ -596,6 +681,10 @@ export class ArchiveServiceExpress {
           relations: ["user"],
         });
 
+        console.log(
+          `   - Manual entries encontradas: ${manualTimeEntries.length}`
+        );
+
         for (const entry of manualTimeEntries) {
           manualEntries.push({
             id: entry.id,
@@ -611,6 +700,11 @@ export class ArchiveServiceExpress {
         }
       }
 
+      console.log(`📊 Resumen de entradas recolectadas:`, {
+        timerEntriesTotal: timerEntries.length,
+        manualEntriesTotal: manualEntries.length,
+      });
+
       // Calcular tiempos por separado
       const timerTimeMinutes = timerEntries.reduce(
         (total, entry) => total + (entry.durationMinutes || 0),
@@ -624,6 +718,12 @@ export class ArchiveServiceExpress {
 
       // Calcular tiempo total
       const totalTimeMinutes = timerTimeMinutes + manualTimeMinutes;
+
+      console.log(`⏱️ Tiempos calculados:`, {
+        timerTimeMinutes,
+        manualTimeMinutes,
+        totalTimeMinutes,
+      });
 
       // Crear el TODO archivado
       const archivedTodo = new ArchivedTodo();

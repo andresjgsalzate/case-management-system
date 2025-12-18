@@ -159,10 +159,19 @@ export class RestoreService {
 
       // 5. Restaurar entradas de tiempo desde los campos JSONB directos de ArchivedCase
       if (savedCaseControl) {
+        console.log(
+          `🔍 Restaurando entradas de tiempo para CASO ${archivedCase.caseNumber}:`,
+          {
+            timerEntriesCount: archivedCase.timerEntries?.length || 0,
+            manualEntriesCount: archivedCase.manualTimeEntries?.length || 0,
+          }
+        );
+
         // Restaurar entradas de tiempo manuales desde el campo JSONB
         if (
           archivedCase.manualTimeEntries &&
-          Array.isArray(archivedCase.manualTimeEntries)
+          Array.isArray(archivedCase.manualTimeEntries) &&
+          archivedCase.manualTimeEntries.length > 0
         ) {
           for (const timeEntry of archivedCase.manualTimeEntries) {
             const newTimeEntry = queryRunner.manager.create(ManualTimeEntry, {
@@ -192,7 +201,8 @@ export class RestoreService {
         // Restaurar entradas de tiempo automáticas desde el campo JSONB
         if (
           archivedCase.timerEntries &&
-          Array.isArray(archivedCase.timerEntries)
+          Array.isArray(archivedCase.timerEntries) &&
+          archivedCase.timerEntries.length > 0
         ) {
           for (const timeEntry of archivedCase.timerEntries) {
             const newTimeEntry = new TimeEntry();
@@ -211,11 +221,26 @@ export class RestoreService {
 
             await queryRunner.manager.save(newTimeEntry);
           }
+          console.log(
+            `✅ Restauradas ${archivedCase.timerEntries.length} entradas de timer para CASO`
+          );
+        }
+
+        // Log de entradas manuales restauradas
+        if (
+          archivedCase.manualTimeEntries &&
+          archivedCase.manualTimeEntries.length > 0
+        ) {
+          console.log(
+            `✅ Restauradas ${archivedCase.manualTimeEntries.length} entradas manuales para CASO`
+          );
         }
       }
 
-      // 7. Marcar el caso como restaurado en lugar de eliminarlo (para seguridad)
+      // 7. Marcar el caso como restaurado con fecha y usuario
       archivedCase.isRestored = true;
+      archivedCase.restoredAt = new Date();
+      archivedCase.restoredBy = restoredBy;
       await queryRunner.manager.save(ArchivedCase, archivedCase);
 
       // Confirmar transacción
@@ -335,14 +360,27 @@ export class RestoreService {
         newTodoControl.timerStartAt = undefined;
 
         savedTodoControl = await queryRunner.manager.save(newTodoControl);
+      }
 
-        // 3. Restaurar entradas de tiempo desde controlData si existen
+      // 3. Restaurar entradas de tiempo desde los campos JSONB directos de ArchivedTodo
+      if (savedTodoControl) {
+        console.log(
+          `🔍 Restaurando entradas de tiempo para TODO ${archivedTodo.title}:`,
+          {
+            timerEntriesCount: archivedTodo.timerEntries?.length || 0,
+            manualEntriesCount: archivedTodo.manualTimeEntries?.length || 0,
+          }
+        );
+
+        // Restaurar entradas de timer desde el campo JSONB timerEntries
         if (
-          controlData.timerEntries &&
-          Array.isArray(controlData.timerEntries)
+          archivedTodo.timerEntries &&
+          Array.isArray(archivedTodo.timerEntries) &&
+          archivedTodo.timerEntries.length > 0
         ) {
-          for (const timerEntry of controlData.timerEntries) {
+          for (const timerEntry of archivedTodo.timerEntries) {
             const newTimeEntry = new TodoTimeEntry();
+            newTimeEntry.id = timerEntry.id; // Usar UUID original
             newTimeEntry.todoControlId = savedTodoControl.id;
             newTimeEntry.userId = timerEntry.userId || restoredBy;
             newTimeEntry.startTime = new Date(timerEntry.startTime);
@@ -353,18 +391,29 @@ export class RestoreService {
             newTimeEntry.entryType = timerEntry.entryType || "automatic";
             newTimeEntry.description =
               timerEntry.description || "Entrada de timer restaurada";
+            newTimeEntry.createdAt = timerEntry.createdAt
+              ? new Date(timerEntry.createdAt)
+              : new Date();
+            newTimeEntry.updatedAt = timerEntry.updatedAt
+              ? new Date(timerEntry.updatedAt)
+              : new Date();
 
             await queryRunner.manager.save(TodoTimeEntry, newTimeEntry);
           }
+          console.log(
+            `✅ Restauradas ${archivedTodo.timerEntries.length} entradas de timer para TODO`
+          );
         }
 
-        // 4. Restaurar entradas de tiempo manuales desde controlData si existen
+        // Restaurar entradas de tiempo manuales desde el campo JSONB manualTimeEntries
         if (
-          controlData.manualEntries &&
-          Array.isArray(controlData.manualEntries)
+          archivedTodo.manualTimeEntries &&
+          Array.isArray(archivedTodo.manualTimeEntries) &&
+          archivedTodo.manualTimeEntries.length > 0
         ) {
-          for (const manualEntry of controlData.manualEntries) {
+          for (const manualEntry of archivedTodo.manualTimeEntries) {
             const newManualEntry = new TodoManualTimeEntry();
+            newManualEntry.id = manualEntry.id; // Usar UUID original
             newManualEntry.todoControlId = savedTodoControl.id;
             newManualEntry.userId = manualEntry.userId || restoredBy;
             newManualEntry.date = manualEntry.date
@@ -373,9 +422,16 @@ export class RestoreService {
             newManualEntry.durationMinutes = manualEntry.durationMinutes || 0;
             newManualEntry.description =
               manualEntry.description || "Entrada manual restaurada";
+            newManualEntry.createdBy = manualEntry.createdBy || restoredBy;
+            newManualEntry.createdAt = manualEntry.createdAt
+              ? new Date(manualEntry.createdAt)
+              : new Date();
 
             await queryRunner.manager.save(TodoManualTimeEntry, newManualEntry);
           }
+          console.log(
+            `✅ Restauradas ${archivedTodo.manualTimeEntries.length} entradas manuales para TODO`
+          );
         }
       }
 

@@ -11,7 +11,6 @@ import {
 import { archiveApi } from "../../services/archiveApi";
 import { useConfirmationModal } from "../../hooks/useConfirmationModal";
 import { ConfirmationModal } from "../../components/ui/ConfirmationModal";
-import { ArchiveDetailsModal } from "../../components/archive/ArchiveDetailsModal";
 import { Button } from "../../components/ui/Button";
 import { useToast } from "../../contexts/ToastContext";
 
@@ -806,13 +805,6 @@ export const ArchivePage: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Modal de detalles del elemento archivado */}
-      <ArchiveDetailsModal
-        isOpen={showDetailsModal}
-        onClose={() => setShowDetailsModal(false)}
-        item={selectedItem}
-      />
 
       {/* Modal de confirmación */}
       <ConfirmationModal

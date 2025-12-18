@@ -9,6 +9,7 @@ import { useConfirmationModal } from "../../hooks/useConfirmationModal";
 import { ConfirmationModal } from "../ui/ConfirmationModal";
 import { todoAPI } from "../../services/todoAPI";
 import { TodoTimeEntry, TodoManualTimeEntry } from "../../types/todo.types";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface TodoTimeModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
     useTodos();
   const { success, error: showErrorToast } = useToast();
   const { confirmDelete, modalState, modalHandlers } = useConfirmationModal();
+  const { user } = useAuth();
 
   const [showManualTimeForm, setShowManualTimeForm] = useState(false);
   const [timeEntries, setTimeEntries] = useState<TodoTimeEntry[]>([]);
@@ -132,8 +134,13 @@ export const TodoTimeModal: React.FC<TodoTimeModalProps> = ({
     }
 
     try {
-      // Usar un UUID válido del sistema por ahora
-      const currentUserId = "550e8400-e29b-41d4-a716-446655440001"; // UUID válido del sistema
+      // Usar el ID del usuario autenticado
+      const currentUserId = user?.id;
+
+      if (!currentUserId) {
+        showErrorToast("Error", "No se pudo obtener el usuario actual");
+        return;
+      }
 
       const isSuccess = await addManualTimeEntry(todoId, {
         description: manualTimeForm.description,

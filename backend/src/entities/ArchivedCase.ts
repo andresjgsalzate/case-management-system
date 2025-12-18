@@ -154,6 +154,12 @@ export class ArchivedCase {
   @Column({ name: "is_restored", type: "boolean", default: false })
   isRestored!: boolean;
 
+  @Column({ name: "restored_at", type: "timestamptz", nullable: true })
+  restoredAt?: Date;
+
+  @Column({ name: "restored_by", type: "uuid", nullable: true })
+  restoredBy?: string;
+
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt!: Date;
 

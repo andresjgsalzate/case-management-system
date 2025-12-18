@@ -33,7 +33,7 @@ interface SecureTokenData {
 }
 
 class SecurityService {
-  private static readonly INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutos
+  private static readonly INACTIVITY_TIMEOUT = 3 * 60 * 1000; // 3 minutos para pruebas
   private static readonly TOKEN_REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutos
   private static readonly SESSION_KEY = "__secure_session__";
   private static readonly ACTIVITY_KEY = "__last_activity__";
@@ -43,6 +43,8 @@ class SecurityService {
   private onSessionExpired?: () => void;
   private onTokenRefreshed?: (newToken: string) => void;
   private isWarningShown = false;
+  private progressTimer: number | null = null;
+  private timerStartTime: number = 0;
 
   constructor() {
     this.setupActivityMonitoring();
@@ -276,12 +278,18 @@ class SecurityService {
       "click",
     ];
 
-    const activityHandler = () => {
-      // No resetear el timer si ya se está mostrando el warning
-      if (!this.isWarningShown) {
-        this.updateLastActivity();
-        this.resetInactivityTimer();
+    const activityHandler = (_event: Event) => {
+      // Solo log cuando hay warning activo (caso excepcional)
+      if (this.isWarningShown) {
+        console.log(
+          "🚫 ACTIVIDAD IGNORADA: Warning activo, no se resetea el timer"
+        );
+        return;
       }
+
+      // Reset normal sin log para evitar spam
+      this.updateLastActivity();
+      this.resetInactivityTimer();
     };
 
     events.forEach((event) => {
@@ -376,20 +384,86 @@ class SecurityService {
     this.stopInactivityTimer();
     this.isWarningShown = false; // Reset warning flag al iniciar nuevo timer
 
+    this.timerStartTime = Date.now();
+    // Timer iniciado sin logs para evitar spam
+
     this.inactivityTimer = window.setTimeout(() => {
-      console.warn("🚨 Sesión expirada por inactividad");
+      console.warn(
+        "⏰ TIMEOUT: Sesión expirada por inactividad - INICIANDO PROCESO DE LOGOUT"
+      );
       this.clearSession();
       if (this.onSessionExpired) {
+        console.log("🎯 CALLBACK: Ejecutando onSessionExpired callback");
         this.onSessionExpired();
+      } else {
+        console.error("❌ ERROR: No hay callback onSessionExpired registrado");
       }
     }, SecurityService.INACTIVITY_TIMEOUT);
+
+    // Timer de progreso cada 10 segundos
+    this.startProgressTimer();
+  }
+
+  /**
+   * Inicia el timer de progreso que muestra logs cada 10 segundos
+   */
+  private startProgressTimer(): void {
+    this.stopProgressTimer();
+
+    const logProgress = () => {
+      const now = Date.now();
+      const elapsed = now - this.timerStartTime;
+      const remaining = Math.max(
+        0,
+        SecurityService.INACTIVITY_TIMEOUT - elapsed
+      );
+      // Actualizar warning estado basado en tiempo restante real
+      const warningThreshold = 2 * 60 * 1000; // 2 minutos
+      const shouldShowWarning = remaining <= warningThreshold && remaining > 0;
+
+      // Si necesitamos mostrar warning y no está activo aún
+      if (shouldShowWarning && !this.isWarningShown) {
+        this.isWarningShown = true;
+        console.log("⚠️ WARNING ACTIVADO: Quedan menos de 2 minutos");
+      }
+
+      if (remaining > 0) {
+        // Timer sin logs de progreso para evitar spam
+        this.progressTimer = window.setTimeout(logProgress, 10000);
+      } else {
+        console.log(
+          "💀 PROGRESO: Timer completado - sesión debería haber expirado"
+        );
+      }
+    };
+
+    // Iniciar el primer log en 10 segundos
+    this.progressTimer = window.setTimeout(logProgress, 10000);
+  }
+
+  /**
+   * Detiene el timer de progreso
+   */
+  private stopProgressTimer(): void {
+    if (this.progressTimer) {
+      window.clearTimeout(this.progressTimer);
+      this.progressTimer = null;
+    }
   }
 
   /**
    * Reinicia el timer de inactividad
    */
   private resetInactivityTimer(): void {
-    this.startInactivityTimer();
+    // Log de reset eliminado para evitar spam - solo eventos críticos se registran
+
+    if (!this.isWarningShown) {
+      this.startInactivityTimer();
+    } else {
+      console.log(
+        "🚫 RESET BLOQUEADO: Warning ya está activo, no se permite reset"
+      );
+    }
   }
 
   /**
@@ -400,6 +474,9 @@ class SecurityService {
       window.clearTimeout(this.inactivityTimer);
       this.inactivityTimer = null;
     }
+    this.stopProgressTimer();
+    this.timerStartTime = 0;
+    this.isWarningShown = false;
   }
 
   /**
@@ -489,6 +566,7 @@ class SecurityService {
    * Configurar callbacks
    */
   public onSessionExpire(callback: () => void): void {
+    // Callback registrado (log eliminado para evitar spam)
     this.onSessionExpired = callback;
   }
 
@@ -593,22 +671,18 @@ class SecurityService {
    */
   public getTimeUntilInactivityTimeout(): number {
     const sessionData = this.getValidTokens();
-    if (!sessionData) {
+    if (!sessionData || !this.inactivityTimer || this.timerStartTime === 0) {
       return 0;
     }
 
     const now = Date.now();
-    const lastActivity =
-      Number(sessionStorage.getItem(SecurityService.ACTIVITY_KEY)) || now;
-    const expirationTime = lastActivity + SecurityService.INACTIVITY_TIMEOUT;
-    const timeRemaining = Math.max(0, expirationTime - now);
+    const elapsed = now - this.timerStartTime;
+    const timeRemaining = Math.max(
+      0,
+      SecurityService.INACTIVITY_TIMEOUT - elapsed
+    );
 
-    const warningThreshold = 5 * 60 * 1000; // 5 minutos
-    const shouldShowWarning =
-      timeRemaining <= warningThreshold && timeRemaining > 0;
-
-    // Actualizar el flag de warning
-    this.isWarningShown = shouldShowWarning;
+    // DEBUG: Log eliminado para evitar spam
 
     return timeRemaining;
   }

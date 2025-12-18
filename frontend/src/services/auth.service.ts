@@ -164,8 +164,8 @@ class AuthService {
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
 
-    // Redirigir al login
-    window.location.href = "/auth/login";
+    // Redirigir al login (ruta correcta)
+    window.location.href = "/login";
   }
 
   /**

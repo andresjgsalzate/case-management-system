@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ActionIcon } from "./ui/ActionIcons";
 import { useSecureAuth } from "../hooks/useSecureAuth";
+import { securityService } from "../services/security.service";
 
 interface SessionTimeoutWarningProps {
   warningThreshold?: number; // Minutos antes de expirar para mostrar warning
@@ -11,90 +12,72 @@ export const SessionTimeoutWarning: React.FC<SessionTimeoutWarningProps> = ({
   warningThreshold = 5, // 5 minutos por defecto
   className = "",
 }) => {
-  const {
-    isAuthenticated,
-    sessionTimeRemaining,
-    sessionTimeRemainingFormatted,
-    logout,
-  } = useSecureAuth();
+  const { isAuthenticated, logout, extendSession } = useSecureAuth();
 
   const [showWarning, setShowWarning] = useState(false);
-  const [showCritical, setShowCritical] = useState(false);
+  const [currentTimeFormatted, setCurrentTimeFormatted] = useState("");
 
+  // Función para formatear tiempo
+  const formatTime = (timeMs: number) => {
+    if (timeMs <= 0) return "Expirada";
+    const minutes = Math.floor(timeMs / 60000);
+    const seconds = Math.floor((timeMs % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  // Efecto para actualizar el tiempo en tiempo real
   useEffect(() => {
     if (!isAuthenticated) {
       setShowWarning(false);
-      setShowCritical(false);
+      setCurrentTimeFormatted("");
       return;
     }
 
-    const remainingMinutes = sessionTimeRemaining / (60 * 1000);
+    // Actualizar inmediatamente
+    const updateTime = () => {
+      const timeRemaining = securityService.getTimeUntilInactivityTimeout();
+      setCurrentTimeFormatted(formatTime(timeRemaining));
 
-    // Mostrar warning cuando quedan menos de X minutos
-    setShowWarning(
-      remainingMinutes <= warningThreshold && remainingMinutes > 2
-    );
+      // Si no hay tiempo de sesión disponible (sesión ya expirada), no mostrar advertencias
+      if (timeRemaining <= 0) {
+        setShowWarning(false);
+        return;
+      }
 
-    // Mostrar crítico cuando quedan menos de 2 minutos
-    setShowCritical(remainingMinutes <= 2 && remainingMinutes > 0);
-  }, [sessionTimeRemaining, warningThreshold, isAuthenticated]);
+      const remainingMinutes = timeRemaining / (60 * 1000);
+
+      // Warning amarillo: cuando queden 5 minutos o menos
+      const willShowWarning =
+        remainingMinutes <= warningThreshold && remainingMinutes > 0;
+
+      setShowWarning(willShowWarning);
+    };
+
+    // Actualizar inmediatamente
+    updateTime();
+
+    // Actualizar cada segundo para tiempo en vivo
+    const intervalId = setInterval(updateTime, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [isAuthenticated, warningThreshold]);
 
   const handleExtendSession = () => {
-    // En una implementación real, esto haría una llamada al backend
-    // para extender la sesión o refrescar el token
+    // Extender la sesión usando el SecurityService
+    const success = extendSession();
 
-    // Por ahora, simplemente ocultamos el warning
-    setShowWarning(false);
-    setShowCritical(false);
-  };
-
-  const handleLogoutNow = () => {
-    logout();
+    if (success) {
+      // Ocultar warnings si se extendió exitosamente
+      setShowWarning(false);
+    } else {
+      // Si no se pudo extender, cerrar sesión
+      logout();
+    }
   };
 
   if (!isAuthenticated) return null;
 
-  // Crítico: menos de 2 minutos
-  if (showCritical) {
-    return (
-      <div className={`fixed top-4 right-4 z-50 ${className}`}>
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg shadow-lg p-4 max-w-sm">
-          <div className="flex items-start">
-            <div className="flex-shrink-0">
-              <ActionIcon action="warning" size="md" color="red" />
-            </div>
-            <div className="ml-3 flex-1">
-              <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
-                ⚠️ Sesión Crítica
-              </h3>
-              <div className="mt-2 text-sm text-red-700 dark:text-red-300">
-                <p>Tu sesión expira en:</p>
-                <p className="font-mono text-lg font-bold text-red-900 dark:text-red-100">
-                  {sessionTimeRemainingFormatted}
-                </p>
-              </div>
-              <div className="mt-3 flex space-x-2">
-                <button
-                  onClick={handleExtendSession}
-                  className="text-xs bg-red-600 hover:bg-red-700 text-white font-medium px-3 py-1 rounded transition-colors"
-                >
-                  Extender
-                </button>
-                <button
-                  onClick={handleLogoutNow}
-                  className="text-xs bg-gray-600 hover:bg-gray-700 text-white font-medium px-3 py-1 rounded transition-colors"
-                >
-                  Cerrar Sesión
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Warning: entre 2-5 minutos
+  // Warning: cuando queden 2 minutos o menos
   if (showWarning) {
     return (
       <div className={`fixed top-4 right-4 z-50 ${className}`}>
@@ -108,7 +91,7 @@ export const SessionTimeoutWarning: React.FC<SessionTimeoutWarningProps> = ({
                 🕐 Sesión por Expirar
               </h3>
               <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
-                <p>Tu sesión expira en {sessionTimeRemainingFormatted}</p>
+                <p>Tu sesión expira en {currentTimeFormatted}</p>
                 <p className="mt-1 text-xs">¿Deseas continuar trabajando?</p>
               </div>
               <div className="mt-3 flex space-x-2">
@@ -141,36 +124,63 @@ export const SessionTimeoutWarning: React.FC<SessionTimeoutWarningProps> = ({
 export const SessionTimeDisplay: React.FC<{ className?: string }> = ({
   className = "",
 }) => {
-  const {
-    isAuthenticated,
-    sessionTimeRemaining,
-    sessionTimeRemainingFormatted,
-  } = useSecureAuth();
+  const { isAuthenticated } = useSecureAuth();
+  const [currentTime, setCurrentTime] = useState("");
+  const [status, setStatus] = useState<"normal" | "warning" | "critical">(
+    "normal"
+  );
+
+  // Formatear tiempo
+  const formatTime = (timeMs: number) => {
+    if (timeMs <= 0) return "Expirada";
+    const minutes = Math.floor(timeMs / 60000);
+    const seconds = Math.floor((timeMs % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setCurrentTime("");
+      setStatus("normal");
+      return;
+    }
+
+    const updateTime = () => {
+      const timeRemaining = securityService.getTimeUntilInactivityTimeout();
+      setCurrentTime(formatTime(timeRemaining));
+
+      const remainingMinutes = timeRemaining / (60 * 1000);
+      if (remainingMinutes <= 5) {
+        setStatus("warning"); // Warning amarillo cuando quedan 5 minutos o menos
+      } else {
+        setStatus("normal");
+      }
+    };
+
+    updateTime();
+    const intervalId = setInterval(updateTime, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) return null;
-
-  const remainingMinutes = sessionTimeRemaining / (60 * 1000);
-  const isWarning = remainingMinutes <= 5;
-  const isCritical = remainingMinutes <= 2;
 
   return (
     <div className={`flex items-center space-x-2 ${className}`}>
       <ActionIcon
         action="time"
         size="sm"
-        color={isCritical ? "red" : isWarning ? "yellow" : "neutral"}
+        color={status === "warning" ? "yellow" : "neutral"}
       />
       <span
         className={`text-xs font-mono ${
-          isCritical
-            ? "text-red-600 dark:text-red-400"
-            : isWarning
+          status === "warning"
             ? "text-yellow-600 dark:text-yellow-400"
             : "text-gray-600 dark:text-gray-400"
         }`}
         title="Tiempo restante de sesión"
       >
-        {sessionTimeRemainingFormatted}
+        {currentTime}
       </span>
     </div>
   );

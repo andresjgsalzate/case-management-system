@@ -42,6 +42,7 @@ class SecurityService {
   private refreshTimer: number | null = null;
   private onSessionExpired?: () => void;
   private onTokenRefreshed?: (newToken: string) => void;
+  private isWarningShown = false;
 
   constructor() {
     this.setupActivityMonitoring();
@@ -276,8 +277,11 @@ class SecurityService {
     ];
 
     const activityHandler = () => {
-      this.updateLastActivity();
-      this.resetInactivityTimer();
+      // No resetear el timer si ya se está mostrando el warning
+      if (!this.isWarningShown) {
+        this.updateLastActivity();
+        this.resetInactivityTimer();
+      }
     };
 
     events.forEach((event) => {
@@ -370,6 +374,7 @@ class SecurityService {
    */
   private startInactivityTimer(): void {
     this.stopInactivityTimer();
+    this.isWarningShown = false; // Reset warning flag al iniciar nuevo timer
 
     this.inactivityTimer = window.setTimeout(() => {
       console.warn("🚨 Sesión expirada por inactividad");
@@ -581,6 +586,45 @@ class SecurityService {
 
   public async generateDeviceFingerprint(): Promise<string> {
     return this.generateFingerprint().hash;
+  }
+
+  /**
+   * Obtiene el tiempo restante hasta el timeout de inactividad
+   */
+  public getTimeUntilInactivityTimeout(): number {
+    const sessionData = this.getValidTokens();
+    if (!sessionData) {
+      return 0;
+    }
+
+    const now = Date.now();
+    const lastActivity =
+      Number(sessionStorage.getItem(SecurityService.ACTIVITY_KEY)) || now;
+    const expirationTime = lastActivity + SecurityService.INACTIVITY_TIMEOUT;
+    const timeRemaining = Math.max(0, expirationTime - now);
+
+    const warningThreshold = 5 * 60 * 1000; // 5 minutos
+    const shouldShowWarning =
+      timeRemaining <= warningThreshold && timeRemaining > 0;
+
+    // Actualizar el flag de warning
+    this.isWarningShown = shouldShowWarning;
+
+    return timeRemaining;
+  }
+
+  /**
+   * Extiende la sesión actual actualizando la marca de tiempo de actividad
+   */
+  public extendSession(): boolean {
+    const tokens = this.getValidTokens();
+    if (!tokens) {
+      return false;
+    }
+
+    this.updateLastActivity();
+    this.resetInactivityTimer();
+    return true;
   }
 }
 

@@ -7,8 +7,6 @@ export const ForceLogout: React.FC = () => {
 
   useEffect(() => {
     const forceCleanLogout = async () => {
-      console.log("🧹 Forzando limpieza completa de sesión...");
-
       // Limpiar todo posible storage
       localStorage.clear();
       sessionStorage.clear();

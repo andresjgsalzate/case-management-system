@@ -41,15 +41,16 @@ export const useSecureAuth = () => {
   const checkSessionValidity = useCallback(() => {
     const hasValidSession = securityService.hasValidSession();
 
+    // Si la sesión no es válida pero estamos autenticados, cerrar sesión inmediatamente
     if (isAuthenticated && !hasValidSession) {
-      // Sesión comprometida o expirada
-      console.warn("🚨 Sesión inválida detectada - Cerrando sesión");
       logout();
       return false;
     }
 
     if (!isAuthenticated && hasValidSession) {
       // Hay una sesión válida pero el store no está actualizado
+      // Solo log en caso de debug, normalmente esto es esperado durante la inicialización
+      // console.log("✅ Sesión válida encontrada pero store no actualizado");
       return true;
     }
 
@@ -101,17 +102,11 @@ export const useSecureAuth = () => {
   }, [getSessionInfo]);
 
   /**
-   * Obtiene el tiempo restante de la sesión
+   * Obtiene el tiempo restante de la sesión usando el SecurityService directamente
    */
   const getSessionTimeRemaining = useCallback(() => {
-    const sessionInfo = getSessionInfo();
-    if (!sessionInfo) return 0;
-
-    const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutos
-    const timeSinceActivity = Date.now() - sessionInfo.lastActivity.getTime();
-
-    return Math.max(0, INACTIVITY_TIMEOUT - timeSinceActivity);
-  }, [getSessionInfo]);
+    return securityService.getTimeUntilInactivityTimeout();
+  }, []);
 
   /**
    * Formatea el tiempo restante para mostrar al usuario
@@ -134,7 +129,9 @@ export const useSecureAuth = () => {
   // Configurar escuchadores de SecurityService
   useEffect(() => {
     const handleSessionExpired = () => {
-      console.warn("🚨 Sesión expirada por SecurityService");
+      console.log(
+        "🎯 USEAUTH: Callback onSessionExpired ejecutado - haciendo logout"
+      );
       logout();
     };
 
@@ -157,10 +154,17 @@ export const useSecureAuth = () => {
 
     const intervalId = setInterval(() => {
       checkSessionValidity();
-    }, 30000); // Verificar cada 30 segundos
+    }, 5000); // Verificar cada 5 segundos para mejor responsividad del warning
 
     return () => clearInterval(intervalId);
   }, [isAuthenticated, checkSessionValidity]);
+
+  /**
+   * Extiende la sesión manualmente
+   */
+  const extendSession = useCallback(() => {
+    return securityService.extendSession();
+  }, []);
 
   return {
     // Estado
@@ -170,6 +174,7 @@ export const useSecureAuth = () => {
     // Métodos de autenticación
     login: secureLogin,
     logout: secureLogout,
+    extendSession,
 
     // Información de sesión
     sessionInfo: getSessionInfo(),

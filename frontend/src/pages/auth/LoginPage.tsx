@@ -27,7 +27,6 @@ export const LoginPage = () => {
   const handleAutoLogin = async () => {
     try {
       // Limpiar completamente la sesión antes del login
-      console.log("🧹 Limpiando sesión antes del auto-login...");
       localStorage.clear();
       sessionStorage.clear();
       securityService.clearSession();
@@ -44,7 +43,6 @@ export const LoginPage = () => {
     e.preventDefault();
     try {
       // Limpiar completamente la sesión antes del login
-      console.log("🧹 Limpiando sesión antes del login manual...");
       localStorage.clear();
       sessionStorage.clear();
       securityService.clearSession();

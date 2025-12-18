@@ -75,13 +75,38 @@ export const DashboardPage: React.FC = () => {
     };
   }, [cases, dashboardStats]);
 
-  // Mostrar los casos más recientes
+  // Mostrar los casos más recientes ordenados por fecha de creación
   const recentCases = React.useMemo(() => {
     if (!cases) return [];
     return [...cases]
-      .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
       .slice(0, 5);
   }, [cases]);
+
+  /**
+   * Formatea una fecha preservando el día exacto de la base de datos.
+   * Evita problemas de timezone que pueden alterar el día.
+   */
+  const formatDatePreservingDay = (dateValue: string | Date): string => {
+    if (!dateValue) return "N/A";
+    try {
+      const dateStr =
+        typeof dateValue === "string" ? dateValue : dateValue.toISOString();
+      // Extraer directamente año, mes, día del string ISO sin conversión de timezone
+      const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (match) {
+        const [, year, month, day] = match;
+        return `${day}/${month}/${year}`;
+      }
+      // Fallback: usar toLocaleDateString con UTC
+      return new Date(dateStr).toLocaleDateString("es-ES", { timeZone: "UTC" });
+    } catch {
+      return "N/A";
+    }
+  };
 
   if (!user) {
     return (
@@ -866,7 +891,7 @@ export const DashboardPage: React.FC = () => {
                       Clasificación
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Fecha
+                      Fecha de Creación
                     </th>
                   </tr>
                 </thead>
@@ -897,7 +922,7 @@ export const DashboardPage: React.FC = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(caso.fecha).toLocaleDateString("es-ES")}
+                          {formatDatePreservingDay(caso.createdAt)}
                         </td>
                       </tr>
                     ))

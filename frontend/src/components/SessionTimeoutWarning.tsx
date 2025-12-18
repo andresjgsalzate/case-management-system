@@ -9,7 +9,7 @@ interface SessionTimeoutWarningProps {
 }
 
 export const SessionTimeoutWarning: React.FC<SessionTimeoutWarningProps> = ({
-  warningThreshold = 5, // 5 minutos por defecto
+  warningThreshold = 3, // 3 minutos por defecto
   className = "",
 }) => {
   const { isAuthenticated, logout, extendSession } = useSecureAuth();
@@ -150,8 +150,8 @@ export const SessionTimeDisplay: React.FC<{ className?: string }> = ({
       setCurrentTime(formatTime(timeRemaining));
 
       const remainingMinutes = timeRemaining / (60 * 1000);
-      if (remainingMinutes <= 5) {
-        setStatus("warning"); // Warning amarillo cuando quedan 5 minutos o menos
+      if (remainingMinutes <= 3) {
+        setStatus("warning"); // Warning amarillo cuando quedan 3 minutos o menos
       } else {
         setStatus("normal");
       }

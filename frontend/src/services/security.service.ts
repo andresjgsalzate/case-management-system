@@ -55,15 +55,20 @@ class SecurityService {
   /**
    * Genera una huella digital estable del dispositivo/navegador
    * Versión mejorada que evita elementos volátiles
+   * NOTA: No usamos screen.width/height porque cambian al mover ventana entre monitores
    */
   private generateFingerprint(): DeviceFingerprint {
-    // Solo usar elementos estables que no cambien entre sesiones
+    // Solo usar elementos estables que no cambien entre sesiones NI entre monitores
     const stableElements = {
       userAgent: navigator.userAgent,
-      screen: `${screen.width}x${screen.height}`,
+      // Usar colorDepth y pixelDepth que son más estables que resolución
+      colorDepth: screen.colorDepth,
+      pixelDepth: screen.pixelDepth,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       language: navigator.language,
       platform: navigator.platform,
+      hardwareConcurrency: navigator.hardwareConcurrency || 0,
+      maxTouchPoints: navigator.maxTouchPoints || 0,
     };
 
     // Generar hash de elementos estables
@@ -78,9 +83,10 @@ class SecurityService {
     const stableHash = hash.toString(36);
 
     // Mantener interfaz original pero usar elementos estables
+    // El valor de "screen" ahora no afecta el hash
     const fingerprint = {
       userAgent: navigator.userAgent,
-      screen: `${screen.width}x${screen.height}x${screen.colorDepth}`,
+      screen: `${screen.colorDepth}x${screen.pixelDepth}`, // Ya no usa width/height
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       language: navigator.language,
       platform: navigator.platform,

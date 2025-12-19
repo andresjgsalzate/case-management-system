@@ -47,7 +47,11 @@ class KnowledgeDocumentService {
             .skip(offset)
             .take(limit)
             .getManyAndCount();
-        const documentsWithTags = documents.map((doc) => {
+        const documentsWithTags = await Promise.all(documents.map(async (doc) => {
+            const createdByUser = await doc.createdByUser;
+            const documentType = await doc.documentType;
+            doc.__createdByUser__ = createdByUser;
+            doc.__documentType__ = documentType;
             if (doc.tagRelations && doc.tagRelations.length > 0) {
                 doc.tags = doc.tagRelations.map((relation) => ({
                     id: relation.tag.id,
@@ -66,7 +70,7 @@ class KnowledgeDocumentService {
                 doc.tags = [];
             }
             return doc;
-        });
+        }));
         return {
             documents: documentsWithTags,
             total,
@@ -100,8 +104,11 @@ class KnowledgeDocumentService {
                     createdByUserName: createdByUser?.fullName,
                 });
                 document.documentType = documentType;
+                document.__documentType__ = documentType;
                 document.createdByUser = createdByUser;
+                document.__createdByUser__ = createdByUser;
                 document.lastEditedByUser = lastEditedByUser;
+                document.__lastEditedByUser__ = lastEditedByUser;
                 const documentWithTags = await this.loadDocumentTags(document);
                 console.log(`🏷️ [EDIT MODE] Document tags loaded count: ${documentWithTags.tags ? documentWithTags.tags.length : 0}`);
                 if (documentWithTags.attachments &&
@@ -417,7 +424,11 @@ class KnowledgeDocumentService {
             .skip(offset)
             .take(limit)
             .getManyAndCount();
-        const documentsWithTags = documents.map((doc) => {
+        const documentsWithTags = await Promise.all(documents.map(async (doc) => {
+            const createdByUser = await doc.createdByUser;
+            const documentType = await doc.documentType;
+            doc.__createdByUser__ = createdByUser;
+            doc.__documentType__ = documentType;
             if (doc.tagRelations && doc.tagRelations.length > 0) {
                 doc.tags = doc.tagRelations.map((relation) => ({
                     id: relation.tag.id,
@@ -436,7 +447,7 @@ class KnowledgeDocumentService {
                 doc.tags = [];
             }
             return doc;
-        });
+        }));
         return {
             documents: documentsWithTags,
             total,
@@ -447,6 +458,7 @@ class KnowledgeDocumentService {
         return this.knowledgeDocumentRepository
             .createQueryBuilder("doc")
             .leftJoinAndSelect("doc.documentType", "type")
+            .leftJoinAndSelect("doc.createdByUser", "createdByUser")
             .leftJoinAndSelect("doc.tagRelations", "tagRelations")
             .leftJoinAndSelect("tagRelations.tag", "tags");
     }

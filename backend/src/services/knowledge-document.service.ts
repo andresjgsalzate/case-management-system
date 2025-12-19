@@ -90,26 +90,34 @@ export class KnowledgeDocumentService {
       .getManyAndCount();
 
     // Las etiquetas ya están cargadas por el join en createQueryBuilder
-    // Mapear las etiquetas al formato que espera el frontend
-    const documentsWithTags = documents.map((doc) => {
-      if (doc.tagRelations && doc.tagRelations.length > 0) {
-        (doc as any).tags = doc.tagRelations.map((relation) => ({
-          id: relation.tag.id,
-          tagName: relation.tag.tagName,
-          color: relation.tag.color,
-          category: relation.tag.category,
-          description: relation.tag.description,
-          isActive: relation.tag.isActive,
-          createdBy: relation.tag.createdBy,
-          createdAt: relation.tag.createdAt,
-          updatedAt: relation.tag.updatedAt,
-          documentId: doc.id,
-        }));
-      } else {
-        (doc as any).tags = [];
-      }
-      return doc;
-    });
+    // Mapear las etiquetas y resolver relaciones lazy
+    const documentsWithTags = await Promise.all(
+      documents.map(async (doc) => {
+        // Resolver relaciones lazy y asignar con formato __nombre__
+        const createdByUser = await doc.createdByUser;
+        const documentType = await doc.documentType;
+        (doc as any).__createdByUser__ = createdByUser;
+        (doc as any).__documentType__ = documentType;
+
+        if (doc.tagRelations && doc.tagRelations.length > 0) {
+          (doc as any).tags = doc.tagRelations.map((relation) => ({
+            id: relation.tag.id,
+            tagName: relation.tag.tagName,
+            color: relation.tag.color,
+            category: relation.tag.category,
+            description: relation.tag.description,
+            isActive: relation.tag.isActive,
+            createdBy: relation.tag.createdBy,
+            createdAt: relation.tag.createdAt,
+            updatedAt: relation.tag.updatedAt,
+            documentId: doc.id,
+          }));
+        } else {
+          (doc as any).tags = [];
+        }
+        return doc;
+      })
+    );
 
     return {
       documents: documentsWithTags,
@@ -155,9 +163,13 @@ export class KnowledgeDocumentService {
         });
 
         // Asignar las relaciones resueltas al documento
+        // Usar ambos formatos para compatibilidad con frontend
         (document as any).documentType = documentType;
+        (document as any).__documentType__ = documentType;
         (document as any).createdByUser = createdByUser;
+        (document as any).__createdByUser__ = createdByUser;
         (document as any).lastEditedByUser = lastEditedByUser;
+        (document as any).__lastEditedByUser__ = lastEditedByUser;
 
         // Cargar etiquetas usando el método del nuevo sistema
         const documentWithTags = await this.loadDocumentTags(document);
@@ -663,26 +675,34 @@ export class KnowledgeDocumentService {
       .getManyAndCount();
 
     // Las etiquetas ya están cargadas por el join en createQueryBuilder
-    // Mapear las etiquetas al formato que espera el frontend
-    const documentsWithTags = documents.map((doc) => {
-      if (doc.tagRelations && doc.tagRelations.length > 0) {
-        (doc as any).tags = doc.tagRelations.map((relation) => ({
-          id: relation.tag.id,
-          tagName: relation.tag.tagName,
-          color: relation.tag.color,
-          category: relation.tag.category,
-          description: relation.tag.description,
-          isActive: relation.tag.isActive,
-          createdBy: relation.tag.createdBy,
-          createdAt: relation.tag.createdAt,
-          updatedAt: relation.tag.updatedAt,
-          documentId: doc.id,
-        }));
-      } else {
-        (doc as any).tags = [];
-      }
-      return doc;
-    });
+    // Mapear las etiquetas y resolver relaciones lazy
+    const documentsWithTags = await Promise.all(
+      documents.map(async (doc) => {
+        // Resolver relaciones lazy y asignar con formato __nombre__
+        const createdByUser = await doc.createdByUser;
+        const documentType = await doc.documentType;
+        (doc as any).__createdByUser__ = createdByUser;
+        (doc as any).__documentType__ = documentType;
+
+        if (doc.tagRelations && doc.tagRelations.length > 0) {
+          (doc as any).tags = doc.tagRelations.map((relation) => ({
+            id: relation.tag.id,
+            tagName: relation.tag.tagName,
+            color: relation.tag.color,
+            category: relation.tag.category,
+            description: relation.tag.description,
+            isActive: relation.tag.isActive,
+            createdBy: relation.tag.createdBy,
+            createdAt: relation.tag.createdAt,
+            updatedAt: relation.tag.updatedAt,
+            documentId: doc.id,
+          }));
+        } else {
+          (doc as any).tags = [];
+        }
+        return doc;
+      })
+    );
 
     return {
       documents: documentsWithTags,
@@ -695,6 +715,7 @@ export class KnowledgeDocumentService {
     return this.knowledgeDocumentRepository
       .createQueryBuilder("doc")
       .leftJoinAndSelect("doc.documentType", "type")
+      .leftJoinAndSelect("doc.createdByUser", "createdByUser")
       .leftJoinAndSelect("doc.tagRelations", "tagRelations")
       .leftJoinAndSelect("tagRelations.tag", "tags");
   }

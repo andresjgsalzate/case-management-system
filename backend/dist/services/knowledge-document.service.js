@@ -239,15 +239,15 @@ class KnowledgeDocumentService {
         doc.title ILIKE :search 
         OR doc.content ILIKE :search 
         OR tags."tag_name" ILIKE :search
-        OR :searchTerm = ANY(doc."associated_cases")
+        OR doc."associated_cases"::jsonb @> (:searchTermJson)::jsonb
         OR EXISTS (
           SELECT 1 FROM cases c 
-          WHERE c.id::text = ANY(doc."associated_cases") 
-          AND c."numero_caso" ILIKE :search
+          WHERE doc."associated_cases"::jsonb ? c.id::text
+          AND c."numeroCaso" ILIKE :search
         )
       )`, {
             search: `%${searchTerm}%`,
-            searchTerm: searchTerm,
+            searchTermJson: JSON.stringify([searchTerm]),
         });
         this.applyPermissionFilters(queryBuilder, userId, userPermissions);
         return queryBuilder
@@ -297,17 +297,18 @@ class KnowledgeDocumentService {
             .getRawMany();
         let caseSuggestions = [];
         try {
+            console.log(`🔍 Buscando casos con término: "${searchTerm}"`);
             caseSuggestions = await database_1.AppDataSource.query(`
-        SELECT DISTINCT c.id, c."numero_caso" as "numeroCaso"
+        SELECT c.id, c."numeroCaso"
         FROM cases c 
-        WHERE c."numero_caso" ILIKE $1 
-        AND c."is_archived" = false
-        ORDER BY c."created_at" DESC 
+        WHERE c."numeroCaso" ILIKE $1 
+        ORDER BY c."createdAt" DESC 
         LIMIT $2
       `, [`%${searchTerm}%`, limit]);
+            console.log(`✅ Casos encontrados: ${caseSuggestions.length}`, caseSuggestions);
         }
         catch (error) {
-            console.log("Cases table not found, skipping case suggestions");
+            console.log("❌ Error buscando casos:", error?.message || error);
         }
         return {
             documents: documents.map((doc) => ({
@@ -340,11 +341,17 @@ class KnowledgeDocumentService {
             const params = {
                 search: `%${query.search}%`,
                 searchTerm: query.search,
+                searchTermJson: JSON.stringify([query.search]),
             };
             searchConditions.push("doc.title ILIKE :search");
             searchConditions.push("doc.content ILIKE :search");
             searchConditions.push('tags."tag_name" ILIKE :search');
-            searchConditions.push('doc."associated_cases"::text ILIKE :search');
+            searchConditions.push('doc."associated_cases"::jsonb @> (:searchTermJson)::jsonb');
+            searchConditions.push(`EXISTS (
+        SELECT 1 FROM cases c 
+        WHERE doc."associated_cases"::jsonb ? c.id::text
+        AND c."numeroCaso" ILIKE :search
+      )`);
             queryBuilder.andWhere(`(${searchConditions.join(" OR ")})`, params);
             const titleMatches = await this.knowledgeDocumentRepository
                 .createQueryBuilder("doc")
@@ -358,7 +365,15 @@ class KnowledgeDocumentService {
             });
         }
         if (query.caseNumber) {
-            queryBuilder.andWhere('doc."associated_cases"::text ILIKE :caseSearch', {
+            queryBuilder.andWhere(`(
+          doc."associated_cases"::jsonb @> (:caseNumberJson)::jsonb
+          OR EXISTS (
+            SELECT 1 FROM cases c 
+            WHERE doc."associated_cases"::jsonb ? c.id::text
+            AND c."numeroCaso" ILIKE :caseSearch
+          )
+        )`, {
+                caseNumberJson: JSON.stringify([query.caseNumber]),
                 caseSearch: `%${query.caseNumber}%`,
             });
         }

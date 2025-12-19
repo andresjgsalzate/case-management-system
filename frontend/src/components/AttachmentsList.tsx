@@ -4,7 +4,6 @@ import {
   useDeleteFile,
   formatFileSize,
   getFileIcon,
-  getDownloadUrl,
   isImageFile,
 } from "../hooks/useFileUpload";
 import DeleteAttachmentModal from "./DeleteAttachmentModal";
@@ -44,6 +43,22 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
     };
   }, [previewFile]);
 
+  // Función para determinar si un archivo se puede previsualizar
+  const canPreviewFile = (mimeType: string): boolean => {
+    // Imágenes
+    if (mimeType.startsWith("image/")) return true;
+    // PDFs
+    if (mimeType === "application/pdf") return true;
+    // Texto plano
+    if (mimeType.startsWith("text/")) return true;
+    return false;
+  };
+
+  // Función para determinar si es PDF
+  const isPdfFile = (mimeType: string): boolean => {
+    return mimeType === "application/pdf";
+  };
+
   const handleDeleteClick = (attachment: any) => {
     setAttachmentToDelete(attachment);
   };
@@ -68,33 +83,31 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
   };
 
   const handlePreviewFile = async (attachment: any) => {
-    if (isImageFile(attachment.mimeType)) {
-      try {
-        // Obtener tokens de autenticación
-        const tokens = securityService.getValidTokens();
+    try {
+      // Obtener tokens de autenticación
+      const tokens = securityService.getValidTokens();
 
-        if (!tokens?.token) {
-          showError("Sesión expirada. Por favor, inicia sesión nuevamente.");
-          return;
-        }
+      if (!tokens?.token) {
+        showError("Sesión expirada. Por favor, inicia sesión nuevamente.");
+        return;
+      }
 
-        // Construir URL de vista con token
-        const downloadUrl = getDownloadUrl(attachment.downloadUrl);
-        const urlParts = downloadUrl.split("/");
-        const physicalFileName = urlParts[urlParts.length - 1];
+      // Extraer nombre físico del archivo
+      const urlParts = attachment.downloadUrl.split("/");
+      const physicalFileName = urlParts[urlParts.length - 1];
 
+      if (isImageFile(attachment.mimeType)) {
+        // Para imágenes: cargar como blob y mostrar vista previa en modal
         const viewUrl = `${
           window.location.origin
         }/api/files/knowledge/view/${physicalFileName}?token=${encodeURIComponent(
           tokens.token
         )}`;
 
-        // Fetch de la imagen con autenticación y crear blob URL
         const response = await fetch(viewUrl, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${tokens.token}`,
-            "Content-Type": "application/json",
             Accept: "image/*,*/*",
           },
           cache: "no-cache",
@@ -107,19 +120,119 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
 
         const blob = await response.blob();
         const blobUrl = URL.createObjectURL(blob);
-
         setPreviewFile(blobUrl);
-      } catch (error) {
-        console.error("Error cargando imagen:", error);
-        showError(
-          `Error al cargar la imagen para vista previa: ${
-            error instanceof Error ? error.message : "Error desconocido"
-          }`
-        );
+      } else if (isPdfFile(attachment.mimeType)) {
+        // Para PDFs: descargar como blob y abrir en nueva pestaña
+        const viewUrl = `${
+          window.location.origin
+        }/api/files/knowledge/view/${physicalFileName}?token=${encodeURIComponent(
+          tokens.token
+        )}`;
+
+        const response = await fetch(viewUrl, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${tokens.token}`,
+            Accept: "application/pdf,*/*",
+          },
+          cache: "no-cache",
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        // Abrir PDF en nueva pestaña
+        window.open(blobUrl, "_blank");
+      } else if (attachment.mimeType.startsWith("text/")) {
+        // Para archivos de texto: descargar y mostrar contenido
+        const viewUrl = `${
+          window.location.origin
+        }/api/files/knowledge/view/${physicalFileName}?token=${encodeURIComponent(
+          tokens.token
+        )}`;
+
+        const response = await fetch(viewUrl, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${tokens.token}`,
+            Accept: "text/*,*/*",
+          },
+          cache: "no-cache",
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, "_blank");
       }
-    } else {
-      // Para archivos que no son imágenes, descargar directamente
-      window.open(getDownloadUrl(attachment.downloadUrl), "_blank");
+    } catch (error) {
+      console.error("Error procesando archivo:", error);
+      showError(
+        `Error al procesar el archivo: ${
+          error instanceof Error ? error.message : "Error desconocido"
+        }`
+      );
+    }
+  };
+
+  // Función para descargar archivo con autenticación
+  const handleDownloadFile = async (attachment: any) => {
+    try {
+      const tokens = securityService.getValidTokens();
+
+      if (!tokens?.token) {
+        showError("Sesión expirada. Por favor, inicia sesión nuevamente.");
+        return;
+      }
+
+      const urlParts = attachment.downloadUrl.split("/");
+      const physicalFileName = urlParts[urlParts.length - 1];
+
+      const downloadUrl = `${
+        window.location.origin
+      }/api/files/knowledge/download/${physicalFileName}?token=${encodeURIComponent(
+        tokens.token
+      )}`;
+
+      const response = await fetch(downloadUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${tokens.token}`,
+        },
+        cache: "no-cache",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = attachment.fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+    } catch (error) {
+      console.error("Error descargando archivo:", error);
+      showError(
+        `Error al descargar el archivo: ${
+          error instanceof Error ? error.message : "Error desconocido"
+        }`
+      );
     }
   };
 
@@ -187,18 +300,14 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
               </div>
 
               <div className="flex items-center space-x-2 ml-4">
-                {/* Botón de vista previa/descarga */}
-                <button
-                  type="button"
-                  onClick={() => handlePreviewFile(attachment)}
-                  className="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
-                  title={
-                    isImageFile(attachment.mimeType)
-                      ? "Vista previa"
-                      : "Descargar"
-                  }
-                >
-                  {isImageFile(attachment.mimeType) ? (
+                {/* Botón de vista previa - Solo para archivos que se pueden visualizar */}
+                {canPreviewFile(attachment.mimeType) && (
+                  <button
+                    type="button"
+                    onClick={() => handlePreviewFile(attachment)}
+                    className="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition-colors"
+                    title="Vista previa"
+                  >
                     <svg
                       className="w-5 h-5"
                       fill="none"
@@ -218,27 +327,13 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
                         d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                       />
                     </svg>
-                  ) : (
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                  )}
-                </button>
+                  </button>
+                )}
 
                 {/* Botón de descarga directa */}
-                <a
-                  href={getDownloadUrl(attachment.downloadUrl)}
-                  download={attachment.fileName}
+                <button
+                  type="button"
+                  onClick={() => handleDownloadFile(attachment)}
                   className="p-2 text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-full transition-colors"
                   title="Descargar"
                 >
@@ -255,7 +350,7 @@ const AttachmentsList: React.FC<AttachmentsListProps> = ({
                       d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                     />
                   </svg>
-                </a>
+                </button>
 
                 {/* Botón de eliminar - Solo mostrar si no está en modo readOnly */}
                 {!readOnly && (

@@ -149,6 +149,21 @@ const SmartSearch: React.FC<SmartSearchProps> = ({
       }
     };
 
+    const getMatchTypeLabel = (matchType: string) => {
+      switch (matchType) {
+        case "title":
+          return "en título";
+        case "content":
+          return "en contenido";
+        case "tag":
+          return "en etiqueta";
+        case "case":
+          return "en caso asociado";
+        default:
+          return "";
+      }
+    };
+
     return (
       <div
         key={index}
@@ -170,7 +185,16 @@ const SmartSearch: React.FC<SmartSearchProps> = ({
             {suggestion.type === "case" && suggestion.caseNumber}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
-            {suggestion.type === "document" && "Documento"}
+            {suggestion.type === "document" && (
+              <>
+                Documento
+                {suggestion.matchType && suggestion.matchType !== "title" && (
+                  <span className="ml-1 text-blue-500 dark:text-blue-400">
+                    • Coincidencia {getMatchTypeLabel(suggestion.matchType)}
+                  </span>
+                )}
+              </>
+            )}
             {suggestion.type === "tag" && "Etiqueta"}
             {suggestion.type === "case" && "Caso"}
           </div>

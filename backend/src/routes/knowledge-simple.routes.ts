@@ -108,6 +108,82 @@ router.get(
   }
 );
 
+// GET /api/knowledge/search/suggestions - Sugerencias de búsqueda
+router.get(
+  "/knowledge/search/suggestions",
+  requireAnyPermission([
+    "knowledge.read.own",
+    "knowledge.read.team",
+    "knowledge.read.all",
+  ]),
+  async (req: Request, res: Response) => {
+    try {
+      const { q, limit } = req.query;
+      if (!q || typeof q !== "string" || q.length < 2) {
+        return res.json({ documents: [], tags: [], cases: [] });
+      }
+
+      const userId = (req as any).user?.id;
+      const userPermissions = (req as any).user?.permissions || [];
+
+      console.log(
+        `💡 [SUGGESTIONS] Usuario ${userId} buscando sugerencias: "${q}" con permisos: ${userPermissions.join(
+          ", "
+        )}`
+      );
+
+      const suggestions = await knowledgeDocumentService.getSearchSuggestions(
+        q,
+        parseInt(limit as string) || 5,
+        userId,
+        userPermissions
+      );
+      res.json(suggestions);
+    } catch (error) {
+      handleError(res, error, 400);
+    }
+  }
+);
+
+// POST /api/knowledge/search/advanced - Búsqueda avanzada
+router.post(
+  "/knowledge/search/advanced",
+  requireAnyPermission([
+    "knowledge.read.own",
+    "knowledge.read.team",
+    "knowledge.read.all",
+  ]),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const userPermissions = (req as any).user?.permissions || [];
+
+      console.log(
+        `🔎 [ADVANCED_SEARCH] Usuario ${userId} realizando búsqueda avanzada con permisos: ${userPermissions.join(
+          ", "
+        )}`
+      );
+
+      const searchQuery = req.body;
+      const result = await knowledgeDocumentService.enhancedSearch(
+        searchQuery,
+        userId,
+        userPermissions
+      );
+
+      res.json({
+        documents: result.documents,
+        total: result.total,
+        page: searchQuery.page || 1,
+        totalPages: Math.ceil(result.total / (searchQuery.limit || 10)),
+        searchStats: result.searchStats,
+      });
+    } catch (error) {
+      handleError(res, error, 400);
+    }
+  }
+);
+
 // ================================
 // KNOWLEDGE DOCUMENT TAGS ROUTES
 // ================================
@@ -115,7 +191,13 @@ router.get(
 // GET /api/knowledge/tags - Obtener todas las etiquetas
 router.get(
   "/knowledge/tags",
-  requireAnyPermission(["tags.read.all", "tags.manage.all"]),
+  requireAnyPermission([
+    "tags.read.all",
+    "tags.manage.all",
+    "knowledge.read.own",
+    "knowledge.read.team",
+    "knowledge.read.all",
+  ]),
   async (req: Request, res: Response) => {
     try {
       const tags = await knowledgeTagService.getAllTagsWithUsage();
@@ -129,7 +211,13 @@ router.get(
 // GET /api/knowledge/tags/popular - Obtener etiquetas populares
 router.get(
   "/knowledge/tags/popular",
-  requireAnyPermission(["tags.read.all", "tags.manage.all"]),
+  requireAnyPermission([
+    "tags.read.all",
+    "tags.manage.all",
+    "knowledge.read.own",
+    "knowledge.read.team",
+    "knowledge.read.all",
+  ]),
   async (req: Request, res: Response) => {
     try {
       const { limit } = req.query;
@@ -152,7 +240,13 @@ router.get(
 // GET /api/knowledge/tags/details/:id - Obtener detalles de una etiqueta específica
 router.get(
   "/knowledge/tags/details/:id",
-  requireAnyPermission(["tags.read.all", "tags.manage.all"]),
+  requireAnyPermission([
+    "tags.read.all",
+    "tags.manage.all",
+    "knowledge.read.own",
+    "knowledge.read.team",
+    "knowledge.read.all",
+  ]),
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -181,7 +275,13 @@ router.get(
 // GET /api/knowledge/tags/:id - Obtener etiqueta por ID con uso real
 router.get(
   "/knowledge/tags/:id",
-  requireAnyPermission(["tags.read.all", "tags.manage.all"]),
+  requireAnyPermission([
+    "tags.read.all",
+    "tags.manage.all",
+    "knowledge.read.own",
+    "knowledge.read.team",
+    "knowledge.read.all",
+  ]),
   async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -208,7 +308,13 @@ router.get(
 // GET /api/knowledge/tags/:tagName - Obtener etiqueta por nombre
 router.get(
   "/knowledge/tags/:tagName",
-  requireAnyPermission(["tags.read.all", "tags.manage.all"]),
+  requireAnyPermission([
+    "tags.read.all",
+    "tags.manage.all",
+    "knowledge.read.own",
+    "knowledge.read.team",
+    "knowledge.read.all",
+  ]),
   async (req: Request, res: Response) => {
     try {
       const { tagName } = req.params;

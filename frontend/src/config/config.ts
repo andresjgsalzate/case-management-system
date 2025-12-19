@@ -3,7 +3,7 @@
 // Función para obtener la URL base de la API
 const getApiBaseUrl = (): string => {
   // En desarrollo, usar variable de entorno o proxy de Vite
-  if (false) {
+  if (import.meta.env.DEV) {
     return import.meta.env.VITE_API_BASE_URL || "/api";
   }
 

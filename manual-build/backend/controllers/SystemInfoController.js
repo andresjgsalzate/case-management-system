@@ -74,13 +74,23 @@ class SystemInfoController {
     }
     async getChangelog(req, res) {
         try {
-            const changelogPath = (0, path_1.join)(__dirname, "../../../CHANGELOG.md");
+            const possiblePaths = [
+                (0, path_1.join)(__dirname, "../../../CHANGELOG.md"),
+                (0, path_1.join)(__dirname, "../../CHANGELOG.md"),
+                (0, path_1.join)(process.cwd(), "CHANGELOG.md"),
+                (0, path_1.join)(process.cwd(), "../CHANGELOG.md"),
+            ];
             let changelog = "";
-            try {
-                changelog = (0, fs_1.readFileSync)(changelogPath, "utf-8");
+            let foundPath = "";
+            for (const path of possiblePaths) {
+                if ((0, fs_1.existsSync)(path)) {
+                    changelog = (0, fs_1.readFileSync)(path, "utf-8");
+                    foundPath = path;
+                    break;
+                }
             }
-            catch (error) {
-                console.warn("Changelog no encontrado en:", changelogPath);
+            if (!changelog) {
+                console.warn("Changelog no encontrado en ninguna ubicación:", possiblePaths);
                 changelog =
                     "# Changelog\n\n## Versión 1.0.0 - 2025-01-15\n\n### Añadido\n- Sistema de gestión de casos completo\n- Módulos de dashboard, TODOs y knowledge base\n- Sistema de autenticación y permisos";
             }

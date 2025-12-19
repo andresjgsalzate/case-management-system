@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 
 export interface SystemModule {
@@ -116,13 +116,30 @@ export class SystemInfoController {
    */
   async getChangelog(req: Request, res: Response) {
     try {
-      const changelogPath = join(__dirname, "../../../CHANGELOG.md");
-      let changelog = "";
+      // Intentar múltiples ubicaciones del CHANGELOG.md
+      const possiblePaths = [
+        join(__dirname, "../../../CHANGELOG.md"), // Desarrollo: backend/src/controllers -> raíz
+        join(__dirname, "../../CHANGELOG.md"), // Producción compilado: backend/controllers -> backend/CHANGELOG.md
+        join(process.cwd(), "CHANGELOG.md"), // Directorio de trabajo actual
+        join(process.cwd(), "../CHANGELOG.md"), // Un nivel arriba del cwd
+      ];
 
-      try {
-        changelog = readFileSync(changelogPath, "utf-8");
-      } catch (error) {
-        console.warn("Changelog no encontrado en:", changelogPath);
+      let changelog = "";
+      let foundPath = "";
+
+      for (const path of possiblePaths) {
+        if (existsSync(path)) {
+          changelog = readFileSync(path, "utf-8");
+          foundPath = path;
+          break;
+        }
+      }
+
+      if (!changelog) {
+        console.warn(
+          "Changelog no encontrado en ninguna ubicación:",
+          possiblePaths
+        );
         changelog =
           "# Changelog\n\n## Versión 1.0.0 - 2025-01-15\n\n### Añadido\n- Sistema de gestión de casos completo\n- Módulos de dashboard, TODOs y knowledge base\n- Sistema de autenticación y permisos";
       }

@@ -133,6 +133,15 @@ else
     print_warning "No se encontró node_modules en backend, se instalará en producción"
 fi
 
+# Copiar CHANGELOG.md para que esté disponible en producción
+print_step "Copiando CHANGELOG.md al backend de producción..."
+if [ -f "CHANGELOG.md" ]; then
+    cp -f CHANGELOG.md manual-build/backend/
+    print_success "CHANGELOG.md copiado correctamente"
+else
+    print_warning "No se encontró CHANGELOG.md en la raíz del proyecto"
+fi
+
 print_success "Backend copiado a manual-build/"
 
 # Copiar frontend compilado

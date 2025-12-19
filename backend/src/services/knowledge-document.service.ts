@@ -376,17 +376,17 @@ export class KnowledgeDocumentService {
         `(
         doc.title ILIKE :search 
         OR doc.content ILIKE :search 
-        OR tags.tagName ILIKE :search
-        OR :searchTerm = ANY(doc.associatedCases)
+        OR tags."tag_name" ILIKE :search
+        OR doc."associated_cases"::jsonb @> (:searchTermJson)::jsonb
         OR EXISTS (
           SELECT 1 FROM cases c 
-          WHERE c.id = ANY(doc.associatedCases) 
-          AND c.caseNumber ILIKE :search
+          WHERE doc."associated_cases"::jsonb ? c.id::text
+          AND c."numeroCaso" ILIKE :search
         )
       )`,
         {
           search: `%${searchTerm}%`,
-          searchTerm: searchTerm,
+          searchTermJson: JSON.stringify([searchTerm]),
         }
       );
 
@@ -407,7 +407,12 @@ export class KnowledgeDocumentService {
     userId?: string,
     userPermissions?: string[]
   ): Promise<{
-    documents: Array<{ id: string; title: string; type: "document" }>;
+    documents: Array<{
+      id: string;
+      title: string;
+      matchType: string;
+      type: "document";
+    }>;
     tags: Array<{ name: string; type: "tag" }>;
     cases: Array<{ id: string; caseNumber: string; type: "case" }>;
   }> {
@@ -415,19 +420,43 @@ export class KnowledgeDocumentService {
       return { documents: [], tags: [], cases: [] };
     }
 
-    // Sugerencias de documentos
-    const documentSuggestions = await this.knowledgeDocumentRepository
+    // Sugerencias de documentos - buscar en título, contenido y tags
+    const documentSuggestions = this.knowledgeDocumentRepository
       .createQueryBuilder("doc")
+      .leftJoin("doc.tagRelations", "tagRelations")
+      .leftJoin("tagRelations.tag", "tags")
       .select(["doc.id", "doc.title"])
-      .andWhere("doc.title ILIKE :search", { search: `%${searchTerm}%` })
+      .addSelect(
+        `CASE 
+          WHEN doc.title ILIKE :search THEN 'title'
+          WHEN tags."tag_name" ILIKE :search THEN 'tag'
+          WHEN doc.content ILIKE :search THEN 'content'
+          ELSE 'other'
+        END`,
+        "matchType"
+      )
+      .andWhere(
+        `(doc.title ILIKE :search 
+          OR doc.content ILIKE :search 
+          OR tags."tag_name" ILIKE :search)`,
+        { search: `%${searchTerm}%` }
+      )
       .andWhere("doc.isArchived = :archived", { archived: false });
 
     this.applyPermissionFilters(documentSuggestions, userId, userPermissions);
 
-    const documents = await documentSuggestions
-      .orderBy("doc.viewCount", "DESC")
+    const documentsRaw = await documentSuggestions
+      .orderBy(`CASE WHEN doc.title ILIKE :search THEN 0 ELSE 1 END`, "ASC")
+      .addOrderBy("doc.viewCount", "DESC")
+      .setParameter("search", `%${searchTerm}%`)
       .limit(limit)
-      .getMany();
+      .getRawAndEntities();
+
+    // Combinar resultados raw con entities para obtener matchType
+    const documents = documentsRaw.entities.map((doc, index) => ({
+      ...doc,
+      matchType: documentsRaw.raw[index]?.matchType || "title",
+    }));
 
     // Sugerencias de etiquetas
     const tagSuggestions = await AppDataSource.getRepository(
@@ -445,26 +474,31 @@ export class KnowledgeDocumentService {
     // Sugerencias de casos (si existe la tabla cases)
     let caseSuggestions: any[] = [];
     try {
+      console.log(`🔍 Buscando casos con término: "${searchTerm}"`);
       caseSuggestions = await AppDataSource.query(
         `
-        SELECT DISTINCT c.id, c."caseNumber" 
+        SELECT c.id, c."numeroCaso"
         FROM cases c 
-        WHERE c."caseNumber" ILIKE $1 
-        AND c."isArchived" = false
+        WHERE c."numeroCaso" ILIKE $1 
         ORDER BY c."createdAt" DESC 
         LIMIT $2
       `,
         [`%${searchTerm}%`, limit]
       );
-    } catch (error) {
-      // Si la tabla cases no existe, ignorar
-      console.log("Cases table not found, skipping case suggestions");
+      console.log(
+        `✅ Casos encontrados: ${caseSuggestions.length}`,
+        caseSuggestions
+      );
+    } catch (error: any) {
+      // Si la tabla cases no existe o hay otro error, loguearlo
+      console.log("❌ Error buscando casos:", error?.message || error);
     }
 
     return {
       documents: documents.map((doc) => ({
         id: doc.id,
         title: doc.title,
+        matchType: doc.matchType,
         type: "document" as const,
       })),
       tags: tagSuggestions.map((tag) => ({
@@ -473,7 +507,7 @@ export class KnowledgeDocumentService {
       })),
       cases: caseSuggestions.map((case_) => ({
         id: case_.id,
-        caseNumber: case_.caseNumber,
+        caseNumber: case_.numeroCaso,
         type: "case" as const,
       })),
     };
@@ -518,6 +552,7 @@ export class KnowledgeDocumentService {
       const params: any = {
         search: `%${query.search}%`,
         searchTerm: query.search,
+        searchTermJson: JSON.stringify([query.search]),
       };
 
       // Búsqueda en título
@@ -527,16 +562,18 @@ export class KnowledgeDocumentService {
       searchConditions.push("doc.content ILIKE :search");
 
       // Búsqueda en etiquetas
-      searchConditions.push("tags.tagName ILIKE :search");
+      searchConditions.push('tags."tag_name" ILIKE :search');
 
-      // Búsqueda en casos asociados
-      searchConditions.push(":searchTerm = ANY(doc.associatedCases)");
+      // Búsqueda en casos asociados - búsqueda exacta en el array JSONB
+      searchConditions.push(
+        'doc."associated_cases"::jsonb @> (:searchTermJson)::jsonb'
+      );
 
-      // Búsqueda por número de caso
+      // Búsqueda por número de caso en la tabla cases (busca documentos que tengan casos cuyo número coincida)
       searchConditions.push(`EXISTS (
         SELECT 1 FROM cases c 
-        WHERE c.id = ANY(doc.associatedCases) 
-        AND c.caseNumber ILIKE :search
+        WHERE doc."associated_cases"::jsonb ? c.id::text
+        AND c."numeroCaso" ILIKE :search
       )`);
 
       queryBuilder.andWhere(`(${searchConditions.join(" OR ")})`, params);
@@ -551,15 +588,25 @@ export class KnowledgeDocumentService {
 
     // Aplicar otros filtros
     if (query.tags && query.tags.length > 0) {
-      queryBuilder.andWhere("tags.tagName IN (:...tagNames)", {
+      queryBuilder.andWhere('tags."tag_name" IN (:...tagNames)', {
         tagNames: query.tags,
       });
     }
 
     if (query.caseNumber) {
       queryBuilder.andWhere(
-        "EXISTS (SELECT 1 FROM cases c WHERE c.id = ANY(doc.associatedCases) AND c.caseNumber ILIKE :caseSearch)",
-        { caseSearch: `%${query.caseNumber}%` }
+        `(
+          doc."associated_cases"::jsonb @> (:caseNumberJson)::jsonb
+          OR EXISTS (
+            SELECT 1 FROM cases c 
+            WHERE doc."associated_cases"::jsonb ? c.id::text
+            AND c."numeroCaso" ILIKE :caseSearch
+          )
+        )`,
+        {
+          caseNumberJson: JSON.stringify([query.caseNumber]),
+          caseSearch: `%${query.caseNumber}%`,
+        }
       );
     }
 
@@ -593,14 +640,13 @@ export class KnowledgeDocumentService {
     if (query.search) {
       queryBuilder
         .addSelect(
-          `
-        CASE 
-          WHEN doc.title ILIKE :titleSearch THEN 3
-          WHEN tags.tagName ILIKE :tagSearch THEN 2  
-          WHEN doc.content ILIKE :contentSearch THEN 1
+          `CASE 
+          WHEN "doc"."title" ILIKE :titleSearch THEN 3
+          WHEN "tags"."tag_name" ILIKE :tagSearch THEN 2  
+          WHEN "doc"."content" ILIKE :contentSearch THEN 1
           ELSE 0
-        END as relevance_score
-      `
+        END`,
+          "relevance_score"
         )
         .setParameter("titleSearch", `%${query.search}%`)
         .setParameter("tagSearch", `%${query.search}%`)

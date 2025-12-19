@@ -55,7 +55,56 @@ router.get("/knowledge/search", auth_1.authenticateToken, async (req, res) => {
         handleError(res, error, 400);
     }
 });
-router.get("/knowledge/tags", (0, authorizationMiddleware_1.requireAnyPermission)(["tags.read.all", "tags.manage.all"]), async (req, res) => {
+router.get("/knowledge/search/suggestions", (0, authorizationMiddleware_1.requireAnyPermission)([
+    "knowledge.read.own",
+    "knowledge.read.team",
+    "knowledge.read.all",
+]), async (req, res) => {
+    try {
+        const { q, limit } = req.query;
+        if (!q || typeof q !== "string" || q.length < 2) {
+            return res.json({ documents: [], tags: [], cases: [] });
+        }
+        const userId = req.user?.id;
+        const userPermissions = req.user?.permissions || [];
+        console.log(`💡 [SUGGESTIONS] Usuario ${userId} buscando sugerencias: "${q}" con permisos: ${userPermissions.join(", ")}`);
+        const suggestions = await knowledgeDocumentService.getSearchSuggestions(q, parseInt(limit) || 5, userId, userPermissions);
+        res.json(suggestions);
+    }
+    catch (error) {
+        handleError(res, error, 400);
+    }
+});
+router.post("/knowledge/search/advanced", (0, authorizationMiddleware_1.requireAnyPermission)([
+    "knowledge.read.own",
+    "knowledge.read.team",
+    "knowledge.read.all",
+]), async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const userPermissions = req.user?.permissions || [];
+        console.log(`🔎 [ADVANCED_SEARCH] Usuario ${userId} realizando búsqueda avanzada con permisos: ${userPermissions.join(", ")}`);
+        const searchQuery = req.body;
+        const result = await knowledgeDocumentService.enhancedSearch(searchQuery, userId, userPermissions);
+        res.json({
+            documents: result.documents,
+            total: result.total,
+            page: searchQuery.page || 1,
+            totalPages: Math.ceil(result.total / (searchQuery.limit || 10)),
+            searchStats: result.searchStats,
+        });
+    }
+    catch (error) {
+        handleError(res, error, 400);
+    }
+});
+router.get("/knowledge/tags", (0, authorizationMiddleware_1.requireAnyPermission)([
+    "tags.read.all",
+    "tags.manage.all",
+    "knowledge.read.own",
+    "knowledge.read.team",
+    "knowledge.read.all",
+]), async (req, res) => {
     try {
         const tags = await knowledgeTagService.getAllTagsWithUsage();
         res.json(tags);
@@ -64,7 +113,13 @@ router.get("/knowledge/tags", (0, authorizationMiddleware_1.requireAnyPermission
         handleError(res, error);
     }
 });
-router.get("/knowledge/tags/popular", (0, authorizationMiddleware_1.requireAnyPermission)(["tags.read.all", "tags.manage.all"]), async (req, res) => {
+router.get("/knowledge/tags/popular", (0, authorizationMiddleware_1.requireAnyPermission)([
+    "tags.read.all",
+    "tags.manage.all",
+    "knowledge.read.own",
+    "knowledge.read.team",
+    "knowledge.read.all",
+]), async (req, res) => {
     try {
         const { limit } = req.query;
         const limitNumber = limit ? parseInt(limit, 10) : 20;
@@ -80,7 +135,13 @@ router.get("/knowledge/tags/popular", (0, authorizationMiddleware_1.requireAnyPe
         handleError(res, error);
     }
 });
-router.get("/knowledge/tags/details/:id", (0, authorizationMiddleware_1.requireAnyPermission)(["tags.read.all", "tags.manage.all"]), async (req, res) => {
+router.get("/knowledge/tags/details/:id", (0, authorizationMiddleware_1.requireAnyPermission)([
+    "tags.read.all",
+    "tags.manage.all",
+    "knowledge.read.own",
+    "knowledge.read.team",
+    "knowledge.read.all",
+]), async (req, res) => {
     try {
         const { id } = req.params;
         if (!id) {
@@ -100,7 +161,13 @@ router.get("/knowledge/tags/details/:id", (0, authorizationMiddleware_1.requireA
         handleError(res, error);
     }
 });
-router.get("/knowledge/tags/:id", (0, authorizationMiddleware_1.requireAnyPermission)(["tags.read.all", "tags.manage.all"]), async (req, res) => {
+router.get("/knowledge/tags/:id", (0, authorizationMiddleware_1.requireAnyPermission)([
+    "tags.read.all",
+    "tags.manage.all",
+    "knowledge.read.own",
+    "knowledge.read.team",
+    "knowledge.read.all",
+]), async (req, res) => {
     try {
         const { id } = req.params;
         if (!id) {
@@ -120,7 +187,13 @@ router.get("/knowledge/tags/:id", (0, authorizationMiddleware_1.requireAnyPermis
         handleError(res, error);
     }
 });
-router.get("/knowledge/tags/:tagName", (0, authorizationMiddleware_1.requireAnyPermission)(["tags.read.all", "tags.manage.all"]), async (req, res) => {
+router.get("/knowledge/tags/:tagName", (0, authorizationMiddleware_1.requireAnyPermission)([
+    "tags.read.all",
+    "tags.manage.all",
+    "knowledge.read.own",
+    "knowledge.read.team",
+    "knowledge.read.all",
+]), async (req, res) => {
     try {
         const { tagName } = req.params;
         if (!tagName) {

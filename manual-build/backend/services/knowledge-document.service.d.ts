@@ -26,6 +26,7 @@ export declare class KnowledgeDocumentService {
         documents: Array<{
             id: string;
             title: string;
+            matchType: string;
             type: "document";
         }>;
         tags: Array<{

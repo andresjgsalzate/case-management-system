@@ -238,12 +238,12 @@ class KnowledgeDocumentService {
             .andWhere(`(
         doc.title ILIKE :search 
         OR doc.content ILIKE :search 
-        OR tags.tagName ILIKE :search
-        OR :searchTerm = ANY(doc.associatedCases)
+        OR tags."tag_name" ILIKE :search
+        OR :searchTerm = ANY(doc."associated_cases")
         OR EXISTS (
           SELECT 1 FROM cases c 
-          WHERE c.id = ANY(doc.associatedCases) 
-          AND c.caseNumber ILIKE :search
+          WHERE c.id::text = ANY(doc."associated_cases") 
+          AND c."numero_caso" ILIKE :search
         )
       )`, {
             search: `%${searchTerm}%`,
@@ -260,16 +260,32 @@ class KnowledgeDocumentService {
         if (!searchTerm || searchTerm.length < 2) {
             return { documents: [], tags: [], cases: [] };
         }
-        const documentSuggestions = await this.knowledgeDocumentRepository
+        const documentSuggestions = this.knowledgeDocumentRepository
             .createQueryBuilder("doc")
+            .leftJoin("doc.tagRelations", "tagRelations")
+            .leftJoin("tagRelations.tag", "tags")
             .select(["doc.id", "doc.title"])
-            .andWhere("doc.title ILIKE :search", { search: `%${searchTerm}%` })
+            .addSelect(`CASE 
+          WHEN doc.title ILIKE :search THEN 'title'
+          WHEN tags."tag_name" ILIKE :search THEN 'tag'
+          WHEN doc.content ILIKE :search THEN 'content'
+          ELSE 'other'
+        END`, "matchType")
+            .andWhere(`(doc.title ILIKE :search 
+          OR doc.content ILIKE :search 
+          OR tags."tag_name" ILIKE :search)`, { search: `%${searchTerm}%` })
             .andWhere("doc.isArchived = :archived", { archived: false });
         this.applyPermissionFilters(documentSuggestions, userId, userPermissions);
-        const documents = await documentSuggestions
-            .orderBy("doc.viewCount", "DESC")
+        const documentsRaw = await documentSuggestions
+            .orderBy(`CASE WHEN doc.title ILIKE :search THEN 0 ELSE 1 END`, "ASC")
+            .addOrderBy("doc.viewCount", "DESC")
+            .setParameter("search", `%${searchTerm}%`)
             .limit(limit)
-            .getMany();
+            .getRawAndEntities();
+        const documents = documentsRaw.entities.map((doc, index) => ({
+            ...doc,
+            matchType: documentsRaw.raw[index]?.matchType || "title",
+        }));
         const tagSuggestions = await database_1.AppDataSource.getRepository(require("../entities/KnowledgeDocumentTag").KnowledgeDocumentTag)
             .createQueryBuilder("tag")
             .select(["tag.tagName"])
@@ -282,11 +298,11 @@ class KnowledgeDocumentService {
         let caseSuggestions = [];
         try {
             caseSuggestions = await database_1.AppDataSource.query(`
-        SELECT DISTINCT c.id, c."caseNumber" 
+        SELECT DISTINCT c.id, c."numero_caso" as "numeroCaso"
         FROM cases c 
-        WHERE c."caseNumber" ILIKE $1 
-        AND c."isArchived" = false
-        ORDER BY c."createdAt" DESC 
+        WHERE c."numero_caso" ILIKE $1 
+        AND c."is_archived" = false
+        ORDER BY c."created_at" DESC 
         LIMIT $2
       `, [`%${searchTerm}%`, limit]);
         }
@@ -297,6 +313,7 @@ class KnowledgeDocumentService {
             documents: documents.map((doc) => ({
                 id: doc.id,
                 title: doc.title,
+                matchType: doc.matchType,
                 type: "document",
             })),
             tags: tagSuggestions.map((tag) => ({
@@ -305,7 +322,7 @@ class KnowledgeDocumentService {
             })),
             cases: caseSuggestions.map((case_) => ({
                 id: case_.id,
-                caseNumber: case_.caseNumber,
+                caseNumber: case_.numeroCaso,
                 type: "case",
             })),
         };
@@ -326,13 +343,8 @@ class KnowledgeDocumentService {
             };
             searchConditions.push("doc.title ILIKE :search");
             searchConditions.push("doc.content ILIKE :search");
-            searchConditions.push("tags.tagName ILIKE :search");
-            searchConditions.push(":searchTerm = ANY(doc.associatedCases)");
-            searchConditions.push(`EXISTS (
-        SELECT 1 FROM cases c 
-        WHERE c.id = ANY(doc.associatedCases) 
-        AND c.caseNumber ILIKE :search
-      )`);
+            searchConditions.push('tags."tag_name" ILIKE :search');
+            searchConditions.push('doc."associated_cases"::text ILIKE :search');
             queryBuilder.andWhere(`(${searchConditions.join(" OR ")})`, params);
             const titleMatches = await this.knowledgeDocumentRepository
                 .createQueryBuilder("doc")
@@ -341,12 +353,14 @@ class KnowledgeDocumentService {
             searchStats.foundInTitle = titleMatches;
         }
         if (query.tags && query.tags.length > 0) {
-            queryBuilder.andWhere("tags.tagName IN (:...tagNames)", {
+            queryBuilder.andWhere('tags."tag_name" IN (:...tagNames)', {
                 tagNames: query.tags,
             });
         }
         if (query.caseNumber) {
-            queryBuilder.andWhere("EXISTS (SELECT 1 FROM cases c WHERE c.id = ANY(doc.associatedCases) AND c.caseNumber ILIKE :caseSearch)", { caseSearch: `%${query.caseNumber}%` });
+            queryBuilder.andWhere('doc."associated_cases"::text ILIKE :caseSearch', {
+                caseSearch: `%${query.caseNumber}%`,
+            });
         }
         if (query.documentTypeId) {
             queryBuilder.andWhere("doc.documentTypeId = :typeId", {
@@ -369,14 +383,12 @@ class KnowledgeDocumentService {
         const offset = (page - 1) * limit;
         if (query.search) {
             queryBuilder
-                .addSelect(`
-        CASE 
-          WHEN doc.title ILIKE :titleSearch THEN 3
-          WHEN tags.tagName ILIKE :tagSearch THEN 2  
-          WHEN doc.content ILIKE :contentSearch THEN 1
+                .addSelect(`CASE 
+          WHEN "doc"."title" ILIKE :titleSearch THEN 3
+          WHEN "tags"."tag_name" ILIKE :tagSearch THEN 2  
+          WHEN "doc"."content" ILIKE :contentSearch THEN 1
           ELSE 0
-        END as relevance_score
-      `)
+        END`, "relevance_score")
                 .setParameter("titleSearch", `%${query.search}%`)
                 .setParameter("tagSearch", `%${query.search}%`)
                 .setParameter("contentSearch", `%${query.search}%`)

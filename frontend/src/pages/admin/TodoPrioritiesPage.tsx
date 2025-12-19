@@ -281,19 +281,19 @@ export const TodoPrioritiesPage: React.FC = () => {
     <div className="space-y-6">
       {/* Estadísticas */}
       {/* Estadísticas */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-5">
         <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-          <div className="p-5">
+          <div className="p-3 sm:p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <ActionIcon action="analytics" size="md" color="gray" />
+                <ActionIcon action="analytics" size="sm" color="gray" />
               </div>
-              <div className="ml-5 w-0 flex-1">
+              <div className="ml-2 sm:ml-5 min-w-0">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                    Total de Prioridades
+                  <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                    Total
                   </dt>
-                  <dd className="text-lg font-medium text-gray-900 dark:text-white">
+                  <dd className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">
                     {stats.total}
                   </dd>
                 </dl>
@@ -303,17 +303,17 @@ export const TodoPrioritiesPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-          <div className="p-5">
+          <div className="p-3 sm:p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <ActionIcon action="success" size="md" color="green" />
+                <ActionIcon action="success" size="sm" color="green" />
               </div>
-              <div className="ml-5 w-0 flex-1">
+              <div className="ml-2 sm:ml-5 min-w-0">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                  <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                     Activas
                   </dt>
-                  <dd className="text-lg font-medium text-gray-900 dark:text-white">
+                  <dd className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">
                     {stats.active}
                   </dd>
                 </dl>
@@ -323,17 +323,17 @@ export const TodoPrioritiesPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-          <div className="p-5">
+          <div className="p-3 sm:p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <ActionIcon action="error" size="md" color="red" />
+                <ActionIcon action="error" size="sm" color="red" />
               </div>
-              <div className="ml-5 w-0 flex-1">
+              <div className="ml-2 sm:ml-5 min-w-0">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                  <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                     Inactivas
                   </dt>
-                  <dd className="text-lg font-medium text-gray-900 dark:text-white">
+                  <dd className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">
                     {stats.inactive}
                   </dd>
                 </dl>

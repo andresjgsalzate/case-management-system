@@ -332,13 +332,13 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
 
       {/* Documents Grid */}
       {documents && documents.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {documents.map((doc: KnowledgeDocument) => (
             <div
               key={doc.id}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden"
             >
-              <div className="p-6">
+              <div className="p-4 md:p-6">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center">
@@ -377,13 +377,13 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                   </h3>
 
                   {/* Priority and Difficulty */}
-                  <div className="flex items-center space-x-4 mb-3">
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
                     <div className="flex items-center text-sm">
-                      <span className="text-gray-600 dark:text-gray-300 mr-1">
+                      <span className="text-gray-600 dark:text-gray-300 mr-1 text-xs">
                         Prioridad:
                       </span>
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
                           doc.priority === "urgent"
                             ? "bg-red-100 text-red-800"
                             : doc.priority === "high"
@@ -403,7 +403,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                       </span>
                     </div>
                     <div className="flex items-center text-sm">
-                      <span className="text-gray-600 dark:text-gray-300 mr-1">
+                      <span className="text-gray-600 dark:text-gray-300 mr-1 text-xs">
                         Dificultad:
                       </span>
                       <div className="flex">
@@ -411,7 +411,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                           <ActionIcon
                             key={i}
                             action="star"
-                            size="sm"
+                            size="xs"
                             color={i < doc.difficultyLevel ? "yellow" : "gray"}
                           />
                         ))}
@@ -425,14 +425,14 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                     (() => {
                       const associatedCases = getAssociatedCasesInfo(doc);
                       return (
-                        <div className="flex items-center text-sm mb-3 flex-wrap gap-1">
+                        <div className="flex flex-wrap items-center text-xs mb-3 gap-1">
                           <ActionIcon
                             action="case"
-                            size="sm"
+                            size="xs"
                             color="blue"
-                            className="mr-1"
+                            className="flex-shrink-0"
                           />
-                          <span className="text-gray-600 dark:text-gray-300 mr-1">
+                          <span className="text-gray-600 dark:text-gray-300">
                             Casos:
                           </span>
                           {associatedCases && associatedCases.length > 0 ? (
@@ -442,7 +442,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                                 .map((caso, index) => (
                                   <span
                                     key={index}
-                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                    className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 whitespace-nowrap"
                                     title={`${caso.numeroCaso}: ${caso.descripcion}`}
                                   >
                                     {caso.numeroCaso}
@@ -469,8 +469,15 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                     {/* Document Type */}
                     {doc.documentType && (
                       <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                        <ActionIcon action="folder" size="sm" color="gray" />
-                        <span className="ml-1">{doc.documentType.name}</span>
+                        <ActionIcon
+                          action="folder"
+                          size="xs"
+                          color="gray"
+                          className="flex-shrink-0"
+                        />
+                        <span className="ml-1 truncate">
+                          {doc.documentType.name}
+                        </span>
                       </div>
                     )}
 
@@ -485,17 +492,18 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                           <div className="flex items-start flex-wrap gap-1">
                             <ActionIcon
                               action="tag"
-                              size="sm"
+                              size="xs"
                               color="gray"
-                              className="mt-0.5 mr-1 flex-shrink-0"
+                              className="mt-0.5 flex-shrink-0"
                             />
                             {tagInfo.documentTags.map((tag, index) => (
                               <span
                                 key={index}
-                                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white"
+                                className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium text-white truncate max-w-[80px]"
                                 style={{
                                   backgroundColor: tag.color || "#6b7280",
                                 }}
+                                title={tag.tagName}
                               >
                                 {tag.tagName}
                               </span>
@@ -515,19 +523,33 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-100 dark:border-gray-700">
-                  <div className="flex items-center">
-                    <ActionIcon action="user" size="sm" color="gray" />
-                    <span className="ml-1">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-100 dark:border-gray-700">
+                  <div className="flex items-center min-w-0">
+                    <ActionIcon
+                      action="user"
+                      size="xs"
+                      color="gray"
+                      className="flex-shrink-0"
+                    />
+                    <span
+                      className="ml-1 truncate max-w-[120px]"
+                      title={
+                        doc.__createdByUser__?.fullName ||
+                        doc.__createdByUser__?.email ||
+                        "Usuario desconocido"
+                      }
+                    >
                       {doc.__createdByUser__?.fullName ||
                         doc.__createdByUser__?.email ||
                         "Usuario desconocido"}
                     </span>
                   </div>
 
-                  <div className="flex items-center">
-                    <ActionIcon action="time" size="sm" color="gray" />
-                    {formatDate(doc.updatedAt)}
+                  <div className="flex items-center flex-shrink-0">
+                    <ActionIcon action="time" size="xs" color="gray" />
+                    <span className="ml-1 whitespace-nowrap">
+                      {formatDate(doc.updatedAt)}
+                    </span>
                   </div>
                 </div>
               </div>

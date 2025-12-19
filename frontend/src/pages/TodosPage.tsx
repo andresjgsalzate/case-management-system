@@ -160,19 +160,19 @@ const TodosPage: React.FC = () => {
           </div>
 
           {/* Métricas */}
-          <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-4">
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
+            <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+              <div className="p-3 sm:p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ActionIcon action="success" size="lg" color="neutral" />
+                    <ActionIcon action="success" size="md" color="neutral" />
                   </div>
-                  <div className="ml-5 w-0 flex-1">
+                  <div className="ml-3 sm:ml-5 min-w-0">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        Total TODOs
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                        Total
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900">
+                      <dd className="text-lg font-medium text-gray-900 dark:text-white">
                         {totalTodos}
                       </dd>
                     </dl>
@@ -181,18 +181,18 @@ const TodosPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
+            <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+              <div className="p-3 sm:p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ActionIcon action="time" size="lg" color="blue" />
+                    <ActionIcon action="time" size="md" color="blue" />
                   </div>
-                  <div className="ml-5 w-0 flex-1">
+                  <div className="ml-3 sm:ml-5 min-w-0">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                         Activos
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900">
+                      <dd className="text-lg font-medium text-gray-900 dark:text-white">
                         {activeTodos}
                       </dd>
                     </dl>
@@ -201,18 +201,18 @@ const TodosPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
+            <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+              <div className="p-3 sm:p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ActionIcon action="success" size="lg" color="green" />
+                    <ActionIcon action="success" size="md" color="green" />
                   </div>
-                  <div className="ml-5 w-0 flex-1">
+                  <div className="ml-3 sm:ml-5 min-w-0">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
-                        Completados
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                        Completos
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900">
+                      <dd className="text-lg font-medium text-gray-900 dark:text-white">
                         {completedTodos}
                       </dd>
                     </dl>
@@ -221,18 +221,18 @@ const TodosPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white overflow-hidden shadow rounded-lg">
-              <div className="p-5">
+            <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+              <div className="p-3 sm:p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ActionIcon action="warning" size="lg" color="red" />
+                    <ActionIcon action="warning" size="md" color="red" />
                   </div>
-                  <div className="ml-5 w-0 flex-1">
+                  <div className="ml-3 sm:ml-5 min-w-0">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                         Vencidos
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900">
+                      <dd className="text-lg font-medium text-gray-900 dark:text-white">
                         {overdueTodos}
                       </dd>
                     </dl>

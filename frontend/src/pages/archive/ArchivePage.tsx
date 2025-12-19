@@ -194,83 +194,83 @@ export const ArchivePage: React.FC = () => {
 
       {/* Estadísticas */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-5">
+          <div className="bg-white dark:bg-gray-800 p-2 sm:p-4 rounded-lg shadow">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <ActionIcon action="archive" size="md" color="blue" />
+              <div className="p-1.5 sm:p-2 bg-blue-100 dark:bg-blue-900 rounded-lg flex-shrink-0">
+                <ActionIcon action="archive" size="sm" color="blue" />
               </div>
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="ml-2 sm:ml-4 min-w-0">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {(stats as any)?.totalArchivedCases || 0}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Casos archivados
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
+                  Casos
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+          <div className="bg-white dark:bg-gray-800 p-2 sm:p-4 rounded-lg shadow">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                <ActionIcon action="download" size="md" color="green" />
+              <div className="p-1.5 sm:p-2 bg-green-100 dark:bg-green-900 rounded-lg flex-shrink-0">
+                <ActionIcon action="download" size="sm" color="green" />
               </div>
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="ml-2 sm:ml-4 min-w-0">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {(stats as any)?.totalArchivedTodos || 0}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  TODOs archivados
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
+                  TODOs
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+          <div className="bg-white dark:bg-gray-800 p-2 sm:p-4 rounded-lg shadow">
             <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
-                <ActionIcon action="calendar" size="md" color="yellow" />
+              <div className="p-1.5 sm:p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex-shrink-0">
+                <ActionIcon action="calendar" size="sm" color="yellow" />
               </div>
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="ml-2 sm:ml-4 min-w-0">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {archiveApi.formatTime(
                     (stats as any)?.totalArchivedTimeMinutes || 0
                   )}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Tiempo total
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
+                  Tiempo
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+          <div className="bg-white dark:bg-gray-800 p-2 sm:p-4 rounded-lg shadow">
             <div className="flex items-center">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                <ActionIcon action="archive" size="md" color="purple" />
+              <div className="p-1.5 sm:p-2 bg-purple-100 dark:bg-purple-900 rounded-lg flex-shrink-0">
+                <ActionIcon action="archive" size="sm" color="purple" />
               </div>
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="ml-2 sm:ml-4 min-w-0">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {(stats as any)?.archivedThisMonth || 0}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
                   Este mes
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+          <div className="bg-white dark:bg-gray-800 p-2 sm:p-4 rounded-lg shadow">
             <div className="flex items-center">
-              <div className="p-2 bg-indigo-100 dark:bg-indigo-900 rounded-lg">
-                <ActionIcon action="loading" size="md" color="primary" />
+              <div className="p-1.5 sm:p-2 bg-indigo-100 dark:bg-indigo-900 rounded-lg flex-shrink-0">
+                <ActionIcon action="loading" size="sm" color="primary" />
               </div>
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="ml-2 sm:ml-4 min-w-0">
+                <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {(stats as any)?.restoredThisMonth || 0}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
                   Restaurados
                 </p>
               </div>

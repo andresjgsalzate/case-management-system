@@ -245,24 +245,24 @@ export const NotesPage: React.FC = () => {
 
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6 mb-8">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6 sm:gap-3 mb-8">
             <div
               className={`bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${
                 viewMode === "all" ? "ring-2 ring-indigo-500" : ""
               }`}
               onClick={() => handleViewModeChange("all")}
             >
-              <div className="p-5">
+              <div className="p-3 sm:p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ActionIcon action="analytics" size="md" color="gray" />
+                    <ActionIcon action="analytics" size="sm" color="gray" />
                   </div>
-                  <div className="ml-5 w-0 flex-1">
+                  <div className="ml-2 sm:ml-5 min-w-0">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                         Total
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900 dark:text-white">
+                      <dd className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">
                         {stats.totalNotes || 0}
                       </dd>
                     </dl>
@@ -277,17 +277,17 @@ export const NotesPage: React.FC = () => {
               }`}
               onClick={() => handleViewModeChange("my")}
             >
-              <div className="p-5">
+              <div className="p-3 sm:p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ActionIcon action="analytics" size="md" color="blue" />
+                    <ActionIcon action="analytics" size="sm" color="blue" />
                   </div>
-                  <div className="ml-5 w-0 flex-1">
+                  <div className="ml-2 sm:ml-5 min-w-0">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                        Mis Notas
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                        Mías
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900 dark:text-white">
+                      <dd className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">
                         {stats.myNotes || 0}
                       </dd>
                     </dl>
@@ -302,17 +302,17 @@ export const NotesPage: React.FC = () => {
               }`}
               onClick={() => handleViewModeChange("assigned")}
             >
-              <div className="p-5">
+              <div className="p-3 sm:p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ActionIcon action="analytics" size="md" color="purple" />
+                    <ActionIcon action="analytics" size="sm" color="purple" />
                   </div>
-                  <div className="ml-5 w-0 flex-1">
+                  <div className="ml-2 sm:ml-5 min-w-0">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                         Asignadas
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900 dark:text-white">
+                      <dd className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">
                         {stats.assignedNotes || 0}
                       </dd>
                     </dl>
@@ -327,17 +327,17 @@ export const NotesPage: React.FC = () => {
               }`}
               onClick={() => handleViewModeChange("important")}
             >
-              <div className="p-5">
+              <div className="p-3 sm:p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ActionIcon action="analytics" size="md" color="red" />
+                    <ActionIcon action="analytics" size="sm" color="red" />
                   </div>
-                  <div className="ml-5 w-0 flex-1">
+                  <div className="ml-2 sm:ml-5 min-w-0">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                         Importantes
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900 dark:text-white">
+                      <dd className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">
                         {stats.importantNotes || 0}
                       </dd>
                     </dl>
@@ -352,17 +352,17 @@ export const NotesPage: React.FC = () => {
               }`}
               onClick={() => handleViewModeChange("all")}
             >
-              <div className="p-5">
+              <div className="p-3 sm:p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ActionIcon action="analytics" size="md" color="yellow" />
+                    <ActionIcon action="analytics" size="sm" color="yellow" />
                   </div>
-                  <div className="ml-5 w-0 flex-1">
+                  <div className="ml-2 sm:ml-5 min-w-0">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
-                        Recordatorios
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                        Recordar
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900 dark:text-white">
+                      <dd className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">
                         {stats.withReminders || 0}
                       </dd>
                     </dl>
@@ -377,17 +377,17 @@ export const NotesPage: React.FC = () => {
               }`}
               onClick={() => handleViewModeChange("archived")}
             >
-              <div className="p-5">
+              <div className="p-3 sm:p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <ActionIcon action="archive" size="md" color="gray" />
+                    <ActionIcon action="archive" size="sm" color="gray" />
                   </div>
-                  <div className="ml-5 w-0 flex-1">
+                  <div className="ml-2 sm:ml-5 min-w-0">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
+                      <dt className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                         Archivadas
                       </dt>
-                      <dd className="text-lg font-medium text-gray-900 dark:text-white">
+                      <dd className="text-base sm:text-lg font-medium text-gray-900 dark:text-white">
                         {stats.archivedNotes || 0}
                       </dd>
                     </dl>

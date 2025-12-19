@@ -288,64 +288,64 @@ export const CasesPage: React.FC = () => {
         </div>
 
         {/* Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 md:p-6">
             <div className="flex items-center">
-              <div className="flex-shrink-0 p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
+              <div className="flex-shrink-0 p-2 md:p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
                 <ActionIcon
                   action="document"
-                  size="lg"
+                  size="md"
                   color="blue"
                   title="Total de casos"
                 />
               </div>
-              <div className="ml-4 flex-1">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Total de Casos
+              <div className="ml-3 md:ml-4 min-w-0">
+                <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
+                  Total
                 </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                   {cases.length}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 md:p-6">
             <div className="flex items-center">
-              <div className="flex-shrink-0 p-3 bg-green-100 dark:bg-green-900 rounded-lg">
+              <div className="flex-shrink-0 p-2 md:p-3 bg-green-100 dark:bg-green-900 rounded-lg">
                 <ActionIcon
                   action="check"
-                  size="lg"
+                  size="md"
                   color="green"
                   title="Casos activos"
                 />
               </div>
-              <div className="ml-4 flex-1">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Casos Activos
+              <div className="ml-3 md:ml-4 min-w-0">
+                <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
+                  Activos
                 </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                   {cases.filter((c) => c.estado !== "cerrado").length}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 md:p-6">
             <div className="flex items-center">
-              <div className="flex-shrink-0 p-3 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
+              <div className="flex-shrink-0 p-2 md:p-3 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
                 <ActionIcon
                   action="warning"
-                  size="lg"
+                  size="md"
                   color="yellow"
                   title="Casos de alta complejidad"
                 />
               </div>
-              <div className="ml-4 flex-1">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Alta Complejidad
+              <div className="ml-3 md:ml-4 min-w-0">
+                <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
+                  Complejos
                 </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                   {
                     cases.filter((c) => c.clasificacion === "Alta Complejidad")
                       .length
@@ -355,21 +355,21 @@ export const CasesPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 md:p-6">
             <div className="flex items-center">
-              <div className="flex-shrink-0 p-3 bg-red-100 dark:bg-red-900 rounded-lg">
+              <div className="flex-shrink-0 p-2 md:p-3 bg-red-100 dark:bg-red-900 rounded-lg">
                 <ActionIcon
                   action="filter"
-                  size="lg"
+                  size="md"
                   color="red"
                   title="Casos filtrados"
                 />
               </div>
-              <div className="ml-4 flex-1">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <div className="ml-3 md:ml-4 min-w-0">
+                <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
                   Filtrados
                 </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                   {filteredCases.length}
                 </p>
               </div>

@@ -442,23 +442,32 @@ const KnowledgeDocumentForm: React.FC = () => {
 
     setIsAutoSaving(true);
 
-    const documentData = {
+    // Construir objeto de datos limpio (sin propiedades undefined)
+    const documentData: UpdateKnowledgeDocumentDto = {
       title,
       content: textContent,
       jsonContent,
-      documentTypeId: documentTypeId || undefined,
       priority,
       difficultyLevel,
       isTemplate,
       isPublished,
-      tags: tags.length > 0 ? tags : undefined,
       associatedCases,
     };
+
+    // Solo incluir documentTypeId si tiene valor
+    if (documentTypeId && documentTypeId.trim()) {
+      documentData.documentTypeId = documentTypeId;
+    }
+
+    // Solo incluir tags si hay alguna
+    if (tags.length > 0) {
+      documentData.tags = tags;
+    }
 
     try {
       await autoSaveMutation.mutateAsync({
         id: id!,
-        data: documentData as UpdateKnowledgeDocumentDto,
+        data: documentData,
       });
     } catch (error) {
       console.error("❌ Error en autoguardado:", error);
@@ -722,18 +731,27 @@ const KnowledgeDocumentForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const documentData = {
+    // Construir objeto de datos limpio (sin propiedades undefined)
+    const documentData: UpdateKnowledgeDocumentDto = {
       title,
       content: textContent,
       jsonContent,
-      documentTypeId: documentTypeId || undefined,
       priority,
       difficultyLevel,
       isTemplate,
-      isPublished, // 🔧 AÑADIR el campo isPublished
-      tags: tags.length > 0 ? tags : undefined,
-      associatedCases: associatedCases, // Enviar array (vacío o con datos)
+      isPublished,
+      associatedCases: associatedCases,
     };
+
+    // Solo incluir documentTypeId si tiene valor
+    if (documentTypeId && documentTypeId.trim()) {
+      documentData.documentTypeId = documentTypeId;
+    }
+
+    // Solo incluir tags si hay alguna
+    if (tags.length > 0) {
+      documentData.tags = tags;
+    }
 
     try {
       // Indicar que queremos navegar después de guardar exitosamente
@@ -742,7 +760,7 @@ const KnowledgeDocumentForm: React.FC = () => {
       if (isEditing) {
         await updateMutation.mutateAsync({
           id: id!,
-          data: documentData as UpdateKnowledgeDocumentDto,
+          data: documentData,
         });
         // ✅ AUTOGUARDADO: Actualizar referencia del contenido guardado
         lastSavedContentRef.current = JSON.stringify({
@@ -788,23 +806,32 @@ const KnowledgeDocumentForm: React.FC = () => {
       return;
     }
 
-    const documentData = {
+    // Construir objeto de datos limpio (sin propiedades undefined)
+    const documentData: UpdateKnowledgeDocumentDto = {
       title,
       content: textContent,
       jsonContent,
-      documentTypeId: documentTypeId || undefined,
       priority,
       difficultyLevel,
       isTemplate,
       isPublished,
-      tags: tags.length > 0 ? tags : undefined,
       associatedCases: associatedCases,
     };
+
+    // Solo incluir documentTypeId si tiene valor
+    if (documentTypeId && documentTypeId.trim()) {
+      documentData.documentTypeId = documentTypeId;
+    }
+
+    // Solo incluir tags si hay alguna
+    if (tags.length > 0) {
+      documentData.tags = tags;
+    }
 
     try {
       await updateMutation.mutateAsync({
         id: id!,
-        data: documentData as UpdateKnowledgeDocumentDto,
+        data: documentData,
       });
       // Actualizar referencia del contenido guardado
       lastSavedContentRef.current = JSON.stringify({

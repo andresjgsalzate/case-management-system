@@ -34,6 +34,9 @@ export class CreateKnowledgeDocumentDto {
   jsonContent: object; // Contenido BlockNote
 
   @IsOptional()
+  @Transform(({ value }) =>
+    value === "" || value === null ? undefined : value
+  )
   @IsUUID()
   documentTypeId?: string;
 
@@ -77,6 +80,9 @@ export class UpdateKnowledgeDocumentDto {
   jsonContent?: object;
 
   @IsOptional()
+  @Transform(({ value }) =>
+    value === "" || value === null ? undefined : value
+  )
   @IsUUID()
   documentTypeId?: string;
 

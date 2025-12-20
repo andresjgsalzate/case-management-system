@@ -21,7 +21,7 @@ import { KnowledgeDocumentFeedback } from "./KnowledgeDocumentFeedback";
 export type Priority = "low" | "medium" | "high" | "urgent";
 
 @Entity("knowledge_documents")
-@Index(["title", "content"])
+@Index(["title"]) // Solo índice en title - content puede ser muy grande para B-tree
 export class KnowledgeDocument {
   @PrimaryGeneratedColumn("uuid")
   id: string;

@@ -1160,9 +1160,13 @@ const renderBlock = (
 ): React.ReactElement => {
   switch (block.type) {
     case "paragraph":
+      const paragraphContent = renderInlineContent(block.content, block.props);
+      if (!paragraphContent) {
+        return <View key={index} />;
+      }
       return (
         <Text key={index} style={styles.paragraph}>
-          {renderInlineContent(block.content, block.props)}
+          {paragraphContent}
         </Text>
       );
     case "heading":
@@ -1211,25 +1215,34 @@ const renderBlock = (
       return headingElement ? (
         <View key={index}>{headingElement}</View>
       ) : (
-        <Text key={index} style={headingStyle}>
-          ""
-        </Text>
+        <View key={index} />
       );
     case "bulletListItem":
+      const bulletContent = renderInlineContent(block.content, block.props);
+      if (!bulletContent) {
+        return <View key={index} />;
+      }
       return (
         <Text key={index} style={styles.listItem}>
-          • {renderInlineContent(block.content, block.props)}
+          <Text>• </Text>
+          {bulletContent}
         </Text>
       );
     case "numberedListItem":
       const itemNumber = numberedListCounter ? numberedListCounter.value++ : 1;
+      const numberedContent = renderInlineContent(block.content, block.props);
+      if (!numberedContent) {
+        return <View key={index} />;
+      }
       return (
         <Text key={index} style={styles.numberedListItem}>
-          {itemNumber}. {renderInlineContent(block.content, block.props)}
+          <Text>{itemNumber}. </Text>
+          {numberedContent}
         </Text>
       );
     case "checkListItem":
       const isChecked = block.props?.checked || false;
+      const checklistContent = renderInlineContent(block.content, block.props);
       return (
         <View key={index} style={styles.checklistItem}>
           <View
@@ -1241,9 +1254,7 @@ const renderBlock = (
           >
             {isChecked && <Text style={styles.checkmark}>✔</Text>}
           </View>
-          <Text style={styles.checkboxText}>
-            {renderInlineContent(block.content, block.props)}
-          </Text>
+          <Text style={styles.checkboxText}>{checklistContent || " "}</Text>
         </View>
       );
     case "codeBlock":
@@ -1275,22 +1286,23 @@ const renderBlock = (
         );
       }
       // Fallback: renderizado normal sin syntax highlighting
+      const codeContent = renderInlineContent(block.content, block.props);
       return (
         <View key={index} style={styles.codeBlock}>
           {language && (
             <Text style={styles.codeLanguage}>{language.toUpperCase()}</Text>
           )}
-          <Text style={styles.codeText}>
-            {renderInlineContent(block.content, block.props)}
-          </Text>
+          <Text style={styles.codeText}>{codeContent || " "}</Text>
         </View>
       );
     case "quote":
+      const quoteContent = renderInlineContent(block.content, block.props);
+      if (!quoteContent) {
+        return <View key={index} />;
+      }
       return (
         <View key={index} style={styles.quote}>
-          <Text style={styles.quoteText}>
-            {renderInlineContent(block.content, block.props)}
-          </Text>
+          <Text style={styles.quoteText}>{quoteContent}</Text>
         </View>
       );
     case "divider":
@@ -1300,9 +1312,16 @@ const renderBlock = (
     case "image":
       return renderImage(block, index);
     default:
+      const defaultContent = renderInlineContent(
+        (block as any).content,
+        (block as any).props
+      );
+      if (!defaultContent) {
+        return <View key={index} />;
+      }
       return (
         <Text key={index} style={styles.paragraph}>
-          {renderInlineContent((block as any).content, (block as any).props)}
+          {defaultContent}
         </Text>
       );
   }
@@ -1326,18 +1345,21 @@ const renderTable = (
           }
         >
           {row.content &&
-            row.content.map((cell: any, cellIndex: number) => (
-              <Text
-                key={cellIndex}
-                style={
-                  rowIndex === 0
-                    ? [styles.tableCell, styles.tableHeaderCell]
-                    : styles.tableCell
-                }
-              >
-                {renderInlineContent(cell)}
-              </Text>
-            ))}
+            row.content.map((cell: any, cellIndex: number) => {
+              const cellContent = renderInlineContent(cell);
+              return (
+                <Text
+                  key={cellIndex}
+                  style={
+                    rowIndex === 0
+                      ? [styles.tableCell, styles.tableHeaderCell]
+                      : styles.tableCell
+                  }
+                >
+                  {cellContent || " "}
+                </Text>
+              );
+            })}
         </View>
       ))}
     </View>

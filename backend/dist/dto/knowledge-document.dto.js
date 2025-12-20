@@ -45,6 +45,7 @@ __decorate([
 ], CreateKnowledgeDocumentDto.prototype, "jsonContent", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => value === "" || value === null ? undefined : value),
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
 ], CreateKnowledgeDocumentDto.prototype, "documentTypeId", void 0);
@@ -98,6 +99,7 @@ __decorate([
 ], UpdateKnowledgeDocumentDto.prototype, "jsonContent", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => value === "" || value === null ? undefined : value),
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
 ], UpdateKnowledgeDocumentDto.prototype, "documentTypeId", void 0);

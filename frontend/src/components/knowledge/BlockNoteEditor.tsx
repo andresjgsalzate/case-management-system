@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo } from "react";
+import React, { useEffect, useCallback, useMemo, useRef } from "react";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import { useTheme } from "../../providers/ThemeProvider";
@@ -27,6 +27,7 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
   documentId,
 }) => {
   const { isDark } = useTheme();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Validate and prepare content
   const validContent = React.useMemo(() => {
@@ -663,6 +664,56 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
     }
   }, [editable]);
 
+  // ✅ TRACKING DE ACTIVIDAD: Detectar interacción del usuario en el editor
+  // Esto es CRÍTICO porque el editor BlockNote captura eventos internamente y no los propaga al document,
+  // causando que el SecurityService no detecte la actividad y expire la sesión prematuramente.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Usar throttle simple para evitar demasiadas llamadas
+    let lastActivityTime = 0;
+    const THROTTLE_MS = 5000; // Notificar máximo cada 5 segundos
+
+    const handleUserActivity = () => {
+      const now = Date.now();
+      if (now - lastActivityTime >= THROTTLE_MS) {
+        lastActivityTime = now;
+        securityService.notifyActivity();
+      }
+    };
+
+    // Eventos a monitorear dentro del editor
+    const events: (keyof HTMLElementEventMap)[] = [
+      "mousedown",
+      "mousemove",
+      "keydown",
+      "keypress",
+      "scroll",
+      "touchstart",
+      "click",
+      "focus",
+      "focusin",
+    ];
+
+    // Añadir listeners con capture para interceptar antes que BlockNote
+    events.forEach((event) => {
+      container.addEventListener(event, handleUserActivity, {
+        capture: true,
+        passive: true,
+      });
+    });
+
+    // Cleanup
+    return () => {
+      events.forEach((event) => {
+        container.removeEventListener(event, handleUserActivity, {
+          capture: true,
+        });
+      });
+    };
+  }, []); // Sin dependencias para que el efecto se ejecute solo una vez
+
   // Handle content changes
   const handleChange = useCallback(() => {
     // ✅ IMPORTANTE: Notificar actividad al SecurityService para evitar expiración de sesión
@@ -745,6 +796,7 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
 
   return (
     <div
+      ref={containerRef}
       className={`blocknote-editor ${className}`}
       data-theme={isDark ? "dark" : "light"}
       data-editable={editable}

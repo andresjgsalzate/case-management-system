@@ -70,10 +70,57 @@ const KnowledgeDocumentForm: React.FC = () => {
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContentRef = useRef<string>(""); // Para comparar si hay cambios reales
 
+  // ✅ BACKUP LOCAL: Para proteger contra pérdida de datos por sesión expirada
+  const [hasLocalBackup, setHasLocalBackup] = useState(false);
+  const LOCAL_BACKUP_KEY = `knowledge_backup_${id || "new"}`;
+
+  // Función para guardar backup local
+  const saveLocalBackup = useCallback(
+    (data: any) => {
+      try {
+        const backupData = {
+          ...data,
+          backupTimestamp: new Date().toISOString(),
+          documentId: id,
+        };
+        localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(backupData));
+        setHasLocalBackup(true);
+        console.log(
+          "💾 Backup local guardado:",
+          new Date().toLocaleTimeString()
+        );
+      } catch (e) {
+        console.error("Error guardando backup local:", e);
+      }
+    },
+    [id, LOCAL_BACKUP_KEY]
+  );
+
+  // Función para restaurar backup local
+  const restoreLocalBackup = useCallback(() => {
+    try {
+      const backupStr = localStorage.getItem(LOCAL_BACKUP_KEY);
+      if (backupStr) {
+        const backup = JSON.parse(backupStr);
+        return backup;
+      }
+    } catch (e) {
+      console.error("Error restaurando backup local:", e);
+    }
+    return null;
+  }, [LOCAL_BACKUP_KEY]);
+
+  // Función para limpiar backup local
+  const clearLocalBackup = useCallback(() => {
+    localStorage.removeItem(LOCAL_BACKUP_KEY);
+    setHasLocalBackup(false);
+  }, [LOCAL_BACKUP_KEY]);
+
   // Mutations
   const createMutation = useCreateKnowledgeDocument({
     onSuccess: () => {
       success("Documento creado exitosamente");
+      clearLocalBackup(); // ✅ BACKUP LOCAL: Limpiar backup al guardar exitosamente
       if (shouldNavigateAfterSave) {
         navigate("/knowledge");
       }
@@ -87,6 +134,7 @@ const KnowledgeDocumentForm: React.FC = () => {
   const updateMutation = useUpdateKnowledgeDocument({
     onSuccess: () => {
       success("Documento actualizado exitosamente");
+      clearLocalBackup(); // ✅ BACKUP LOCAL: Limpiar backup al guardar exitosamente
       // ✅ AUTOGUARDADO: Marcar como guardado tras guardado manual exitoso
       setHasUnsavedChanges(false);
       setLastAutoSave(new Date());
@@ -107,6 +155,7 @@ const KnowledgeDocumentForm: React.FC = () => {
       setLastAutoSave(new Date());
       setIsAutoSaving(false);
       setHasUnsavedChanges(false);
+      clearLocalBackup(); // ✅ BACKUP LOCAL: Limpiar backup al autoguardar exitosamente
       // Actualizar el contenido guardado para futuras comparaciones
       lastSavedContentRef.current = JSON.stringify({
         title,
@@ -124,7 +173,22 @@ const KnowledgeDocumentForm: React.FC = () => {
     onError: (error: any) => {
       console.error("❌ Error en autoguardado:", error);
       setIsAutoSaving(false);
-      // No mostrar error intrusivo, solo en consola
+      // ✅ BACKUP LOCAL: Guardar backup local si falla el autoguardado por 401
+      if (error?.response?.status === 401 || error?.message?.includes("401")) {
+        const documentData = {
+          title,
+          content: textContent,
+          jsonContent,
+          documentTypeId: documentTypeId || undefined,
+          priority,
+          difficultyLevel,
+          isTemplate,
+          isPublished,
+          tags: tags.length > 0 ? tags : undefined,
+          associatedCases,
+        };
+        saveLocalBackup(documentData);
+      }
     },
   });
   // TODO: Implementar hooks de tags
@@ -154,6 +218,21 @@ const KnowledgeDocumentForm: React.FC = () => {
 
   // Query para obtener casos (incluyendo archivados)
   const { data: casesData } = useCases();
+
+  // ✅ BACKUP LOCAL: Verificar si hay backup al montar el componente
+  useEffect(() => {
+    const backupStr = localStorage.getItem(LOCAL_BACKUP_KEY);
+    if (backupStr) {
+      try {
+        const backup = JSON.parse(backupStr);
+        if (backup && backup.documentId === id) {
+          setHasLocalBackup(true);
+        }
+      } catch (e) {
+        // Ignorar errores de parsing
+      }
+    }
+  }, [id, LOCAL_BACKUP_KEY]);
 
   // Query para obtener estados dinámicos de casos (no necesaria con la nueva lógica simplificada)
   // const { data: caseStatuses = [] } = useQuery<CaseStatus[]>({
@@ -226,6 +305,49 @@ const KnowledgeDocumentForm: React.FC = () => {
   // Load document data if editing
   useEffect(() => {
     if (document && isEditing) {
+      // ✅ BACKUP LOCAL: Verificar si hay un backup local más reciente
+      const localBackup = restoreLocalBackup();
+      if (localBackup && localBackup.documentId === id) {
+        const backupTime = new Date(localBackup.backupTimestamp);
+        const useBackup = window.confirm(
+          `Se encontró un backup local guardado el ${backupTime.toLocaleString()}.\n\n` +
+            `Esto puede contener cambios que no se guardaron debido a una sesión expirada.\n\n` +
+            `¿Deseas restaurar el backup local? (Cancelar para usar la versión del servidor)`
+        );
+
+        if (useBackup) {
+          setTitle(localBackup.title || document.title);
+          setJsonContent(localBackup.jsonContent || document.jsonContent);
+          setTextContent(
+            localBackup.content ||
+              localBackup.textContent ||
+              document.content ||
+              ""
+          );
+          setDocumentTypeId(
+            localBackup.documentTypeId || document.documentTypeId || ""
+          );
+          setPriority(localBackup.priority || document.priority);
+          setDifficultyLevel(
+            localBackup.difficultyLevel || document.difficultyLevel
+          );
+          setIsTemplate(localBackup.isTemplate ?? document.isTemplate ?? false);
+          setIsPublished(
+            localBackup.isPublished ?? document.isPublished ?? false
+          );
+          const backupTags = localBackup.tags || [];
+          setTags(backupTags);
+          setAssociatedCases(localBackup.associatedCases || []);
+          setHasUnsavedChanges(true); // Marcar que hay cambios pendientes
+          success("Backup local restaurado. Recuerda guardar los cambios.");
+          return; // No cargar datos del servidor
+        } else {
+          // Usuario eligió no restaurar, limpiar backup
+          clearLocalBackup();
+        }
+      }
+
+      // Cargar datos normales del servidor
       setTitle(document.title);
       setJsonContent(document.jsonContent);
       setTextContent(document.content || "");
@@ -261,7 +383,7 @@ const KnowledgeDocumentForm: React.FC = () => {
         associatedCases: document.associatedCases || [],
       });
     }
-  }, [document, isEditing]);
+  }, [document, isEditing, id, restoreLocalBackup, clearLocalBackup, success]);
 
   // ✅ AUTOGUARDADO: Función para ejecutar el autoguardado
   const performAutoSave = useCallback(async () => {
@@ -563,9 +685,18 @@ const KnowledgeDocumentForm: React.FC = () => {
       }
 
       // La navegación ahora se maneja en los callbacks onSuccess de las mutaciones
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving document:", error);
       setShouldNavigateAfterSave(false);
+
+      // ✅ BACKUP LOCAL: Si falla por 401 (sesión expirada), guardar backup local
+      if (error?.response?.status === 401 || error?.message?.includes("401")) {
+        saveLocalBackup(documentData);
+        showError(
+          "Tu sesión ha expirado. El documento se ha guardado localmente. " +
+            "Por favor, inicia sesión de nuevo y tus cambios se restaurarán automáticamente."
+        );
+      }
     }
   };
 

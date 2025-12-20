@@ -63,7 +63,7 @@ const KnowledgeDocumentForm: React.FC = () => {
   const [shouldNavigateAfterSave, setShouldNavigateAfterSave] = useState(false);
 
   // ✅ AUTOGUARDADO: Estados y configuración
-  const AUTOSAVE_INTERVAL = 2 * 60 * 1000; // 2 minutos en milisegundos
+  const AUTOSAVE_INTERVAL = 1 * 60 * 1000; // 1 minuto en milisegundos
   const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -723,6 +723,61 @@ const KnowledgeDocumentForm: React.FC = () => {
     }
   };
 
+  // ✅ GUARDAR SIN NAVEGAR: Función para guardar y continuar editando
+  const handleSaveAndContinue = async () => {
+    if (!isEditing || !id) return;
+    if (updateMutation.isPending) return;
+    if (!title.trim()) {
+      showError("El título es requerido");
+      return;
+    }
+
+    const documentData = {
+      title,
+      content: textContent,
+      jsonContent,
+      documentTypeId: documentTypeId || undefined,
+      priority,
+      difficultyLevel,
+      isTemplate,
+      isPublished,
+      tags: tags.length > 0 ? tags : undefined,
+      associatedCases: associatedCases,
+    };
+
+    try {
+      await updateMutation.mutateAsync({
+        id: id!,
+        data: documentData as UpdateKnowledgeDocumentDto,
+      });
+      // Actualizar referencia del contenido guardado
+      lastSavedContentRef.current = JSON.stringify({
+        title,
+        jsonContent,
+        textContent,
+        documentTypeId,
+        priority,
+        difficultyLevel,
+        isTemplate,
+        isPublished,
+        tags,
+        associatedCases,
+      });
+      setHasUnsavedChanges(false);
+      setLastAutoSave(new Date());
+      // No navegar - el usuario continúa editando
+    } catch (error: any) {
+      console.error("Error saving document:", error);
+      if (error?.response?.status === 401 || error?.message?.includes("401")) {
+        saveLocalBackup(documentData);
+        showError(
+          "Tu sesión ha expirado. El documento se ha guardado localmente. " +
+            "Por favor, inicia sesión de nuevo y tus cambios se restaurarán automáticamente."
+        );
+      }
+    }
+  };
+
   if (isEditing && documentLoading) {
     return (
       <div className="flex items-center justify-center min-h-64">
@@ -833,6 +888,47 @@ const KnowledgeDocumentForm: React.FC = () => {
                 >
                   Cancelar
                 </Button>
+                {/* Botón Guardar: solo en modo edición, guarda sin navegar */}
+                {isEditing && (
+                  <Button
+                    variant="secondary"
+                    type="button"
+                    onClick={handleSaveAndContinue}
+                    disabled={updateMutation.isPending}
+                    className="bg-green-50 text-green-700 border-green-300 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-900/40"
+                  >
+                    {updateMutation.isPending ? (
+                      <>
+                        <svg
+                          className="animate-spin -ml-1 mr-2 h-4 w-4"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <ActionIcon action="save" size="sm" className="mr-1" />
+                        Guardar
+                      </>
+                    )}
+                  </Button>
+                )}
                 <Button
                   variant="primary"
                   type="submit"
@@ -844,7 +940,7 @@ const KnowledgeDocumentForm: React.FC = () => {
                   {createMutation.isPending || updateMutation.isPending
                     ? "Guardando..."
                     : isEditing
-                    ? "Actualizar"
+                    ? "Guardar y salir"
                     : "Crear"}
                 </Button>
               </div>

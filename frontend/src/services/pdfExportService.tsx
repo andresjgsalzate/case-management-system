@@ -77,7 +77,7 @@ const renderTextWithEmojiSupport = (
   if (!text || typeof text !== "string" || !text.trim()) {
     return null;
   }
-  const fontFamily = forceFont || getFontFamily(text);
+  const fontFamily = forceFont || getFontFamily(baseStyle.fontFamily);
   return (
     <Text style={{ ...baseStyle, fontFamily }} key={`text-${Math.random()}`}>
       {text}
@@ -917,7 +917,7 @@ const renderInlineContent = (
     // Solo retornar si el string tiene contenido útil, sin espacios extra
     const trimmedContent = content.trim();
     if (trimmedContent) {
-      const fontFamily = getFontFamily(trimmedContent);
+      const fontFamily = getFontFamily();
       false &&
         console.log("🔤 [PDF] Detectando fuente para texto:", {
           text: trimmedContent.substring(0, 20) + "...",
@@ -959,7 +959,7 @@ const renderInlineContent = (
           const trimmedText = text.trim();
           if (!trimmedText) return null;
           // Determinar la fuente apropiada según el contenido
-          const fontFamily = getFontFamily(trimmedText);
+          const fontFamily = getFontFamily();
           false &&
             console.log("🔤 [PDF] Fuente para texto con estilos:", {
               text: trimmedText.substring(0, 20) + "...",
@@ -1087,7 +1087,7 @@ const renderInlineContent = (
         return "";
       })
       .join("");
-    const fontFamily = getFontFamily(allText);
+    const fontFamily = getFontFamily();
     false &&
       console.log("🔤 [PDF] Fuente para contenido combinado:", {
         allText: allText.substring(0, 50) + "...",
@@ -1126,7 +1126,7 @@ const renderInlineContent = (
       const text = content.text || "";
       if (text.trim()) {
         // SIEMPRE envolver en Text para react-pdf con soporte para emojis
-        const fontFamily = getFontFamily(text);
+        const fontFamily = getFontFamily();
         return (
           <Text
             style={{

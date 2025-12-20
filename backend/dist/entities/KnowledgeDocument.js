@@ -199,5 +199,5 @@ __decorate([
 ], KnowledgeDocument.prototype, "updatedAt", void 0);
 exports.KnowledgeDocument = KnowledgeDocument = __decorate([
     (0, typeorm_1.Entity)("knowledge_documents"),
-    (0, typeorm_1.Index)(["title", "content"])
+    (0, typeorm_1.Index)(["title"])
 ], KnowledgeDocument);

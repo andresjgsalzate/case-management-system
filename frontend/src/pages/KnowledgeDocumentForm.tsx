@@ -305,45 +305,78 @@ const KnowledgeDocumentForm: React.FC = () => {
   // Load document data if editing
   useEffect(() => {
     if (document && isEditing) {
-      // ✅ BACKUP LOCAL: Verificar si hay un backup local más reciente
-      const localBackup = restoreLocalBackup();
-      if (localBackup && localBackup.documentId === id) {
-        const backupTime = new Date(localBackup.backupTimestamp);
-        const useBackup = window.confirm(
-          `Se encontró un backup local guardado el ${backupTime.toLocaleString()}.\n\n` +
-            `Esto puede contener cambios que no se guardaron debido a una sesión expirada.\n\n` +
-            `¿Deseas restaurar el backup local? (Cancelar para usar la versión del servidor)`
-        );
+      // ✅ BACKUP LOCAL: Verificar si hay un backup local más reciente (solo una vez)
+      const backupKey = `knowledge_backup_${id || "new"}`;
+      const backupStr = localStorage.getItem(backupKey);
 
-        if (useBackup) {
-          setTitle(localBackup.title || document.title);
-          setJsonContent(localBackup.jsonContent || document.jsonContent);
-          setTextContent(
-            localBackup.content ||
-              localBackup.textContent ||
-              document.content ||
-              ""
-          );
-          setDocumentTypeId(
-            localBackup.documentTypeId || document.documentTypeId || ""
-          );
-          setPriority(localBackup.priority || document.priority);
-          setDifficultyLevel(
-            localBackup.difficultyLevel || document.difficultyLevel
-          );
-          setIsTemplate(localBackup.isTemplate ?? document.isTemplate ?? false);
-          setIsPublished(
-            localBackup.isPublished ?? document.isPublished ?? false
-          );
-          const backupTags = localBackup.tags || [];
-          setTags(backupTags);
-          setAssociatedCases(localBackup.associatedCases || []);
-          setHasUnsavedChanges(true); // Marcar que hay cambios pendientes
-          success("Backup local restaurado. Recuerda guardar los cambios.");
-          return; // No cargar datos del servidor
-        } else {
-          // Usuario eligió no restaurar, limpiar backup
-          clearLocalBackup();
+      if (backupStr) {
+        try {
+          const localBackup = JSON.parse(backupStr);
+          if (localBackup && localBackup.documentId === id) {
+            const backupTime = new Date(localBackup.backupTimestamp);
+            const useBackup = window.confirm(
+              `Se encontró un backup local guardado el ${backupTime.toLocaleString()}.\n\n` +
+                `Esto puede contener cambios que no se guardaron debido a una sesión expirada.\n\n` +
+                `¿Deseas restaurar el backup local? (Cancelar para usar la versión del servidor)`
+            );
+
+            if (useBackup) {
+              setTitle(localBackup.title || document.title);
+              setJsonContent(localBackup.jsonContent || document.jsonContent);
+              setTextContent(
+                localBackup.content ||
+                  localBackup.textContent ||
+                  document.content ||
+                  ""
+              );
+              setDocumentTypeId(
+                localBackup.documentTypeId || document.documentTypeId || ""
+              );
+              setPriority(localBackup.priority || document.priority);
+              setDifficultyLevel(
+                localBackup.difficultyLevel || document.difficultyLevel
+              );
+              setIsTemplate(
+                localBackup.isTemplate ?? document.isTemplate ?? false
+              );
+              setIsPublished(
+                localBackup.isPublished ?? document.isPublished ?? false
+              );
+              const backupTags = localBackup.tags || [];
+              setTags(backupTags);
+              setAssociatedCases(localBackup.associatedCases || []);
+              setHasUnsavedChanges(true); // Marcar que hay cambios pendientes
+
+              // Inicializar ref con el contenido del backup
+              lastSavedContentRef.current = JSON.stringify({
+                title: localBackup.title || document.title,
+                jsonContent: localBackup.jsonContent || document.jsonContent,
+                textContent:
+                  localBackup.content ||
+                  localBackup.textContent ||
+                  document.content ||
+                  "",
+                documentTypeId:
+                  localBackup.documentTypeId || document.documentTypeId || "",
+                priority: localBackup.priority || document.priority,
+                difficultyLevel:
+                  localBackup.difficultyLevel || document.difficultyLevel,
+                isTemplate:
+                  localBackup.isTemplate ?? document.isTemplate ?? false,
+                isPublished:
+                  localBackup.isPublished ?? document.isPublished ?? false,
+                tags: backupTags,
+                associatedCases: localBackup.associatedCases || [],
+              });
+              return; // No cargar datos del servidor
+            } else {
+              // Usuario eligió no restaurar, limpiar backup
+              localStorage.removeItem(backupKey);
+              setHasLocalBackup(false);
+            }
+          }
+        } catch (e) {
+          console.error("Error procesando backup local:", e);
         }
       }
 
@@ -383,7 +416,7 @@ const KnowledgeDocumentForm: React.FC = () => {
         associatedCases: document.associatedCases || [],
       });
     }
-  }, [document, isEditing, id, restoreLocalBackup, clearLocalBackup, success]);
+  }, [document, isEditing, id]); // Solo dependencias estables
 
   // ✅ AUTOGUARDADO: Función para ejecutar el autoguardado
   const performAutoSave = useCallback(async () => {
@@ -482,11 +515,9 @@ const KnowledgeDocumentForm: React.FC = () => {
     };
   }, [isEditing, id, performAutoSave, AUTOSAVE_INTERVAL]);
 
-  // ✅ AUTOGUARDADO: Detectar cambios no guardados
-  useEffect(() => {
-    if (!isEditing) return;
-
-    const currentContent = JSON.stringify({
+  // ✅ AUTOGUARDADO: Detectar cambios no guardados (usando useMemo para evitar re-renders infinitos)
+  const currentContentString = React.useMemo(() => {
+    return JSON.stringify({
       title,
       jsonContent,
       textContent,
@@ -498,10 +529,7 @@ const KnowledgeDocumentForm: React.FC = () => {
       tags,
       associatedCases,
     });
-
-    setHasUnsavedChanges(currentContent !== lastSavedContentRef.current);
   }, [
-    isEditing,
     title,
     jsonContent,
     textContent,
@@ -513,6 +541,14 @@ const KnowledgeDocumentForm: React.FC = () => {
     tags,
     associatedCases,
   ]);
+
+  // Efecto separado para actualizar hasUnsavedChanges solo cuando cambia el string serializado
+  useEffect(() => {
+    if (!isEditing) return;
+    const hasChanges = currentContentString !== lastSavedContentRef.current;
+    // Solo actualizar si el valor realmente cambió para evitar re-renders innecesarios
+    setHasUnsavedChanges((prev) => (prev !== hasChanges ? hasChanges : prev));
+  }, [isEditing, currentContentString]);
 
   // ✅ AUTOGUARDADO: Advertencia al salir con cambios sin guardar
   useEffect(() => {

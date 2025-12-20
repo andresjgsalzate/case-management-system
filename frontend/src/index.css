@@ -542,6 +542,46 @@
   border: 1px solid #334155 !important;
 }
 
+/* ===== FIX: Color del texto BASE en bloques de código (sin sobrescribir syntax highlighting) ===== */
+/* El syntax highlighting de Shiki usa estilos inline, así que solo aplicamos color al texto base */
+
+/* Modo claro - color de texto base para código sin highlighting */
+.bn-code-block .bn-code-block-content {
+  color: #1e293b;
+}
+
+/* Modo oscuro - color de texto base para código sin highlighting */
+.dark .bn-code-block .bn-code-block-content {
+  color: #e2e8f0;
+}
+
+/* Asegurar que el cursor sea visible en modo oscuro */
+.dark .bn-code-block pre,
+.dark .bn-code-block code,
+.dark .bn-code-block textarea,
+.dark .bn-code-block [contenteditable] {
+  caret-color: #e2e8f0 !important;
+}
+
+/* Placeholder en modo oscuro */
+.dark .bn-code-block [data-placeholder]::before {
+  color: #64748b !important;
+}
+
+/* ===== SHIKI SYNTAX HIGHLIGHTING - Asegurar que los colores se muestren ===== */
+/* Shiki genera spans con style="color: xxx" - NO sobrescribir con !important */
+.bn-code-block code span[style],
+.bn-code-block pre span[style],
+.bn-code-block .shiki span[style] {
+  /* Permitir que los estilos inline de Shiki prevalezcan */
+}
+
+/* Fondo del código Shiki debe ser transparente para heredar el del contenedor */
+.bn-code-block .shiki,
+.bn-code-block .shiki code {
+  background: transparent !important;
+}
+
 /* Language selector styling */
 .bn-code-block .mantine-Select-root {
   margin-bottom: 8px !important;

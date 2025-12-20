@@ -669,16 +669,20 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
   // causando que el SecurityService no detecte la actividad y expire la sesión prematuramente.
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container) {
+      // El contenedor aún no está disponible, el efecto se re-ejecutará cuando cambie
+      return;
+    }
 
     // Usar throttle simple para evitar demasiadas llamadas
     let lastActivityTime = 0;
-    const THROTTLE_MS = 5000; // Notificar máximo cada 5 segundos
+    const THROTTLE_MS = 3000; // Notificar máximo cada 3 segundos
 
     const handleUserActivity = () => {
       const now = Date.now();
       if (now - lastActivityTime >= THROTTLE_MS) {
         lastActivityTime = now;
+        // Notificar actividad al servicio de seguridad
         securityService.notifyActivity();
       }
     };
@@ -694,6 +698,7 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
       "click",
       "focus",
       "focusin",
+      "input",
     ];
 
     // Añadir listeners con capture para interceptar antes que BlockNote
@@ -704,6 +709,21 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
       });
     });
 
+    // También monitorear el document para eventos que puedan no propagarse
+    const documentActivityHandler = (e: Event) => {
+      // Solo procesar si el evento se originó dentro del contenedor
+      if (container.contains(e.target as Node)) {
+        handleUserActivity();
+      }
+    };
+
+    document.addEventListener("keydown", documentActivityHandler, {
+      capture: true,
+    });
+    document.addEventListener("mousedown", documentActivityHandler, {
+      capture: true,
+    });
+
     // Cleanup
     return () => {
       events.forEach((event) => {
@@ -711,8 +731,14 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
           capture: true,
         });
       });
+      document.removeEventListener("keydown", documentActivityHandler, {
+        capture: true,
+      });
+      document.removeEventListener("mousedown", documentActivityHandler, {
+        capture: true,
+      });
     };
-  }, []); // Sin dependencias para que el efecto se ejecute solo una vez
+  }, [containerRef.current]); // Re-ejecutar cuando el ref esté disponible
 
   // Handle content changes
   const handleChange = useCallback(() => {

@@ -30,11 +30,15 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Select } from "../components/ui/Select";
 import { useToast } from "../hooks/useNotification";
+import { securityService } from "../services/security.service";
 
 const KnowledgeDocumentForm: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditing = Boolean(id);
+
+  // Ref para el contenedor principal del formulario
+  const formContainerRef = useRef<HTMLDivElement>(null);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -552,6 +556,58 @@ const KnowledgeDocumentForm: React.FC = () => {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges, isEditing]);
 
+  // ✅ TRACKING DE ACTIVIDAD: Detectar interacción del usuario en todo el formulario
+  // Esto complementa el tracking del BlockNoteEditor y asegura que cualquier
+  // interacción en el formulario (inputs, selects, etc.) mantenga la sesión activa
+  useEffect(() => {
+    const container = formContainerRef.current;
+    if (!container) return;
+
+    // Throttle para evitar demasiadas llamadas
+    let lastActivityTime = 0;
+    const THROTTLE_MS = 3000; // Notificar máximo cada 3 segundos
+
+    const handleUserActivity = () => {
+      const now = Date.now();
+      if (now - lastActivityTime >= THROTTLE_MS) {
+        lastActivityTime = now;
+        securityService.notifyActivity();
+      }
+    };
+
+    // Eventos a monitorear
+    const events: (keyof HTMLElementEventMap)[] = [
+      "mousedown",
+      "mousemove",
+      "keydown",
+      "keypress",
+      "scroll",
+      "touchstart",
+      "click",
+      "focus",
+      "focusin",
+      "input",
+      "change",
+    ];
+
+    // Añadir listeners
+    events.forEach((event) => {
+      container.addEventListener(event, handleUserActivity, {
+        capture: true,
+        passive: true,
+      });
+    });
+
+    // Cleanup
+    return () => {
+      events.forEach((event) => {
+        container.removeEventListener(event, handleUserActivity, {
+          capture: true,
+        });
+      });
+    };
+  }, [formContainerRef.current]);
+
   const handleContentChange = (content: any) => {
     setJsonContent(content);
   };
@@ -787,7 +843,10 @@ const KnowledgeDocumentForm: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div
+      ref={formContainerRef}
+      className="min-h-screen bg-gray-50 dark:bg-gray-900"
+    >
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow">
         <div className="max-w-full mx-auto px-6 sm:px-8 lg:px-12">

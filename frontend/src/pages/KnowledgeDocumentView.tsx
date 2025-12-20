@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ActionIcon } from "../components/ui/ActionIcons";
 import {
@@ -17,11 +17,15 @@ import BlockNoteEditor from "../components/knowledge/BlockNoteEditor";
 import AttachmentsList from "../components/AttachmentsList";
 import { ConfirmationModal } from "../components/ui/ConfirmationModal";
 import { useToast } from "../hooks/useNotification";
+import { securityService } from "../services/security.service";
 import type { KnowledgeDocumentPDF } from "../types/pdf";
 
 const KnowledgeDocumentView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  // Ref para el contenedor principal
+  const viewContainerRef = useRef<HTMLDivElement>(null);
 
   // Modal states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -62,6 +66,52 @@ const KnowledgeDocumentView: React.FC = () => {
       refetch();
     }
   }, [id, refetch, queryClient]);
+
+  // ✅ TRACKING DE ACTIVIDAD: Detectar interacción del usuario mientras lee el documento
+  // Esto mantiene la sesión activa mientras el usuario está leyendo
+  useEffect(() => {
+    const container = viewContainerRef.current;
+    if (!container) return;
+
+    // Throttle para evitar demasiadas llamadas
+    let lastActivityTime = 0;
+    const THROTTLE_MS = 3000; // Notificar máximo cada 3 segundos
+
+    const handleUserActivity = () => {
+      const now = Date.now();
+      if (now - lastActivityTime >= THROTTLE_MS) {
+        lastActivityTime = now;
+        securityService.notifyActivity();
+      }
+    };
+
+    // Eventos a monitorear
+    const events: (keyof HTMLElementEventMap)[] = [
+      "mousedown",
+      "mousemove",
+      "keydown",
+      "scroll",
+      "touchstart",
+      "click",
+    ];
+
+    // Añadir listeners
+    events.forEach((event) => {
+      container.addEventListener(event, handleUserActivity, {
+        capture: true,
+        passive: true,
+      });
+    });
+
+    // Cleanup
+    return () => {
+      events.forEach((event) => {
+        container.removeEventListener(event, handleUserActivity, {
+          capture: true,
+        });
+      });
+    };
+  }, [viewContainerRef.current]);
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -327,7 +377,10 @@ const KnowledgeDocumentView: React.FC = () => {
   const statusInfo = getStatusInfo(document);
 
   return (
-    <div className="max-w-full mx-auto px-6 sm:px-8 lg:px-12 py-6">
+    <div
+      ref={viewContainerRef}
+      className="max-w-full mx-auto px-6 sm:px-8 lg:px-12 py-6"
+    >
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">

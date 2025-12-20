@@ -529,17 +529,27 @@
 
 /* ===== BLOCKNOTE SYNTAX HIGHLIGHTING IMPROVEMENTS ===== */
 
+/* Code block content wrapper - estilo principal */
+.bn-block-content[data-content-type="codeBlock"] {
+  position: relative;
+  background-color: #98999980;
+  color: #fff;
+  border-radius: 8px;
+}
+
 /* Code block container styling */
 .bn-code-block {
   border-radius: 8px !important;
-  background: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
+  background: transparent !important;
+  border: none !important;
   overflow: hidden !important;
 }
 
-.dark .bn-code-block {
-  background: #1e293b !important;
-  border: 1px solid #334155 !important;
+.dark .bn-code-block,
+[data-theme="dark"] .bn-code-block,
+.blocknote-editor[data-theme="dark"] .bn-code-block {
+  background: transparent !important;
+  border: none !important;
 }
 
 /* ===== FIX: Color del texto BASE en bloques de código (sin sobrescribir syntax highlighting) ===== */
@@ -551,7 +561,9 @@
 }
 
 /* Modo oscuro - color de texto base para código sin highlighting */
-.dark .bn-code-block .bn-code-block-content {
+.dark .bn-code-block .bn-code-block-content,
+[data-theme="dark"] .bn-code-block .bn-code-block-content,
+.blocknote-editor[data-theme="dark"] .bn-code-block .bn-code-block-content {
   color: #e2e8f0;
 }
 
@@ -580,6 +592,223 @@
 .bn-code-block .shiki,
 .bn-code-block .shiki code {
   background: transparent !important;
+}
+
+/* ===== FIX: Modo oscuro - Ajustar colores del syntax highlighting de Shiki ===== */
+/* Shiki genera colores inline para tema claro, en modo oscuro necesitamos sobrescribirlos */
+.dark .bn-code-block .shiki,
+.dark .bn-code-block pre,
+.dark .bn-code-block code,
+[data-theme="dark"] .bn-code-block .shiki,
+[data-theme="dark"] .bn-code-block pre,
+[data-theme="dark"] .bn-code-block code,
+.blocknote-editor[data-theme="dark"] .bn-code-block .shiki,
+.blocknote-editor[data-theme="dark"] .bn-code-block pre,
+.blocknote-editor[data-theme="dark"] .bn-code-block code {
+  filter: none !important;
+}
+
+/* Sobrescribir colores típicos de Light Plus theme en modo oscuro */
+.dark .bn-code-block span[style*="color:#000000"],
+.dark .bn-code-block span[style*="color: #000000"],
+.dark .bn-code-block span[style*="color:#1F2937"],
+.dark .bn-code-block span[style*="color: #1F2937"],
+[data-theme="dark"] .bn-code-block span[style*="color:#000000"],
+[data-theme="dark"] .bn-code-block span[style*="color: #000000"],
+[data-theme="dark"] .bn-code-block span[style*="color:#1F2937"],
+[data-theme="dark"] .bn-code-block span[style*="color: #1F2937"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#000000"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color: #000000"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#1F2937"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color: #1F2937"] {
+  color: #e2e8f0 !important;
+}
+
+/* Keywords, funciones y palabras clave de SQL */
+.dark .bn-code-block span[style*="color:#0000FF"],
+.dark .bn-code-block span[style*="color: #0000FF"],
+.dark .bn-code-block span[style*="color:#0000ff"],
+[data-theme="dark"] .bn-code-block span[style*="color:#0000FF"],
+[data-theme="dark"] .bn-code-block span[style*="color: #0000FF"],
+[data-theme="dark"] .bn-code-block span[style*="color:#0000ff"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#0000FF"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color: #0000FF"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#0000ff"] {
+  color: #569cd6 !important;
+}
+
+/* Strings - naranja */
+.dark .bn-code-block span[style*="color:#A31515"],
+.dark .bn-code-block span[style*="color: #A31515"],
+.dark .bn-code-block span[style*="color:#a31515"],
+[data-theme="dark"] .bn-code-block span[style*="color:#A31515"],
+[data-theme="dark"] .bn-code-block span[style*="color: #A31515"],
+[data-theme="dark"] .bn-code-block span[style*="color:#a31515"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#A31515"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color: #A31515"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#a31515"] {
+  color: #ce9178 !important;
+}
+
+/* Comentarios - verde */
+.dark .bn-code-block span[style*="color:#008000"],
+.dark .bn-code-block span[style*="color: #008000"],
+[data-theme="dark"] .bn-code-block span[style*="color:#008000"],
+[data-theme="dark"] .bn-code-block span[style*="color: #008000"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#008000"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color: #008000"] {
+  color: #6a9955 !important;
+}
+
+/* Números - verde claro */
+.dark .bn-code-block span[style*="color:#098658"],
+.dark .bn-code-block span[style*="color: #098658"],
+.dark .bn-code-block span[style*="color:#09885A"],
+.dark .bn-code-block span[style*="color: #09885A"],
+[data-theme="dark"] .bn-code-block span[style*="color:#098658"],
+[data-theme="dark"] .bn-code-block span[style*="color: #098658"],
+[data-theme="dark"] .bn-code-block span[style*="color:#09885A"],
+[data-theme="dark"] .bn-code-block span[style*="color: #09885A"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#098658"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color: #098658"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#09885A"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color: #09885A"] {
+  color: #b5cea8 !important;
+}
+
+/* Tipos y clases - cyan */
+.dark .bn-code-block span[style*="color:#267F99"],
+.dark .bn-code-block span[style*="color: #267F99"],
+[data-theme="dark"] .bn-code-block span[style*="color:#267F99"],
+[data-theme="dark"] .bn-code-block span[style*="color: #267F99"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#267F99"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color: #267F99"] {
+  color: #4ec9b0 !important;
+}
+
+/* Funciones - amarillo */
+.dark .bn-code-block span[style*="color:#795E26"],
+.dark .bn-code-block span[style*="color: #795E26"],
+[data-theme="dark"] .bn-code-block span[style*="color:#795E26"],
+[data-theme="dark"] .bn-code-block span[style*="color: #795E26"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#795E26"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color: #795E26"] {
+  color: #dcdcaa !important;
+}
+
+/* Variables y parámetros */
+.dark .bn-code-block span[style*="color:#001080"],
+.dark .bn-code-block span[style*="color: #001080"],
+[data-theme="dark"] .bn-code-block span[style*="color:#001080"],
+[data-theme="dark"] .bn-code-block span[style*="color: #001080"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#001080"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color: #001080"] {
+  color: #9cdcfe !important;
+}
+
+/* Propiedades de objeto */
+.dark .bn-code-block span[style*="color:#0070C1"],
+.dark .bn-code-block span[style*="color: #0070C1"],
+[data-theme="dark"] .bn-code-block span[style*="color:#0070C1"],
+[data-theme="dark"] .bn-code-block span[style*="color: #0070C1"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#0070C1"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color: #0070C1"] {
+  color: #9cdcfe !important;
+}
+
+/* Tags HTML/XML */
+.dark .bn-code-block span[style*="color:#800000"],
+.dark .bn-code-block span[style*="color: #800000"],
+[data-theme="dark"] .bn-code-block span[style*="color:#800000"],
+[data-theme="dark"] .bn-code-block span[style*="color: #800000"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#800000"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color: #800000"] {
+  color: #569cd6 !important;
+}
+
+/* Atributos */
+.dark .bn-code-block span[style*="color:#FF0000"],
+.dark .bn-code-block span[style*="color: #FF0000"],
+.dark .bn-code-block span[style*="color:#ff0000"],
+[data-theme="dark"] .bn-code-block span[style*="color:#FF0000"],
+[data-theme="dark"] .bn-code-block span[style*="color: #FF0000"],
+[data-theme="dark"] .bn-code-block span[style*="color:#ff0000"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#FF0000"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color: #FF0000"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#ff0000"] {
+  color: #9cdcfe !important;
+}
+
+/* Operadores y puntuación */
+.dark .bn-code-block span[style*="color:#000000"],
+.dark .bn-code-block span[style*="color: #000000"],
+[data-theme="dark"] .bn-code-block span[style*="color:#000000"],
+[data-theme="dark"] .bn-code-block span[style*="color: #000000"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color:#000000"],
+.blocknote-editor[data-theme="dark"]
+  .bn-code-block
+  span[style*="color: #000000"] {
+  color: #d4d4d4 !important;
 }
 
 /* Language selector styling */

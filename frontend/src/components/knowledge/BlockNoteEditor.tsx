@@ -390,6 +390,96 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
     }
   }, [isDark, editor, editable]);
 
+  // ===== FIX: Ajustar colores del syntax highlighting en modo oscuro =====
+  // Shiki aplica estilos inline que no se pueden sobrescribir con CSS
+  useEffect(() => {
+    if (!isDark) return; // Solo necesario en modo oscuro
+
+    // Mapa de conversión de colores claros a oscuros (Light Plus → Dark Plus)
+    const colorMap: Record<string, string> = {
+      "#000000": "#e2e8f0", // Negro → Gris claro
+      "#1f2937": "#e2e8f0", // Gris oscuro → Gris claro
+      "#0000ff": "#569cd6", // Azul (keywords SQL) → Azul claro
+      "#0000FF": "#569cd6",
+      "#a31515": "#ce9178", // Rojo (strings) → Naranja
+      "#A31515": "#ce9178",
+      "#008000": "#6a9955", // Verde (comentarios) → Verde claro
+      "#098658": "#b5cea8", // Verde (números) → Verde muy claro
+      "#09885a": "#b5cea8",
+      "#09885A": "#b5cea8",
+      "#267f99": "#4ec9b0", // Cyan (tipos) → Cyan claro
+      "#267F99": "#4ec9b0",
+      "#795e26": "#dcdcaa", // Marrón (funciones) → Amarillo
+      "#795E26": "#dcdcaa",
+      "#001080": "#9cdcfe", // Azul oscuro (variables) → Cyan claro
+      "#0070c1": "#9cdcfe", // Azul (propiedades) → Cyan claro
+      "#0070C1": "#9cdcfe",
+      "#800000": "#569cd6", // Marrón oscuro (tags HTML) → Azul
+      "#ff0000": "#9cdcfe", // Rojo (atributos) → Cyan
+      "#FF0000": "#9cdcfe",
+    };
+
+    const convertColors = () => {
+      const codeBlocks = document.querySelectorAll(".bn-code-block");
+      codeBlocks.forEach((block) => {
+        const spans = block.querySelectorAll("span[style]");
+        spans.forEach((span) => {
+          const element = span as HTMLElement;
+          const style = element.getAttribute("style") || "";
+          const colorMatch = style.match(/color:\s*([^;]+)/i);
+          if (colorMatch) {
+            const currentColor = colorMatch[1].trim().toLowerCase();
+            // Buscar en el mapa (case-insensitive)
+            for (const [lightColor, darkColor] of Object.entries(colorMap)) {
+              if (currentColor === lightColor.toLowerCase()) {
+                element.style.setProperty("color", darkColor, "important");
+                break;
+              }
+            }
+          }
+        });
+      });
+    };
+
+    // Ejecutar inmediatamente y después de renderizado async de Shiki
+    convertColors();
+    const timeouts = [
+      setTimeout(convertColors, 100),
+      setTimeout(convertColors, 300),
+      setTimeout(convertColors, 500),
+      setTimeout(convertColors, 1000),
+      setTimeout(convertColors, 2000),
+    ];
+
+    // Observer para detectar cuando Shiki termina de renderizar
+    const observer = new MutationObserver((mutations) => {
+      const hasCodeBlockChanges = mutations.some(
+        (m) =>
+          m.target instanceof HTMLElement &&
+          (m.target.closest(".bn-code-block") ||
+            m.target.classList.contains("bn-code-block"))
+      );
+      if (hasCodeBlockChanges) {
+        setTimeout(convertColors, 50);
+      }
+    });
+
+    const editorElement = document.querySelector(".blocknote-editor");
+    if (editorElement) {
+      observer.observe(editorElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["style"],
+      });
+    }
+
+    return () => {
+      timeouts.forEach(clearTimeout);
+      observer.disconnect();
+    };
+  }, [isDark, editor]);
+
   // FORZAR ocultación del selector usando JavaScript directo
   useEffect(() => {
     if (!editable && editor) {

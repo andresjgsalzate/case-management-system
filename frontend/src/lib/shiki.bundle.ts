@@ -2,9 +2,11 @@
 import { createHighlighterCore } from "@shikijs/core";
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
 
-// Simplified highlighter creation function
-export const createHighlighter = async () => {
-  return await createHighlighterCore({
+// Simplified highlighter creation function that accepts theme parameter
+export const createHighlighter = async (
+  theme: "light-plus" | "dark-plus" = "light-plus"
+) => {
+  const highlighter = await createHighlighterCore({
     themes: [
       import("@shikijs/themes/light-plus"),
       import("@shikijs/themes/dark-plus"),
@@ -37,6 +39,11 @@ export const createHighlighter = async () => {
     ],
     engine: createJavaScriptRegexEngine(),
   });
+
+  // Set default theme for the highlighter
+  (highlighter as any).defaultTheme = theme;
+
+  return highlighter;
 };
 
 export type BundledLanguage =

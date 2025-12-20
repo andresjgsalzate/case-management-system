@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const time_entries_controller_1 = require("./time-entries.controller");
+const auth_1 = require("../../middleware/auth");
+const auditMiddleware_1 = require("../../middleware/auditMiddleware");
+const router = (0, express_1.Router)();
+const timeEntriesController = new time_entries_controller_1.TimeEntriesController();
+router.use(auth_1.authenticateToken);
+router.use(auditMiddleware_1.AuditMiddleware.initializeAuditContext);
+router.get("/case-control/:caseControlId", timeEntriesController.getTimeEntriesByCaseControl.bind(timeEntriesController));
+router.get("/user", timeEntriesController.getTimeEntriesByUser.bind(timeEntriesController));
+router.get("/:id", timeEntriesController.getTimeEntry.bind(timeEntriesController));
+router.delete("/:id", auditMiddleware_1.AuditMiddleware.auditDelete("time_entries"), timeEntriesController.deleteTimeEntry.bind(timeEntriesController));
+exports.default = router;

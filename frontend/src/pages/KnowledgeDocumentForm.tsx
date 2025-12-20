@@ -71,7 +71,8 @@ const KnowledgeDocumentForm: React.FC = () => {
   const lastSavedContentRef = useRef<string>(""); // Para comparar si hay cambios reales
 
   // ✅ BACKUP LOCAL: Para proteger contra pérdida de datos por sesión expirada
-  const [hasLocalBackup, setHasLocalBackup] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_, setHasLocalBackup] = useState(false);
   const LOCAL_BACKUP_KEY = `knowledge_backup_${id || "new"}`;
 
   // Función para guardar backup local
@@ -95,20 +96,6 @@ const KnowledgeDocumentForm: React.FC = () => {
     },
     [id, LOCAL_BACKUP_KEY]
   );
-
-  // Función para restaurar backup local
-  const restoreLocalBackup = useCallback(() => {
-    try {
-      const backupStr = localStorage.getItem(LOCAL_BACKUP_KEY);
-      if (backupStr) {
-        const backup = JSON.parse(backupStr);
-        return backup;
-      }
-    } catch (e) {
-      console.error("Error restaurando backup local:", e);
-    }
-    return null;
-  }, [LOCAL_BACKUP_KEY]);
 
   // Función para limpiar backup local
   const clearLocalBackup = useCallback(() => {

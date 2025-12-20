@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const disposition_controller_1 = require("./disposition.controller");
+const auth_1 = require("../../middleware/auth");
+const router = (0, express_1.Router)();
+router.use(auth_1.authenticateToken);
+router.get("/", disposition_controller_1.getAllDispositions);
+router.get("/years", disposition_controller_1.getAvailableYears);
+router.get("/monthly/:year/:month", disposition_controller_1.getMonthlyStats);
+router.get("/:id", disposition_controller_1.getDispositionById);
+router.post("/", disposition_controller_1.createDisposition);
+router.put("/:id", disposition_controller_1.updateDisposition);
+router.delete("/:id", disposition_controller_1.deleteDisposition);
+exports.default = router;

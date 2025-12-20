@@ -701,6 +701,28 @@ class SecurityService {
     this.resetInactivityTimer();
     return true;
   }
+
+  /**
+   * Notifica actividad del usuario desde componentes externos que no propagan eventos DOM.
+   * Útil para editores de texto enriquecido (BlockNote, etc.) que capturan eventos internamente.
+   * Solo registra actividad si no hay warning activo.
+   */
+  public notifyActivity(): void {
+    // Solo procesar si hay una sesión válida
+    const tokens = this.getValidTokens();
+    if (!tokens) {
+      return;
+    }
+
+    // No resetear si el warning ya está activo (igual que en activityHandler)
+    if (this.isWarningShown) {
+      return;
+    }
+
+    // Actualizar actividad y resetear timer
+    this.updateLastActivity();
+    this.resetInactivityTimer();
+  }
 }
 
 export const securityService = new SecurityService();

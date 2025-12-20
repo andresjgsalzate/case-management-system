@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ActionIcon } from "../components/ui/ActionIcons";
 import {
@@ -62,6 +62,14 @@ const KnowledgeDocumentForm: React.FC = () => {
   // Estado para controlar cuándo navegar después de guardar
   const [shouldNavigateAfterSave, setShouldNavigateAfterSave] = useState(false);
 
+  // ✅ AUTOGUARDADO: Estados y configuración
+  const AUTOSAVE_INTERVAL = 2 * 60 * 1000; // 2 minutos en milisegundos
+  const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedContentRef = useRef<string>(""); // Para comparar si hay cambios reales
+
   // Mutations
   const createMutation = useCreateKnowledgeDocument({
     onSuccess: () => {
@@ -79,6 +87,9 @@ const KnowledgeDocumentForm: React.FC = () => {
   const updateMutation = useUpdateKnowledgeDocument({
     onSuccess: () => {
       success("Documento actualizado exitosamente");
+      // ✅ AUTOGUARDADO: Marcar como guardado tras guardado manual exitoso
+      setHasUnsavedChanges(false);
+      setLastAutoSave(new Date());
       if (shouldNavigateAfterSave) {
         navigate("/knowledge");
       }
@@ -87,6 +98,33 @@ const KnowledgeDocumentForm: React.FC = () => {
     onError: (error: any) => {
       showError(`Error al actualizar documento: ${error.message}`);
       setShouldNavigateAfterSave(false);
+    },
+  });
+
+  // ✅ AUTOGUARDADO: Mutación silenciosa (sin notificaciones intrusivas)
+  const autoSaveMutation = useUpdateKnowledgeDocument({
+    onSuccess: () => {
+      setLastAutoSave(new Date());
+      setIsAutoSaving(false);
+      setHasUnsavedChanges(false);
+      // Actualizar el contenido guardado para futuras comparaciones
+      lastSavedContentRef.current = JSON.stringify({
+        title,
+        jsonContent,
+        textContent,
+        documentTypeId,
+        priority,
+        difficultyLevel,
+        isTemplate,
+        isPublished,
+        tags,
+        associatedCases,
+      });
+    },
+    onError: (error: any) => {
+      console.error("❌ Error en autoguardado:", error);
+      setIsAutoSaving(false);
+      // No mostrar error intrusivo, solo en consola
     },
   });
   // TODO: Implementar hooks de tags
@@ -208,8 +246,166 @@ const KnowledgeDocumentForm: React.FC = () => {
       } else {
         setAssociatedCases([]); // Limpiar casos si no hay ninguno
       }
+
+      // ✅ AUTOGUARDADO: Inicializar el contenido guardado al cargar el documento
+      lastSavedContentRef.current = JSON.stringify({
+        title: document.title,
+        jsonContent: document.jsonContent,
+        textContent: document.content || "",
+        documentTypeId: document.documentTypeId || "",
+        priority: document.priority,
+        difficultyLevel: document.difficultyLevel,
+        isTemplate: document.isTemplate || false,
+        isPublished: document.isPublished || false,
+        tags: documentTags,
+        associatedCases: document.associatedCases || [],
+      });
     }
   }, [document, isEditing]);
+
+  // ✅ AUTOGUARDADO: Función para ejecutar el autoguardado
+  const performAutoSave = useCallback(async () => {
+    // Solo autoguardar si estamos editando un documento existente
+    if (!isEditing || !id) return;
+
+    // No autoguardar si ya hay una operación de guardado en progreso
+    if (isAutoSaving || updateMutation.isPending || autoSaveMutation.isPending)
+      return;
+
+    // No autoguardar si el título está vacío (documento inválido)
+    if (!title.trim()) return;
+
+    // Verificar si hay cambios reales comparando con el último contenido guardado
+    const currentContent = JSON.stringify({
+      title,
+      jsonContent,
+      textContent,
+      documentTypeId,
+      priority,
+      difficultyLevel,
+      isTemplate,
+      isPublished,
+      tags,
+      associatedCases,
+    });
+
+    if (currentContent === lastSavedContentRef.current) {
+      // No hay cambios, no es necesario guardar
+      return;
+    }
+
+    setIsAutoSaving(true);
+
+    const documentData = {
+      title,
+      content: textContent,
+      jsonContent,
+      documentTypeId: documentTypeId || undefined,
+      priority,
+      difficultyLevel,
+      isTemplate,
+      isPublished,
+      tags: tags.length > 0 ? tags : undefined,
+      associatedCases,
+    };
+
+    try {
+      await autoSaveMutation.mutateAsync({
+        id: id!,
+        data: documentData as UpdateKnowledgeDocumentDto,
+      });
+    } catch (error) {
+      console.error("❌ Error en autoguardado:", error);
+      setIsAutoSaving(false);
+    }
+  }, [
+    isEditing,
+    id,
+    isAutoSaving,
+    updateMutation.isPending,
+    autoSaveMutation,
+    title,
+    jsonContent,
+    textContent,
+    documentTypeId,
+    priority,
+    difficultyLevel,
+    isTemplate,
+    isPublished,
+    tags,
+    associatedCases,
+  ]);
+
+  // ✅ AUTOGUARDADO: Configurar el intervalo de autoguardado
+  useEffect(() => {
+    // Solo activar autoguardado en modo edición
+    if (!isEditing || !id) return;
+
+    // Limpiar timer anterior si existe
+    if (autoSaveTimerRef.current) {
+      clearInterval(autoSaveTimerRef.current);
+    }
+
+    // Configurar nuevo timer
+    autoSaveTimerRef.current = setInterval(() => {
+      performAutoSave();
+    }, AUTOSAVE_INTERVAL);
+
+    // Cleanup al desmontar o cuando cambian las dependencias
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearInterval(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+    };
+  }, [isEditing, id, performAutoSave, AUTOSAVE_INTERVAL]);
+
+  // ✅ AUTOGUARDADO: Detectar cambios no guardados
+  useEffect(() => {
+    if (!isEditing) return;
+
+    const currentContent = JSON.stringify({
+      title,
+      jsonContent,
+      textContent,
+      documentTypeId,
+      priority,
+      difficultyLevel,
+      isTemplate,
+      isPublished,
+      tags,
+      associatedCases,
+    });
+
+    setHasUnsavedChanges(currentContent !== lastSavedContentRef.current);
+  }, [
+    isEditing,
+    title,
+    jsonContent,
+    textContent,
+    documentTypeId,
+    priority,
+    difficultyLevel,
+    isTemplate,
+    isPublished,
+    tags,
+    associatedCases,
+  ]);
+
+  // ✅ AUTOGUARDADO: Advertencia al salir con cambios sin guardar
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges && isEditing) {
+        e.preventDefault();
+        e.returnValue =
+          "Tienes cambios sin guardar. ¿Estás seguro de que deseas salir?";
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges, isEditing]);
 
   const handleContentChange = (content: any) => {
     setJsonContent(content);
@@ -347,6 +543,19 @@ const KnowledgeDocumentForm: React.FC = () => {
           id: id!,
           data: documentData as UpdateKnowledgeDocumentDto,
         });
+        // ✅ AUTOGUARDADO: Actualizar referencia del contenido guardado
+        lastSavedContentRef.current = JSON.stringify({
+          title,
+          jsonContent,
+          textContent,
+          documentTypeId,
+          priority,
+          difficultyLevel,
+          isTemplate,
+          isPublished,
+          tags,
+          associatedCases,
+        });
       } else {
         await createMutation.mutateAsync(
           documentData as CreateKnowledgeDocumentDto
@@ -383,25 +592,108 @@ const KnowledgeDocumentForm: React.FC = () => {
                 Volver
               </button>
             </div>
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="secondary"
-                onClick={() => navigate("/knowledge")}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="primary"
-                type="submit"
-                form="document-form"
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                {createMutation.isPending || updateMutation.isPending
-                  ? "Guardando..."
-                  : isEditing
-                  ? "Actualizar"
-                  : "Crear"}
-              </Button>
+
+            {/* ✅ AUTOGUARDADO: Indicador de estado */}
+            <div className="flex items-center space-x-4">
+              {isEditing && (
+                <div className="flex items-center space-x-2 text-sm">
+                  {isAutoSaving ? (
+                    <span className="flex items-center text-blue-600 dark:text-blue-400">
+                      <svg
+                        className="animate-spin h-4 w-4 mr-1"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Guardando...
+                    </span>
+                  ) : lastAutoSave ? (
+                    <span
+                      className="flex items-center text-green-600 dark:text-green-400"
+                      title={`Último autoguardado: ${lastAutoSave.toLocaleTimeString()}`}
+                    >
+                      <svg
+                        className="h-4 w-4 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      Guardado{" "}
+                      {lastAutoSave.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  ) : hasUnsavedChanges ? (
+                    <span
+                      className="flex items-center text-yellow-600 dark:text-yellow-400"
+                      title="Hay cambios sin guardar. Se guardarán automáticamente."
+                    >
+                      <svg
+                        className="h-4 w-4 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          fill="none"
+                        />
+                        <circle cx="12" cy="12" r="3" fill="currentColor" />
+                      </svg>
+                      Cambios pendientes
+                    </span>
+                  ) : null}
+                </div>
+              )}
+
+              <div className="flex items-center space-x-3">
+                <Button
+                  variant="secondary"
+                  onClick={() => navigate("/knowledge")}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="primary"
+                  type="submit"
+                  form="document-form"
+                  disabled={
+                    createMutation.isPending || updateMutation.isPending
+                  }
+                >
+                  {createMutation.isPending || updateMutation.isPending
+                    ? "Guardando..."
+                    : isEditing
+                    ? "Actualizar"
+                    : "Crear"}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

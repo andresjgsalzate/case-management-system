@@ -665,6 +665,13 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
 
   // Handle content changes
   const handleChange = useCallback(() => {
+    // ✅ IMPORTANTE: Notificar actividad al SecurityService para evitar expiración de sesión
+    // El editor BlockNote captura eventos internamente y no los propaga al document,
+    // por lo que el sistema de seguridad no detecta la actividad de edición.
+    if (editable) {
+      securityService.notifyActivity();
+    }
+
     if (!onChange && !onContentChange) return;
 
     // Get JSON content for storage
@@ -686,7 +693,7 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
 
     onChange?.(jsonContent);
     onContentChange?.(textContent);
-  }, [editor, onChange, onContentChange]);
+  }, [editor, onChange, onContentChange, editable]);
 
   // Update editor content when content prop changes
   useEffect(() => {

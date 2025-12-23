@@ -36,7 +36,7 @@ export const LoginPage: React.FC = () => {
             <img
               src="/android-chrome-192x192.png"
               alt="Logo Sistema de Gestión de Casos"
-              className="h-32 w-32"
+              className="h-48 w-48"
             />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">

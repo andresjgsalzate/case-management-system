@@ -26,6 +26,31 @@ La Base de Conocimiento te permite buscar y encontrar documentos de forma rápid
 
 ---
 
+## 🔤 Búsqueda por Múltiples Palabras
+
+Cuando escribes varias palabras, el sistema busca documentos que contengan **cualquiera** de ellas:
+
+### ¿Cómo funciona?
+
+| Búsqueda                        | Encuentra documentos que contengan...           |
+| ------------------------------- | ----------------------------------------------- |
+| `error conexión timeout`        | "error" **O** "conexión" **O** "timeout"        |
+| `configuración servidor correo` | "configuración" **O** "servidor" **O** "correo" |
+
+### Ordenamiento por Relevancia
+
+Los resultados se ordenan según **cuántas palabras coinciden**:
+
+| Documento                     | Palabras encontradas | Relevancia |
+| ----------------------------- | -------------------- | ---------- |
+| "Error de conexión y timeout" | 3/3                  | 🟢 100%    |
+| "Error de conexión"           | 2/3                  | 🟡 67%     |
+| "Configuración de timeout"    | 1/3                  | 🟠 33%     |
+
+> 💡 **Tip:** Mientras más palabras de tu búsqueda aparezcan en un documento, más arriba aparecerá en los resultados.
+
+---
+
 ## 🎯 Indicador de Relevancia
 
 Cada resultado muestra qué tan relevante es para tu búsqueda:
@@ -41,26 +66,27 @@ El porcentaje indica qué tan bien coincide el documento con tu búsqueda:
 | 🟠 **30-49%**  | Parcialmente relevante                 |
 | 🔴 **0-29%**   | Baja relevancia                        |
 
-### Ubicaciones de Coincidencia (T / C / E)
+### Ubicaciones de Coincidencia (T / C / E / CA)
 
 Verás indicadores que muestran **dónde** se encontraron tus palabras:
 
-| Indicador | Significado                                      | Importancia |
-| --------- | ------------------------------------------------ | ----------- |
-| **T** ✓   | **Título** - La palabra está en el título        | ⭐⭐⭐ Alta |
-| **C** ✓   | **Contenido** - La palabra está en el contenido  | ⭐⭐ Media  |
-| **E** ✓   | **Etiquetas** - La palabra está en las etiquetas | ⭐ Normal   |
+| Indicador | Significado                                        | Importancia |
+| --------- | -------------------------------------------------- | ----------- |
+| **T** ✓   | **Título** - La palabra está en el título          | ⭐⭐⭐ Alta |
+| **C** ✓   | **Contenido** - La palabra está en el contenido    | ⭐⭐ Media  |
+| **E** ✓   | **Etiquetas** - La palabra está en las etiquetas   | ⭐ Normal   |
+| **CA** ✓  | **Casos** - La palabra está en los casos asociados | ⭐ Normal   |
 
 ### Ejemplo Visual:
 
 ```
-┌─────────────────────────────────────────────────┐
-│ 📄 Configuración de Base de Datos              │
-│                                                 │
-│ [85%] 2/3 palabras  |  T✓  C✓  E              │
-│       └─────────────────┘  └───────────────┘   │
-│       Relevancia           Ubicaciones         │
-└─────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│ 📄 Configuración de Base de Datos                   │
+│                                                      │
+│ [85%] 2/3 palabras  |  T✓  C✓  E  CA               │
+│       └─────────────────┘  └────────────────┘       │
+│       Relevancia           Ubicaciones              │
+└──────────────────────────────────────────────────────┘
 ```
 
 Este ejemplo muestra:
@@ -68,6 +94,7 @@ Este ejemplo muestra:
 - **85%** de relevancia
 - **2 de 3** palabras de búsqueda encontradas
 - Coincidencias en **Título** (T✓) y **Contenido** (C✓)
+- Sin coincidencias en **Etiquetas** (E) ni **Casos** (CA)
 
 ---
 
@@ -173,6 +200,7 @@ Para empezar una nueva búsqueda:
 | T     | Título                  |
 | C     | Contenido               |
 | E     | Etiquetas               |
+| CA    | Casos asociados         |
 | 🎯    | Frase exacta encontrada |
 
 ---
@@ -194,6 +222,7 @@ Para empezar una nueva búsqueda:
 
 - Sí, escribe el número de caso en el campo de búsqueda
 - Los documentos vinculados a ese caso aparecerán
+- El indicador **CA** ✓ te mostrará cuando hay coincidencia en casos asociados
 
 ---
 

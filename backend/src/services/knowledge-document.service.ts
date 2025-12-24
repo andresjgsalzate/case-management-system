@@ -69,7 +69,7 @@ export class KnowledgeDocumentService {
     userId?: string,
     userPermissions?: string[]
   ): Promise<{
-    documents: KnowledgeDocument[];
+    documents: any[];
     total: number;
     page: number;
     totalPages: number;
@@ -93,29 +93,53 @@ export class KnowledgeDocumentService {
     // Mapear las etiquetas y resolver relaciones lazy
     const documentsWithTags = await Promise.all(
       documents.map(async (doc) => {
-        // Resolver relaciones lazy y asignar con formato __nombre__
+        // Resolver relaciones lazy
         const createdByUser = await doc.createdByUser;
         const documentType = await doc.documentType;
-        (doc as any).__createdByUser__ = createdByUser;
-        (doc as any).__documentType__ = documentType;
 
-        if (doc.tagRelations && doc.tagRelations.length > 0) {
-          (doc as any).tags = doc.tagRelations.map((relation) => ({
-            id: relation.tag.id,
-            tagName: relation.tag.tagName,
-            color: relation.tag.color,
-            category: relation.tag.category,
-            description: relation.tag.description,
-            isActive: relation.tag.isActive,
-            createdBy: relation.tag.createdBy,
-            createdAt: relation.tag.createdAt,
-            updatedAt: relation.tag.updatedAt,
-            documentId: doc.id,
-          }));
-        } else {
-          (doc as any).tags = [];
-        }
-        return doc;
+        // Mapear tags
+        const tags =
+          doc.tagRelations && doc.tagRelations.length > 0
+            ? doc.tagRelations.map((relation) => ({
+                id: relation.tag.id,
+                tagName: relation.tag.tagName,
+                color: relation.tag.color,
+                category: relation.tag.category,
+                description: relation.tag.description,
+                isActive: relation.tag.isActive,
+                createdBy: relation.tag.createdBy,
+                createdAt: relation.tag.createdAt,
+                updatedAt: relation.tag.updatedAt,
+                documentId: doc.id,
+              }))
+            : [];
+
+        // Crear objeto plano para asegurar serialización correcta
+        return {
+          ...doc,
+          documentType: documentType
+            ? {
+                id: documentType.id,
+                code: documentType.code,
+                name: documentType.name,
+                description: documentType.description,
+                icon: documentType.icon,
+                color: documentType.color,
+                isActive: documentType.isActive,
+                displayOrder: documentType.displayOrder,
+              }
+            : null,
+          createdByUser: createdByUser
+            ? {
+                id: createdByUser.id,
+                email: createdByUser.email,
+                fullName: createdByUser.fullName,
+                roleName: createdByUser.roleName,
+              }
+            : null,
+          tags,
+          tagRelations: undefined, // Remover tagRelations del response
+        };
       })
     );
 
@@ -386,14 +410,14 @@ export class KnowledgeDocumentService {
       .leftJoinAndSelect("doc.createdByUser", "creator")
       .andWhere(
         `(
-        doc.title ILIKE :search 
-        OR doc.content ILIKE :search 
-        OR tags."tag_name" ILIKE :search
+        unaccent(lower(doc.title)) LIKE unaccent(lower(:search))
+        OR unaccent(lower(doc.content)) LIKE unaccent(lower(:search))
+        OR unaccent(lower(tags."tag_name")) LIKE unaccent(lower(:search))
         OR doc."associated_cases"::jsonb @> (:searchTermJson)::jsonb
         OR EXISTS (
           SELECT 1 FROM cases c 
           WHERE doc."associated_cases"::jsonb ? c.id::text
-          AND c."numeroCaso" ILIKE :search
+          AND unaccent(lower(c."numeroCaso")) LIKE unaccent(lower(:search))
         )
       )`,
         {
@@ -432,7 +456,7 @@ export class KnowledgeDocumentService {
       return { documents: [], tags: [], cases: [] };
     }
 
-    // Sugerencias de documentos - buscar en título, contenido y tags
+    // Sugerencias de documentos - buscar en título, contenido y tags (insensible a acentos)
     const documentSuggestions = this.knowledgeDocumentRepository
       .createQueryBuilder("doc")
       .leftJoin("doc.tagRelations", "tagRelations")
@@ -440,17 +464,17 @@ export class KnowledgeDocumentService {
       .select(["doc.id", "doc.title"])
       .addSelect(
         `CASE 
-          WHEN doc.title ILIKE :search THEN 'title'
-          WHEN tags."tag_name" ILIKE :search THEN 'tag'
-          WHEN doc.content ILIKE :search THEN 'content'
+          WHEN unaccent(lower(doc.title)) LIKE unaccent(lower(:search)) THEN 'title'
+          WHEN unaccent(lower(tags."tag_name")) LIKE unaccent(lower(:search)) THEN 'tag'
+          WHEN unaccent(lower(doc.content)) LIKE unaccent(lower(:search)) THEN 'content'
           ELSE 'other'
         END`,
         "matchType"
       )
       .andWhere(
-        `(doc.title ILIKE :search 
-          OR doc.content ILIKE :search 
-          OR tags."tag_name" ILIKE :search)`,
+        `(unaccent(lower(doc.title)) LIKE unaccent(lower(:search))
+          OR unaccent(lower(doc.content)) LIKE unaccent(lower(:search))
+          OR unaccent(lower(tags."tag_name")) LIKE unaccent(lower(:search)))`,
         { search: `%${searchTerm}%` }
       )
       .andWhere("doc.isArchived = :archived", { archived: false });
@@ -458,7 +482,10 @@ export class KnowledgeDocumentService {
     this.applyPermissionFilters(documentSuggestions, userId, userPermissions);
 
     const documentsRaw = await documentSuggestions
-      .orderBy(`CASE WHEN doc.title ILIKE :search THEN 0 ELSE 1 END`, "ASC")
+      .orderBy(
+        `CASE WHEN unaccent(lower(doc.title)) LIKE unaccent(lower(:search)) THEN 0 ELSE 1 END`,
+        "ASC"
+      )
       .addOrderBy("doc.viewCount", "DESC")
       .setParameter("search", `%${searchTerm}%`)
       .limit(limit)
@@ -470,20 +497,22 @@ export class KnowledgeDocumentService {
       matchType: documentsRaw.raw[index]?.matchType || "title",
     }));
 
-    // Sugerencias de etiquetas
+    // Sugerencias de etiquetas (insensible a acentos) - Usando KnowledgeTag (tabla correcta)
     const tagSuggestions = await AppDataSource.getRepository(
-      require("../entities/KnowledgeDocumentTag").KnowledgeDocumentTag
+      require("../entities/KnowledgeTag").KnowledgeTag
     )
       .createQueryBuilder("tag")
       .select(["tag.tagName"])
-      .andWhere("tag.tagName ILIKE :search", { search: `%${searchTerm}%` })
+      .andWhere("unaccent(lower(tag.tagName)) LIKE unaccent(lower(:search))", {
+        search: `%${searchTerm}%`,
+      })
       .andWhere("tag.isActive = :active", { active: true })
       .groupBy("tag.tagName")
       .orderBy("COUNT(tag.tagName)", "DESC")
       .limit(limit)
       .getRawMany();
 
-    // Sugerencias de casos (si existe la tabla cases)
+    // Sugerencias de casos (si existe la tabla cases) - insensible a acentos
     let caseSuggestions: any[] = [];
     try {
       console.log(`🔍 Buscando casos con término: "${searchTerm}"`);
@@ -491,7 +520,7 @@ export class KnowledgeDocumentService {
         `
         SELECT c.id, c."numeroCaso"
         FROM cases c 
-        WHERE c."numeroCaso" ILIKE $1 
+        WHERE unaccent(lower(c."numeroCaso")) LIKE unaccent(lower($1))
         ORDER BY c."createdAt" DESC 
         LIMIT $2
       `,
@@ -525,6 +554,103 @@ export class KnowledgeDocumentService {
     };
   }
 
+  /**
+   * Calcula la relevancia de un documento basado en coincidencia de palabras
+   * Similar a como funcionan los motores de búsqueda
+   */
+  private calculateWordRelevance(
+    searchPhrase: string,
+    document: {
+      title: string;
+      content: string | null;
+      tags?: Array<{ tagName: string }>;
+    }
+  ): {
+    score: number; // 0-100
+    matchedWords: string[];
+    totalWords: number;
+    hasExactPhrase: boolean;
+    matchLocations: ("title" | "content" | "tags")[];
+  } {
+    // Normalizar texto removiendo acentos y convirtiendo a minúsculas
+    const normalizeText = (text: string): string => {
+      return text
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Remover acentos
+        .replace(/[^\w\s]/g, " ") // Remover caracteres especiales
+        .replace(/\s+/g, " ")
+        .trim();
+    };
+
+    const normalizedSearch = normalizeText(searchPhrase);
+    const searchWords = normalizedSearch
+      .split(" ")
+      .filter((w) => w.length >= 2);
+
+    if (searchWords.length === 0) {
+      return {
+        score: 0,
+        matchedWords: [],
+        totalWords: 0,
+        hasExactPhrase: false,
+        matchLocations: [],
+      };
+    }
+
+    const normalizedTitle = normalizeText(document.title || "");
+    const normalizedContent = normalizeText(document.content || "");
+    const normalizedTags = (document.tags || [])
+      .map((t) => normalizeText(t.tagName))
+      .join(" ");
+
+    const fullText = `${normalizedTitle} ${normalizedContent} ${normalizedTags}`;
+
+    // Verificar si tiene la frase exacta
+    const hasExactPhrase = fullText.includes(normalizedSearch);
+
+    // Contar palabras coincidentes
+    const matchedWords: string[] = [];
+    const matchLocations: Set<"title" | "content" | "tags"> = new Set();
+
+    for (const word of searchWords) {
+      if (fullText.includes(word)) {
+        matchedWords.push(word);
+
+        // Determinar dónde coincide
+        if (normalizedTitle.includes(word)) matchLocations.add("title");
+        if (normalizedContent.includes(word)) matchLocations.add("content");
+        if (normalizedTags.includes(word)) matchLocations.add("tags");
+      }
+    }
+
+    // Calcular score base (porcentaje de palabras encontradas)
+    let score = (matchedWords.length / searchWords.length) * 100;
+
+    // Bonus por frase exacta (+20%)
+    if (hasExactPhrase) {
+      score = Math.min(100, score + 20);
+    }
+
+    // Bonus por coincidencia en título (+10%)
+    if (matchLocations.has("title")) {
+      score = Math.min(100, score + 10);
+    }
+
+    // Penalización leve si solo coincide en contenido (-5%)
+    if (matchLocations.size === 1 && matchLocations.has("content")) {
+      score = Math.max(0, score - 5);
+    }
+
+    return {
+      score: Math.round(score),
+      matchedWords,
+      totalWords: searchWords.length,
+      hasExactPhrase,
+      matchLocations: Array.from(matchLocations),
+    };
+  }
+
   // Método mejorado para búsqueda avanzada
   async enhancedSearch(
     query: {
@@ -540,7 +666,15 @@ export class KnowledgeDocumentService {
     userId?: string,
     userPermissions?: string[]
   ): Promise<{
-    documents: KnowledgeDocument[];
+    documents: Array<
+      KnowledgeDocument & {
+        relevanceScore?: number;
+        matchedWords?: string[];
+        totalSearchWords?: number;
+        hasExactPhrase?: boolean;
+        matchLocations?: string[];
+      }
+    >;
     total: number;
     searchStats: {
       foundInTitle: number;
@@ -567,33 +701,42 @@ export class KnowledgeDocumentService {
         searchTermJson: JSON.stringify([query.search]),
       };
 
-      // Búsqueda en título
-      searchConditions.push("doc.title ILIKE :search");
+      // Búsqueda en título (insensible a acentos)
+      searchConditions.push(
+        "unaccent(lower(doc.title)) LIKE unaccent(lower(:search))"
+      );
 
-      // Búsqueda en contenido
-      searchConditions.push("doc.content ILIKE :search");
+      // Búsqueda en contenido (insensible a acentos)
+      searchConditions.push(
+        "unaccent(lower(doc.content)) LIKE unaccent(lower(:search))"
+      );
 
-      // Búsqueda en etiquetas
-      searchConditions.push('tags."tag_name" ILIKE :search');
+      // Búsqueda en etiquetas (insensible a acentos)
+      searchConditions.push(
+        'unaccent(lower(tags."tag_name")) LIKE unaccent(lower(:search))'
+      );
 
       // Búsqueda en casos asociados - búsqueda exacta en el array JSONB
       searchConditions.push(
         'doc."associated_cases"::jsonb @> (:searchTermJson)::jsonb'
       );
 
-      // Búsqueda por número de caso en la tabla cases (busca documentos que tengan casos cuyo número coincida)
+      // Búsqueda por número de caso en la tabla cases (insensible a acentos)
       searchConditions.push(`EXISTS (
         SELECT 1 FROM cases c 
         WHERE doc."associated_cases"::jsonb ? c.id::text
-        AND c."numeroCaso" ILIKE :search
+        AND unaccent(lower(c."numeroCaso")) LIKE unaccent(lower(:search))
       )`);
 
       queryBuilder.andWhere(`(${searchConditions.join(" OR ")})`, params);
 
-      // Calcular estadísticas de búsqueda
+      // Calcular estadísticas de búsqueda (insensible a acentos)
       const titleMatches = await this.knowledgeDocumentRepository
         .createQueryBuilder("doc")
-        .andWhere("doc.title ILIKE :search", params)
+        .andWhere(
+          "unaccent(lower(doc.title)) LIKE unaccent(lower(:search))",
+          params
+        )
         .getCount();
       searchStats.foundInTitle = titleMatches;
     }
@@ -612,7 +755,7 @@ export class KnowledgeDocumentService {
           OR EXISTS (
             SELECT 1 FROM cases c 
             WHERE doc."associated_cases"::jsonb ? c.id::text
-            AND c."numeroCaso" ILIKE :caseSearch
+            AND unaccent(lower(c."numeroCaso")) LIKE unaccent(lower(:caseSearch))
           )
         )`,
         {
@@ -683,26 +826,64 @@ export class KnowledgeDocumentService {
         const documentType = await doc.documentType;
         (doc as any).__createdByUser__ = createdByUser;
         (doc as any).__documentType__ = documentType;
+        (doc as any).documentType = documentType; // Asignar directamente para el frontend
 
-        if (doc.tagRelations && doc.tagRelations.length > 0) {
-          (doc as any).tags = doc.tagRelations.map((relation) => ({
-            id: relation.tag.id,
-            tagName: relation.tag.tagName,
-            color: relation.tag.color,
-            category: relation.tag.category,
-            description: relation.tag.description,
-            isActive: relation.tag.isActive,
-            createdBy: relation.tag.createdBy,
-            createdAt: relation.tag.createdAt,
-            updatedAt: relation.tag.updatedAt,
-            documentId: doc.id,
-          }));
-        } else {
-          (doc as any).tags = [];
+        // Extraer tags
+        const tags =
+          doc.tagRelations && doc.tagRelations.length > 0
+            ? doc.tagRelations.map((relation) => ({
+                id: relation.tag.id,
+                tagName: relation.tag.tagName,
+                color: relation.tag.color,
+                category: relation.tag.category,
+                description: relation.tag.description,
+                isActive: relation.tag.isActive,
+                createdBy: relation.tag.createdBy,
+                createdAt: relation.tag.createdAt,
+                updatedAt: relation.tag.updatedAt,
+                documentId: doc.id,
+              }))
+            : [];
+
+        (doc as any).tags = tags;
+
+        // Calcular relevancia por palabras si hay término de búsqueda
+        if (query.search && query.search.trim()) {
+          const relevance = this.calculateWordRelevance(query.search, {
+            title: doc.title,
+            content: doc.content,
+            tags: tags,
+          });
+
+          (doc as any).relevanceScore = relevance.score;
+          (doc as any).matchedWords = relevance.matchedWords;
+          (doc as any).totalSearchWords = relevance.totalWords;
+          (doc as any).hasExactPhrase = relevance.hasExactPhrase;
+          (doc as any).matchLocations = relevance.matchLocations;
         }
+
         return doc;
       })
     );
+
+    // Si hay búsqueda, reordenar por relevancia de palabras
+    if (query.search && query.search.trim()) {
+      documentsWithTags.sort((a, b) => {
+        const scoreA = (a as any).relevanceScore || 0;
+        const scoreB = (b as any).relevanceScore || 0;
+
+        // Primero por score de relevancia
+        if (scoreB !== scoreA) return scoreB - scoreA;
+
+        // Luego por frase exacta
+        const exactA = (a as any).hasExactPhrase ? 1 : 0;
+        const exactB = (b as any).hasExactPhrase ? 1 : 0;
+        if (exactB !== exactA) return exactB - exactA;
+
+        // Finalmente por vistas
+        return (b.viewCount || 0) - (a.viewCount || 0);
+      });
+    }
 
     return {
       documents: documentsWithTags,
@@ -725,8 +906,10 @@ export class KnowledgeDocumentService {
     query: KnowledgeDocumentQueryDto
   ): void {
     if (query.search) {
+      // Búsqueda insensible a acentos usando unaccent
       queryBuilder.andWhere(
-        "(doc.title ILIKE :search OR doc.content ILIKE :search)",
+        `(unaccent(lower(doc.title)) LIKE unaccent(lower(:search)) 
+          OR unaccent(lower(doc.content)) LIKE unaccent(lower(:search)))`,
         { search: `%${query.search}%` }
       );
     }

@@ -4,16 +4,20 @@ import useSmartSearch from "../../hooks/useSmartSearch";
 
 interface SmartSearchProps {
   onSearch: (term: string, filters?: any) => void;
+  onRefineSearch?: (term: string) => void;
   onSelectDocument?: (documentId: string) => void;
   placeholder?: string;
   className?: string;
+  isRefining?: boolean;
 }
 
 const SmartSearch: React.FC<SmartSearchProps> = ({
   onSearch,
+  onRefineSearch,
   onSelectDocument,
   placeholder = "Buscar documentos, etiquetas, casos...",
   className = "",
+  isRefining = false,
 }) => {
   const {
     searchTerm,
@@ -36,7 +40,13 @@ const SmartSearch: React.FC<SmartSearchProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
-      onSearch(searchTerm.trim());
+      // Si estamos en modo refinamiento y existe la función, refinar
+      if (onRefineSearch) {
+        onRefineSearch(searchTerm.trim());
+        setSearchTerm(""); // Limpiar el input después de refinar
+      } else {
+        onSearch(searchTerm.trim());
+      }
       setShowSuggestions(false);
     }
   };
@@ -205,11 +215,21 @@ const SmartSearch: React.FC<SmartSearchProps> = ({
 
   return (
     <div className={`relative ${className}`}>
+      {/* Indicador de modo refinamiento */}
+      {isRefining && onRefineSearch && (
+        <div className="absolute -top-5 left-0 right-0 text-xs text-green-600 dark:text-green-400 flex items-center">
+          <span className="inline-block w-2 h-2 bg-green-500 rounded-full mr-1.5 animate-pulse"></span>
+          Refinando búsqueda...
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="relative">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             {isSearching ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 dark:border-blue-400"></div>
+            ) : onRefineSearch ? (
+              <ActionIcon action="filter" size="sm" color="green" />
             ) : (
               <ActionIcon action="search" size="sm" color="gray" />
             )}
@@ -221,7 +241,11 @@ const SmartSearch: React.FC<SmartSearchProps> = ({
             onChange={(e) => setSearchTerm(e.target.value)}
             onFocus={() => setShowSuggestions(true)}
             onKeyDown={handleKeyDown}
-            className="block w-full pl-10 pr-10 py-3 border border-gray-300 dark:border-gray-600 rounded-lg leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-all duration-200"
+            className={`block w-full pl-10 pr-10 py-3 border rounded-lg leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:placeholder-gray-400 transition-all duration-200 ${
+              onRefineSearch
+                ? "border-green-300 dark:border-green-600 focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:focus:ring-green-400 dark:focus:border-green-400"
+                : "border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
+            }`}
             placeholder={placeholder}
           />
           {searchTerm && (
@@ -282,7 +306,11 @@ const SmartSearch: React.FC<SmartSearchProps> = ({
               {/* Mensaje de búsqueda adicional */}
               <div className="border-t border-gray-200 dark:border-gray-600 px-4 py-2 bg-gray-50 dark:bg-gray-700">
                 <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
-                  <span>Presiona Enter para buscar "{searchTerm}"</span>
+                  <span>
+                    {onRefineSearch
+                      ? `Presiona Enter para filtrar por "${searchTerm}"`
+                      : `Presiona Enter para buscar "${searchTerm}"`}
+                  </span>
                   <span className="text-xs">↑↓ navegar, Enter seleccionar</span>
                 </div>
               </div>

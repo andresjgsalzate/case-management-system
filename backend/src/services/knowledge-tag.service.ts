@@ -1,4 +1,4 @@
-import { Repository, DataSource } from "typeorm";
+import { Repository, DataSource, ILike } from "typeorm";
 import { KnowledgeTag, TagCategory } from "../entities/KnowledgeTag";
 import { KnowledgeDocument } from "../entities/KnowledgeDocument";
 import { KnowledgeDocumentTagRelation } from "../entities/KnowledgeDocumentTagRelation";
@@ -15,6 +15,46 @@ export interface KnowledgeTagWithUsage extends KnowledgeTag {
   usageCount: number;
 }
 
+/**
+ * Normaliza un nombre de etiqueta para evitar duplicados
+ * - Remueve espacios al inicio y final
+ * - Remueve acentos/diacríticos
+ * - Remueve puntos y caracteres especiales al inicio y final
+ * - Convierte a mayúsculas
+ * - Reemplaza múltiples espacios por uno solo
+ */
+export function normalizeTagName(tagName: string): string {
+  if (!tagName) return "";
+
+  let normalized = tagName
+    // 1. Trim espacios al inicio y final
+    .trim()
+    // 2. Remover acentos/diacríticos usando normalize
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    // 3. Remover caracteres especiales al inicio y final (puntos, guiones, etc.)
+    .replace(/^[.\-_,;:!¡¿?@#$%^&*()+=\[\]{}|\\/<>'"]+/, "")
+    .replace(/[.\-_,;:!¡¿?@#$%^&*()+=\[\]{}|\\/<>'"]+$/, "")
+    // 4. Reemplazar múltiples espacios por uno solo
+    .replace(/\s+/g, " ")
+    // 5. Trim de nuevo por si quedaron espacios
+    .trim()
+    // 6. Convertir a mayúsculas
+    .toUpperCase();
+
+  return normalized;
+}
+
+/**
+ * Genera una versión "slug" para comparación de duplicados
+ * Esta versión elimina todos los espacios y caracteres especiales
+ */
+export function generateTagSlug(tagName: string): string {
+  return normalizeTagName(tagName)
+    .replace(/\s+/g, "") // Sin espacios
+    .replace(/[^A-Z0-9]/g, ""); // Solo letras y números
+}
+
 export class KnowledgeTagService {
   private tagRepository: Repository<KnowledgeTag>;
   private relationRepository: Repository<KnowledgeDocumentTagRelation>;
@@ -29,22 +69,53 @@ export class KnowledgeTagService {
 
   /**
    * Crear una nueva etiqueta única
+   * - Normaliza el nombre (mayúsculas, sin acentos, sin espacios extra)
+   * - Verifica duplicados considerando variaciones del nombre
    */
   async createTag(
     createDto: CreateKnowledgeTagDto,
     userId?: string
   ): Promise<KnowledgeTag> {
-    // Verificar que el nombre sea único
-    const existingTag = await this.tagRepository.findOne({
-      where: { tagName: createDto.tagName },
+    // Normalizar el nombre de la etiqueta
+    const normalizedName = normalizeTagName(createDto.tagName);
+
+    if (!normalizedName) {
+      throw new Error("El nombre de la etiqueta no puede estar vacío");
+    }
+
+    // Generar slug para comparación de duplicados
+    const tagSlug = generateTagSlug(normalizedName);
+
+    // Buscar duplicados potenciales
+    // 1. Buscar coincidencia exacta (normalizada)
+    const exactMatch = await this.tagRepository.findOne({
+      where: { tagName: normalizedName },
     });
 
-    if (existingTag) {
-      throw new Error(`La etiqueta "${createDto.tagName}" ya existe`);
+    if (exactMatch) {
+      throw new Error(`La etiqueta "${normalizedName}" ya existe`);
+    }
+
+    // 2. Buscar etiquetas similares (sin espacios, sin acentos)
+    const allTags = await this.tagRepository.find({
+      where: { isActive: true },
+    });
+
+    const duplicateTag = allTags.find((tag) => {
+      const existingSlug = generateTagSlug(tag.tagName);
+      return existingSlug === tagSlug;
+    });
+
+    if (duplicateTag) {
+      throw new Error(
+        `Ya existe una etiqueta similar: "${duplicateTag.tagName}". ` +
+          `La etiqueta "${createDto.tagName}" se considera duplicada.`
+      );
     }
 
     const tag = this.tagRepository.create({
       ...createDto,
+      tagName: normalizedName, // Guardar siempre normalizado
       createdBy: userId,
     });
 
@@ -53,14 +124,34 @@ export class KnowledgeTagService {
 
   /**
    * Buscar o crear etiqueta por nombre
+   * - Busca primero una etiqueta existente (considerando normalización)
+   * - Si no existe, crea una nueva con el nombre normalizado
    */
   async findOrCreateTag(
     tagName: string,
     userId?: string
   ): Promise<KnowledgeTag> {
+    // Normalizar el nombre
+    const normalizedName = normalizeTagName(tagName);
+
+    if (!normalizedName) {
+      throw new Error("El nombre de la etiqueta no puede estar vacío");
+    }
+
+    // Buscar etiqueta existente por nombre normalizado exacto
     let tag = await this.tagRepository.findOne({
-      where: { tagName },
+      where: { tagName: normalizedName },
     });
+
+    // Si no hay coincidencia exacta, buscar por slug (para encontrar variaciones)
+    if (!tag) {
+      const tagSlug = generateTagSlug(normalizedName);
+      const allTags = await this.tagRepository.find({
+        where: { isActive: true },
+      });
+
+      tag = allTags.find((t) => generateTagSlug(t.tagName) === tagSlug) || null;
+    }
 
     if (!tag) {
       // Get recent tags to avoid color repetition
@@ -97,7 +188,7 @@ export class KnowledgeTagService {
 
       // Determine category automatically
       let selectedCategory = TagCategory.CUSTOM;
-      const lowerName = tagName.toLowerCase();
+      const lowerName = normalizedName.toLowerCase();
 
       if (
         ["bug", "error", "fix", "critical", "urgent"].some((k) =>
@@ -134,7 +225,7 @@ export class KnowledgeTagService {
 
       tag = await this.createTag(
         {
-          tagName,
+          tagName: normalizedName, // Ya está normalizado
           color: selectedColor,
           category: selectedCategory,
           description: `Etiqueta creada automáticamente`,
@@ -351,6 +442,7 @@ export class KnowledgeTagService {
 
   /**
    * Actualizar etiqueta
+   * - Si se cambia el nombre, lo normaliza y verifica duplicados
    */
   async updateTag(
     tagId: string,
@@ -361,14 +453,47 @@ export class KnowledgeTagService {
       throw new Error("Etiqueta no encontrada");
     }
 
-    // Si se está cambiando el nombre, verificar unicidad
-    if (updateData.tagName && updateData.tagName !== tag.tagName) {
-      const existingTag = await this.tagRepository.findOne({
-        where: { tagName: updateData.tagName },
-      });
+    // Si se está cambiando el nombre, normalizar y verificar unicidad
+    if (updateData.tagName) {
+      const normalizedName = normalizeTagName(updateData.tagName);
 
-      if (existingTag) {
-        throw new Error(`La etiqueta "${updateData.tagName}" ya existe`);
+      if (!normalizedName) {
+        throw new Error("El nombre de la etiqueta no puede estar vacío");
+      }
+
+      // Solo verificar duplicados si el nombre normalizado es diferente
+      if (normalizedName !== tag.tagName) {
+        // Buscar coincidencia exacta
+        const exactMatch = await this.tagRepository.findOne({
+          where: { tagName: normalizedName },
+        });
+
+        if (exactMatch && exactMatch.id !== tagId) {
+          throw new Error(`La etiqueta "${normalizedName}" ya existe`);
+        }
+
+        // Buscar etiquetas similares por slug
+        const tagSlug = generateTagSlug(normalizedName);
+        const allTags = await this.tagRepository.find({
+          where: { isActive: true },
+        });
+
+        const duplicateTag = allTags.find((t) => {
+          if (t.id === tagId) return false; // Ignorar la etiqueta actual
+          return generateTagSlug(t.tagName) === tagSlug;
+        });
+
+        if (duplicateTag) {
+          throw new Error(
+            `Ya existe una etiqueta similar: "${duplicateTag.tagName}". ` +
+              `La etiqueta "${updateData.tagName}" se considera duplicada.`
+          );
+        }
+
+        updateData.tagName = normalizedName;
+      } else {
+        // El nombre normalizado es el mismo, no hay cambio
+        delete updateData.tagName;
       }
     }
 

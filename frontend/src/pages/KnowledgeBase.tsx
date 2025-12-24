@@ -1,7 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ActionIcon } from "../components/ui/ActionIcons";
 import SmartSearch from "../components/search/SmartSearch";
+import ActiveFiltersBar, {
+  ActiveFilter,
+} from "../components/search/ActiveFiltersBar";
+import RelevanceIndicator from "../components/search/RelevanceIndicator";
 import {
   useKnowledgeDocuments,
   useCreateKnowledgeDocument,
@@ -13,6 +17,7 @@ import { useToast } from "../hooks/useNotification";
 import { useFeaturePermissions } from "../hooks/usePermissions";
 import { useCrudErrorHandler } from "../hooks/useErrorHandler";
 import { knowledgeApi } from "../services/knowledge.service";
+import { containsNormalized } from "../utils/searchUtils";
 
 interface KnowledgeBaseProps {}
 
@@ -30,6 +35,11 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
     KnowledgeDocument[] | null
   >(null);
   const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
+
+  // Estados para filtrado en cascada (Fase 2)
+  const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([]);
+  const [resultHistory, setResultHistory] = useState<KnowledgeDocument[][]>([]);
+  const [isRefiningSearch, setIsRefiningSearch] = useState(false);
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -107,6 +117,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   const handleSmartSearch = async (term: string, filters?: any) => {
     try {
       setIsAdvancedSearch(true);
+      setIsRefiningSearch(false);
       const result = await knowledgeApi.documents.enhancedSearch({
         search: term,
         documentTypeId: undefined,
@@ -114,11 +125,123 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
       });
       setSearchResults(result.documents);
       setSearchQuery(term);
+
+      // Inicializar filtros activos con la búsqueda inicial
+      setActiveFilters([
+        {
+          id: `search-${Date.now()}`,
+          term: term,
+          type: "search",
+          timestamp: Date.now(),
+        },
+      ]);
+      setResultHistory([]); // Limpiar historial al hacer nueva búsqueda
     } catch (error) {
       showError("Error al realizar la búsqueda");
       console.error("Search error:", error);
     }
   };
+
+  // Función para refinar búsqueda sobre resultados existentes
+  const handleRefineSearch = useCallback(
+    (newTerm: string) => {
+      if (!searchResults || !newTerm.trim()) return;
+
+      // Guardar estado actual en historial
+      setResultHistory((prev) => [...prev, searchResults]);
+
+      // Crear mapa de casos para búsqueda eficiente
+      const casesMap = new Map(casesData?.map((c) => [c.id, c]) || []);
+
+      // Filtrar resultados actuales usando normalización de acentos
+      // Busca en: título, contenido, tags y casos asociados (igual que búsqueda inicial)
+      const filtered = searchResults.filter((doc) => {
+        // Buscar en título y contenido
+        if (
+          containsNormalized(doc.title, newTerm) ||
+          containsNormalized(doc.content || "", newTerm)
+        ) {
+          return true;
+        }
+
+        // Buscar en tags
+        if (doc.tags?.some((tag) => containsNormalized(tag.tagName, newTerm))) {
+          return true;
+        }
+
+        // Buscar en casos asociados (por ID, buscar info del caso)
+        if (doc.associatedCases?.length) {
+          return doc.associatedCases.some((caseId) => {
+            const caseInfo = casesMap.get(caseId);
+            if (caseInfo) {
+              return (
+                containsNormalized(caseInfo.numeroCaso || "", newTerm) ||
+                containsNormalized(caseInfo.descripcion || "", newTerm)
+              );
+            }
+            return false;
+          });
+        }
+
+        return false;
+      });
+
+      setSearchResults(filtered);
+      setActiveFilters((prev) => [
+        ...prev,
+        {
+          id: `refine-${Date.now()}`,
+          term: newTerm.trim(),
+          type: "refine",
+          timestamp: Date.now(),
+        },
+      ]);
+      setIsRefiningSearch(true);
+    },
+    [searchResults, casesData]
+  );
+
+  // Función para eliminar un filtro específico
+  const handleRemoveFilter = useCallback(
+    (filterId: string) => {
+      const filterIndex = activeFilters.findIndex((f) => f.id === filterId);
+
+      if (filterIndex === -1) return;
+
+      // Si es el primer filtro (búsqueda original), limpiar todo
+      if (filterIndex === 0) {
+        clearAdvancedSearch();
+        return;
+      }
+
+      // Restaurar resultados desde el historial
+      const newFilters = activeFilters.slice(0, filterIndex);
+      const targetResults = resultHistory[filterIndex - 1] || [];
+
+      setSearchResults(targetResults);
+      setActiveFilters(newFilters);
+      setResultHistory((prev) => prev.slice(0, filterIndex - 1));
+
+      if (newFilters.length <= 1) {
+        setIsRefiningSearch(false);
+      }
+    },
+    [activeFilters, resultHistory]
+  );
+
+  // Función para deshacer último filtro
+  const handleUndoLastFilter = useCallback(() => {
+    if (resultHistory.length === 0 || activeFilters.length <= 1) return;
+
+    const previousResults = resultHistory[resultHistory.length - 1];
+    setSearchResults(previousResults);
+    setResultHistory((prev) => prev.slice(0, -1));
+    setActiveFilters((prev) => prev.slice(0, -1));
+
+    if (resultHistory.length === 1) {
+      setIsRefiningSearch(false);
+    }
+  }, [resultHistory, activeFilters]);
 
   // Función para manejar selección de documento desde sugerencias
   const handleSelectDocument = (documentId: string) => {
@@ -128,19 +251,11 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   // Función para limpiar búsqueda
   const clearAdvancedSearch = () => {
     setIsAdvancedSearch(false);
+    setIsRefiningSearch(false);
     setSearchResults(null);
     setSearchQuery("");
-  };
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("es-ES", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    setActiveFilters([]);
+    setResultHistory([]);
   };
 
   // Get status color
@@ -252,9 +367,15 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
           <div className="flex-1">
             <SmartSearch
               onSearch={handleSmartSearch}
+              onRefineSearch={isAdvancedSearch ? handleRefineSearch : undefined}
               onSelectDocument={handleSelectDocument}
-              placeholder="Buscar documentos, etiquetas, casos..."
+              placeholder={
+                isRefiningSearch
+                  ? "Refinar búsqueda dentro de los resultados..."
+                  : "Buscar documentos, etiquetas, casos..."
+              }
               className="w-full"
+              isRefining={isRefiningSearch}
             />
           </div>
           {isAdvancedSearch && (
@@ -273,9 +394,37 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
           )}
         </div>
 
+        {/* Barra de filtros activos */}
+        {isAdvancedSearch && activeFilters.length > 0 && (
+          <div className="mt-3">
+            <ActiveFiltersBar
+              filters={activeFilters}
+              onRemoveFilter={handleRemoveFilter}
+              onUndoLastFilter={handleUndoLastFilter}
+              onClearAll={clearAdvancedSearch}
+              resultCount={searchResults?.length}
+              canUndo={resultHistory.length > 0}
+            />
+          </div>
+        )}
+
         {/* Tip debajo de la búsqueda avanzada */}
         <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-          💡 Tip: Usa la búsqueda inteligente arriba para mejores resultados
+          {isRefiningSearch ? (
+            <>
+              🔍 <strong>Modo refinamiento:</strong> Escribe para filtrar dentro
+              de los {searchResults?.length || 0} resultados actuales
+            </>
+          ) : (
+            <>
+              💡 Tip: Usa la búsqueda inteligente arriba para mejores resultados
+              {isAdvancedSearch && (
+                <span className="ml-2 text-blue-600 dark:text-blue-400">
+                  • Puedes refinar la búsqueda escribiendo más términos
+                </span>
+              )}
+            </>
+          )}
         </div>
       </div>
 
@@ -338,193 +487,124 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
               key={doc.id}
               className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden"
             >
-              <div className="p-4 md:p-6">
-                {/* Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <ActionIcon action="document" size="lg" color="blue" />
-                    </div>
-                    <div className="ml-3">
-                      <div className="flex items-center space-x-2">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
-                            doc.isPublished,
-                            doc.isArchived,
-                            doc.isDeprecated
-                          )}`}
-                        >
-                          {getStatusText(
-                            doc.isPublished,
-                            doc.isArchived,
-                            doc.isDeprecated
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+              <div className="p-4 md:p-5">
+                {/* Header: Estado */}
+                <div className="flex items-center mb-3">
+                  <span
+                    className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
+                      doc.isPublished,
+                      doc.isArchived,
+                      doc.isDeprecated
+                    )}`}
+                  >
+                    {getStatusText(
+                      doc.isPublished,
+                      doc.isArchived,
+                      doc.isDeprecated
+                    )}
+                  </span>
                 </div>
 
-                {/* Content */}
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2">
-                    <Link
-                      to={`/knowledge/${doc.id}`}
-                      className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                    >
-                      {doc.title}
-                    </Link>
-                  </h3>
+                {/* Título */}
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3 line-clamp-2">
+                  <Link
+                    to={`/knowledge/${doc.id}`}
+                    className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  >
+                    {doc.title}
+                  </Link>
+                </h3>
 
-                  {/* Priority and Difficulty */}
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <div className="flex items-center text-sm">
-                      <span className="text-gray-600 dark:text-gray-300 mr-1 text-xs">
-                        Prioridad:
-                      </span>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
-                          doc.priority === "urgent"
-                            ? "bg-red-100 text-red-800"
-                            : doc.priority === "high"
-                            ? "bg-orange-100 text-orange-800"
-                            : doc.priority === "medium"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-green-100 text-green-800"
-                        }`}
-                      >
-                        {doc.priority === "urgent"
-                          ? "Urgente"
-                          : doc.priority === "high"
-                          ? "Alta"
-                          : doc.priority === "medium"
-                          ? "Media"
-                          : "Baja"}
-                      </span>
+                {/* Casos Asociados */}
+                {doc.associatedCases && doc.associatedCases.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                      <ActionIcon
+                        action="case"
+                        size="xs"
+                        color="blue"
+                        className="flex-shrink-0"
+                      />
+                      <span>Caso:</span>
                     </div>
-                    <div className="flex items-center text-sm">
-                      <span className="text-gray-600 dark:text-gray-300 mr-1 text-xs">
-                        Dificultad:
-                      </span>
-                      <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <ActionIcon
-                            key={i}
-                            action="star"
-                            size="xs"
-                            color={i < doc.difficultyLevel ? "yellow" : "gray"}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Associated Cases */}
-                  {doc.associatedCases &&
-                    doc.associatedCases.length > 0 &&
-                    (() => {
+                    {(() => {
                       const associatedCases = getAssociatedCasesInfo(doc);
-                      return (
-                        <div className="flex flex-wrap items-center text-xs mb-3 gap-1">
-                          <ActionIcon
-                            action="case"
-                            size="xs"
-                            color="blue"
-                            className="flex-shrink-0"
-                          />
-                          <span className="text-gray-600 dark:text-gray-300">
-                            Casos:
-                          </span>
-                          {associatedCases && associatedCases.length > 0 ? (
-                            <>
-                              {associatedCases
-                                .slice(0, 2) // Mostrar hasta 2 casos
-                                .map((caso, index) => (
-                                  <span
-                                    key={index}
-                                    className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 whitespace-nowrap"
-                                    title={`${caso.numeroCaso}: ${caso.descripcion}`}
-                                  >
-                                    {caso.numeroCaso}
-                                  </span>
-                                ))}
-                              {doc.associatedCases.length > 2 && (
-                                <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                                  +{doc.associatedCases.length - 2}
-                                </span>
-                              )}
-                            </>
-                          ) : (
-                            <span className="text-blue-600 dark:text-blue-400 font-medium">
-                              {doc.associatedCases.length} asociado
-                              {doc.associatedCases.length !== 1 ? "s" : ""}
+                      return associatedCases && associatedCases.length > 0 ? (
+                        <>
+                          {associatedCases.slice(0, 3).map((caso, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300"
+                              title={`${caso.numeroCaso}: ${caso.descripcion}`}
+                            >
+                              {caso.numeroCaso}
+                            </span>
+                          ))}
+                          {doc.associatedCases.length > 3 && (
+                            <span className="text-xs text-blue-600 dark:text-blue-400">
+                              +{doc.associatedCases.length - 3}
                             </span>
                           )}
-                        </div>
+                        </>
+                      ) : (
+                        <span className="text-xs text-blue-600 dark:text-blue-400">
+                          {doc.associatedCases.length} caso
+                          {doc.associatedCases.length !== 1 ? "s" : ""}
+                        </span>
                       );
                     })()}
+                  </div>
+                )}
 
-                  {/* Type and Tags */}
-                  <div className="space-y-2">
-                    {/* Document Type */}
-                    {doc.documentType && (
-                      <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                {/* Etiquetas */}
+                {(() => {
+                  const tagInfo = getDisplayTags(doc);
+                  return tagInfo.documentTags.length > 0 ? (
+                    <div className="flex items-center flex-wrap gap-1.5">
+                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                         <ActionIcon
-                          action="folder"
+                          action="tag"
                           size="xs"
                           color="gray"
                           className="flex-shrink-0"
                         />
-                        <span className="ml-1 truncate">
-                          {doc.documentType.name}
-                        </span>
+                        <span>Tags:</span>
                       </div>
-                    )}
+                      {tagInfo.documentTags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-white"
+                          style={{ backgroundColor: tag.color || "#6b7280" }}
+                          title={tag.tagName}
+                        >
+                          {tag.tagName}
+                        </span>
+                      ))}
+                      {tagInfo.showMore && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          +{tagInfo.totalDocTags - tagInfo.documentTags.length}
+                        </span>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
 
-                    {/* Tags Section */}
-                    {(() => {
-                      const tagInfo = getDisplayTags(doc);
-                      const hasAnyTags = tagInfo.documentTags.length > 0;
-
-                      return hasAnyTags ? (
-                        <div className="space-y-1">
-                          {/* Document Tags */}
-                          <div className="flex items-start flex-wrap gap-1">
-                            <ActionIcon
-                              action="tag"
-                              size="xs"
-                              color="gray"
-                              className="mt-0.5 flex-shrink-0"
-                            />
-                            {tagInfo.documentTags.map((tag, index) => (
-                              <span
-                                key={index}
-                                className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium text-white truncate max-w-[80px]"
-                                style={{
-                                  backgroundColor: tag.color || "#6b7280",
-                                }}
-                                title={tag.tagName}
-                              >
-                                {tag.tagName}
-                              </span>
-                            ))}
-                            {tagInfo.showMore && (
-                              <span className="text-xs text-gray-500 self-center">
-                                +
-                                {tagInfo.totalDocTags -
-                                  tagInfo.documentTags.length}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      ) : null;
-                    })()}
+                {/* Footer: Tipo de documento y Autor */}
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
+                  {/* Tipo de documento */}
+                  <div className="flex items-center gap-1 truncate">
+                    <ActionIcon
+                      action="folder"
+                      size="xs"
+                      color="gray"
+                      className="flex-shrink-0"
+                    />
+                    <span className="truncate">
+                      {doc.documentType?.name || "Sin tipo"}
+                    </span>
                   </div>
-                </div>
-
-                {/* Footer */}
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-100 dark:border-gray-700">
-                  <div className="flex items-center min-w-0">
+                  {/* Autor */}
+                  <div className="flex items-center gap-1 truncate">
                     <ActionIcon
                       action="user"
                       size="xs"
@@ -532,26 +612,30 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                       className="flex-shrink-0"
                     />
                     <span
-                      className="ml-1 truncate max-w-[120px]"
+                      className="truncate max-w-[100px]"
                       title={
                         doc.__createdByUser__?.fullName ||
                         doc.__createdByUser__?.email ||
-                        "Usuario desconocido"
+                        "Desconocido"
                       }
                     >
                       {doc.__createdByUser__?.fullName ||
                         doc.__createdByUser__?.email ||
-                        "Usuario desconocido"}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center flex-shrink-0">
-                    <ActionIcon action="time" size="xs" color="gray" />
-                    <span className="ml-1 whitespace-nowrap">
-                      {formatDate(doc.updatedAt)}
+                        "Desconocido"}
                     </span>
                   </div>
                 </div>
+
+                {/* Indicador de relevancia (solo en búsqueda) */}
+                {isAdvancedSearch && doc.relevanceScore !== undefined && (
+                  <RelevanceIndicator
+                    score={doc.relevanceScore}
+                    matchedWords={doc.matchedWords}
+                    totalWords={doc.totalSearchWords}
+                    hasExactPhrase={doc.hasExactPhrase}
+                    matchLocations={doc.matchLocations}
+                  />
+                )}
               </div>
             </div>
           ))}

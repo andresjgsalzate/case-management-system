@@ -67,6 +67,13 @@ export interface KnowledgeDocument {
   feedback?: KnowledgeDocumentFeedback[];
   associatedCases?: string[]; // IDs de casos asociados
 
+  // Relevancia de búsqueda (cuando viene de enhancedSearch)
+  relevanceScore?: number; // 0-100 porcentaje de coincidencia
+  matchedWords?: string[]; // Palabras de la búsqueda encontradas
+  totalSearchWords?: number; // Total de palabras buscadas
+  hasExactPhrase?: boolean; // Si contiene la frase exacta
+  matchLocations?: ("title" | "content" | "tags")[]; // Dónde se encontraron coincidencias
+
   // Special backend-loaded properties (with lazy loading)
   __createdByUser__?: User;
   __documentType__?: DocumentType;

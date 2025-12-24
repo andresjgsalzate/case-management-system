@@ -18,6 +18,10 @@ import { useFeaturePermissions } from "../hooks/usePermissions";
 import { useCrudErrorHandler } from "../hooks/useErrorHandler";
 import { knowledgeApi } from "../services/knowledge.service";
 import { containsNormalized } from "../utils/searchUtils";
+import {
+  DOCUMENTATION_TEMPLATE,
+  EMPTY_DOCUMENT_CONTENT,
+} from "../constants/documentationTemplate";
 
 interface KnowledgeBaseProps {}
 
@@ -45,6 +49,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [documentTitle, setDocumentTitle] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [useDocTemplate, setUseDocTemplate] = useState(false);
 
   // Fetch data
   const {
@@ -67,6 +72,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
       setIsModalOpen(false);
       setDocumentTitle("");
       setIsCreating(false);
+      setUseDocTemplate(false);
       success("Documento creado exitosamente");
       // Navigate to the editor with the new document ID
       navigate(`/knowledge/${newDocument.id}/edit`);
@@ -90,18 +96,15 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
 
     setIsCreating(true);
 
+    // Usar plantilla de documentación si está activado
+    const jsonContent = useDocTemplate
+      ? DOCUMENTATION_TEMPLATE
+      : EMPTY_DOCUMENT_CONTENT;
+
     createDocumentMutation.mutate({
       title: documentTitle.trim(),
       content: "",
-      jsonContent: {
-        type: "doc",
-        content: [
-          {
-            type: "paragraph",
-            content: [],
-          },
-        ],
-      }, // Estructura inicial válida para BlockNote
+      jsonContent,
       priority: "medium",
       isTemplate: false,
     });
@@ -111,6 +114,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
     setIsModalOpen(false);
     setDocumentTitle("");
     setIsCreating(false);
+    setUseDocTemplate(false);
   };
 
   // Nueva función para manejar búsqueda inteligente
@@ -712,6 +716,27 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                       }
                     }}
                   />
+                </div>
+
+                {/* Opción de usar plantilla de documentación */}
+                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <label className="flex items-start cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={useDocTemplate}
+                      onChange={(e) => setUseDocTemplate(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <div className="ml-3">
+                      <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                        Usar plantilla de documentación
+                      </span>
+                      <p className="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                        Incluye estructura con las 4 secciones: Descripción del
+                        Problema, Diagnóstico, Solución Aplicada y Notas.
+                      </p>
+                    </div>
+                  </label>
                 </div>
               </div>
 

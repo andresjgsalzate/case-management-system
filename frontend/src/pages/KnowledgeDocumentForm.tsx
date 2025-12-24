@@ -31,6 +31,7 @@ import { Input } from "../components/ui/Input";
 import { Select } from "../components/ui/Select";
 import { useToast } from "../hooks/useNotification";
 import { securityService } from "../services/security.service";
+import { DOCUMENTATION_TEMPLATE } from "../constants/documentationTemplate";
 
 const KnowledgeDocumentForm: React.FC = () => {
   const navigate = useNavigate();
@@ -60,8 +61,36 @@ const KnowledgeDocumentForm: React.FC = () => {
   const [caseSearchInput, setCaseSearchInput] = useState(""); // Input para buscar casos
   const [showCaseSearch, setShowCaseSearch] = useState(false); // Mostrar/ocultar búsqueda de casos
 
+  // ✅ PLANTILLA BASE: Estado para usar plantilla de documentación
+  const [useDocTemplate, setUseDocTemplate] = useState(false);
+
   // Notificaciones
   const { success, error: showError } = useToast();
+
+  // ✅ PLANTILLA BASE: Handler para aplicar la plantilla
+  const handleUseTemplate = (checked: boolean) => {
+    setUseDocTemplate(checked);
+    if (checked) {
+      // Solo aplicar si el documento está vacío o el usuario confirma
+      const hasContent =
+        jsonContent &&
+        jsonContent.length > 0 &&
+        jsonContent.some(
+          (block: any) => block.content && block.content.length > 0
+        );
+
+      if (hasContent) {
+        const confirm = window.confirm(
+          "El documento ya tiene contenido. ¿Deseas reemplazarlo con la plantilla de documentación?"
+        );
+        if (!confirm) {
+          setUseDocTemplate(false);
+          return;
+        }
+      }
+      setJsonContent(DOCUMENTATION_TEMPLATE);
+    }
+  };
 
   // Estado para controlar cuándo navegar después de guardar
   const [shouldNavigateAfterSave, setShouldNavigateAfterSave] = useState(false);
@@ -1475,9 +1504,33 @@ const KnowledgeDocumentForm: React.FC = () => {
           {/* Content Editor Card */}
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                Contenido del Documento
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  Contenido del Documento
+                </h3>
+                {/* ✅ PLANTILLA BASE: Toggle para usar plantilla */}
+                {!isEditing && (
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={useDocTemplate}
+                        onChange={(e) => handleUseTemplate(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-500 peer-checked:bg-blue-600"></div>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        📋 Usar plantilla de documentación
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Estructura con las 4 preguntas del diagnóstico
+                      </span>
+                    </div>
+                  </label>
+                )}
+              </div>
             </div>
             <div className="p-6">
               <div className="document-metadata mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border-l-4 border-blue-500">

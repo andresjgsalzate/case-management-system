@@ -214,7 +214,13 @@ router.get("/knowledge/tags/:tagName", (0, authorizationMiddleware_1.requireAnyP
         handleError(res, error);
     }
 });
-router.post("/knowledge/tags", (0, authorizationMiddleware_1.requirePermission)("tags.create.all"), auditMiddleware_1.AuditMiddleware.auditCreate("knowledge_tags"), async (req, res) => {
+router.post("/knowledge/tags", (0, authorizationMiddleware_1.requireAnyPermission)([
+    "tags.create.own",
+    "tags.create.all",
+    "knowledge.create.own",
+    "knowledge.update.own",
+    "knowledge.update.all",
+]), auditMiddleware_1.AuditMiddleware.auditCreate("knowledge_tags"), async (req, res) => {
     try {
         const { tagName, color, category, description } = req.body;
         const userId = req.user?.id;

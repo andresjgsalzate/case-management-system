@@ -241,9 +241,13 @@ class KnowledgeTagService {
             return;
         }
         const tags = [];
+        const seenTagIds = new Set();
         for (const tagName of tagNames) {
             const tag = await this.findOrCreateTag(tagName.trim(), userId);
-            tags.push(tag);
+            if (!seenTagIds.has(tag.id)) {
+                seenTagIds.add(tag.id);
+                tags.push(tag);
+            }
         }
         const relations = tags.map((tag) => this.relationRepository.create({
             documentId,

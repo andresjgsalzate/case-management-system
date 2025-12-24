@@ -1,8 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.KnowledgeDocumentService = void 0;
+const typeorm_1 = require("typeorm");
 const KnowledgeDocument_1 = require("../entities/KnowledgeDocument");
 const KnowledgeDocumentVersion_1 = require("../entities/KnowledgeDocumentVersion");
+const Case_1 = require("../entities/Case");
 const database_1 = require("../config/database");
 const knowledge_tag_service_1 = require("./knowledge-tag.service");
 class KnowledgeDocumentService {
@@ -10,6 +12,7 @@ class KnowledgeDocumentService {
         const ds = dataSource || database_1.AppDataSource;
         this.knowledgeDocumentRepository = ds.getRepository(KnowledgeDocument_1.KnowledgeDocument);
         this.versionRepository = ds.getRepository(KnowledgeDocumentVersion_1.KnowledgeDocumentVersion);
+        this.caseRepository = ds.getRepository(Case_1.Case);
         this.knowledgeTagService = new knowledge_tag_service_1.KnowledgeTagService(ds);
     }
     async create(createDto, userId) {
@@ -384,7 +387,10 @@ class KnowledgeDocumentService {
         const normalizedTags = (document.tags || [])
             .map((t) => normalizeText(t.tagName))
             .join(" ");
-        const fullText = `${normalizedTitle} ${normalizedContent} ${normalizedTags}`;
+        const normalizedCases = (document.cases || [])
+            .map((c) => normalizeText(c.numeroCaso))
+            .join(" ");
+        const fullText = `${normalizedTitle} ${normalizedContent} ${normalizedTags} ${normalizedCases}`;
         const hasExactPhrase = fullText.includes(normalizedSearch);
         const matchedWords = [];
         const matchLocations = new Set();
@@ -397,6 +403,8 @@ class KnowledgeDocumentService {
                     matchLocations.add("content");
                 if (normalizedTags.includes(word))
                     matchLocations.add("tags");
+                if (normalizedCases.includes(word))
+                    matchLocations.add("cases");
             }
         }
         let score = (matchedWords.length / searchWords.length) * 100;
@@ -426,32 +434,60 @@ class KnowledgeDocumentService {
             foundInCases: 0,
         };
         if (query.search) {
-            const searchConditions = [];
-            const params = {
-                search: `%${query.search}%`,
-                searchTerm: query.search,
-                searchTermJson: JSON.stringify([query.search]),
-            };
-            searchConditions.push("unaccent(lower(doc.title)) LIKE unaccent(lower(:search))");
-            searchConditions.push("unaccent(lower(doc.content)) LIKE unaccent(lower(:search))");
-            searchConditions.push('unaccent(lower(tags."tag_name")) LIKE unaccent(lower(:search))');
-            searchConditions.push('doc."associated_cases"::jsonb @> (:searchTermJson)::jsonb');
-            searchConditions.push(`EXISTS (
-        SELECT 1 FROM cases c 
-        WHERE doc."associated_cases"::jsonb ? c.id::text
-        AND unaccent(lower(c."numeroCaso")) LIKE unaccent(lower(:search))
-      )`);
-            queryBuilder.andWhere(`(${searchConditions.join(" OR ")})`, params);
+            const searchWords = query.search
+                .trim()
+                .split(/\s+/)
+                .filter((word) => word.length >= 2);
+            if (searchWords.length === 0) {
+                searchWords.push(query.search.trim());
+            }
+            const wordConditions = [];
+            const params = {};
+            searchWords.forEach((word, index) => {
+                const paramName = `search${index}`;
+                const paramNameJson = `searchJson${index}`;
+                params[paramName] = `%${word}%`;
+                params[paramNameJson] = JSON.stringify([word]);
+                const wordSearchConditions = [
+                    `unaccent(lower(doc.title)) LIKE unaccent(lower(:${paramName}))`,
+                    `unaccent(lower(doc.content)) LIKE unaccent(lower(:${paramName}))`,
+                    `EXISTS (
+            SELECT 1 FROM knowledge_document_tag_relations kdtr
+            INNER JOIN knowledge_tags kt ON kdtr.tag_id = kt.id
+            WHERE kdtr.document_id = doc.id
+            AND unaccent(lower(kt.tag_name)) LIKE unaccent(lower(:${paramName}))
+          )`,
+                    `EXISTS (
+            SELECT 1 FROM cases c 
+            WHERE doc."associated_cases"::jsonb ? c.id::text
+            AND unaccent(lower(c."numeroCaso")) LIKE unaccent(lower(:${paramName}))
+          )`,
+                ];
+                wordConditions.push(`(${wordSearchConditions.join(" OR ")})`);
+            });
+            queryBuilder.andWhere(`(${wordConditions.join(" OR ")})`, params);
             const titleMatches = await this.knowledgeDocumentRepository
                 .createQueryBuilder("doc")
-                .andWhere("unaccent(lower(doc.title)) LIKE unaccent(lower(:search))", params)
+                .andWhere(`unaccent(lower(doc.title)) LIKE unaccent(lower(:search))`, {
+                search: `%${query.search}%`,
+            })
                 .getCount();
             searchStats.foundInTitle = titleMatches;
         }
         if (query.tags && query.tags.length > 0) {
-            queryBuilder.andWhere('tags."tag_name" IN (:...tagNames)', {
-                tagNames: query.tags,
-            });
+            const tagConditions = query.tags
+                .map((_, index) => `EXISTS (
+          SELECT 1 FROM knowledge_document_tag_relations kdtr
+          INNER JOIN knowledge_tags kt ON kdtr.tag_id = kt.id
+          WHERE kdtr.document_id = doc.id
+          AND LOWER(kt.tag_name) = LOWER(:tagName${index})
+        )`)
+                .join(" OR ");
+            const tagParams = query.tags.reduce((acc, tag, index) => {
+                acc[`tagName${index}`] = tag;
+                return acc;
+            }, {});
+            queryBuilder.andWhere(`(${tagConditions})`, tagParams);
         }
         if (query.caseNumber) {
             queryBuilder.andWhere(`(
@@ -506,6 +542,20 @@ class KnowledgeDocumentService {
             .skip(offset)
             .take(limit)
             .getManyAndCount();
+        const allCaseIds = new Set();
+        documents.forEach((doc) => {
+            if (doc.associatedCases && Array.isArray(doc.associatedCases)) {
+                doc.associatedCases.forEach((caseId) => allCaseIds.add(caseId));
+            }
+        });
+        let casesMap = new Map();
+        if (allCaseIds.size > 0) {
+            const cases = await this.caseRepository.find({
+                where: { id: (0, typeorm_1.In)(Array.from(allCaseIds)) },
+                select: ["id", "numeroCaso"],
+            });
+            cases.forEach((c) => casesMap.set(c.id, { numeroCaso: c.numeroCaso }));
+        }
         const documentsWithTags = await Promise.all(documents.map(async (doc) => {
             const createdByUser = await doc.createdByUser;
             const documentType = await doc.documentType;
@@ -527,11 +577,17 @@ class KnowledgeDocumentService {
                 }))
                 : [];
             doc.tags = tags;
+            const associatedCases = doc.associatedCases && Array.isArray(doc.associatedCases)
+                ? doc.associatedCases
+                    .map((caseId) => casesMap.get(caseId))
+                    .filter((c) => !!c)
+                : [];
             if (query.search && query.search.trim()) {
                 const relevance = this.calculateWordRelevance(query.search, {
                     title: doc.title,
                     content: doc.content,
                     tags: tags,
+                    cases: associatedCases,
                 });
                 doc.relevanceScore = relevance.score;
                 doc.matchedWords = relevance.matchedWords;
@@ -570,8 +626,36 @@ class KnowledgeDocumentService {
     }
     applyFilters(queryBuilder, query) {
         if (query.search) {
-            queryBuilder.andWhere(`(unaccent(lower(doc.title)) LIKE unaccent(lower(:search)) 
-          OR unaccent(lower(doc.content)) LIKE unaccent(lower(:search)))`, { search: `%${query.search}%` });
+            const searchWords = query.search
+                .trim()
+                .split(/\s+/)
+                .filter((word) => word.length >= 2);
+            if (searchWords.length === 0) {
+                searchWords.push(query.search.trim());
+            }
+            const wordConditions = [];
+            const params = {};
+            searchWords.forEach((word, index) => {
+                const paramName = `search${index}`;
+                params[paramName] = `%${word}%`;
+                const wordSearchConditions = [
+                    `unaccent(lower(doc.title)) LIKE unaccent(lower(:${paramName}))`,
+                    `unaccent(lower(doc.content)) LIKE unaccent(lower(:${paramName}))`,
+                    `EXISTS (
+            SELECT 1 FROM knowledge_document_tag_relations kdtr
+            INNER JOIN knowledge_tags kt ON kdtr.tag_id = kt.id
+            WHERE kdtr.document_id = doc.id
+            AND unaccent(lower(kt.tag_name)) LIKE unaccent(lower(:${paramName}))
+          )`,
+                    `EXISTS (
+            SELECT 1 FROM cases c 
+            WHERE doc."associated_cases"::jsonb ? c.id::text
+            AND unaccent(lower(c."numeroCaso")) LIKE unaccent(lower(:${paramName}))
+          )`,
+                ];
+                wordConditions.push(`(${wordSearchConditions.join(" OR ")})`);
+            });
+            queryBuilder.andWhere(`(${wordConditions.join(" OR ")})`, params);
         }
         if (query.documentTypeId) {
             queryBuilder.andWhere("doc.documentTypeId = :typeId", {
@@ -604,9 +688,19 @@ class KnowledgeDocumentService {
             });
         }
         if (query.tags && query.tags.length > 0) {
-            queryBuilder.andWhere("tags.tagName IN (:...tagNames)", {
-                tagNames: query.tags,
-            });
+            const tagConditions = query.tags
+                .map((_, index) => `EXISTS (
+          SELECT 1 FROM knowledge_document_tag_relations kdtr
+          INNER JOIN knowledge_tags kt ON kdtr.tag_id = kt.id
+          WHERE kdtr.document_id = doc.id
+          AND LOWER(kt.tag_name) = LOWER(:tagName${index})
+        )`)
+                .join(" OR ");
+            const tagParams = query.tags.reduce((acc, tag, index) => {
+                acc[`tagName${index}`] = tag;
+                return acc;
+            }, {});
+            queryBuilder.andWhere(`(${tagConditions})`, tagParams);
         }
     }
     applyPermissionFilters(queryBuilder, userId, userPermissions) {

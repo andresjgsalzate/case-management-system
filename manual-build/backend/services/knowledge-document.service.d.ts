@@ -5,6 +5,7 @@ import { CreateKnowledgeDocumentDto, UpdateKnowledgeDocumentDto, KnowledgeDocume
 export declare class KnowledgeDocumentService {
     private knowledgeDocumentRepository;
     private versionRepository;
+    private caseRepository;
     private knowledgeTagService;
     constructor(dataSource?: DataSource);
     create(createDto: CreateKnowledgeDocumentDto, userId: string): Promise<KnowledgeDocument>;

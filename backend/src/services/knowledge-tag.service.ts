@@ -380,12 +380,18 @@ export class KnowledgeTagService {
 
     // Encontrar o crear etiquetas
     const tags: KnowledgeTag[] = [];
+    const seenTagIds = new Set<string>();
+
     for (const tagName of tagNames) {
       const tag = await this.findOrCreateTag(tagName.trim(), userId);
-      tags.push(tag);
+      // Evitar duplicados (puede ocurrir si el mismo tag viene con diferente case)
+      if (!seenTagIds.has(tag.id)) {
+        seenTagIds.add(tag.id);
+        tags.push(tag);
+      }
     }
 
-    // Crear nuevas relaciones
+    // Crear nuevas relaciones (sin duplicados)
     const relations = tags.map((tag) =>
       this.relationRepository.create({
         documentId,

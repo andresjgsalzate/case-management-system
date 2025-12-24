@@ -4,7 +4,7 @@ import { ActionIcon } from "../ui/ActionIcons";
 export interface ActiveFilter {
   id: string;
   term: string;
-  type: "search" | "refine";
+  type: "search" | "refine" | "tag" | "case";
   timestamp: number;
 }
 
@@ -40,50 +40,81 @@ const ActiveFiltersBar: React.FC<ActiveFiltersBarProps> = ({
       </span>
 
       {/* Filter chips */}
-      {filters.map((filter) => (
-        <span
-          key={filter.id}
-          className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-            filter.type === "search"
-              ? "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-700"
-              : "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-700"
-          }`}
-        >
-          {/* Icon */}
-          <span className="mr-1.5">
-            {filter.type === "search" ? "🔍" : "➕"}
-          </span>
+      {filters.map((filter) => {
+        const getChipStyles = () => {
+          switch (filter.type) {
+            case "search":
+              return "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-700";
+            case "tag":
+              return "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-700";
+            case "case":
+              return "bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 border border-purple-200 dark:border-purple-700";
+            default: // refine
+              return "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-700";
+          }
+        };
 
-          {/* Filter term */}
-          <span className="max-w-32 truncate" title={filter.term}>
-            {filter.term}
-          </span>
+        const getIcon = () => {
+          switch (filter.type) {
+            case "search":
+              return "🔍";
+            case "tag":
+              return "🏷️";
+            case "case":
+              return "📁";
+            default:
+              return "➕";
+          }
+        };
 
-          {/* Remove button */}
-          <button
-            onClick={() => onRemoveFilter(filter.id)}
-            className={`ml-2 p-0.5 rounded-full hover:bg-opacity-30 transition-colors ${
-              filter.type === "search"
-                ? "hover:bg-blue-600 dark:hover:bg-blue-400"
-                : "hover:bg-green-600 dark:hover:bg-green-400"
-            }`}
-            title="Eliminar filtro"
-            aria-label={`Eliminar filtro: ${filter.term}`}
+        const getHoverColor = () => {
+          switch (filter.type) {
+            case "search":
+              return "hover:bg-blue-600 dark:hover:bg-blue-400";
+            case "tag":
+              return "hover:bg-emerald-600 dark:hover:bg-emerald-400";
+            case "case":
+              return "hover:bg-purple-600 dark:hover:bg-purple-400";
+            default:
+              return "hover:bg-green-600 dark:hover:bg-green-400";
+          }
+        };
+
+        return (
+          <span
+            key={filter.id}
+            className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium transition-all ${getChipStyles()}`}
           >
-            <svg
-              className="w-3.5 h-3.5"
-              fill="currentColor"
-              viewBox="0 0 20 20"
+            {/* Icon */}
+            <span className="mr-1.5">{getIcon()}</span>
+
+            {/* Filter term */}
+            <span className="max-w-32 truncate" title={filter.term}>
+              {filter.term}
+            </span>
+
+            {/* Remove button */}
+            <button
+              onClick={() => onRemoveFilter(filter.id)}
+              className={`ml-2 p-0.5 rounded-full hover:bg-opacity-30 transition-colors ${getHoverColor()}`}
+              title="Eliminar filtro"
+              aria-label={`Eliminar filtro: ${filter.term}`}
             >
-              <path
-                fillRule="evenodd"
-                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
-        </span>
-      ))}
+              <svg
+                className="w-3.5 h-3.5"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          </span>
+        );
+      })}
 
       {/* Result count */}
       {resultCount !== undefined && (

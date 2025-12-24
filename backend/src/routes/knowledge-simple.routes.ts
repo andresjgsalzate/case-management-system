@@ -343,7 +343,14 @@ router.get(
 // POST /api/knowledge/tags - Crear una nueva etiqueta
 router.post(
   "/knowledge/tags",
-  requirePermission("tags.create.all"),
+  // Permitir crear etiquetas a usuarios que pueden crear o editar documentos
+  requireAnyPermission([
+    "tags.create.own",
+    "tags.create.all",
+    "knowledge.create.own",
+    "knowledge.update.own",
+    "knowledge.update.all",
+  ]),
   AuditMiddleware.auditCreate("knowledge_tags"),
   async (req: Request, res: Response) => {
     try {

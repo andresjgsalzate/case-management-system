@@ -1,6 +1,7 @@
-import { Repository, SelectQueryBuilder, ILike, DataSource } from "typeorm";
+import { Repository, SelectQueryBuilder, ILike, DataSource, In } from "typeorm";
 import { KnowledgeDocument } from "../entities/KnowledgeDocument";
 import { KnowledgeDocumentVersion } from "../entities/KnowledgeDocumentVersion";
+import { Case } from "../entities/Case";
 import { AppDataSource } from "../config/database";
 import { KnowledgeTagService } from "./knowledge-tag.service";
 import {
@@ -14,12 +15,14 @@ import {
 export class KnowledgeDocumentService {
   private knowledgeDocumentRepository: Repository<KnowledgeDocument>;
   private versionRepository: Repository<KnowledgeDocumentVersion>;
+  private caseRepository: Repository<Case>;
   private knowledgeTagService: KnowledgeTagService;
 
   constructor(dataSource?: DataSource) {
     const ds = dataSource || AppDataSource;
     this.knowledgeDocumentRepository = ds.getRepository(KnowledgeDocument);
     this.versionRepository = ds.getRepository(KnowledgeDocumentVersion);
+    this.caseRepository = ds.getRepository(Case);
     this.knowledgeTagService = new KnowledgeTagService(ds);
   }
 
@@ -564,13 +567,14 @@ export class KnowledgeDocumentService {
       title: string;
       content: string | null;
       tags?: Array<{ tagName: string }>;
+      cases?: Array<{ numeroCaso: string }>;
     }
   ): {
     score: number; // 0-100
     matchedWords: string[];
     totalWords: number;
     hasExactPhrase: boolean;
-    matchLocations: ("title" | "content" | "tags")[];
+    matchLocations: ("title" | "content" | "tags" | "cases")[];
   } {
     // Normalizar texto removiendo acentos y convirtiendo a minúsculas
     const normalizeText = (text: string): string => {
@@ -603,15 +607,19 @@ export class KnowledgeDocumentService {
     const normalizedTags = (document.tags || [])
       .map((t) => normalizeText(t.tagName))
       .join(" ");
+    const normalizedCases = (document.cases || [])
+      .map((c) => normalizeText(c.numeroCaso))
+      .join(" ");
 
-    const fullText = `${normalizedTitle} ${normalizedContent} ${normalizedTags}`;
+    const fullText = `${normalizedTitle} ${normalizedContent} ${normalizedTags} ${normalizedCases}`;
 
     // Verificar si tiene la frase exacta
     const hasExactPhrase = fullText.includes(normalizedSearch);
 
     // Contar palabras coincidentes
     const matchedWords: string[] = [];
-    const matchLocations: Set<"title" | "content" | "tags"> = new Set();
+    const matchLocations: Set<"title" | "content" | "tags" | "cases"> =
+      new Set();
 
     for (const word of searchWords) {
       if (fullText.includes(word)) {
@@ -621,6 +629,7 @@ export class KnowledgeDocumentService {
         if (normalizedTitle.includes(word)) matchLocations.add("title");
         if (normalizedContent.includes(word)) matchLocations.add("content");
         if (normalizedTags.includes(word)) matchLocations.add("tags");
+        if (normalizedCases.includes(word)) matchLocations.add("cases");
       }
     }
 
@@ -694,58 +703,81 @@ export class KnowledgeDocumentService {
     // Las etiquetas ya están cargadas por el join en createQueryBuilder
 
     if (query.search) {
-      const searchConditions = [];
-      const params: any = {
-        search: `%${query.search}%`,
-        searchTerm: query.search,
-        searchTermJson: JSON.stringify([query.search]),
-      };
+      // Dividir el término de búsqueda en palabras individuales
+      const searchWords = query.search
+        .trim()
+        .split(/\s+/)
+        .filter((word) => word.length >= 2); // Ignorar palabras muy cortas
 
-      // Búsqueda en título (insensible a acentos)
-      searchConditions.push(
-        "unaccent(lower(doc.title)) LIKE unaccent(lower(:search))"
-      );
+      if (searchWords.length === 0) {
+        searchWords.push(query.search.trim());
+      }
 
-      // Búsqueda en contenido (insensible a acentos)
-      searchConditions.push(
-        "unaccent(lower(doc.content)) LIKE unaccent(lower(:search))"
-      );
+      // Crear condiciones para cada palabra (OR entre palabras)
+      const wordConditions: string[] = [];
+      const params: any = {};
 
-      // Búsqueda en etiquetas (insensible a acentos)
-      searchConditions.push(
-        'unaccent(lower(tags."tag_name")) LIKE unaccent(lower(:search))'
-      );
+      searchWords.forEach((word, index) => {
+        const paramName = `search${index}`;
+        const paramNameJson = `searchJson${index}`;
+        params[paramName] = `%${word}%`;
+        params[paramNameJson] = JSON.stringify([word]);
 
-      // Búsqueda en casos asociados - búsqueda exacta en el array JSONB
-      searchConditions.push(
-        'doc."associated_cases"::jsonb @> (:searchTermJson)::jsonb'
-      );
+        // Cada palabra puede coincidir en título, contenido, etiquetas o casos
+        const wordSearchConditions = [
+          // Búsqueda en título
+          `unaccent(lower(doc.title)) LIKE unaccent(lower(:${paramName}))`,
+          // Búsqueda en contenido
+          `unaccent(lower(doc.content)) LIKE unaccent(lower(:${paramName}))`,
+          // Búsqueda en etiquetas
+          `EXISTS (
+            SELECT 1 FROM knowledge_document_tag_relations kdtr
+            INNER JOIN knowledge_tags kt ON kdtr.tag_id = kt.id
+            WHERE kdtr.document_id = doc.id
+            AND unaccent(lower(kt.tag_name)) LIKE unaccent(lower(:${paramName}))
+          )`,
+          // Búsqueda en casos asociados
+          `EXISTS (
+            SELECT 1 FROM cases c 
+            WHERE doc."associated_cases"::jsonb ? c.id::text
+            AND unaccent(lower(c."numeroCaso")) LIKE unaccent(lower(:${paramName}))
+          )`,
+        ];
 
-      // Búsqueda por número de caso en la tabla cases (insensible a acentos)
-      searchConditions.push(`EXISTS (
-        SELECT 1 FROM cases c 
-        WHERE doc."associated_cases"::jsonb ? c.id::text
-        AND unaccent(lower(c."numeroCaso")) LIKE unaccent(lower(:search))
-      )`);
+        wordConditions.push(`(${wordSearchConditions.join(" OR ")})`);
+      });
 
-      queryBuilder.andWhere(`(${searchConditions.join(" OR ")})`, params);
+      // Unir todas las condiciones de palabras con OR (documento coincide si tiene al menos una palabra)
+      queryBuilder.andWhere(`(${wordConditions.join(" OR ")})`, params);
 
-      // Calcular estadísticas de búsqueda (insensible a acentos)
+      // Calcular estadísticas de búsqueda
       const titleMatches = await this.knowledgeDocumentRepository
         .createQueryBuilder("doc")
-        .andWhere(
-          "unaccent(lower(doc.title)) LIKE unaccent(lower(:search))",
-          params
-        )
+        .andWhere(`unaccent(lower(doc.title)) LIKE unaccent(lower(:search))`, {
+          search: `%${query.search}%`,
+        })
         .getCount();
       searchStats.foundInTitle = titleMatches;
     }
 
     // Aplicar otros filtros
     if (query.tags && query.tags.length > 0) {
-      queryBuilder.andWhere('tags."tag_name" IN (:...tagNames)', {
-        tagNames: query.tags,
-      });
+      // Búsqueda case-insensitive de etiquetas usando EXISTS para no filtrar las etiquetas cargadas
+      const tagConditions = query.tags
+        .map(
+          (_, index) => `EXISTS (
+          SELECT 1 FROM knowledge_document_tag_relations kdtr
+          INNER JOIN knowledge_tags kt ON kdtr.tag_id = kt.id
+          WHERE kdtr.document_id = doc.id
+          AND LOWER(kt.tag_name) = LOWER(:tagName${index})
+        )`
+        )
+        .join(" OR ");
+      const tagParams = query.tags.reduce((acc, tag, index) => {
+        acc[`tagName${index}`] = tag;
+        return acc;
+      }, {} as Record<string, string>);
+      queryBuilder.andWhere(`(${tagConditions})`, tagParams);
     }
 
     if (query.caseNumber) {
@@ -817,6 +849,24 @@ export class KnowledgeDocumentService {
       .take(limit)
       .getManyAndCount();
 
+    // Obtener todos los IDs de casos asociados únicos para cargarlos de una vez
+    const allCaseIds = new Set<string>();
+    documents.forEach((doc) => {
+      if (doc.associatedCases && Array.isArray(doc.associatedCases)) {
+        doc.associatedCases.forEach((caseId) => allCaseIds.add(caseId));
+      }
+    });
+
+    // Cargar todos los casos de una vez (más eficiente)
+    let casesMap = new Map<string, { numeroCaso: string }>();
+    if (allCaseIds.size > 0) {
+      const cases = await this.caseRepository.find({
+        where: { id: In(Array.from(allCaseIds)) },
+        select: ["id", "numeroCaso"],
+      });
+      cases.forEach((c) => casesMap.set(c.id, { numeroCaso: c.numeroCaso }));
+    }
+
     // Las etiquetas ya están cargadas por el join en createQueryBuilder
     // Mapear las etiquetas y resolver relaciones lazy
     const documentsWithTags = await Promise.all(
@@ -847,12 +897,21 @@ export class KnowledgeDocumentService {
 
         (doc as any).tags = tags;
 
+        // Obtener los casos asociados con sus números
+        const associatedCases =
+          doc.associatedCases && Array.isArray(doc.associatedCases)
+            ? doc.associatedCases
+                .map((caseId) => casesMap.get(caseId))
+                .filter((c): c is { numeroCaso: string } => !!c)
+            : [];
+
         // Calcular relevancia por palabras si hay término de búsqueda
         if (query.search && query.search.trim()) {
           const relevance = this.calculateWordRelevance(query.search, {
             title: doc.title,
             content: doc.content,
             tags: tags,
+            cases: associatedCases,
           });
 
           (doc as any).relevanceScore = relevance.score;
@@ -906,12 +965,44 @@ export class KnowledgeDocumentService {
     query: KnowledgeDocumentQueryDto
   ): void {
     if (query.search) {
-      // Búsqueda insensible a acentos usando unaccent
-      queryBuilder.andWhere(
-        `(unaccent(lower(doc.title)) LIKE unaccent(lower(:search)) 
-          OR unaccent(lower(doc.content)) LIKE unaccent(lower(:search)))`,
-        { search: `%${query.search}%` }
-      );
+      // Dividir el término de búsqueda en palabras individuales
+      const searchWords = query.search
+        .trim()
+        .split(/\s+/)
+        .filter((word) => word.length >= 2);
+
+      if (searchWords.length === 0) {
+        searchWords.push(query.search.trim());
+      }
+
+      // Crear condiciones para cada palabra
+      const wordConditions: string[] = [];
+      const params: any = {};
+
+      searchWords.forEach((word, index) => {
+        const paramName = `search${index}`;
+        params[paramName] = `%${word}%`;
+
+        const wordSearchConditions = [
+          `unaccent(lower(doc.title)) LIKE unaccent(lower(:${paramName}))`,
+          `unaccent(lower(doc.content)) LIKE unaccent(lower(:${paramName}))`,
+          `EXISTS (
+            SELECT 1 FROM knowledge_document_tag_relations kdtr
+            INNER JOIN knowledge_tags kt ON kdtr.tag_id = kt.id
+            WHERE kdtr.document_id = doc.id
+            AND unaccent(lower(kt.tag_name)) LIKE unaccent(lower(:${paramName}))
+          )`,
+          `EXISTS (
+            SELECT 1 FROM cases c 
+            WHERE doc."associated_cases"::jsonb ? c.id::text
+            AND unaccent(lower(c."numeroCaso")) LIKE unaccent(lower(:${paramName}))
+          )`,
+        ];
+
+        wordConditions.push(`(${wordSearchConditions.join(" OR ")})`);
+      });
+
+      queryBuilder.andWhere(`(${wordConditions.join(" OR ")})`, params);
     }
 
     if (query.documentTypeId) {
@@ -951,9 +1042,22 @@ export class KnowledgeDocumentService {
     }
 
     if (query.tags && query.tags.length > 0) {
-      queryBuilder.andWhere("tags.tagName IN (:...tagNames)", {
-        tagNames: query.tags,
-      });
+      // Búsqueda case-insensitive de etiquetas usando EXISTS para no filtrar las etiquetas cargadas
+      const tagConditions = query.tags
+        .map(
+          (_, index) => `EXISTS (
+          SELECT 1 FROM knowledge_document_tag_relations kdtr
+          INNER JOIN knowledge_tags kt ON kdtr.tag_id = kt.id
+          WHERE kdtr.document_id = doc.id
+          AND LOWER(kt.tag_name) = LOWER(:tagName${index})
+        )`
+        )
+        .join(" OR ");
+      const tagParams = query.tags.reduce((acc, tag, index) => {
+        acc[`tagName${index}`] = tag;
+        return acc;
+      }, {} as Record<string, string>);
+      queryBuilder.andWhere(`(${tagConditions})`, tagParams);
     }
   }
 

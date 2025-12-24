@@ -122,20 +122,29 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
     try {
       setIsAdvancedSearch(true);
       setIsRefiningSearch(false);
+
+      // Siempre buscar el término en todos los campos (título, contenido, tags, casos)
       const result = await knowledgeApi.documents.enhancedSearch({
         search: term,
         documentTypeId: undefined,
-        ...filters,
       });
       setSearchResults(result.documents);
       setSearchQuery(term);
 
+      // Determinar el tipo de filtro para mostrar el icono correcto
+      let filterType: "search" | "tag" | "case" = "search";
+      if (filters?.filterType === "tag") {
+        filterType = "tag";
+      } else if (filters?.filterType === "case") {
+        filterType = "case";
+      }
+
       // Inicializar filtros activos con la búsqueda inicial
       setActiveFilters([
         {
-          id: `search-${Date.now()}`,
+          id: `${filterType}-${Date.now()}`,
           term: term,
-          type: "search",
+          type: filterType,
           timestamp: Date.now(),
         },
       ]);

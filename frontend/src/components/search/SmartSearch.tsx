@@ -104,6 +104,12 @@ const SmartSearch: React.FC<SmartSearchProps> = ({
 
       if (suggestion.type === "document" && onSelectDocument) {
         onSelectDocument(suggestion.id);
+      } else if (suggestion.type === "tag") {
+        // Para etiquetas, buscar el nombre en todos los campos
+        onSearch(suggestion.name, { filterType: "tag" });
+      } else if (suggestion.type === "case") {
+        // Para casos, buscar el número en todos los campos
+        onSearch(suggestion.caseNumber, { filterType: "case" });
       } else {
         onSearch(searchTerm);
       }

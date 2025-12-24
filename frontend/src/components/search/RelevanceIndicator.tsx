@@ -173,6 +173,47 @@ const RelevanceIndicator: React.FC<RelevanceIndicatorProps> = ({
               </svg>
             )}
           </div>
+
+          {/* Casos */}
+          <div
+            className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs transition-all ${
+              hasMatch("cases")
+                ? "bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300"
+                : "bg-gray-100 dark:bg-gray-700/50 text-gray-400 dark:text-gray-500 opacity-50"
+            }`}
+            title={
+              hasMatch("cases")
+                ? "✓ Coincidencia en casos asociados"
+                : "✗ Sin coincidencia en casos asociados"
+            }
+          >
+            <svg
+              className="w-3 h-3"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+              />
+            </svg>
+            {hasMatch("cases") && (
+              <svg
+                className="w-2.5 h-2.5 text-green-500"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            )}
+          </div>
         </div>
 
         {/* Score y detalles */}

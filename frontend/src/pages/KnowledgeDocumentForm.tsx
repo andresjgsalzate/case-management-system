@@ -8,6 +8,7 @@ import {
   useDocumentTypes,
   useAllTags,
   useSearchTags,
+  useCreateTag,
 } from "../hooks/useKnowledge";
 import { useCases } from "../hooks/useCases";
 import { Case } from "../services/api";
@@ -211,15 +212,13 @@ const KnowledgeDocumentForm: React.FC = () => {
       }
     },
   });
-  // TODO: Implementar hooks de tags
-  // const createTagMutation = useCreateTag({
-  //   onSuccess: () => {
-  //     success("Etiqueta creada exitosamente");
-  //   },
-  //   onError: () => {
-  //     showError("Error al crear la etiqueta");
-  //   },
-  // });
+
+  // Mutation para crear/encontrar etiquetas
+  const createTagMutation = useCreateTag({
+    onError: (error) => {
+      console.error("Error al crear/encontrar etiqueta:", error);
+    },
+  });
 
   // Queries
   const { data: document, isLoading: documentLoading } = useKnowledgeDocument(
@@ -655,7 +654,7 @@ const KnowledgeDocumentForm: React.FC = () => {
   };
 
   // Handle tags
-  const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleAddTag = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Escape") {
       setShowPredictiveTags(false);
       return;
@@ -665,34 +664,48 @@ const KnowledgeDocumentForm: React.FC = () => {
       e.preventDefault();
       const newTag = tagInput.trim();
 
-      if (!tags.includes(newTag)) {
-        // Add to local state immediately for better UX
-        setTags([...tags, newTag]);
+      if (newTag.length === 0) {
+        setTagInput("");
+        setShowPredictiveTags(false);
+        return;
+      }
 
-        // Create the tag in the database asynchronously with color system
-        try {
-          // TODO: Implementar lógica de colores de tags
-          // const recentColors =
-          //   popularTags?.slice(0, 3).map((tag: any) => tag.color) || [];
-          // const availableColors = TAG_COLORS.filter(
-          //   (c) => !recentColors.includes(c)
-          // );
-          // const colorPool =
-          //   availableColors.length > 0 ? availableColors : TAG_COLORS;
-          // const randomColor =
-          //   colorPool[Math.floor(Math.random() * colorPool.length)];
-          // TODO: Implementar creación de tags
-          // await createTagMutation.mutateAsync({
-          //   tagName: newTag,
-          //   color: randomColor,
-          //   category: determineCategory(newTag),
-          //   description: `Etiqueta creada automáticamente`,
-          // });
-        } catch (error) {
-          console.error("Error creating tag:", error);
-          // If creation fails, we could optionally remove from local state
-          // but for now we'll keep it as the user intended to add it
+      // Verificación case-insensitive para evitar duplicados
+      const isDuplicate = tags.some(
+        (existingTag) => existingTag.toLowerCase() === newTag.toLowerCase()
+      );
+
+      if (isDuplicate) {
+        // La etiqueta ya está asignada, limpiar input y notificar
+        setTagInput("");
+        setShowPredictiveTags(false);
+        return;
+      }
+
+      // Crear o encontrar la etiqueta en la base de datos
+      // El backend maneja la lógica de findOrCreate
+      try {
+        const createdTag = await createTagMutation.mutateAsync({
+          tagName: newTag,
+          description: `Etiqueta creada automáticamente`,
+        });
+
+        // Usar el nombre normalizado devuelto por el servidor
+        // Verificar nuevamente por si el servidor normalizó el nombre
+        const normalizedName = createdTag.tagName;
+        const isStillDuplicate = tags.some(
+          (existingTag) =>
+            existingTag.toLowerCase() === normalizedName.toLowerCase()
+        );
+
+        if (!isStillDuplicate) {
+          setTags([...tags, normalizedName]);
         }
+      } catch (error) {
+        console.error("Error creating/finding tag:", error);
+        // En caso de error, agregar la etiqueta localmente
+        // El backend la manejará al guardar el documento
+        setTags([...tags, newTag]);
       }
 
       setTagInput("");
@@ -705,21 +718,19 @@ const KnowledgeDocumentForm: React.FC = () => {
   };
 
   const handleAddSuggestedTag = async (tagName: string) => {
-    if (!tags.includes(tagName)) {
-      // Add to local state immediately for better UX
-      setTags([...tags, tagName]);
+    // Verificación case-insensitive para evitar duplicados
+    const isDuplicate = tags.some(
+      (existingTag) => existingTag.toLowerCase() === tagName.toLowerCase()
+    );
 
-      // Ensure the tag exists in the database (this will just return existing tag if it exists)
-      try {
-        // TODO: Implementar creación de tags
-        // await createTagMutation.mutateAsync({
-        //   tagName,
-        //   // For suggested tags, we don't need to specify color/category as they likely already exist
-        // });
-      } catch (error) {
-        console.error("Error ensuring tag exists:", error);
-      }
+    if (isDuplicate) {
+      // La etiqueta ya está asignada, no hacer nada
+      return;
     }
+
+    // Para etiquetas sugeridas, ya existen en la BD
+    // Solo las agregamos al estado local
+    setTags([...tags, tagName]);
   };
 
   // Handle cases

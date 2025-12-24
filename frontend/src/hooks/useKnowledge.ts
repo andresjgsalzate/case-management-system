@@ -432,6 +432,35 @@ export const useSearchTags = (searchQuery: string) => {
 };
 
 // Mutations for Knowledge Document Tags
+export const useCreateTag = (options?: {
+  onSuccess?: (tag: any) => void;
+  onError?: (error: any) => void;
+}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (params: {
+      tagName: string;
+      description?: string;
+      color?: string;
+      category?: string;
+    }) =>
+      KnowledgeDocumentTagService.createTag(params.tagName, {
+        description: params.description,
+        color: params.color,
+        category: params.category,
+      }),
+    onSuccess: (data) => {
+      // Invalidate all tag-related queries to refresh the list
+      queryClient.invalidateQueries({ queryKey: ["knowledge", "tags"] });
+      options?.onSuccess?.(data);
+    },
+    onError: (error) => {
+      options?.onError?.(error);
+    },
+  });
+};
+
 export const useDeleteKnowledgeTag = (options?: {
   onSuccess?: () => void;
   onError?: (error: any) => void;

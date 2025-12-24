@@ -50,10 +50,8 @@ class KnowledgeDocumentService {
         const documentsWithTags = await Promise.all(documents.map(async (doc) => {
             const createdByUser = await doc.createdByUser;
             const documentType = await doc.documentType;
-            doc.__createdByUser__ = createdByUser;
-            doc.__documentType__ = documentType;
-            if (doc.tagRelations && doc.tagRelations.length > 0) {
-                doc.tags = doc.tagRelations.map((relation) => ({
+            const tags = doc.tagRelations && doc.tagRelations.length > 0
+                ? doc.tagRelations.map((relation) => ({
                     id: relation.tag.id,
                     tagName: relation.tag.tagName,
                     color: relation.tag.color,
@@ -64,12 +62,33 @@ class KnowledgeDocumentService {
                     createdAt: relation.tag.createdAt,
                     updatedAt: relation.tag.updatedAt,
                     documentId: doc.id,
-                }));
-            }
-            else {
-                doc.tags = [];
-            }
-            return doc;
+                }))
+                : [];
+            return {
+                ...doc,
+                documentType: documentType
+                    ? {
+                        id: documentType.id,
+                        code: documentType.code,
+                        name: documentType.name,
+                        description: documentType.description,
+                        icon: documentType.icon,
+                        color: documentType.color,
+                        isActive: documentType.isActive,
+                        displayOrder: documentType.displayOrder,
+                    }
+                    : null,
+                createdByUser: createdByUser
+                    ? {
+                        id: createdByUser.id,
+                        email: createdByUser.email,
+                        fullName: createdByUser.fullName,
+                        roleName: createdByUser.roleName,
+                    }
+                    : null,
+                tags,
+                tagRelations: undefined,
+            };
         }));
         return {
             documents: documentsWithTags,
@@ -243,14 +262,14 @@ class KnowledgeDocumentService {
             .leftJoinAndSelect("doc.documentType", "type")
             .leftJoinAndSelect("doc.createdByUser", "creator")
             .andWhere(`(
-        doc.title ILIKE :search 
-        OR doc.content ILIKE :search 
-        OR tags."tag_name" ILIKE :search
+        unaccent(lower(doc.title)) LIKE unaccent(lower(:search))
+        OR unaccent(lower(doc.content)) LIKE unaccent(lower(:search))
+        OR unaccent(lower(tags."tag_name")) LIKE unaccent(lower(:search))
         OR doc."associated_cases"::jsonb @> (:searchTermJson)::jsonb
         OR EXISTS (
           SELECT 1 FROM cases c 
           WHERE doc."associated_cases"::jsonb ? c.id::text
-          AND c."numeroCaso" ILIKE :search
+          AND unaccent(lower(c."numeroCaso")) LIKE unaccent(lower(:search))
         )
       )`, {
             search: `%${searchTerm}%`,
@@ -273,18 +292,18 @@ class KnowledgeDocumentService {
             .leftJoin("tagRelations.tag", "tags")
             .select(["doc.id", "doc.title"])
             .addSelect(`CASE 
-          WHEN doc.title ILIKE :search THEN 'title'
-          WHEN tags."tag_name" ILIKE :search THEN 'tag'
-          WHEN doc.content ILIKE :search THEN 'content'
+          WHEN unaccent(lower(doc.title)) LIKE unaccent(lower(:search)) THEN 'title'
+          WHEN unaccent(lower(tags."tag_name")) LIKE unaccent(lower(:search)) THEN 'tag'
+          WHEN unaccent(lower(doc.content)) LIKE unaccent(lower(:search)) THEN 'content'
           ELSE 'other'
         END`, "matchType")
-            .andWhere(`(doc.title ILIKE :search 
-          OR doc.content ILIKE :search 
-          OR tags."tag_name" ILIKE :search)`, { search: `%${searchTerm}%` })
+            .andWhere(`(unaccent(lower(doc.title)) LIKE unaccent(lower(:search))
+          OR unaccent(lower(doc.content)) LIKE unaccent(lower(:search))
+          OR unaccent(lower(tags."tag_name")) LIKE unaccent(lower(:search)))`, { search: `%${searchTerm}%` })
             .andWhere("doc.isArchived = :archived", { archived: false });
         this.applyPermissionFilters(documentSuggestions, userId, userPermissions);
         const documentsRaw = await documentSuggestions
-            .orderBy(`CASE WHEN doc.title ILIKE :search THEN 0 ELSE 1 END`, "ASC")
+            .orderBy(`CASE WHEN unaccent(lower(doc.title)) LIKE unaccent(lower(:search)) THEN 0 ELSE 1 END`, "ASC")
             .addOrderBy("doc.viewCount", "DESC")
             .setParameter("search", `%${searchTerm}%`)
             .limit(limit)
@@ -293,10 +312,12 @@ class KnowledgeDocumentService {
             ...doc,
             matchType: documentsRaw.raw[index]?.matchType || "title",
         }));
-        const tagSuggestions = await database_1.AppDataSource.getRepository(require("../entities/KnowledgeDocumentTag").KnowledgeDocumentTag)
+        const tagSuggestions = await database_1.AppDataSource.getRepository(require("../entities/KnowledgeTag").KnowledgeTag)
             .createQueryBuilder("tag")
             .select(["tag.tagName"])
-            .andWhere("tag.tagName ILIKE :search", { search: `%${searchTerm}%` })
+            .andWhere("unaccent(lower(tag.tagName)) LIKE unaccent(lower(:search))", {
+            search: `%${searchTerm}%`,
+        })
             .andWhere("tag.isActive = :active", { active: true })
             .groupBy("tag.tagName")
             .orderBy("COUNT(tag.tagName)", "DESC")
@@ -308,7 +329,7 @@ class KnowledgeDocumentService {
             caseSuggestions = await database_1.AppDataSource.query(`
         SELECT c.id, c."numeroCaso"
         FROM cases c 
-        WHERE c."numeroCaso" ILIKE $1 
+        WHERE unaccent(lower(c."numeroCaso")) LIKE unaccent(lower($1))
         ORDER BY c."createdAt" DESC 
         LIMIT $2
       `, [`%${searchTerm}%`, limit]);
@@ -335,6 +356,67 @@ class KnowledgeDocumentService {
             })),
         };
     }
+    calculateWordRelevance(searchPhrase, document) {
+        const normalizeText = (text) => {
+            return text
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^\w\s]/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
+        };
+        const normalizedSearch = normalizeText(searchPhrase);
+        const searchWords = normalizedSearch
+            .split(" ")
+            .filter((w) => w.length >= 2);
+        if (searchWords.length === 0) {
+            return {
+                score: 0,
+                matchedWords: [],
+                totalWords: 0,
+                hasExactPhrase: false,
+                matchLocations: [],
+            };
+        }
+        const normalizedTitle = normalizeText(document.title || "");
+        const normalizedContent = normalizeText(document.content || "");
+        const normalizedTags = (document.tags || [])
+            .map((t) => normalizeText(t.tagName))
+            .join(" ");
+        const fullText = `${normalizedTitle} ${normalizedContent} ${normalizedTags}`;
+        const hasExactPhrase = fullText.includes(normalizedSearch);
+        const matchedWords = [];
+        const matchLocations = new Set();
+        for (const word of searchWords) {
+            if (fullText.includes(word)) {
+                matchedWords.push(word);
+                if (normalizedTitle.includes(word))
+                    matchLocations.add("title");
+                if (normalizedContent.includes(word))
+                    matchLocations.add("content");
+                if (normalizedTags.includes(word))
+                    matchLocations.add("tags");
+            }
+        }
+        let score = (matchedWords.length / searchWords.length) * 100;
+        if (hasExactPhrase) {
+            score = Math.min(100, score + 20);
+        }
+        if (matchLocations.has("title")) {
+            score = Math.min(100, score + 10);
+        }
+        if (matchLocations.size === 1 && matchLocations.has("content")) {
+            score = Math.max(0, score - 5);
+        }
+        return {
+            score: Math.round(score),
+            matchedWords,
+            totalWords: searchWords.length,
+            hasExactPhrase,
+            matchLocations: Array.from(matchLocations),
+        };
+    }
     async enhancedSearch(query, userId, userPermissions) {
         const queryBuilder = this.createQueryBuilder();
         let searchStats = {
@@ -350,19 +432,19 @@ class KnowledgeDocumentService {
                 searchTerm: query.search,
                 searchTermJson: JSON.stringify([query.search]),
             };
-            searchConditions.push("doc.title ILIKE :search");
-            searchConditions.push("doc.content ILIKE :search");
-            searchConditions.push('tags."tag_name" ILIKE :search');
+            searchConditions.push("unaccent(lower(doc.title)) LIKE unaccent(lower(:search))");
+            searchConditions.push("unaccent(lower(doc.content)) LIKE unaccent(lower(:search))");
+            searchConditions.push('unaccent(lower(tags."tag_name")) LIKE unaccent(lower(:search))');
             searchConditions.push('doc."associated_cases"::jsonb @> (:searchTermJson)::jsonb');
             searchConditions.push(`EXISTS (
         SELECT 1 FROM cases c 
         WHERE doc."associated_cases"::jsonb ? c.id::text
-        AND c."numeroCaso" ILIKE :search
+        AND unaccent(lower(c."numeroCaso")) LIKE unaccent(lower(:search))
       )`);
             queryBuilder.andWhere(`(${searchConditions.join(" OR ")})`, params);
             const titleMatches = await this.knowledgeDocumentRepository
                 .createQueryBuilder("doc")
-                .andWhere("doc.title ILIKE :search", params)
+                .andWhere("unaccent(lower(doc.title)) LIKE unaccent(lower(:search))", params)
                 .getCount();
             searchStats.foundInTitle = titleMatches;
         }
@@ -377,7 +459,7 @@ class KnowledgeDocumentService {
           OR EXISTS (
             SELECT 1 FROM cases c 
             WHERE doc."associated_cases"::jsonb ? c.id::text
-            AND c."numeroCaso" ILIKE :caseSearch
+            AND unaccent(lower(c."numeroCaso")) LIKE unaccent(lower(:caseSearch))
           )
         )`, {
                 caseNumberJson: JSON.stringify([query.caseNumber]),
@@ -429,8 +511,9 @@ class KnowledgeDocumentService {
             const documentType = await doc.documentType;
             doc.__createdByUser__ = createdByUser;
             doc.__documentType__ = documentType;
-            if (doc.tagRelations && doc.tagRelations.length > 0) {
-                doc.tags = doc.tagRelations.map((relation) => ({
+            doc.documentType = documentType;
+            const tags = doc.tagRelations && doc.tagRelations.length > 0
+                ? doc.tagRelations.map((relation) => ({
                     id: relation.tag.id,
                     tagName: relation.tag.tagName,
                     color: relation.tag.color,
@@ -441,13 +524,36 @@ class KnowledgeDocumentService {
                     createdAt: relation.tag.createdAt,
                     updatedAt: relation.tag.updatedAt,
                     documentId: doc.id,
-                }));
-            }
-            else {
-                doc.tags = [];
+                }))
+                : [];
+            doc.tags = tags;
+            if (query.search && query.search.trim()) {
+                const relevance = this.calculateWordRelevance(query.search, {
+                    title: doc.title,
+                    content: doc.content,
+                    tags: tags,
+                });
+                doc.relevanceScore = relevance.score;
+                doc.matchedWords = relevance.matchedWords;
+                doc.totalSearchWords = relevance.totalWords;
+                doc.hasExactPhrase = relevance.hasExactPhrase;
+                doc.matchLocations = relevance.matchLocations;
             }
             return doc;
         }));
+        if (query.search && query.search.trim()) {
+            documentsWithTags.sort((a, b) => {
+                const scoreA = a.relevanceScore || 0;
+                const scoreB = b.relevanceScore || 0;
+                if (scoreB !== scoreA)
+                    return scoreB - scoreA;
+                const exactA = a.hasExactPhrase ? 1 : 0;
+                const exactB = b.hasExactPhrase ? 1 : 0;
+                if (exactB !== exactA)
+                    return exactB - exactA;
+                return (b.viewCount || 0) - (a.viewCount || 0);
+            });
+        }
         return {
             documents: documentsWithTags,
             total,
@@ -464,7 +570,8 @@ class KnowledgeDocumentService {
     }
     applyFilters(queryBuilder, query) {
         if (query.search) {
-            queryBuilder.andWhere("(doc.title ILIKE :search OR doc.content ILIKE :search)", { search: `%${query.search}%` });
+            queryBuilder.andWhere(`(unaccent(lower(doc.title)) LIKE unaccent(lower(:search)) 
+          OR unaccent(lower(doc.content)) LIKE unaccent(lower(:search)))`, { search: `%${query.search}%` });
         }
         if (query.documentTypeId) {
             queryBuilder.andWhere("doc.documentTypeId = :typeId", {

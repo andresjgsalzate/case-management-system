@@ -9,7 +9,7 @@ export declare class KnowledgeDocumentService {
     constructor(dataSource?: DataSource);
     create(createDto: CreateKnowledgeDocumentDto, userId: string): Promise<KnowledgeDocument>;
     findAll(query: KnowledgeDocumentQueryDto, userId?: string, userPermissions?: string[]): Promise<{
-        documents: KnowledgeDocument[];
+        documents: any[];
         total: number;
         page: number;
         totalPages: number;
@@ -39,6 +39,7 @@ export declare class KnowledgeDocumentService {
             type: "case";
         }>;
     }>;
+    private calculateWordRelevance;
     enhancedSearch(query: {
         search?: string;
         tags?: string[];
@@ -49,7 +50,13 @@ export declare class KnowledgeDocumentService {
         limit?: number;
         page?: number;
     }, userId?: string, userPermissions?: string[]): Promise<{
-        documents: KnowledgeDocument[];
+        documents: Array<KnowledgeDocument & {
+            relevanceScore?: number;
+            matchedWords?: string[];
+            totalSearchWords?: number;
+            hasExactPhrase?: boolean;
+            matchLocations?: string[];
+        }>;
         total: number;
         searchStats: {
             foundInTitle: number;

@@ -1,10 +1,31 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.KnowledgeTagService = void 0;
+exports.normalizeTagName = normalizeTagName;
+exports.generateTagSlug = generateTagSlug;
 const KnowledgeTag_1 = require("../entities/KnowledgeTag");
 const KnowledgeDocument_1 = require("../entities/KnowledgeDocument");
 const KnowledgeDocumentTagRelation_1 = require("../entities/KnowledgeDocumentTagRelation");
 const database_1 = require("../config/database");
+function normalizeTagName(tagName) {
+    if (!tagName)
+        return "";
+    let normalized = tagName
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/^[.\-_,;:!¡¿?@#$%^&*()+=\[\]{}|\\/<>'"]+/, "")
+        .replace(/[.\-_,;:!¡¿?@#$%^&*()+=\[\]{}|\\/<>'"]+$/, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toUpperCase();
+    return normalized;
+}
+function generateTagSlug(tagName) {
+    return normalizeTagName(tagName)
+        .replace(/\s+/g, "")
+        .replace(/[^A-Z0-9]/g, "");
+}
 class KnowledgeTagService {
     constructor(dataSource) {
         const ds = dataSource || database_1.AppDataSource;
@@ -13,22 +34,50 @@ class KnowledgeTagService {
         this.documentRepository = ds.getRepository(KnowledgeDocument_1.KnowledgeDocument);
     }
     async createTag(createDto, userId) {
-        const existingTag = await this.tagRepository.findOne({
-            where: { tagName: createDto.tagName },
+        const normalizedName = normalizeTagName(createDto.tagName);
+        if (!normalizedName) {
+            throw new Error("El nombre de la etiqueta no puede estar vacío");
+        }
+        const tagSlug = generateTagSlug(normalizedName);
+        const exactMatch = await this.tagRepository.findOne({
+            where: { tagName: normalizedName },
         });
-        if (existingTag) {
-            throw new Error(`La etiqueta "${createDto.tagName}" ya existe`);
+        if (exactMatch) {
+            throw new Error(`La etiqueta "${normalizedName}" ya existe`);
+        }
+        const allTags = await this.tagRepository.find({
+            where: { isActive: true },
+        });
+        const duplicateTag = allTags.find((tag) => {
+            const existingSlug = generateTagSlug(tag.tagName);
+            return existingSlug === tagSlug;
+        });
+        if (duplicateTag) {
+            throw new Error(`Ya existe una etiqueta similar: "${duplicateTag.tagName}". ` +
+                `La etiqueta "${createDto.tagName}" se considera duplicada.`);
         }
         const tag = this.tagRepository.create({
             ...createDto,
+            tagName: normalizedName,
             createdBy: userId,
         });
         return await this.tagRepository.save(tag);
     }
     async findOrCreateTag(tagName, userId) {
+        const normalizedName = normalizeTagName(tagName);
+        if (!normalizedName) {
+            throw new Error("El nombre de la etiqueta no puede estar vacío");
+        }
         let tag = await this.tagRepository.findOne({
-            where: { tagName },
+            where: { tagName: normalizedName },
         });
+        if (!tag) {
+            const tagSlug = generateTagSlug(normalizedName);
+            const allTags = await this.tagRepository.find({
+                where: { isActive: true },
+            });
+            tag = allTags.find((t) => generateTagSlug(t.tagName) === tagSlug) || null;
+        }
         if (!tag) {
             const recentTags = await this.tagRepository.find({
                 order: { createdAt: "DESC" },
@@ -53,7 +102,7 @@ class KnowledgeTagService {
             const colorPool = availableColors.length > 0 ? availableColors : TAG_COLORS;
             const selectedColor = colorPool[Math.floor(Math.random() * colorPool.length)];
             let selectedCategory = KnowledgeTag_1.TagCategory.CUSTOM;
-            const lowerName = tagName.toLowerCase();
+            const lowerName = normalizedName.toLowerCase();
             if (["bug", "error", "fix", "critical", "urgent"].some((k) => lowerName.includes(k))) {
                 selectedCategory = KnowledgeTag_1.TagCategory.PRIORITY;
             }
@@ -76,7 +125,7 @@ class KnowledgeTagService {
                 selectedCategory = KnowledgeTag_1.TagCategory.MODULE;
             }
             tag = await this.createTag({
-                tagName,
+                tagName: normalizedName,
                 color: selectedColor,
                 category: selectedCategory,
                 description: `Etiqueta creada automáticamente`,
@@ -226,12 +275,35 @@ class KnowledgeTagService {
         if (!tag) {
             throw new Error("Etiqueta no encontrada");
         }
-        if (updateData.tagName && updateData.tagName !== tag.tagName) {
-            const existingTag = await this.tagRepository.findOne({
-                where: { tagName: updateData.tagName },
-            });
-            if (existingTag) {
-                throw new Error(`La etiqueta "${updateData.tagName}" ya existe`);
+        if (updateData.tagName) {
+            const normalizedName = normalizeTagName(updateData.tagName);
+            if (!normalizedName) {
+                throw new Error("El nombre de la etiqueta no puede estar vacío");
+            }
+            if (normalizedName !== tag.tagName) {
+                const exactMatch = await this.tagRepository.findOne({
+                    where: { tagName: normalizedName },
+                });
+                if (exactMatch && exactMatch.id !== tagId) {
+                    throw new Error(`La etiqueta "${normalizedName}" ya existe`);
+                }
+                const tagSlug = generateTagSlug(normalizedName);
+                const allTags = await this.tagRepository.find({
+                    where: { isActive: true },
+                });
+                const duplicateTag = allTags.find((t) => {
+                    if (t.id === tagId)
+                        return false;
+                    return generateTagSlug(t.tagName) === tagSlug;
+                });
+                if (duplicateTag) {
+                    throw new Error(`Ya existe una etiqueta similar: "${duplicateTag.tagName}". ` +
+                        `La etiqueta "${updateData.tagName}" se considera duplicada.`);
+                }
+                updateData.tagName = normalizedName;
+            }
+            else {
+                delete updateData.tagName;
             }
         }
         Object.assign(tag, updateData);

@@ -9,6 +9,8 @@ export interface CreateKnowledgeTagDto {
 export interface KnowledgeTagWithUsage extends KnowledgeTag {
     usageCount: number;
 }
+export declare function normalizeTagName(tagName: string): string;
+export declare function generateTagSlug(tagName: string): string;
 export declare class KnowledgeTagService {
     private tagRepository;
     private relationRepository;

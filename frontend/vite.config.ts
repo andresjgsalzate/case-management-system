@@ -49,6 +49,11 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: "dist",
       sourcemap: true,
+      // Eliminar console.log en producción para mejor rendimiento y seguridad
+      minify: "esbuild",
+      esbuild: {
+        drop: mode === "production" ? ["console", "debugger"] : [],
+      },
     },
   };
 });

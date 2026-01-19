@@ -39,6 +39,7 @@ const database_1 = require("../config/database");
 const AuditLog_1 = require("../entities/AuditLog");
 const AuditEntityChange_1 = require("../entities/AuditEntityChange");
 const audit_dto_1 = require("../dto/audit.dto");
+const IpGeolocationService_1 = require("../services/IpGeolocationService");
 class AuditMiddleware {
     static async waitForDataSource(maxWaitMs = 10000) {
         const startTime = Date.now();
@@ -82,7 +83,23 @@ class AuditMiddleware {
     }
     static async logAudit(metadata) {
         try {
-            const { context, action, entityType, entityId, entityName, changes, operationContext, } = metadata;
+            const { context, action, entityType, entityId, entityName, changes, operationContext, ipGeolocation, } = metadata;
+            if (ipGeolocation && !context.ipGeolocation) {
+                context.ipGeolocation = {
+                    city: ipGeolocation.city,
+                    country: ipGeolocation.country,
+                    countryCode: ipGeolocation.countryCode,
+                    timezone: ipGeolocation.timezone,
+                    latitude: ipGeolocation.latitude,
+                    longitude: ipGeolocation.longitude,
+                    networkCidr: ipGeolocation.networkCidr,
+                    asn: ipGeolocation.asn,
+                    isp: ipGeolocation.isp,
+                    organization: ipGeolocation.organization,
+                    enrichmentSource: ipGeolocation.enrichmentSource,
+                    isPrivateIp: ipGeolocation.isPrivateIp,
+                };
+            }
             if (!context.userId || !entityId || !entityType) {
                 console.warn("Auditoría saltada por datos faltantes:", {
                     userId: context.userId,
@@ -108,6 +125,20 @@ class AuditMiddleware {
             auditLog.sessionId = context.sessionId;
             auditLog.requestPath = context.requestPath;
             auditLog.requestMethod = context.requestMethod;
+            if (context.ipGeolocation) {
+                auditLog.ipCity = context.ipGeolocation.city;
+                auditLog.ipCountry = context.ipGeolocation.country;
+                auditLog.ipCountryCode = context.ipGeolocation.countryCode;
+                auditLog.ipTimezone = context.ipGeolocation.timezone;
+                auditLog.ipLatitude = context.ipGeolocation.latitude;
+                auditLog.ipLongitude = context.ipGeolocation.longitude;
+                auditLog.ipNetworkCidr = context.ipGeolocation.networkCidr;
+                auditLog.ipAsn = context.ipGeolocation.asn;
+                auditLog.ipIsp = context.ipGeolocation.isp;
+                auditLog.ipOrganization = context.ipGeolocation.organization;
+                auditLog.ipEnrichmentSource = context.ipGeolocation.enrichmentSource;
+                auditLog.ipIsPrivate = context.ipGeolocation.isPrivateIp;
+            }
             const responseStatus = operationContext?.responseStatus;
             auditLog.operationSuccess = responseStatus >= 200 && responseStatus < 300;
             if (!auditLog.operationSuccess) {
@@ -478,21 +509,28 @@ AuditMiddleware.ROUTE_ENTITY_MAPPING = {
     "/api/files": "file_operations",
     "/api/metrics": "report_access",
 };
-AuditMiddleware.initializeAuditContext = (req, res, next) => {
+AuditMiddleware.initializeAuditContext = async (req, res, next) => {
     try {
         const user = req.user;
+        const ipAddress = _a.extractIpAddress(req);
         req.auditContext = {
             userId: user?.id || "sistema",
             userEmail: user?.email || "sistema@unknown.com",
             userName: user?.fullName || user?.name || "Usuario del Sistema",
             userRole: user?.roleName || user?.role || "unknown",
             module: _a.extractModuleFromPath(req.originalUrl || req.path),
-            ipAddress: _a.extractIpAddress(req),
+            ipAddress,
             userAgent: req.get("User-Agent"),
             sessionId: req.sessionID || req.get("x-session-id"),
             requestPath: req.originalUrl || req.path,
             requestMethod: req.method,
         };
+        try {
+            req.ipGeolocation = await IpGeolocationService_1.ipGeolocationService.getIpData(ipAddress);
+        }
+        catch (err) {
+            console.warn("⚠️ Error obteniendo geolocalización de IP:", err);
+        }
         if (req.method === "PUT" || req.method === "PATCH") {
             req.originalBody = { ...req.body };
             req.originalParams = { ...req.params };
@@ -534,6 +572,7 @@ AuditMiddleware.auditCreate = (entityType) => {
                                 requestBody: req.body,
                                 responseStatus: res.statusCode,
                             },
+                            ipGeolocation: req.ipGeolocation,
                         }).catch((error) => {
                             console.error("Error registrando auditoría CREATE:", error);
                         });
@@ -590,6 +629,7 @@ AuditMiddleware.auditUpdate = (entityType) => {
                                     updateData: req.body,
                                     responseStatus: res.statusCode,
                                 },
+                                ipGeolocation: req.ipGeolocation,
                             }).catch((error) => {
                                 console.error("Error registrando auditoría UPDATE:", error);
                             });
@@ -636,6 +676,7 @@ AuditMiddleware.auditDelete = (entityType) => {
                             deletedData: originalEntity,
                             responseStatus: res.statusCode,
                         },
+                        ipGeolocation: req.ipGeolocation,
                     }).catch((error) => {
                         console.error("Error registrando auditoría DELETE:", error);
                     });

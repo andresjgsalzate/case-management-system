@@ -28,6 +28,18 @@ export declare class AuditLog {
     module: string;
     operationContext?: any;
     ipAddress?: string;
+    ipCity?: string;
+    ipCountry?: string;
+    ipCountryCode?: string;
+    ipTimezone?: string;
+    ipLatitude?: number;
+    ipLongitude?: number;
+    ipNetworkCidr?: string;
+    ipAsn?: number;
+    ipIsp?: string;
+    ipOrganization?: string;
+    ipEnrichmentSource?: string;
+    ipIsPrivate?: boolean;
     userAgent?: string;
     sessionId?: string;
     requestPath?: string;

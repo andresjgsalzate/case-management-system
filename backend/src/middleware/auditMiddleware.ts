@@ -9,6 +9,10 @@ import {
   AuditModule,
   AuditEntityType,
 } from "../dto/audit.dto";
+import {
+  ipGeolocationService,
+  EnrichedIpData,
+} from "../services/IpGeolocationService";
 
 // Interface para requests con información de auditoría
 export interface AuditableRequest extends Request {
@@ -17,6 +21,7 @@ export interface AuditableRequest extends Request {
   auditMetadata?: AuditMetadata;
   originalBody?: any;
   originalParams?: any;
+  ipGeolocation?: EnrichedIpData; // Datos enriquecidos de IP
 }
 
 /**
@@ -111,14 +116,15 @@ export class AuditMiddleware {
   /**
    * Inicializar contexto de auditoría desde la request
    */
-  static initializeAuditContext = (
+  static initializeAuditContext = async (
     req: AuditableRequest,
     res: Response,
     next: NextFunction
-  ): void => {
+  ): Promise<void> => {
     try {
       // Extraer información del usuario de la request
       const user = req.user;
+      const ipAddress = AuditMiddleware.extractIpAddress(req);
 
       // Crear contexto de auditoría
       req.auditContext = {
@@ -129,12 +135,20 @@ export class AuditMiddleware {
         module: AuditMiddleware.extractModuleFromPath(
           req.originalUrl || req.path
         ),
-        ipAddress: AuditMiddleware.extractIpAddress(req),
+        ipAddress,
         userAgent: req.get("User-Agent"),
         sessionId: (req as any).sessionID || req.get("x-session-id"),
         requestPath: req.originalUrl || req.path,
         requestMethod: req.method,
       };
+
+      // Obtener datos de geolocalización de IP
+      // El servicio tiene timeout de 3 segundos y cache, por lo que no ralentiza
+      try {
+        req.ipGeolocation = await ipGeolocationService.getIpData(ipAddress);
+      } catch (err) {
+        console.warn("⚠️ Error obteniendo geolocalización de IP:", err);
+      }
 
       // Almacenar datos originales para comparación
       if (req.method === "PUT" || req.method === "PATCH") {
@@ -199,6 +213,7 @@ export class AuditMiddleware {
                   requestBody: req.body,
                   responseStatus: res.statusCode,
                 },
+                ipGeolocation: req.ipGeolocation,
               }).catch((error) => {
                 console.error("Error registrando auditoría CREATE:", error);
               });
@@ -284,6 +299,7 @@ export class AuditMiddleware {
                     updateData: req.body,
                     responseStatus: res.statusCode,
                   },
+                  ipGeolocation: req.ipGeolocation,
                 }).catch((error) => {
                   console.error("Error registrando auditoría UPDATE:", error);
                 });
@@ -353,6 +369,7 @@ export class AuditMiddleware {
                 deletedData: originalEntity,
                 responseStatus: res.statusCode,
               },
+              ipGeolocation: req.ipGeolocation,
             }).catch((error) => {
               console.error("Error registrando auditoría DELETE:", error);
             });
@@ -580,6 +597,7 @@ export class AuditMiddleware {
     entityName?: string;
     changes: EntityChange[];
     operationContext?: any;
+    ipGeolocation?: EnrichedIpData; // Datos de geolocalización de IP
   }): Promise<void> {
     try {
       const {
@@ -590,7 +608,26 @@ export class AuditMiddleware {
         entityName,
         changes,
         operationContext,
+        ipGeolocation,
       } = metadata;
+
+      // Enriquecer el contexto con datos de geolocalización si están disponibles
+      if (ipGeolocation && !context.ipGeolocation) {
+        context.ipGeolocation = {
+          city: ipGeolocation.city,
+          country: ipGeolocation.country,
+          countryCode: ipGeolocation.countryCode,
+          timezone: ipGeolocation.timezone,
+          latitude: ipGeolocation.latitude,
+          longitude: ipGeolocation.longitude,
+          networkCidr: ipGeolocation.networkCidr,
+          asn: ipGeolocation.asn,
+          isp: ipGeolocation.isp,
+          organization: ipGeolocation.organization,
+          enrichmentSource: ipGeolocation.enrichmentSource,
+          isPrivateIp: ipGeolocation.isPrivateIp,
+        };
+      }
 
       // Validar datos requeridos
       if (!context.userId || !entityId || !entityType) {
@@ -620,6 +657,22 @@ export class AuditMiddleware {
       auditLog.sessionId = context.sessionId;
       auditLog.requestPath = context.requestPath;
       auditLog.requestMethod = context.requestMethod;
+
+      // Agregar datos de geolocalización de IP si están disponibles
+      if (context.ipGeolocation) {
+        auditLog.ipCity = context.ipGeolocation.city;
+        auditLog.ipCountry = context.ipGeolocation.country;
+        auditLog.ipCountryCode = context.ipGeolocation.countryCode;
+        auditLog.ipTimezone = context.ipGeolocation.timezone;
+        auditLog.ipLatitude = context.ipGeolocation.latitude;
+        auditLog.ipLongitude = context.ipGeolocation.longitude;
+        auditLog.ipNetworkCidr = context.ipGeolocation.networkCidr;
+        auditLog.ipAsn = context.ipGeolocation.asn;
+        auditLog.ipIsp = context.ipGeolocation.isp;
+        auditLog.ipOrganization = context.ipGeolocation.organization;
+        auditLog.ipEnrichmentSource = context.ipGeolocation.enrichmentSource;
+        auditLog.ipIsPrivate = context.ipGeolocation.isPrivateIp;
+      }
 
       // Determinar el éxito de la operación basándose en el responseStatus
       const responseStatus = operationContext?.responseStatus;

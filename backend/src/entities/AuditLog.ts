@@ -82,6 +82,78 @@ export class AuditLog {
   @Column({ name: "ip_address", type: "inet", nullable: true })
   ipAddress?: string;
 
+  // Datos de geolocalización de IP (enriquecidos via ip.guide)
+  @Column({ name: "ip_city", type: "varchar", length: 255, nullable: true })
+  ipCity?: string;
+
+  @Column({ name: "ip_country", type: "varchar", length: 255, nullable: true })
+  ipCountry?: string;
+
+  @Column({
+    name: "ip_country_code",
+    type: "varchar",
+    length: 10,
+    nullable: true,
+  })
+  ipCountryCode?: string;
+
+  @Column({ name: "ip_timezone", type: "varchar", length: 100, nullable: true })
+  ipTimezone?: string;
+
+  @Column({
+    name: "ip_latitude",
+    type: "decimal",
+    precision: 10,
+    scale: 8,
+    nullable: true,
+  })
+  ipLatitude?: number;
+
+  @Column({
+    name: "ip_longitude",
+    type: "decimal",
+    precision: 11,
+    scale: 8,
+    nullable: true,
+  })
+  ipLongitude?: number;
+
+  // Datos de red
+  @Column({
+    name: "ip_network_cidr",
+    type: "varchar",
+    length: 50,
+    nullable: true,
+  })
+  ipNetworkCidr?: string;
+
+  // Datos del ISP/ASN
+  @Column({ name: "ip_asn", type: "integer", nullable: true })
+  ipAsn?: number;
+
+  @Column({ name: "ip_isp", type: "varchar", length: 255, nullable: true })
+  ipIsp?: string;
+
+  @Column({
+    name: "ip_organization",
+    type: "varchar",
+    length: 255,
+    nullable: true,
+  })
+  ipOrganization?: string;
+
+  // Metadatos de enriquecimiento
+  @Column({
+    name: "ip_enrichment_source",
+    type: "varchar",
+    length: 50,
+    nullable: true,
+  })
+  ipEnrichmentSource?: string;
+
+  @Column({ name: "ip_is_private", type: "boolean", default: false })
+  ipIsPrivate?: boolean;
+
   @Column({ name: "user_agent", type: "text", nullable: true })
   userAgent?: string;
 

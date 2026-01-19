@@ -684,6 +684,32 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                   </p>
                 </div>
               )}
+              {selectedLog.ipGeolocation &&
+                !selectedLog.ipGeolocation.isPrivateIp && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Ubicación
+                    </Label>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">
+                      {[
+                        selectedLog.ipGeolocation.city,
+                        selectedLog.ipGeolocation.country,
+                      ]
+                        .filter(Boolean)
+                        .join(", ") || "Desconocida"}
+                    </p>
+                  </div>
+                )}
+              {selectedLog.ipGeolocation?.isp && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    ISP / Proveedor
+                  </Label>
+                  <p className="text-sm text-gray-900 dark:text-gray-100">
+                    {selectedLog.ipGeolocation.isp}
+                  </p>
+                </div>
+              )}
               {selectedLog.requestPath && (
                 <div>
                   <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">

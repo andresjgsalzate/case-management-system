@@ -103,6 +103,7 @@ const KnowledgeDocumentForm: React.FC = () => {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedContentRef = useRef<string>(""); // Para comparar si hay cambios reales
+  const performAutoSaveRef = useRef<() => Promise<void>>(); // Ref estable para la función de autoguardado
 
   // ✅ BACKUP LOCAL: Para proteger contra pérdida de datos por sesión expirada
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -177,6 +178,11 @@ const KnowledgeDocumentForm: React.FC = () => {
       setIsAutoSaving(false);
       setHasUnsavedChanges(false);
       clearLocalBackup(); // ✅ BACKUP LOCAL: Limpiar backup al autoguardar exitosamente
+
+      // ✅ ACTIVIDAD: Notificar al SecurityService que hubo actividad (el autoguardado cuenta como actividad)
+      // Esto reinicia el contador de inactividad y evita que la sesión expire mientras el usuario edita
+      securityService.notifyActivity();
+
       // Actualizar el contenido guardado para futuras comparaciones
       lastSavedContentRef.current = JSON.stringify({
         title,
@@ -465,9 +471,13 @@ const KnowledgeDocumentForm: React.FC = () => {
 
     if (currentContent === lastSavedContentRef.current) {
       // No hay cambios, no es necesario guardar
+      console.log(
+        "⏭️ [AUTOGUARDADO] Sin cambios detectados, omitiendo guardado"
+      );
       return;
     }
 
+    console.log("💾 [AUTOGUARDADO] Cambios detectados, guardando...");
     setIsAutoSaving(true);
 
     // Construir objeto de datos limpio (sin propiedades undefined)
@@ -519,7 +529,13 @@ const KnowledgeDocumentForm: React.FC = () => {
     associatedCases,
   ]);
 
-  // ✅ AUTOGUARDADO: Configurar el intervalo de autoguardado
+  // ✅ AUTOGUARDADO: Mantener referencia estable de performAutoSave
+  // Esto evita que el useEffect se re-ejecute innecesariamente y recree el intervalo
+  useEffect(() => {
+    performAutoSaveRef.current = performAutoSave;
+  }, [performAutoSave]);
+
+  // ✅ AUTOGUARDADO: Configurar el intervalo de autoguardado (solo depende de isEditing e id)
   useEffect(() => {
     // Solo activar autoguardado en modo edición
     if (!isEditing || !id) return;
@@ -529,19 +545,29 @@ const KnowledgeDocumentForm: React.FC = () => {
       clearInterval(autoSaveTimerRef.current);
     }
 
-    // Configurar nuevo timer
+    console.log(
+      "✅ [AUTOGUARDADO] Iniciando intervalo de autoguardado cada",
+      AUTOSAVE_INTERVAL / 1000,
+      "segundos"
+    );
+
+    // Configurar nuevo timer usando la ref estable
     autoSaveTimerRef.current = setInterval(() => {
-      performAutoSave();
+      console.log("⏰ [AUTOGUARDADO] Ejecutando ciclo de autoguardado...");
+      if (performAutoSaveRef.current) {
+        performAutoSaveRef.current();
+      }
     }, AUTOSAVE_INTERVAL);
 
-    // Cleanup al desmontar o cuando cambian las dependencias
+    // Cleanup al desmontar o cuando cambian las dependencias críticas
     return () => {
       if (autoSaveTimerRef.current) {
+        console.log("🛑 [AUTOGUARDADO] Limpiando intervalo de autoguardado");
         clearInterval(autoSaveTimerRef.current);
         autoSaveTimerRef.current = null;
       }
     };
-  }, [isEditing, id, performAutoSave, AUTOSAVE_INTERVAL]);
+  }, [isEditing, id, AUTOSAVE_INTERVAL]); // ✅ IMPORTANTE: No incluir performAutoSave aquí
 
   // ✅ AUTOGUARDADO: Detectar cambios no guardados (usando useMemo para evitar re-renders infinitos)
   const currentContentString = React.useMemo(() => {

@@ -19,6 +19,22 @@ export interface AuditLog {
   createdAt: string;
   operationContext?: Record<string, any>;
 
+  // Campos de geolocalización IP
+  ipGeolocation?: {
+    city?: string;
+    country?: string;
+    countryCode?: string;
+    timezone?: string;
+    latitude?: number;
+    longitude?: number;
+    networkCidr?: string;
+    asn?: number;
+    isp?: string;
+    organization?: string;
+    enrichmentSource?: string;
+    isPrivateIp?: boolean;
+  };
+
   // Relaciones
   user?: {
     id: string;

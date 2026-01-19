@@ -63,6 +63,20 @@ export interface AuditLogResponseDto {
     module: string;
     operationContext?: any;
     ipAddress?: string;
+    ipGeolocation?: {
+        city?: string;
+        country?: string;
+        countryCode?: string;
+        timezone?: string;
+        latitude?: number;
+        longitude?: number;
+        networkCidr?: string;
+        asn?: number;
+        isp?: string;
+        organization?: string;
+        enrichmentSource?: string;
+        isPrivateIp?: boolean;
+    };
     userAgent?: string;
     sessionId?: string;
     requestPath?: string;
@@ -189,6 +203,20 @@ export interface AuditContext {
     sessionId?: string;
     requestPath?: string;
     requestMethod?: string;
+    ipGeolocation?: {
+        city?: string;
+        country?: string;
+        countryCode?: string;
+        timezone?: string;
+        latitude?: number;
+        longitude?: number;
+        networkCidr?: string;
+        asn?: number;
+        isp?: string;
+        organization?: string;
+        enrichmentSource?: string;
+        isPrivateIp?: boolean;
+    };
 }
 export interface EntityChange {
     field: string;

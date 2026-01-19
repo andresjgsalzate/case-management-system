@@ -1,12 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import { AuditAction } from "../entities/AuditLog";
 import { AuditContext, AuditMetadata, EntityChange } from "../dto/audit.dto";
+import { EnrichedIpData } from "../services/IpGeolocationService";
 export interface AuditableRequest extends Request {
     user?: any;
     auditContext?: AuditContext;
     auditMetadata?: AuditMetadata;
     originalBody?: any;
     originalParams?: any;
+    ipGeolocation?: EnrichedIpData;
 }
 export declare class AuditMiddleware {
     private static waitForDataSource;
@@ -14,7 +16,7 @@ export declare class AuditMiddleware {
     private static getAuditChangeRepository;
     private static readonly SENSITIVE_FIELDS;
     private static readonly ROUTE_ENTITY_MAPPING;
-    static initializeAuditContext: (req: AuditableRequest, res: Response, next: NextFunction) => void;
+    static initializeAuditContext: (req: AuditableRequest, res: Response, next: NextFunction) => Promise<void>;
     static auditCreate: (entityType?: string) => (req: AuditableRequest, res: Response, next: NextFunction) => Promise<void>;
     static auditUpdate: (entityType?: string) => (req: AuditableRequest, res: Response, next: NextFunction) => Promise<void>;
     static auditDelete: (entityType?: string) => (req: AuditableRequest, res: Response, next: NextFunction) => Promise<void>;

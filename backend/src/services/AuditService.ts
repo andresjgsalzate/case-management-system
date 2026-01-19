@@ -635,6 +635,28 @@ export class AuditService {
       module: auditLog.module,
       operationContext: auditLog.operationContext,
       ipAddress: auditLog.ipAddress,
+      // Datos de geolocalización de IP
+      ipGeolocation:
+        auditLog.ipCity || auditLog.ipCountry
+          ? {
+              city: auditLog.ipCity,
+              country: auditLog.ipCountry,
+              countryCode: auditLog.ipCountryCode,
+              timezone: auditLog.ipTimezone,
+              latitude: auditLog.ipLatitude
+                ? Number(auditLog.ipLatitude)
+                : undefined,
+              longitude: auditLog.ipLongitude
+                ? Number(auditLog.ipLongitude)
+                : undefined,
+              networkCidr: auditLog.ipNetworkCidr,
+              asn: auditLog.ipAsn,
+              isp: auditLog.ipIsp,
+              organization: auditLog.ipOrganization,
+              enrichmentSource: auditLog.ipEnrichmentSource,
+              isPrivateIp: auditLog.ipIsPrivate,
+            }
+          : undefined,
       userAgent: auditLog.userAgent,
       sessionId: auditLog.sessionId,
       requestPath: auditLog.requestPath,

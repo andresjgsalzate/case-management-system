@@ -108,6 +108,86 @@ __decorate([
     __metadata("design:type", String)
 ], AuditLog.prototype, "ipAddress", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ name: "ip_city", type: "varchar", length: 255, nullable: true }),
+    __metadata("design:type", String)
+], AuditLog.prototype, "ipCity", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: "ip_country", type: "varchar", length: 255, nullable: true }),
+    __metadata("design:type", String)
+], AuditLog.prototype, "ipCountry", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: "ip_country_code",
+        type: "varchar",
+        length: 10,
+        nullable: true,
+    }),
+    __metadata("design:type", String)
+], AuditLog.prototype, "ipCountryCode", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: "ip_timezone", type: "varchar", length: 100, nullable: true }),
+    __metadata("design:type", String)
+], AuditLog.prototype, "ipTimezone", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: "ip_latitude",
+        type: "decimal",
+        precision: 10,
+        scale: 8,
+        nullable: true,
+    }),
+    __metadata("design:type", Number)
+], AuditLog.prototype, "ipLatitude", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: "ip_longitude",
+        type: "decimal",
+        precision: 11,
+        scale: 8,
+        nullable: true,
+    }),
+    __metadata("design:type", Number)
+], AuditLog.prototype, "ipLongitude", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: "ip_network_cidr",
+        type: "varchar",
+        length: 50,
+        nullable: true,
+    }),
+    __metadata("design:type", String)
+], AuditLog.prototype, "ipNetworkCidr", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: "ip_asn", type: "integer", nullable: true }),
+    __metadata("design:type", Number)
+], AuditLog.prototype, "ipAsn", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: "ip_isp", type: "varchar", length: 255, nullable: true }),
+    __metadata("design:type", String)
+], AuditLog.prototype, "ipIsp", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: "ip_organization",
+        type: "varchar",
+        length: 255,
+        nullable: true,
+    }),
+    __metadata("design:type", String)
+], AuditLog.prototype, "ipOrganization", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: "ip_enrichment_source",
+        type: "varchar",
+        length: 50,
+        nullable: true,
+    }),
+    __metadata("design:type", String)
+], AuditLog.prototype, "ipEnrichmentSource", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: "ip_is_private", type: "boolean", default: false }),
+    __metadata("design:type", Boolean)
+], AuditLog.prototype, "ipIsPrivate", void 0);
+__decorate([
     (0, typeorm_1.Column)({ name: "user_agent", type: "text", nullable: true }),
     __metadata("design:type", String)
 ], AuditLog.prototype, "userAgent", void 0);

@@ -163,6 +163,33 @@ class SessionService {
             throw error;
         }
     }
+    async updateSessionToken(refreshToken, newToken) {
+        const refreshTokenHash = this.hashToken(refreshToken);
+        const session = await this.sessionRepository.findOne({
+            where: {
+                refreshTokenHash,
+                isActive: true,
+            },
+            relations: ["user"],
+        });
+        if (!session) {
+            console.warn("⚠️ No se encontró sesión activa para el refresh token");
+            return null;
+        }
+        if (session.expiresAt < new Date()) {
+            await this.invalidateSession(session.id, "expired");
+            return null;
+        }
+        const newTokenHash = this.hashToken(newToken);
+        session.tokenHash = newTokenHash;
+        session.lastActivityAt = new Date();
+        const newExpiresAt = new Date();
+        newExpiresAt.setHours(newExpiresAt.getHours() + 24);
+        session.expiresAt = newExpiresAt;
+        await this.sessionRepository.save(session);
+        console.log("✅ Token de sesión actualizado exitosamente para usuario:", session.userId);
+        return session;
+    }
     hashToken(token) {
         return (0, crypto_1.createHash)("sha256").update(token).digest("hex");
     }

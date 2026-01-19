@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import {
   KnowledgeDocument,
   KnowledgeDocumentListResponse,
@@ -18,8 +18,27 @@ import {
 } from "../types/knowledge";
 import { config } from "../config/config";
 import { securityService } from "./security.service";
+import { authService } from "./auth.service";
 
 const API_BASE_URL = config.api.baseUrl;
+
+// Flag para evitar bucles infinitos de refresh
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value: unknown) => void;
+  reject: (reason?: unknown) => void;
+}> = [];
+
+const processQueue = (error: Error | null, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
 
 // Configure axios defaults
 const api = axios.create({
@@ -39,10 +58,80 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Add response interceptor to handle errors with better error messages
+// Add response interceptor to handle errors with better error messages AND token refresh
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
+
+    // Si es un error 401 y no es un retry, intentar refrescar el token
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Si ya estamos refrescando, encolar esta petición
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const tokens = securityService.getValidTokens();
+
+      if (tokens?.refreshToken) {
+        try {
+          console.log("🔄 [Knowledge] Intentando refrescar token...");
+          const refreshResponse = await authService.refreshToken(
+            tokens.refreshToken,
+          );
+
+          if (refreshResponse.success && refreshResponse.data) {
+            const newToken = refreshResponse.data.token;
+            const newRefreshToken =
+              (refreshResponse.data as { token: string; refreshToken?: string })
+                .refreshToken || tokens.refreshToken;
+
+            // Actualizar tokens en SecurityService
+            securityService.updateTokens(newToken, newRefreshToken);
+
+            console.log("✅ [Knowledge] Token refrescado exitosamente");
+
+            // Procesar la cola de peticiones pendientes
+            processQueue(null, newToken);
+
+            // Reintentar la petición original
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            return api(originalRequest);
+          }
+        } catch (refreshError) {
+          console.error(
+            "❌ [Knowledge] Error al refrescar token:",
+            refreshError,
+          );
+          processQueue(refreshError as Error, null);
+          securityService.clearSession();
+          // Redirigir al login
+          window.location.href = "/login";
+          return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
+        }
+      } else {
+        console.warn("⚠️ [Knowledge] No hay refresh token disponible");
+        securityService.clearSession();
+        window.location.href = "/login";
+      }
+    }
+
     console.error("🚨 API Error:", {
       url: error.config?.url,
       method: error.config?.method,
@@ -52,60 +141,71 @@ api.interceptors.response.use(
     });
 
     // Enhance error with more informative messages
+    const enhancedError = error as AxiosError & {
+      userMessage?: string;
+      technicalDetails?: string;
+    };
+
     if (error.response) {
       const status = error.response.status;
       const url = error.config?.url || "unknown";
 
       switch (status) {
         case 401:
-          error.userMessage =
+          enhancedError.userMessage =
             "Sesión expirada. Por favor, inicia sesión nuevamente.";
-          error.technicalDetails = `Error 401 en ${url}: Token de autenticación inválido o expirado`;
+          enhancedError.technicalDetails = `Error 401 en ${url}: Token de autenticación inválido o expirado`;
           break;
         case 403:
-          error.userMessage = "No tienes permisos para acceder a este recurso.";
-          error.technicalDetails = `Error 403 en ${url}: Permisos insuficientes`;
+          enhancedError.userMessage =
+            "No tienes permisos para acceder a este recurso.";
+          enhancedError.technicalDetails = `Error 403 en ${url}: Permisos insuficientes`;
           break;
         case 404:
-          error.userMessage = "El recurso solicitado no fue encontrado.";
-          error.technicalDetails = `Error 404 en ${url}: Recurso no encontrado`;
+          enhancedError.userMessage =
+            "El recurso solicitado no fue encontrado.";
+          enhancedError.technicalDetails = `Error 404 en ${url}: Recurso no encontrado`;
           break;
         case 500:
-          error.userMessage =
+          enhancedError.userMessage =
             "Error interno del servidor. Por favor, contacta al administrador.";
-          error.technicalDetails = `Error 500 en ${url}: Error interno del servidor`;
+          enhancedError.technicalDetails = `Error 500 en ${url}: Error interno del servidor`;
           break;
         case 502:
-          error.userMessage =
+          enhancedError.userMessage =
             "Error de conexión con el servidor. Inténtalo más tarde.";
-          error.technicalDetails = `Error 502 en ${url}: Bad Gateway`;
+          enhancedError.technicalDetails = `Error 502 en ${url}: Bad Gateway`;
           break;
         case 503:
-          error.userMessage = "El servicio no está disponible temporalmente.";
-          error.technicalDetails = `Error 503 en ${url}: Service Unavailable`;
+          enhancedError.userMessage =
+            "El servicio no está disponible temporalmente.";
+          enhancedError.technicalDetails = `Error 503 en ${url}: Service Unavailable`;
           break;
         default:
-          error.userMessage = `Error ${status}: ${
-            error.response?.data?.message || "Error desconocido"
+          enhancedError.userMessage = `Error ${status}: ${
+            (error.response?.data as { message?: string })?.message ||
+            "Error desconocido"
           }`;
-          error.technicalDetails = `Error ${status} en ${url}`;
+          enhancedError.technicalDetails = `Error ${status} en ${url}`;
       }
     } else if (error.request) {
-      error.userMessage = "Error de conexión. Verifica tu conexión a internet.";
-      error.technicalDetails = "No se recibió respuesta del servidor";
+      enhancedError.userMessage =
+        "Error de conexión. Verifica tu conexión a internet.";
+      enhancedError.technicalDetails = "No se recibió respuesta del servidor";
     } else {
-      error.userMessage = "Error inesperado. Por favor, inténtalo nuevamente.";
-      error.technicalDetails = error.message;
+      enhancedError.userMessage =
+        "Error inesperado. Por favor, inténtalo nuevamente.";
+      enhancedError.technicalDetails = error.message;
     }
 
-    return Promise.reject(error);
-  }
+    return Promise.reject(enhancedError);
+  },
 );
 
 // Knowledge Documents Service
 export class KnowledgeDocumentService {
   static async findAll(
-    query?: KnowledgeDocumentQueryDto
+    query?: KnowledgeDocumentQueryDto,
   ): Promise<KnowledgeDocumentListResponse> {
     const { data } = await api.get("/knowledge", { params: query });
     return data;
@@ -117,7 +217,7 @@ export class KnowledgeDocumentService {
   }
 
   static async create(
-    dto: CreateKnowledgeDocumentDto
+    dto: CreateKnowledgeDocumentDto,
   ): Promise<KnowledgeDocument> {
     const { data } = await api.post("/knowledge", dto);
     return data;
@@ -125,7 +225,7 @@ export class KnowledgeDocumentService {
 
   static async update(
     id: string,
-    dto: UpdateKnowledgeDocumentDto
+    dto: UpdateKnowledgeDocumentDto,
   ): Promise<KnowledgeDocument> {
     const { data } = await api.put(`/knowledge/${id}`, dto);
     return data;
@@ -134,7 +234,7 @@ export class KnowledgeDocumentService {
   static async publish(
     id: string,
     isPublished: boolean,
-    changeSummary?: string
+    changeSummary?: string,
   ): Promise<KnowledgeDocument> {
     const { data } = await api.put(`/knowledge/${id}/publish`, {
       isPublished,
@@ -147,7 +247,7 @@ export class KnowledgeDocumentService {
     id: string,
     isArchived: boolean,
     reason?: string,
-    replacementDocumentId?: string
+    replacementDocumentId?: string,
   ): Promise<KnowledgeDocument> {
     const { data } = await api.put(`/knowledge/${id}/archive`, {
       isArchived,
@@ -168,17 +268,17 @@ export class KnowledgeDocumentService {
 
   static async getVersion(
     id: string,
-    versionNumber: number
+    versionNumber: number,
   ): Promise<KnowledgeDocumentVersion> {
     const { data } = await api.get(
-      `/knowledge/${id}/versions/${versionNumber}`
+      `/knowledge/${id}/versions/${versionNumber}`,
     );
     return data;
   }
 
   static async search(
     query: string,
-    limit?: number
+    limit?: number,
   ): Promise<KnowledgeDocument[]> {
     const { data } = await api.get("/knowledge/search", {
       params: { q: query, limit },
@@ -189,7 +289,7 @@ export class KnowledgeDocumentService {
   // Nuevo: Búsqueda con sugerencias
   static async getSearchSuggestions(
     query: string,
-    limit?: number
+    limit?: number,
   ): Promise<{
     documents: Array<{ id: string; title: string; type: "document" }>;
     tags: Array<{ name: string; type: "tag" }>;
@@ -259,7 +359,7 @@ export class DocumentTypeService {
 
   static async update(
     id: string,
-    dto: UpdateDocumentTypeDto
+    dto: UpdateDocumentTypeDto,
   ): Promise<DocumentType> {
     const { data } = await api.put(`/document-types/${id}`, dto);
     return data;
@@ -283,7 +383,7 @@ export class DocumentTypeService {
 // Document Feedback Service
 export class DocumentFeedbackService {
   static async create(
-    dto: CreateDocumentFeedbackDto
+    dto: CreateDocumentFeedbackDto,
   ): Promise<KnowledgeDocumentFeedback> {
     const { data } = await api.post("/feedback", dto);
     return data;
@@ -299,7 +399,7 @@ export class DocumentFeedbackService {
 
   static async update(
     id: string,
-    dto: UpdateDocumentFeedbackDto
+    dto: UpdateDocumentFeedbackDto,
   ): Promise<KnowledgeDocumentFeedback> {
     const { data } = await api.put(`/feedback/${id}`, dto);
     return data;
@@ -323,7 +423,7 @@ export class KnowledgeDocumentTagService {
       description?: string;
       color?: string;
       category?: string;
-    }
+    },
   ): Promise<KnowledgeDocumentTag> {
     const { data } = await api.post("/knowledge/tags", {
       tagName,
@@ -333,11 +433,11 @@ export class KnowledgeDocumentTagService {
   }
 
   static async findByName(
-    tagName: string
+    tagName: string,
   ): Promise<KnowledgeDocumentTag | null> {
     try {
       const { data } = await api.get(
-        `/knowledge/tags/${encodeURIComponent(tagName)}`
+        `/knowledge/tags/${encodeURIComponent(tagName)}`,
       );
       return data;
     } catch (error: any) {

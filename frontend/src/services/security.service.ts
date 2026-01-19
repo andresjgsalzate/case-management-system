@@ -115,7 +115,7 @@ class SecurityService {
   public storeTokens(
     token: string,
     refreshToken: string,
-    expiresIn: number = 3600
+    expiresIn: number = 3600,
   ): void {
     const fingerprint = this.generateFingerprint();
     const sessionId = this.generateSessionId();
@@ -133,7 +133,7 @@ class SecurityService {
     // Almacenar en sessionStorage (se borra al cerrar navegador)
     sessionStorage.setItem(
       SecurityService.SESSION_KEY,
-      this.encrypt(JSON.stringify(secureData))
+      this.encrypt(JSON.stringify(secureData)),
     );
     sessionStorage.setItem(SecurityService.ACTIVITY_KEY, now.toString());
 
@@ -159,7 +159,7 @@ class SecurityService {
       }
 
       const secureData: SecureTokenData = JSON.parse(
-        this.decrypt(encryptedData)
+        this.decrypt(encryptedData),
       );
 
       const now = Date.now();
@@ -230,28 +230,52 @@ class SecurityService {
 
   /**
    * Actualiza los tokens tras un refresh exitoso
+   * NOTA: Este método NO valida la sesión actual porque precisamente
+   * se usa cuando el token ha expirado y necesitamos actualizarlo.
    */
   public updateTokens(newToken: string, newRefreshToken?: string): void {
-    const current = this.getValidTokens();
-    if (!current) return;
-
     const encryptedData = sessionStorage.getItem(SecurityService.SESSION_KEY);
-    if (!encryptedData) return;
-
-    const secureData: SecureTokenData = JSON.parse(this.decrypt(encryptedData));
-    secureData.token = newToken;
-    if (newRefreshToken) {
-      secureData.refreshToken = newRefreshToken;
+    if (!encryptedData) {
+      console.warn(
+        "⚠️ [SecurityService] No hay datos de sesión para actualizar tokens",
+      );
+      return;
     }
-    secureData.lastActivity = Date.now();
 
-    sessionStorage.setItem(
-      SecurityService.SESSION_KEY,
-      this.encrypt(JSON.stringify(secureData))
-    );
+    try {
+      const secureData: SecureTokenData = JSON.parse(
+        this.decrypt(encryptedData),
+      );
+      const now = Date.now();
 
-    if (this.onTokenRefreshed) {
-      this.onTokenRefreshed(newToken);
+      secureData.token = newToken;
+      if (newRefreshToken) {
+        secureData.refreshToken = newRefreshToken;
+      }
+      secureData.lastActivity = now;
+
+      // Extender el tiempo de expiración del token (1 hora desde ahora)
+      secureData.expiresAt = now + 3600 * 1000;
+
+      sessionStorage.setItem(
+        SecurityService.SESSION_KEY,
+        this.encrypt(JSON.stringify(secureData)),
+      );
+
+      // Actualizar también el ACTIVITY_KEY
+      sessionStorage.setItem(SecurityService.ACTIVITY_KEY, now.toString());
+
+      // Reiniciar los timers con el nuevo token
+      this.startInactivityTimer();
+      this.startRefreshTimer(3600); // 1 hora
+
+      console.log("✅ [SecurityService] Tokens actualizados exitosamente");
+
+      if (this.onTokenRefreshed) {
+        this.onTokenRefreshed(newToken);
+      }
+    } catch (error) {
+      console.error("❌ [SecurityService] Error actualizando tokens:", error);
     }
   }
 
@@ -283,7 +307,7 @@ class SecurityService {
       // Solo log cuando hay warning activo (caso excepcional)
       if (this.isWarningShown) {
         console.log(
-          "🚫 ACTIVIDAD IGNORADA: Warning activo, no se resetea el timer"
+          "🚫 ACTIVIDAD IGNORADA: Warning activo, no se resetea el timer",
         );
         return;
       }
@@ -345,7 +369,7 @@ class SecurityService {
       const encryptedData = sessionStorage.getItem(SecurityService.SESSION_KEY);
       if (encryptedData) {
         const secureData: SecureTokenData = JSON.parse(
-          this.decrypt(encryptedData)
+          this.decrypt(encryptedData),
         );
         const remainingTime = Math.max(0, secureData.expiresAt - Date.now());
         this.startRefreshTimer(remainingTime / 1000);
@@ -365,12 +389,12 @@ class SecurityService {
     if (encryptedData) {
       try {
         const secureData: SecureTokenData = JSON.parse(
-          this.decrypt(encryptedData)
+          this.decrypt(encryptedData),
         );
         secureData.lastActivity = now;
         sessionStorage.setItem(
           SecurityService.SESSION_KEY,
-          this.encrypt(JSON.stringify(secureData))
+          this.encrypt(JSON.stringify(secureData)),
         );
       } catch (error) {
         console.error("Error actualizando actividad:", error);
@@ -390,7 +414,7 @@ class SecurityService {
 
     this.inactivityTimer = window.setTimeout(() => {
       console.warn(
-        "⏰ TIMEOUT: Sesión expirada por inactividad - INICIANDO PROCESO DE LOGOUT"
+        "⏰ TIMEOUT: Sesión expirada por inactividad - INICIANDO PROCESO DE LOGOUT",
       );
       this.clearSession();
       if (this.onSessionExpired) {
@@ -416,7 +440,7 @@ class SecurityService {
       const elapsed = now - this.timerStartTime;
       const remaining = Math.max(
         0,
-        SecurityService.INACTIVITY_TIMEOUT - elapsed
+        SecurityService.INACTIVITY_TIMEOUT - elapsed,
       );
       // Actualizar warning estado basado en tiempo restante real
       const warningThreshold = 2 * 60 * 1000; // 2 minutos
@@ -433,7 +457,7 @@ class SecurityService {
         this.progressTimer = window.setTimeout(logProgress, 10000);
       } else {
         console.log(
-          "💀 PROGRESO: Timer completado - sesión debería haber expirado"
+          "💀 PROGRESO: Timer completado - sesión debería haber expirado",
         );
       }
     };
@@ -462,7 +486,7 @@ class SecurityService {
       this.startInactivityTimer();
     } else {
       console.log(
-        "🚫 RESET BLOQUEADO: Warning ya está activo, no se permite reset"
+        "🚫 RESET BLOQUEADO: Warning ya está activo, no se permite reset",
       );
     }
   }
@@ -489,7 +513,7 @@ class SecurityService {
     // Programar refresh 5 minutos antes de que expire
     const refreshIn = Math.max(
       1000,
-      expiresInSeconds * 1000 - SecurityService.TOKEN_REFRESH_INTERVAL
+      expiresInSeconds * 1000 - SecurityService.TOKEN_REFRESH_INTERVAL,
     );
 
     this.refreshTimer = window.setTimeout(async () => {
@@ -517,29 +541,61 @@ class SecurityService {
 
   /**
    * Intenta refrescar el token automáticamente
+   * Este método obtiene los tokens directamente sin validar inactividad,
+   * ya que precisamente queremos refrescar el token cuando puede estar
+   * cerca de expirar.
    */
   private async attemptTokenRefresh(): Promise<void> {
-    const tokens = this.getValidTokens();
-    if (!tokens) return;
+    // Obtener tokens directamente sin validar inactividad
+    const encryptedData = sessionStorage.getItem(SecurityService.SESSION_KEY);
+    if (!encryptedData) {
+      console.warn(
+        "⚠️ [SecurityService] No hay datos de sesión para refrescar",
+      );
+      return;
+    }
+
+    let tokens: { token: string; refreshToken: string };
+    try {
+      const secureData: SecureTokenData = JSON.parse(
+        this.decrypt(encryptedData),
+      );
+      tokens = {
+        token: secureData.token,
+        refreshToken: secureData.refreshToken,
+      };
+    } catch (error) {
+      console.error("❌ [SecurityService] Error leyendo tokens:", error);
+      return;
+    }
+
+    if (!tokens.refreshToken) {
+      console.warn("⚠️ [SecurityService] No hay refresh token disponible");
+      return;
+    }
 
     try {
       // Importar dinámicamente para evitar dependencias circulares
       const { authService } = await import("./auth.service");
 
+      console.log(
+        "🔄 [SecurityService] Intentando refrescar token automáticamente...",
+      );
+
       const refreshResponse = await authService.refreshToken(
-        tokens.refreshToken
+        tokens.refreshToken,
       );
 
       if (refreshResponse.success && refreshResponse.data) {
         this.updateTokens(refreshResponse.data.token);
+        console.log("✅ [SecurityService] Token refrescado automáticamente");
 
-        // Programar el siguiente refresh
-        this.startRefreshTimer(3600); // 1 hora por defecto
+        // El nuevo timer de refresh ya se programa en updateTokens
       } else {
         throw new Error("Refresh token response was not successful");
       }
     } catch (error) {
-      console.error("❌ Error refrescando token:", error);
+      console.error("❌ [SecurityService] Error refrescando token:", error);
       this.clearSession();
       if (this.onSessionExpired) {
         this.onSessionExpired();
@@ -595,7 +651,7 @@ class SecurityService {
 
     try {
       const secureData: SecureTokenData = JSON.parse(
-        this.decrypt(encryptedData)
+        this.decrypt(encryptedData),
       );
       return {
         sessionId: secureData.sessionId,
@@ -625,7 +681,7 @@ class SecurityService {
     const encryptedData =
       sessionStorage.getItem(SecurityService.SESSION_KEY) || "";
     const lastActivityTime = parseInt(
-      sessionStorage.getItem(SecurityService.ACTIVITY_KEY) || "0"
+      sessionStorage.getItem(SecurityService.ACTIVITY_KEY) || "0",
     );
 
     if (!sessionInfo) {
@@ -645,7 +701,7 @@ class SecurityService {
     const timeSinceActivity = now - lastActivityTime;
     const timeRemaining = Math.max(
       0,
-      SecurityService.INACTIVITY_TIMEOUT - timeSinceActivity
+      SecurityService.INACTIVITY_TIMEOUT - timeSinceActivity,
     );
 
     return {
@@ -680,7 +736,7 @@ class SecurityService {
     const elapsed = now - this.timerStartTime;
     const timeRemaining = Math.max(
       0,
-      SecurityService.INACTIVITY_TIMEOUT - elapsed
+      SecurityService.INACTIVITY_TIMEOUT - elapsed,
     );
 
     // DEBUG: Log eliminado para evitar spam

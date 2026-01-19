@@ -93,6 +93,10 @@ class AuthService {
                 throw (0, errorHandler_1.createError)("User not found", 404);
             }
             const newToken = this.generateToken(user.id);
+            const updatedSession = await this.sessionService.updateSessionToken(refreshToken, newToken);
+            if (!updatedSession) {
+                console.warn("⚠️ No se pudo actualizar la sesión, puede que haya expirado");
+            }
             return { token: newToken };
         }
         catch (error) {

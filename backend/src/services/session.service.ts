@@ -29,7 +29,7 @@ export class SessionService {
     } catch (error) {
       console.error("❌ Error initializing SessionService:", error);
       throw new Error(
-        "Failed to initialize SessionService - database may not be ready"
+        "Failed to initialize SessionService - database may not be ready",
       );
     }
   }
@@ -42,7 +42,7 @@ export class SessionService {
     userId: string,
     token: string,
     refreshToken: string,
-    sessionInfo: SessionInfo
+    sessionInfo: SessionInfo,
   ): Promise<UserSession> {
     const queryRunner = AppDataSource.createQueryRunner();
     await queryRunner.connect();
@@ -61,7 +61,7 @@ export class SessionService {
             isActive: false,
             logoutReason: "new_login",
             updatedAt: new Date(),
-          }
+          },
         );
 
         // Registrar en auditoría para cada sesión cerrada
@@ -76,7 +76,7 @@ export class SessionService {
               device: session.deviceInfo,
               message: "Sesión cerrada automáticamente por nuevo login",
             },
-            sessionInfo
+            sessionInfo,
           );
         }
       }
@@ -119,7 +119,7 @@ export class SessionService {
           deviceInfo,
           message: "Usuario inició sesión exitosamente",
         },
-        sessionInfo
+        sessionInfo,
       );
 
       await queryRunner.commitTransaction();
@@ -168,7 +168,7 @@ export class SessionService {
    */
   async invalidateSession(
     sessionId: string,
-    reason: "manual" | "forced" | "expired" | "new_login" = "manual"
+    reason: "manual" | "forced" | "expired" | "new_login" = "manual",
   ): Promise<void> {
     const session = await this.sessionRepository.findOne({
       where: { id: sessionId },
@@ -191,7 +191,7 @@ export class SessionService {
           sessionId,
           reason,
           message: `Sesión cerrada: ${reason}`,
-        }
+        },
       );
     }
   }
@@ -201,7 +201,7 @@ export class SessionService {
    */
   async invalidateAllUserSessions(
     userId: string,
-    reason: "manual" | "forced" | "security" = "manual"
+    reason: "manual" | "forced" | "security" = "manual",
   ): Promise<void> {
     const activeSessions = await this.sessionRepository.find({
       where: { userId, isActive: true },
@@ -214,7 +214,7 @@ export class SessionService {
           isActive: false,
           logoutReason: reason,
           updatedAt: new Date(),
-        }
+        },
       );
 
       // Registrar en auditoría para cada sesión cerrada
@@ -228,7 +228,7 @@ export class SessionService {
             reason,
             device: session.deviceInfo,
             message: `Sesión cerrada por logout global: ${reason}`,
-          }
+          },
         );
       }
     }
@@ -266,7 +266,7 @@ export class SessionService {
             isActive: false,
             logoutReason: "expired",
             updatedAt: new Date(),
-          }
+          },
         );
       }
 
@@ -275,6 +275,56 @@ export class SessionService {
       console.error("Error in cleanupExpiredSessions:", error);
       throw error;
     }
+  }
+
+  /**
+   * Actualiza el token de una sesión existente (para refresh token)
+   * Busca la sesión por refreshToken y actualiza el token principal
+   */
+  async updateSessionToken(
+    refreshToken: string,
+    newToken: string,
+  ): Promise<UserSession | null> {
+    const refreshTokenHash = this.hashToken(refreshToken);
+
+    // Buscar sesión activa con este refresh token
+    const session = await this.sessionRepository.findOne({
+      where: {
+        refreshTokenHash,
+        isActive: true,
+      },
+      relations: ["user"],
+    });
+
+    if (!session) {
+      console.warn("⚠️ No se encontró sesión activa para el refresh token");
+      return null;
+    }
+
+    // Verificar que la sesión no haya expirado
+    if (session.expiresAt < new Date()) {
+      await this.invalidateSession(session.id, "expired");
+      return null;
+    }
+
+    // Actualizar el token hash y última actividad
+    const newTokenHash = this.hashToken(newToken);
+    session.tokenHash = newTokenHash;
+    session.lastActivityAt = new Date();
+
+    // Extender la expiración de la sesión (24 horas más)
+    const newExpiresAt = new Date();
+    newExpiresAt.setHours(newExpiresAt.getHours() + 24);
+    session.expiresAt = newExpiresAt;
+
+    await this.sessionRepository.save(session);
+
+    console.log(
+      "✅ Token de sesión actualizado exitosamente para usuario:",
+      session.userId,
+    );
+
+    return session;
   }
 
   /**
@@ -317,7 +367,7 @@ export class SessionService {
     entityType: string,
     entityId: string,
     details: any,
-    sessionInfo?: SessionInfo
+    sessionInfo?: SessionInfo,
   ): Promise<void> {
     try {
       // Obtener el email del usuario
@@ -330,7 +380,7 @@ export class SessionService {
       if (!userProfile) {
         console.warn(
           "⚠️ No se pudo encontrar el perfil de usuario para auditoría:",
-          userId
+          userId,
         );
         return;
       }

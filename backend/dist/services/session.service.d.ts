@@ -19,6 +19,7 @@ export declare class SessionService {
     invalidateAllUserSessions(userId: string, reason?: "manual" | "forced" | "security"): Promise<void>;
     getUserActiveSessions(userId: string): Promise<UserSession[]>;
     cleanupExpiredSessions(): Promise<number>;
+    updateSessionToken(refreshToken: string, newToken: string): Promise<UserSession | null>;
     private hashToken;
     private parseDeviceInfo;
     private logSessionActivity;

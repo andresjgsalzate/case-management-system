@@ -15,7 +15,7 @@ export class AuthService {
   constructor() {
     console.log(
       "🔍 AuthService constructor - AppDataSource initialized:",
-      AppDataSource.isInitialized
+      AppDataSource.isInitialized,
     );
     try {
       this.userRepository = AppDataSource.getRepository(UserProfile);
@@ -28,7 +28,7 @@ export class AuthService {
 
   async login(
     loginDto: LoginDto,
-    sessionInfo?: SessionInfo
+    sessionInfo?: SessionInfo,
   ): Promise<AuthResponse> {
     const { email, password } = loginDto;
 
@@ -60,7 +60,7 @@ export class AuthService {
       user.id,
       token,
       refreshToken,
-      sessionInfo || {}
+      sessionInfo || {},
     );
 
     return {
@@ -134,6 +134,21 @@ export class AuthService {
       }
 
       const newToken = this.generateToken(user.id);
+
+      // Actualizar el token en la sesión existente
+      const updatedSession = await this.sessionService.updateSessionToken(
+        refreshToken,
+        newToken,
+      );
+
+      if (!updatedSession) {
+        console.warn(
+          "⚠️ No se pudo actualizar la sesión, puede que haya expirado",
+        );
+        // Aunque no se encontró/actualizó la sesión, devolvemos el token
+        // El próximo request validará si la sesión existe
+      }
+
       return { token: newToken };
     } catch (error) {
       throw createError("Invalid refresh token", 401);
@@ -166,9 +181,8 @@ export class AuthService {
       };
 
       // Primero verificar si el token está en una sesión activa
-      const activeSession = await this.sessionService.validateActiveSession(
-        token
-      );
+      const activeSession =
+        await this.sessionService.validateActiveSession(token);
       if (!activeSession) {
         return null; // Token no está en una sesión activa o la sesión expiró
       }
@@ -220,9 +234,8 @@ export class AuthService {
    * Cerrar sesión del usuario (invalida la sesión actual)
    */
   async logout(token: string): Promise<void> {
-    const activeSession = await this.sessionService.validateActiveSession(
-      token
-    );
+    const activeSession =
+      await this.sessionService.validateActiveSession(token);
     if (activeSession) {
       await this.sessionService.invalidateSession(activeSession.id, "manual");
     }

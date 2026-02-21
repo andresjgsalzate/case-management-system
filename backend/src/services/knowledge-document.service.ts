@@ -1614,38 +1614,51 @@ export class KnowledgeDocumentService {
     // Mapear documentos con información del autor
     const documentsWithInfo = await Promise.all(
       documents.map(async (doc) => {
-        const createdByUser = await doc.createdByUser;
-        const documentType = await doc.documentType;
+        try {
+          const createdByUser = await doc.createdByUser;
+          const documentType = await doc.documentType;
 
-        const tags =
-          doc.tagRelations && doc.tagRelations.length > 0
-            ? doc.tagRelations.map((relation) => ({
-                id: relation.tag.id,
-                tagName: relation.tag.tagName,
-                color: relation.tag.color,
-                category: relation.tag.category,
-              }))
-            : [];
+          const tags =
+            doc.tagRelations && doc.tagRelations.length > 0
+              ? doc.tagRelations
+                  .filter((relation) => relation && relation.tag)
+                  .map((relation) => ({
+                    id: relation.tag.id,
+                    tagName: relation.tag.tagName,
+                    color: relation.tag.color,
+                    category: relation.tag.category,
+                  }))
+              : [];
 
-        return {
-          ...doc,
-          documentType: documentType
-            ? {
-                id: documentType.id,
-                name: documentType.name,
-                color: documentType.color,
-              }
-            : null,
-          __createdByUser__: createdByUser
-            ? {
-                id: createdByUser.id,
-                email: createdByUser.email,
-                fullName: createdByUser.fullName,
-              }
-            : null,
-          tags,
-          tagRelations: undefined,
-        };
+          return {
+            ...doc,
+            documentType: documentType
+              ? {
+                  id: documentType.id,
+                  name: documentType.name,
+                  color: documentType.color,
+                }
+              : null,
+            __createdByUser__: createdByUser
+              ? {
+                  id: createdByUser.id,
+                  email: createdByUser.email,
+                  fullName: createdByUser.fullName,
+                }
+              : null,
+            tags,
+            tagRelations: undefined,
+          };
+        } catch (mapError) {
+          console.error("Error mapping document:", doc.id, mapError);
+          return {
+            ...doc,
+            documentType: null,
+            __createdByUser__: null,
+            tags: [],
+            tagRelations: undefined,
+          };
+        }
       }),
     );
 

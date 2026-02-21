@@ -437,6 +437,39 @@ router.delete(
   },
 );
 
+// ========================================
+// RUTAS ESPECÍFICAS (deben ir ANTES de /knowledge/:id)
+// ========================================
+
+// GET /api/knowledge/pending-review - Get documents pending review
+router.get(
+  "/knowledge/pending-review",
+  requireAnyPermission(["knowledge.approve.team", "knowledge.approve.all"]),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const userPermissions = (req as any).user?.permissions || [];
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+
+      const result = await knowledgeDocumentService.getPendingReviewDocuments(
+        userId,
+        userPermissions,
+        page,
+        limit,
+      );
+
+      res.json(result);
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+// ========================================
+// RUTAS CON PARÁMETROS (:id)
+// ========================================
+
 // GET /api/knowledge/:id - Obtener documento específico
 router.get(
   "/knowledge/:id",
@@ -1225,31 +1258,6 @@ router.put(
         documentId,
         userId,
         notes.trim(),
-      );
-
-      res.json(result);
-    } catch (error) {
-      handleError(res, error);
-    }
-  },
-);
-
-// GET /api/knowledge/pending-review - Get documents pending review
-router.get(
-  "/knowledge/pending-review",
-  requireAnyPermission(["knowledge.approve.team", "knowledge.approve.all"]),
-  async (req: Request, res: Response) => {
-    try {
-      const userId = (req as any).user?.id;
-      const userPermissions = (req as any).user?.permissions || [];
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 20;
-
-      const result = await knowledgeDocumentService.getPendingReviewDocuments(
-        userId,
-        userPermissions,
-        page,
-        limit,
       );
 
       res.json(result);

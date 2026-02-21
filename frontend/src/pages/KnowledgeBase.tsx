@@ -498,6 +498,20 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
           </div>
 
           <div className="flex space-x-3">
+            {/* Botón Panel de Revisión - solo visible para aprobadores */}
+            {permissions.canApproveKnowledge && (
+              <button
+                onClick={() => navigate("/knowledge/pending-review")}
+                className="inline-flex items-center px-4 py-2 border border-yellow-300 dark:border-yellow-600 rounded-md shadow-sm text-sm font-medium text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 dark:focus:ring-offset-gray-800"
+              >
+                <ActionIcon
+                  action="clipboard"
+                  size="sm"
+                  className="mr-2 text-yellow-600 dark:text-yellow-400"
+                />
+                Panel de Revisión
+              </button>
+            )}
             {permissions.canCreateKnowledge && (
               <button
                 onClick={handleCreateDocument}

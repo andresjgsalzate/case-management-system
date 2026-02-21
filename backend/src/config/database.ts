@@ -36,6 +36,7 @@ import { KnowledgeTag } from "../entities/KnowledgeTag";
 import { KnowledgeDocumentTagRelation } from "../entities/KnowledgeDocumentTagRelation";
 import { Team } from "../entities/Team";
 import { TeamMember } from "../entities/TeamMember";
+import { KnowledgeDocumentFavorite } from "../entities/KnowledgeDocumentFavorite";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -81,6 +82,7 @@ export const AppDataSource = new DataSource({
     AuditLog,
     AuditEntityChange,
     UserSession,
+    KnowledgeDocumentFavorite,
   ],
   migrations: ["src/database/migrations/**/*.ts"],
   subscribers: ["src/database/subscribers/**/*.ts"],

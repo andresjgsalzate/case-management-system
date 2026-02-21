@@ -1,9 +1,11 @@
 import React, { useEffect, useCallback, useMemo, useRef } from "react";
+import { createRoot } from "react-dom/client";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import { useTheme } from "../../providers/ThemeProvider";
 import { securityService } from "../../services/security.service";
 import { createHighlighter } from "../../lib/shiki.bundle";
+import MermaidRenderer, { isMermaidCode } from "./MermaidRenderer";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 
@@ -51,7 +53,7 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
             "image",
             "video",
             "audio",
-          ].includes(block.type)
+          ].includes(block.type),
       );
       return validBlocks.length > 0 ? validBlocks : undefined;
     }
@@ -77,7 +79,7 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
                 "image",
                 "video",
                 "audio",
-              ].includes(block.type)
+              ].includes(block.type),
           );
           return validBlocks.length > 0 ? validBlocks : undefined;
         }
@@ -131,12 +133,12 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
               Authorization: `Bearer ${tokens.token}`,
             },
             body: formData,
-          }
+          },
         );
 
         if (!response.ok) {
           throw new Error(
-            `Upload falló: ${response.status} ${response.statusText}`
+            `Upload falló: ${response.status} ${response.statusText}`,
           );
         }
 
@@ -164,14 +166,14 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
           const fileUrl = `${
             window.location.origin
           }/api/files/knowledge/view/${physicalFileName}?token=${encodeURIComponent(
-            token
+            token,
           )}`;
 
           // Retornar solo la URL como string (patrón del sistema antiguo)
           return fileUrl;
         } else {
           console.error(
-            "❌ [BlockNote] No se encontraron archivos en la respuesta"
+            "❌ [BlockNote] No se encontraron archivos en la respuesta",
           );
           throw new Error("No se pudo obtener URL del archivo subido");
         }
@@ -184,7 +186,7 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
         return tempUrl;
       }
     },
-    [documentId]
+    [documentId],
   );
 
   // Función para procesar contenido y añadir/actualizar tokens a las URLs de imágenes
@@ -223,7 +225,7 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
           // Añadir el token actual válido
           const separator = newUrl.includes("?") ? "&" : "?";
           newUrl = `${newUrl}${separator}token=${encodeURIComponent(
-            tokens.token
+            tokens.token,
           )}`;
 
           return {
@@ -308,6 +310,8 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
               diff: { name: "Diff" },
               apache: { name: "Apache Config" },
               nginx: { name: "Nginx Config" },
+              // Mermaid for diagrams
+              mermaid: { name: "Mermaid Diagram", aliases: ["diagram"] },
             },
             createHighlighter: () => createHighlighter(),
           },
@@ -365,6 +369,8 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
               diff: { name: "Diff" },
               apache: { name: "Apache Config" },
               nginx: { name: "Nginx Config" },
+              // Mermaid for diagrams
+              mermaid: { name: "Mermaid Diagram", aliases: ["diagram"] },
             },
             // MANTENER createHighlighter para que funcione el syntax highlighting
             createHighlighter: () => createHighlighter(),
@@ -457,7 +463,7 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
         (m) =>
           m.target instanceof HTMLElement &&
           (m.target.closest(".bn-code-block") ||
-            m.target.classList.contains("bn-code-block"))
+            m.target.classList.contains("bn-code-block")),
       );
       if (hasCodeBlockChanges) {
         setTimeout(convertColors, 50);
@@ -745,7 +751,7 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
 
       return () => {
         const styleElement = document.getElementById(
-          "blocknote-readonly-override"
+          "blocknote-readonly-override",
         );
         if (styleElement) {
           styleElement.remove();
@@ -909,6 +915,123 @@ const BlockNoteEditor: React.FC<BlockNoteEditorProps> = ({
 
     return () => clearInterval(interval);
   }, [editor, documentId, processContentWithTokens]);
+
+  // Efecto para renderizar diagramas Mermaid en modo lectura
+  useEffect(() => {
+    if (editable || !containerRef.current) return;
+
+    // Buscar todos los bloques de código mermaid
+    const renderMermaidBlocks = () => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      // Buscar bloques de código con múltiples selectores para mayor compatibilidad
+      const codeBlocks = container.querySelectorAll(
+        '.bn-code-block, [data-content-type="codeBlock"], pre:not(.mermaid-processed)',
+      );
+
+      if (!codeBlocks || codeBlocks.length === 0) {
+        // Fallback: buscar cualquier elemento pre con código que parezca mermaid
+        const preTags = container.querySelectorAll("pre");
+        preTags.forEach((pre) => {
+          if (pre.getAttribute("data-mermaid-processed") === "true") return;
+          const codeText = pre.textContent?.trim() || "";
+          if (isMermaidCode(codeText)) {
+            processMermaidBlock(pre as HTMLElement, codeText);
+          }
+        });
+        return;
+      }
+
+      codeBlocks.forEach((block) => {
+        // Verificar si ya fue procesado
+        if (block.getAttribute("data-mermaid-processed") === "true") return;
+
+        // Buscar el indicador de lenguaje con múltiples selectores
+        const languageIndicator =
+          block.querySelector("[data-language]") ||
+          block.querySelector(".bn-code-block-language-selector") ||
+          block.querySelector('[class*="language"]');
+
+        // Obtener el código del bloque con múltiples selectores
+        const codeElement =
+          block.querySelector("code") ||
+          block.querySelector("pre") ||
+          block.querySelector(".bn-code-block-content") ||
+          block;
+
+        const codeText = codeElement?.textContent?.trim() || "";
+
+        // Verificar si es un diagrama mermaid (por lenguaje o por contenido)
+        const languageAttr =
+          languageIndicator?.getAttribute("data-language") ||
+          languageIndicator?.textContent?.toLowerCase().trim();
+
+        const isMermaid =
+          languageAttr === "mermaid" ||
+          languageAttr === "diagram" ||
+          languageAttr?.includes("mermaid") ||
+          isMermaidCode(codeText);
+
+        if (!isMermaid || !codeText) return;
+
+        processMermaidBlock(block as HTMLElement, codeText);
+      });
+    };
+
+    // Función para procesar un bloque de código mermaid
+    const processMermaidBlock = (block: HTMLElement, codeText: string) => {
+      // Marcar como procesado
+      block.setAttribute("data-mermaid-processed", "true");
+
+      // Crear contenedor para el diagrama
+      const diagramContainer = document.createElement("div");
+      diagramContainer.className = "mermaid-diagram-container my-4";
+
+      // Insertar el contenedor después del bloque de código
+      block.insertAdjacentElement("afterend", diagramContainer);
+
+      // Ocultar el bloque de código original
+      block.style.display = "none";
+
+      // Renderizar el diagrama con React
+      const root = createRoot(diagramContainer);
+      root.render(<MermaidRenderer code={codeText} className="shadow-sm" />);
+    };
+
+    // Ejecutar después de que el contenido se renderice (aumentar timeout)
+    const timeoutId = setTimeout(renderMermaidBlocks, 300);
+
+    // Re-intentar después de más tiempo por si el contenido carga lento
+    const retryTimeoutId = setTimeout(renderMermaidBlocks, 800);
+
+    // Observer para detectar cambios en el DOM
+    const observer = new MutationObserver((mutations) => {
+      const hasNewCodeBlocks = mutations.some(
+        (m) =>
+          m.type === "childList" &&
+          Array.from(m.addedNodes).some(
+            (node) =>
+              node instanceof Element &&
+              (node.classList?.contains("bn-code-block") ||
+                node.querySelector?.(".bn-code-block") ||
+                node.tagName === "PRE" ||
+                node.querySelector?.("pre")),
+          ),
+      );
+      if (hasNewCodeBlocks) {
+        setTimeout(renderMermaidBlocks, 100);
+      }
+    });
+
+    observer.observe(containerRef.current, { childList: true, subtree: true });
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearTimeout(retryTimeoutId);
+      observer.disconnect();
+    };
+  }, [editable, content, editor]);
 
   return (
     <div

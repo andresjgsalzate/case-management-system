@@ -470,10 +470,90 @@ export class KnowledgeDocumentTagService {
   }
 }
 
+// Knowledge Document Favorites Service
+export class KnowledgeDocumentFavoriteService {
+  static async toggleFavorite(documentId: string): Promise<{
+    isFavorite: boolean;
+    favoriteCount: number;
+  }> {
+    const { data } = await api.post(`/knowledge/${documentId}/favorite`);
+    return data;
+  }
+
+  static async checkFavorite(documentId: string): Promise<{
+    isFavorite: boolean;
+    favoriteCount: number;
+  }> {
+    const { data } = await api.get(`/knowledge/${documentId}/favorite`);
+    return data;
+  }
+
+  static async getMyFavorites(
+    page?: number,
+    limit?: number,
+  ): Promise<KnowledgeDocumentListResponse> {
+    const { data } = await api.get("/knowledge/favorites/my", {
+      params: { page, limit },
+    });
+    return data;
+  }
+
+  static async getMostFavorited(
+    limit?: number,
+  ): Promise<Array<{ documentId: string; favoriteCount: number }>> {
+    const { data } = await api.get("/knowledge/favorites/popular", {
+      params: { limit },
+    });
+    return data;
+  }
+}
+
+// Knowledge Document Review Workflow Service
+export class KnowledgeDocumentReviewService {
+  static async submitForReview(documentId: string): Promise<KnowledgeDocument> {
+    const { data } = await api.put(`/knowledge/${documentId}/submit-review`);
+    return data;
+  }
+
+  static async approveDocument(
+    documentId: string,
+    notes?: string,
+    autoPublish: boolean = true,
+  ): Promise<KnowledgeDocument> {
+    const { data } = await api.put(`/knowledge/${documentId}/approve`, {
+      notes,
+      autoPublish,
+    });
+    return data;
+  }
+
+  static async rejectDocument(
+    documentId: string,
+    notes: string,
+  ): Promise<KnowledgeDocument> {
+    const { data } = await api.put(`/knowledge/${documentId}/reject`, {
+      notes,
+    });
+    return data;
+  }
+
+  static async getPendingReviewDocuments(
+    page?: number,
+    limit?: number,
+  ): Promise<KnowledgeDocumentListResponse> {
+    const { data } = await api.get("/knowledge/pending-review", {
+      params: { page, limit },
+    });
+    return data;
+  }
+}
+
 // Export all services
 export const knowledgeApi = {
   documents: KnowledgeDocumentService,
   types: DocumentTypeService,
   feedback: DocumentFeedbackService,
   tags: KnowledgeDocumentTagService,
+  favorites: KnowledgeDocumentFavoriteService,
+  review: KnowledgeDocumentReviewService,
 };

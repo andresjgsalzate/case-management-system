@@ -2,12 +2,15 @@ import {
   useQuery,
   useMutation,
   useQueryClient,
+  useInfiniteQuery,
   UseQueryOptions,
   UseMutationOptions,
 } from "@tanstack/react-query";
 import {
   knowledgeApi,
   KnowledgeDocumentTagService,
+  KnowledgeDocumentFavoriteService,
+  KnowledgeDocumentReviewService,
 } from "../services/knowledge.service";
 import {
   KnowledgeDocument,
@@ -23,6 +26,8 @@ import {
 export const knowledgeKeys = {
   all: ["knowledge"] as const,
   documents: () => [...knowledgeKeys.all, "documents"] as const,
+  documentsInfinite: () =>
+    [...knowledgeKeys.all, "documents", "infinite"] as const,
   document: (id: string) => [...knowledgeKeys.documents(), id] as const,
   documentVersions: (id: string) =>
     [...knowledgeKeys.document(id), "versions"] as const,
@@ -40,7 +45,7 @@ export const knowledgeKeys = {
 // Knowledge Documents Hooks
 export const useKnowledgeDocuments = (
   query?: KnowledgeDocumentQueryDto,
-  options?: UseQueryOptions<KnowledgeDocumentListResponse>
+  options?: UseQueryOptions<KnowledgeDocumentListResponse>,
 ) => {
   return useQuery({
     queryKey: [...knowledgeKeys.documents(), query],
@@ -49,9 +54,34 @@ export const useKnowledgeDocuments = (
   });
 };
 
+// Infinite scroll hook for knowledge documents
+export const useInfiniteKnowledgeDocuments = (
+  query?: Omit<KnowledgeDocumentQueryDto, "page">,
+) => {
+  return useInfiniteQuery({
+    queryKey: [...knowledgeKeys.documentsInfinite(), query],
+    queryFn: ({ pageParam = 1 }) =>
+      knowledgeApi.documents.findAll({ ...query, page: pageParam }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      // Return next page number if there are more pages, otherwise undefined
+      if (lastPage.page < lastPage.totalPages) {
+        return lastPage.page + 1;
+      }
+      return undefined;
+    },
+    getPreviousPageParam: (firstPage) => {
+      if (firstPage.page > 1) {
+        return firstPage.page - 1;
+      }
+      return undefined;
+    },
+  });
+};
+
 export const useKnowledgeDocument = (
   id: string,
-  options?: UseQueryOptions<KnowledgeDocument>
+  options?: UseQueryOptions<KnowledgeDocument>,
 ) => {
   return useQuery({
     queryKey: knowledgeKeys.document(id),
@@ -101,7 +131,7 @@ export const useCreateKnowledgeDocument = (
     KnowledgeDocument,
     Error,
     CreateKnowledgeDocumentDto
-  >
+  >,
 ) => {
   const queryClient = useQueryClient();
 
@@ -119,7 +149,7 @@ export const useUpdateKnowledgeDocument = (
     KnowledgeDocument,
     Error,
     { id: string; data: UpdateKnowledgeDocumentDto }
-  >
+  >,
 ) => {
   const queryClient = useQueryClient();
 
@@ -190,7 +220,7 @@ export const useArchiveKnowledgeDocument = () => {
         id,
         isArchived,
         reason,
-        replacementDocumentId
+        replacementDocumentId,
       ),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
@@ -423,7 +453,7 @@ export const useSearchTags = (searchQuery: string) => {
       // Get all tags and filter client-side for now
       const allTags = await KnowledgeDocumentTagService.getAllTags();
       return allTags.filter((tag) =>
-        tag.tagName.toLowerCase().includes(searchQuery.toLowerCase())
+        tag.tagName.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     },
     enabled: searchQuery.length >= 2,
@@ -473,6 +503,168 @@ export const useDeleteKnowledgeTag = (options?: {
       // Invalidate all tag-related queries
       queryClient.invalidateQueries({ queryKey: ["knowledge", "tags"] });
       options?.onSuccess?.();
+    },
+    onError: (error) => {
+      options?.onError?.(error);
+    },
+  });
+};
+
+// =========================================
+// KNOWLEDGE DOCUMENT FAVORITES HOOKS
+// =========================================
+
+export const favoriteKeys = {
+  all: ["knowledge", "favorites"] as const,
+  check: (documentId: string) =>
+    [...favoriteKeys.all, "check", documentId] as const,
+  myFavorites: () => [...favoriteKeys.all, "my"] as const,
+  popular: () => [...favoriteKeys.all, "popular"] as const,
+};
+
+export const useCheckFavorite = (documentId: string) => {
+  return useQuery({
+    queryKey: favoriteKeys.check(documentId),
+    queryFn: () => KnowledgeDocumentFavoriteService.checkFavorite(documentId),
+    enabled: !!documentId,
+    staleTime: 30 * 1000, // 30 seconds
+  });
+};
+
+export const useMyFavorites = (page?: number, limit?: number) => {
+  return useQuery({
+    queryKey: [...favoriteKeys.myFavorites(), { page, limit }],
+    queryFn: () => KnowledgeDocumentFavoriteService.getMyFavorites(page, limit),
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
+};
+
+export const useMostFavoritedDocuments = (limit?: number) => {
+  return useQuery({
+    queryKey: [...favoriteKeys.popular(), { limit }],
+    queryFn: () => KnowledgeDocumentFavoriteService.getMostFavorited(limit),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+export const useToggleFavorite = (options?: {
+  onSuccess?: (data: { isFavorite: boolean; favoriteCount: number }) => void;
+  onError?: (error: any) => void;
+}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (documentId: string) =>
+      KnowledgeDocumentFavoriteService.toggleFavorite(documentId),
+    onSuccess: (data, documentId) => {
+      // Invalidate favorite-related queries
+      queryClient.invalidateQueries({
+        queryKey: favoriteKeys.check(documentId),
+      });
+      queryClient.invalidateQueries({ queryKey: favoriteKeys.myFavorites() });
+      queryClient.invalidateQueries({ queryKey: favoriteKeys.popular() });
+      options?.onSuccess?.(data);
+    },
+    onError: (error) => {
+      options?.onError?.(error);
+    },
+  });
+};
+
+// =========================================
+// KNOWLEDGE DOCUMENT REVIEW WORKFLOW HOOKS
+// =========================================
+
+export const reviewKeys = {
+  all: ["knowledge", "review"] as const,
+  pending: () => [...reviewKeys.all, "pending"] as const,
+};
+
+export const usePendingReviewDocuments = (page?: number, limit?: number) => {
+  return useQuery({
+    queryKey: [...reviewKeys.pending(), { page, limit }],
+    queryFn: () =>
+      KnowledgeDocumentReviewService.getPendingReviewDocuments(page, limit),
+    staleTime: 30 * 1000, // 30 seconds - refresh frequently for review queue
+  });
+};
+
+export const useSubmitForReview = (options?: {
+  onSuccess?: (document: KnowledgeDocument) => void;
+  onError?: (error: any) => void;
+}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (documentId: string) =>
+      KnowledgeDocumentReviewService.submitForReview(documentId),
+    onSuccess: (data) => {
+      // Invalidate document-related queries
+      queryClient.invalidateQueries({
+        queryKey: knowledgeKeys.document(data.id),
+      });
+      queryClient.invalidateQueries({ queryKey: knowledgeKeys.documents() });
+      queryClient.invalidateQueries({ queryKey: reviewKeys.pending() });
+      options?.onSuccess?.(data);
+    },
+    onError: (error) => {
+      options?.onError?.(error);
+    },
+  });
+};
+
+export const useApproveDocument = (options?: {
+  onSuccess?: (document: KnowledgeDocument) => void;
+  onError?: (error: any) => void;
+}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (params: {
+      documentId: string;
+      notes?: string;
+      autoPublish?: boolean;
+    }) =>
+      KnowledgeDocumentReviewService.approveDocument(
+        params.documentId,
+        params.notes,
+        params.autoPublish,
+      ),
+    onSuccess: (data) => {
+      // Invalidate document-related queries
+      queryClient.invalidateQueries({
+        queryKey: knowledgeKeys.document(data.id),
+      });
+      queryClient.invalidateQueries({ queryKey: knowledgeKeys.documents() });
+      queryClient.invalidateQueries({ queryKey: reviewKeys.pending() });
+      options?.onSuccess?.(data);
+    },
+    onError: (error) => {
+      options?.onError?.(error);
+    },
+  });
+};
+
+export const useRejectDocument = (options?: {
+  onSuccess?: (document: KnowledgeDocument) => void;
+  onError?: (error: any) => void;
+}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (params: { documentId: string; notes: string }) =>
+      KnowledgeDocumentReviewService.rejectDocument(
+        params.documentId,
+        params.notes,
+      ),
+    onSuccess: (data) => {
+      // Invalidate document-related queries
+      queryClient.invalidateQueries({
+        queryKey: knowledgeKeys.document(data.id),
+      });
+      queryClient.invalidateQueries({ queryKey: knowledgeKeys.documents() });
+      queryClient.invalidateQueries({ queryKey: reviewKeys.pending() });
+      options?.onSuccess?.(data);
     },
     onError: (error) => {
       options?.onError?.(error);

@@ -38,6 +38,7 @@ import { AuditLogsPage } from "./pages/audit";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import KnowledgeDocumentForm from "./pages/KnowledgeDocumentForm";
 import KnowledgeDocumentView from "./pages/KnowledgeDocumentView";
+import KnowledgePendingReview from "./pages/KnowledgePendingReview";
 // System imports
 import { SystemInfoPage } from "./pages/SystemInfoPage";
 // Security imports
@@ -258,6 +259,22 @@ function App() {
                   >
                     <Layout>
                       <KnowledgeDocumentForm />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/knowledge/pending-review"
+                element={
+                  <ProtectedRoute
+                    requiredPermissions={[
+                      "knowledge.approve.team",
+                      "knowledge.approve.all",
+                    ]}
+                  >
+                    <Layout>
+                      <KnowledgePendingReview />
                     </Layout>
                   </ProtectedRoute>
                 }

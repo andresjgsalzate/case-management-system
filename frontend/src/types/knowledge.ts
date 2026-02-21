@@ -6,6 +6,13 @@ export type RelationType = "related" | "replaces" | "prerequisite" | "follows";
 
 export type FileType = "image" | "document" | "spreadsheet" | "other";
 
+export type ReviewStatus =
+  | "draft"
+  | "pending_review"
+  | "approved"
+  | "rejected"
+  | "published";
+
 // Import User type
 import { User } from "./user";
 
@@ -41,11 +48,21 @@ export interface KnowledgeDocument {
   isDeprecated: boolean;
   isArchived: boolean;
 
+  // Review workflow
+  reviewStatus?: ReviewStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewNotes?: string;
+
   // Metrics
   viewCount: number;
   helpfulCount: number;
   notHelpfulCount: number;
   version: number;
+
+  // Favorites
+  isFavorite?: boolean;
+  favoriteCount?: number;
 
   // Dates
   publishedAt?: string;

@@ -63,6 +63,10 @@ const navigation: NavigationItem[] = [
     href: "/knowledge",
     icon: "book",
     requiredPermission: "knowledge.read.all",
+    subItems: [
+      { name: "Explorar", href: "/knowledge" },
+      { name: "Revisión Pendiente", href: "/knowledge/pending-review" },
+    ],
   },
   { name: "Archivo", href: "/archive", icon: "archive" },
   {
@@ -133,7 +137,7 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
             isActive
               ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
               : "text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-700",
-            "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
+            "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold",
           )
         }
       >
@@ -150,7 +154,7 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
         onClick={() => setIsExpanded(!isExpanded)}
         className={classNames(
           "text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400",
-          "group flex w-full gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold items-center justify-between"
+          "group flex w-full gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold items-center justify-between",
         )}
       >
         <div className="flex items-center gap-x-3">
@@ -162,7 +166,7 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
           size="sm"
           className={classNames(
             "transition-transform",
-            isExpanded ? "rotate-180" : ""
+            isExpanded ? "rotate-180" : "",
           )}
         />
       </Button>
@@ -178,7 +182,7 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
                   isActive
                     ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400"
                     : "text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-gray-50 dark:hover:bg-gray-700",
-                  "block rounded-md py-2 px-3 text-sm"
+                  "block rounded-md py-2 px-3 text-sm",
                 )
               }
             >

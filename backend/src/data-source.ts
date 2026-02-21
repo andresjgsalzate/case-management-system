@@ -36,6 +36,7 @@ import { AuditEntityChange } from "./entities/AuditEntityChange";
 import { Team } from "./entities/Team";
 import { TeamMember } from "./entities/TeamMember";
 import { UserSession } from "./entities/UserSession";
+import { KnowledgeDocumentFavorite } from "./entities/KnowledgeDocumentFavorite";
 
 export default new DataSource({
   type: "postgres",
@@ -81,6 +82,7 @@ export default new DataSource({
     Team,
     TeamMember,
     UserSession,
+    KnowledgeDocumentFavorite,
   ],
   migrations: ["src/database/migrations/**/*.ts"],
   subscribers: ["src/database/subscribers/**/*.ts"],

@@ -17,8 +17,15 @@ import { KnowledgeDocumentVersion } from "./KnowledgeDocumentVersion";
 import { KnowledgeDocumentAttachment } from "./KnowledgeDocumentAttachment";
 import { KnowledgeDocumentRelation } from "./KnowledgeDocumentRelation";
 import { KnowledgeDocumentFeedback } from "./KnowledgeDocumentFeedback";
+import { KnowledgeDocumentFavorite } from "./KnowledgeDocumentFavorite";
 
 export type Priority = "low" | "medium" | "high" | "urgent";
+export type ReviewStatus =
+  | "draft"
+  | "pending_review"
+  | "approved"
+  | "rejected"
+  | "published";
 
 @Entity("knowledge_documents")
 @Index(["title"]) // Solo índice en title - content puede ser muy grande para B-tree
@@ -141,13 +148,39 @@ export class KnowledgeDocument {
   })
   associatedCases: string[];
 
+  // Review workflow fields
+  @Column({
+    name: "review_status",
+    type: "varchar",
+    length: 20,
+    default: "draft",
+  })
+  reviewStatus: ReviewStatus;
+
+  @Column({ name: "reviewed_by", type: "uuid", nullable: true })
+  reviewedBy: string | null;
+
+  @ManyToOne(() => UserProfile, { lazy: true })
+  @JoinColumn({ name: "reviewed_by" })
+  reviewedByUser: Promise<UserProfile>;
+
+  @Column({
+    name: "reviewed_at",
+    type: "timestamp with time zone",
+    nullable: true,
+  })
+  reviewedAt: Date | null;
+
+  @Column({ name: "review_notes", type: "text", nullable: true })
+  reviewNotes: string | null;
+
   // Relaciones
   @OneToMany(() => KnowledgeDocumentTag, (tag) => tag.document)
   tags: KnowledgeDocumentTag[];
 
   @OneToMany(
     () => KnowledgeDocumentTagRelation,
-    (relation) => relation.document
+    (relation) => relation.document,
   )
   tagRelations: KnowledgeDocumentTagRelation[];
 
@@ -156,24 +189,27 @@ export class KnowledgeDocument {
 
   @OneToMany(
     () => KnowledgeDocumentAttachment,
-    (attachment) => attachment.document
+    (attachment) => attachment.document,
   )
   attachments: KnowledgeDocumentAttachment[];
 
   @OneToMany(
     () => KnowledgeDocumentRelation,
-    (relation) => relation.parentDocument
+    (relation) => relation.parentDocument,
   )
   parentRelations: KnowledgeDocumentRelation[];
 
   @OneToMany(
     () => KnowledgeDocumentRelation,
-    (relation) => relation.childDocument
+    (relation) => relation.childDocument,
   )
   childRelations: KnowledgeDocumentRelation[];
 
   @OneToMany(() => KnowledgeDocumentFeedback, (feedback) => feedback.document)
   feedback: KnowledgeDocumentFeedback[];
+
+  @OneToMany(() => KnowledgeDocumentFavorite, (favorite) => favorite.document)
+  favorites: KnowledgeDocumentFavorite[];
 
   @CreateDateColumn({ name: "created_at", type: "timestamp with time zone" })
   createdAt: Date;

@@ -28,7 +28,7 @@ export class KnowledgeDocumentService {
 
   async create(
     createDto: CreateKnowledgeDocumentDto,
-    userId: string
+    userId: string,
   ): Promise<KnowledgeDocument> {
     // Crear el documento (sin incluir tags ya que es una relación separada)
     const { tags, associatedCases, ...documentData } = createDto;
@@ -50,7 +50,7 @@ export class KnowledgeDocumentService {
         title: createDto.title,
         changeSummary: "Versión inicial",
       },
-      userId
+      userId,
     );
 
     // Crear tags si existen
@@ -61,7 +61,7 @@ export class KnowledgeDocumentService {
     const result = await this.findOne(savedDocument.id);
     if (!result) {
       throw new Error(
-        `Document with id ${savedDocument.id} not found after creation`
+        `Document with id ${savedDocument.id} not found after creation`,
       );
     }
     return result;
@@ -70,7 +70,7 @@ export class KnowledgeDocumentService {
   async findAll(
     query: KnowledgeDocumentQueryDto,
     userId?: string,
-    userPermissions?: string[]
+    userPermissions?: string[],
   ): Promise<{
     documents: any[];
     total: number;
@@ -143,7 +143,7 @@ export class KnowledgeDocumentService {
           tags,
           tagRelations: undefined, // Remover tagRelations del response
         };
-      })
+      }),
     );
 
     return {
@@ -173,7 +173,7 @@ export class KnowledgeDocumentService {
         console.log(
           `📄 [EDIT MODE] Document found: ${document.title}, attachments: ${
             document.attachments?.length || 0
-          }`
+          }`,
         );
 
         // Resolver relaciones lazy manualmente
@@ -203,7 +203,7 @@ export class KnowledgeDocumentService {
         console.log(
           `🏷️ [EDIT MODE] Document tags loaded count: ${
             documentWithTags.tags ? documentWithTags.tags.length : 0
-          }`
+          }`,
         );
 
         // Log attachment details for debugging
@@ -219,7 +219,7 @@ export class KnowledgeDocumentService {
               filePath: att.filePath,
               mimeType: att.mimeType,
               fileSize: att.fileSize,
-            }))
+            })),
           );
         }
 
@@ -234,7 +234,7 @@ export class KnowledgeDocumentService {
             documentTypeValue: (documentWithTags as any).documentType,
             createdByUserValue: (documentWithTags as any).createdByUser,
             allKeys: Object.keys(documentWithTags),
-          }
+          },
         );
 
         return documentWithTags;
@@ -252,7 +252,7 @@ export class KnowledgeDocumentService {
   async update(
     id: string,
     updateDto: UpdateKnowledgeDocumentDto,
-    userId: string
+    userId: string,
   ): Promise<KnowledgeDocument> {
     const document = await this.findOne(id);
 
@@ -275,7 +275,7 @@ export class KnowledgeDocumentService {
           changeSummary:
             updateDto.changeSummary || "Actualización de contenido",
         },
-        userId
+        userId,
       );
     }
 
@@ -308,7 +308,7 @@ export class KnowledgeDocumentService {
   async publish(
     id: string,
     publishDto: PublishKnowledgeDocumentDto,
-    userId: string
+    userId: string,
   ): Promise<KnowledgeDocument> {
     const document = await this.findOne(id);
 
@@ -334,7 +334,7 @@ export class KnowledgeDocumentService {
           title: document.title,
           changeSummary: publishDto.changeSummary || "Documento despublicado",
         },
-        userId
+        userId,
       );
     }
 
@@ -344,7 +344,7 @@ export class KnowledgeDocumentService {
   async archive(
     id: string,
     archiveDto: ArchiveKnowledgeDocumentDto,
-    userId: string
+    userId: string,
   ): Promise<KnowledgeDocument> {
     const document = await this.findOne(id);
 
@@ -384,7 +384,7 @@ export class KnowledgeDocumentService {
 
   async getVersion(
     documentId: string,
-    versionNumber: number
+    versionNumber: number,
   ): Promise<KnowledgeDocumentVersion> {
     const version = await this.versionRepository.findOne({
       where: { documentId, versionNumber },
@@ -393,7 +393,7 @@ export class KnowledgeDocumentService {
 
     if (!version) {
       throw new Error(
-        `Versión ${versionNumber} del documento ${documentId} no encontrada`
+        `Versión ${versionNumber} del documento ${documentId} no encontrada`,
       );
     }
 
@@ -404,7 +404,7 @@ export class KnowledgeDocumentService {
     searchTerm: string,
     limit: number = 10,
     userId?: string,
-    userPermissions?: string[]
+    userPermissions?: string[],
   ): Promise<KnowledgeDocument[]> {
     const queryBuilder = this.knowledgeDocumentRepository
       .createQueryBuilder("doc")
@@ -426,7 +426,7 @@ export class KnowledgeDocumentService {
         {
           search: `%${searchTerm}%`,
           searchTermJson: JSON.stringify([searchTerm]),
-        }
+        },
       );
 
     // Aplicar filtros de permisos
@@ -444,7 +444,7 @@ export class KnowledgeDocumentService {
     searchTerm: string,
     limit: number = 5,
     userId?: string,
-    userPermissions?: string[]
+    userPermissions?: string[],
   ): Promise<{
     documents: Array<{
       id: string;
@@ -472,13 +472,13 @@ export class KnowledgeDocumentService {
           WHEN unaccent(lower(doc.content)) LIKE unaccent(lower(:search)) THEN 'content'
           ELSE 'other'
         END`,
-        "matchType"
+        "matchType",
       )
       .andWhere(
         `(unaccent(lower(doc.title)) LIKE unaccent(lower(:search))
           OR unaccent(lower(doc.content)) LIKE unaccent(lower(:search))
           OR unaccent(lower(tags."tag_name")) LIKE unaccent(lower(:search)))`,
-        { search: `%${searchTerm}%` }
+        { search: `%${searchTerm}%` },
       )
       .andWhere("doc.isArchived = :archived", { archived: false });
 
@@ -487,7 +487,7 @@ export class KnowledgeDocumentService {
     const documentsRaw = await documentSuggestions
       .orderBy(
         `CASE WHEN unaccent(lower(doc.title)) LIKE unaccent(lower(:search)) THEN 0 ELSE 1 END`,
-        "ASC"
+        "ASC",
       )
       .addOrderBy("doc.viewCount", "DESC")
       .setParameter("search", `%${searchTerm}%`)
@@ -502,7 +502,7 @@ export class KnowledgeDocumentService {
 
     // Sugerencias de etiquetas (insensible a acentos) - Usando KnowledgeTag (tabla correcta)
     const tagSuggestions = await AppDataSource.getRepository(
-      require("../entities/KnowledgeTag").KnowledgeTag
+      require("../entities/KnowledgeTag").KnowledgeTag,
     )
       .createQueryBuilder("tag")
       .select(["tag.tagName"])
@@ -527,11 +527,11 @@ export class KnowledgeDocumentService {
         ORDER BY c."createdAt" DESC 
         LIMIT $2
       `,
-        [`%${searchTerm}%`, limit]
+        [`%${searchTerm}%`, limit],
       );
       console.log(
         `✅ Casos encontrados: ${caseSuggestions.length}`,
-        caseSuggestions
+        caseSuggestions,
       );
     } catch (error: any) {
       // Si la tabla cases no existe o hay otro error, loguearlo
@@ -568,7 +568,7 @@ export class KnowledgeDocumentService {
       content: string | null;
       tags?: Array<{ tagName: string }>;
       cases?: Array<{ numeroCaso: string }>;
-    }
+    },
   ): {
     score: number; // 0-100
     matchedWords: string[];
@@ -673,7 +673,7 @@ export class KnowledgeDocumentService {
       page?: number;
     },
     userId?: string,
-    userPermissions?: string[]
+    userPermissions?: string[],
   ): Promise<{
     documents: Array<
       KnowledgeDocument & {
@@ -770,13 +770,16 @@ export class KnowledgeDocumentService {
           INNER JOIN knowledge_tags kt ON kdtr.tag_id = kt.id
           WHERE kdtr.document_id = doc.id
           AND LOWER(kt.tag_name) = LOWER(:tagName${index})
-        )`
+        )`,
         )
         .join(" OR ");
-      const tagParams = query.tags.reduce((acc, tag, index) => {
-        acc[`tagName${index}`] = tag;
-        return acc;
-      }, {} as Record<string, string>);
+      const tagParams = query.tags.reduce(
+        (acc, tag, index) => {
+          acc[`tagName${index}`] = tag;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
       queryBuilder.andWhere(`(${tagConditions})`, tagParams);
     }
 
@@ -793,7 +796,7 @@ export class KnowledgeDocumentService {
         {
           caseNumberJson: JSON.stringify([query.caseNumber]),
           caseSearch: `%${query.caseNumber}%`,
-        }
+        },
       );
     }
 
@@ -833,7 +836,7 @@ export class KnowledgeDocumentService {
           WHEN "doc"."content" ILIKE :contentSearch THEN 1
           ELSE 0
         END`,
-          "relevance_score"
+          "relevance_score",
         )
         .setParameter("titleSearch", `%${query.search}%`)
         .setParameter("tagSearch", `%${query.search}%`)
@@ -922,7 +925,7 @@ export class KnowledgeDocumentService {
         }
 
         return doc;
-      })
+      }),
     );
 
     // Si hay búsqueda, reordenar por relevancia de palabras
@@ -962,7 +965,7 @@ export class KnowledgeDocumentService {
 
   private applyFilters(
     queryBuilder: SelectQueryBuilder<KnowledgeDocument>,
-    query: KnowledgeDocumentQueryDto
+    query: KnowledgeDocumentQueryDto,
   ): void {
     if (query.search) {
       // Dividir el término de búsqueda en palabras individuales
@@ -1050,13 +1053,16 @@ export class KnowledgeDocumentService {
           INNER JOIN knowledge_tags kt ON kdtr.tag_id = kt.id
           WHERE kdtr.document_id = doc.id
           AND LOWER(kt.tag_name) = LOWER(:tagName${index})
-        )`
+        )`,
         )
         .join(" OR ");
-      const tagParams = query.tags.reduce((acc, tag, index) => {
-        acc[`tagName${index}`] = tag;
-        return acc;
-      }, {} as Record<string, string>);
+      const tagParams = query.tags.reduce(
+        (acc, tag, index) => {
+          acc[`tagName${index}`] = tag;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
       queryBuilder.andWhere(`(${tagConditions})`, tagParams);
     }
   }
@@ -1064,7 +1070,7 @@ export class KnowledgeDocumentService {
   private applyPermissionFilters(
     queryBuilder: SelectQueryBuilder<KnowledgeDocument>,
     userId?: string,
-    userPermissions?: string[]
+    userPermissions?: string[],
   ): void {
     if (!userId || !userPermissions) {
       // Si no hay información de usuario, mostrar solo documentos publicados
@@ -1079,29 +1085,31 @@ export class KnowledgeDocumentService {
     // CLAVE: Solo usuarios con permisos de EDICIÓN pueden ver documentos no publicados de otros
     const hasAllEditPermissions = userPermissions.some(
       (p) =>
-        p.includes("knowledge.update.all") || p.includes("knowledge.delete.all")
+        p.includes("knowledge.update.all") ||
+        p.includes("knowledge.delete.all"),
     );
 
     const hasTeamEditPermissions = userPermissions.some(
       (p) =>
         p.includes("knowledge.update.team") ||
-        p.includes("knowledge.delete.team")
+        p.includes("knowledge.delete.team"),
     );
 
     const hasOwnEditPermissions = userPermissions.some(
       (p) =>
-        p.includes("knowledge.update.own") || p.includes("knowledge.delete.own")
+        p.includes("knowledge.update.own") ||
+        p.includes("knowledge.delete.own"),
     );
 
     // También verificar permisos de lectura para determinar el alcance
     const hasAllReadPermissions = userPermissions.some((p) =>
-      p.includes("knowledge.read.all")
+      p.includes("knowledge.read.all"),
     );
     const hasTeamReadPermissions = userPermissions.some((p) =>
-      p.includes("knowledge.read.team")
+      p.includes("knowledge.read.team"),
     );
     const hasOwnReadPermissions = userPermissions.some((p) =>
-      p.includes("knowledge.read.own")
+      p.includes("knowledge.read.own"),
     );
 
     // Siempre excluir documentos archivados
@@ -1110,40 +1118,40 @@ export class KnowledgeDocumentService {
     if (hasAllEditPermissions) {
       // Usuario con permisos de EDICIÓN ALL: puede ver todos los documentos (publicados y no publicados)
       console.log(
-        `🔓 Usuario ${userId} tiene permisos de EDICIÓN ALL - puede ver todos los documentos`
+        `🔓 Usuario ${userId} tiene permisos de EDICIÓN ALL - puede ver todos los documentos`,
       );
       // No agregar filtros adicionales
     } else if (hasTeamEditPermissions) {
       // Usuario con permisos de EDICIÓN TEAM: puede ver documentos del team completos + documentos publicados de otros
       console.log(
-        `👥 Usuario ${userId} tiene permisos de EDICIÓN TEAM - aplicando filtros apropiados`
+        `👥 Usuario ${userId} tiene permisos de EDICIÓN TEAM - aplicando filtros apropiados`,
       );
       queryBuilder.andWhere(
         "(doc.createdBy = :userId OR doc.isPublished = :published)",
-        { userId, published: true }
+        { userId, published: true },
       );
     } else if (hasOwnEditPermissions || hasOwnReadPermissions) {
       // Usuario con permisos OWN (edición o solo lectura): puede ver sus documentos completos + documentos publicados de otros
       console.log(
-        `👤 Usuario ${userId} tiene permisos OWN - puede ver sus documentos + documentos publicados de otros`
+        `👤 Usuario ${userId} tiene permisos OWN - puede ver sus documentos + documentos publicados de otros`,
       );
       queryBuilder.andWhere(
         "(doc.createdBy = :userId OR doc.isPublished = :published)",
-        { userId, published: true }
+        { userId, published: true },
       );
     } else if (hasAllReadPermissions || hasTeamReadPermissions) {
       // Usuario con solo permisos de LECTURA (sin edición): solo documentos publicados + sus propios documentos
       console.log(
-        `📖 Usuario ${userId} tiene solo permisos de LECTURA - solo documentos publicados + propios`
+        `📖 Usuario ${userId} tiene solo permisos de LECTURA - solo documentos publicados + propios`,
       );
       queryBuilder.andWhere(
         "(doc.createdBy = :userId OR doc.isPublished = :published)",
-        { userId, published: true }
+        { userId, published: true },
       );
     } else {
       // Usuario sin permisos específicos: solo documentos publicados
       console.log(
-        `🔒 Usuario ${userId} sin permisos específicos - solo documentos publicados`
+        `🔒 Usuario ${userId} sin permisos específicos - solo documentos publicados`,
       );
       queryBuilder.andWhere("doc.isPublished = :published", {
         published: true,
@@ -1153,7 +1161,7 @@ export class KnowledgeDocumentService {
 
   private applySorting(
     queryBuilder: SelectQueryBuilder<KnowledgeDocument>,
-    query: KnowledgeDocumentQueryDto
+    query: KnowledgeDocumentQueryDto,
   ): void {
     const sortBy = query.sortBy || "createdAt";
     const sortOrder = query.sortOrder || "DESC";
@@ -1179,11 +1187,11 @@ export class KnowledgeDocumentService {
   private async updateTags(
     documentId: string,
     tagNames: string[],
-    userId?: string
+    userId?: string,
   ): Promise<void> {
     console.log(
       `[updateTags] Updating tags for document ${documentId}:`,
-      tagNames
+      tagNames,
     );
     console.log(`[updateTags] User ID:`, userId);
 
@@ -1191,11 +1199,11 @@ export class KnowledgeDocumentService {
     await this.knowledgeTagService.assignTagsToDocument(
       documentId,
       tagNames,
-      userId
+      userId,
     );
 
     console.log(
-      `[updateTags] Tags updated successfully for document ${documentId}`
+      `[updateTags] Tags updated successfully for document ${documentId}`,
     );
   }
 
@@ -1203,11 +1211,11 @@ export class KnowledgeDocumentService {
    * Cargar las etiquetas de un documento usando el nuevo sistema
    */
   private async loadDocumentTags(
-    document: KnowledgeDocument
+    document: KnowledgeDocument,
   ): Promise<KnowledgeDocument> {
     console.log(
       "🔍 [KnowledgeDocumentService] loadDocumentTags - Loading tags for document:",
-      document.id
+      document.id,
     );
 
     // Consultar las etiquetas asociadas al documento
@@ -1231,7 +1239,7 @@ export class KnowledgeDocumentService {
     console.log(
       "✅ [KnowledgeDocumentService] loadDocumentTags - Loaded",
       (document as any).tags.length,
-      "tags"
+      "tags",
     );
 
     return document;
@@ -1240,7 +1248,7 @@ export class KnowledgeDocumentService {
   private async createVersion(
     documentId: string,
     versionData: { content: object; title: string; changeSummary: string },
-    userId: string
+    userId: string,
   ): Promise<KnowledgeDocumentVersion> {
     // Obtener el último número de versión
     const lastVersion = await this.versionRepository.findOne({
@@ -1263,4 +1271,255 @@ export class KnowledgeDocumentService {
   }
 
   // ================================
+  // REVIEW WORKFLOW METHODS
+  // ================================
+
+  /**
+   * Submit a document for review
+   */
+  async submitForReview(
+    documentId: string,
+    userId: string,
+  ): Promise<KnowledgeDocument> {
+    const document = await this.findOne(documentId);
+
+    if (!document) {
+      throw new Error(`Documento con ID ${documentId} no encontrado`);
+    }
+
+    if (document.isArchived) {
+      throw new Error("No se puede enviar a revisión un documento archivado");
+    }
+
+    if ((document as any).reviewStatus === "pending_review") {
+      throw new Error("Este documento ya está pendiente de revisión");
+    }
+
+    if (document.isPublished) {
+      throw new Error("Este documento ya está publicado");
+    }
+
+    // Validar que el documento tenga contenido mínimo
+    if (!document.title.trim()) {
+      throw new Error("El documento debe tener un título");
+    }
+
+    // Actualizar estado de revisión
+    await this.knowledgeDocumentRepository.update(documentId, {
+      reviewStatus: "pending_review",
+      lastEditedBy: userId,
+    } as any);
+
+    // Crear versión de revisión
+    await this.createVersion(
+      documentId,
+      {
+        content: document.jsonContent,
+        title: document.title,
+        changeSummary: "Enviado a revisión",
+      },
+      userId,
+    );
+
+    const result = await this.findOne(documentId);
+    if (!result) {
+      throw new Error(
+        `Documento ${documentId} no encontrado después de actualización`,
+      );
+    }
+    return result;
+  }
+
+  /**
+   * Approve a document (publishes it by default)
+   */
+  async approveDocument(
+    documentId: string,
+    reviewerId: string,
+    notes?: string,
+    autoPublish: boolean = true,
+  ): Promise<KnowledgeDocument> {
+    const document = await this.findOne(documentId);
+
+    if (!document) {
+      throw new Error(`Documento con ID ${documentId} no encontrado`);
+    }
+
+    if ((document as any).reviewStatus !== "pending_review") {
+      throw new Error("Este documento no está pendiente de revisión");
+    }
+
+    const now = new Date();
+    const updateData: any = {
+      reviewStatus: autoPublish ? "published" : "approved",
+      reviewedBy: reviewerId,
+      reviewedAt: now,
+      reviewNotes: notes || null,
+      lastEditedBy: reviewerId,
+    };
+
+    if (autoPublish) {
+      updateData.isPublished = true;
+      updateData.publishedAt = now;
+    }
+
+    await this.knowledgeDocumentRepository.update(documentId, updateData);
+
+    // Crear versión de aprobación
+    await this.createVersion(
+      documentId,
+      {
+        content: document.jsonContent,
+        title: document.title,
+        changeSummary: autoPublish
+          ? "Documento aprobado y publicado"
+          : "Documento aprobado",
+      },
+      reviewerId,
+    );
+
+    const result = await this.findOne(documentId);
+    if (!result) {
+      throw new Error(
+        `Documento ${documentId} no encontrado después de aprobación`,
+      );
+    }
+    return result;
+  }
+
+  /**
+   * Reject a document (returns to draft)
+   */
+  async rejectDocument(
+    documentId: string,
+    reviewerId: string,
+    notes: string,
+  ): Promise<KnowledgeDocument> {
+    const document = await this.findOne(documentId);
+
+    if (!document) {
+      throw new Error(`Documento con ID ${documentId} no encontrado`);
+    }
+
+    if ((document as any).reviewStatus !== "pending_review") {
+      throw new Error("Este documento no está pendiente de revisión");
+    }
+
+    const now = new Date();
+    await this.knowledgeDocumentRepository.update(documentId, {
+      reviewStatus: "rejected",
+      reviewedBy: reviewerId,
+      reviewedAt: now,
+      reviewNotes: notes,
+      lastEditedBy: reviewerId,
+    } as any);
+
+    // Crear versión de rechazo
+    await this.createVersion(
+      documentId,
+      {
+        content: document.jsonContent,
+        title: document.title,
+        changeSummary: `Documento rechazado: ${notes}`,
+      },
+      reviewerId,
+    );
+
+    const result = await this.findOne(documentId);
+    if (!result) {
+      throw new Error(
+        `Documento ${documentId} no encontrado después de rechazo`,
+      );
+    }
+    return result;
+  }
+
+  /**
+   * Get documents pending review
+   */
+  async getPendingReviewDocuments(
+    userId: string,
+    userPermissions: string[],
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{
+    documents: any[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const queryBuilder = this.createQueryBuilder();
+
+    // Solo documentos pendientes de revisión
+    queryBuilder.andWhere("doc.reviewStatus = :reviewStatus", {
+      reviewStatus: "pending_review",
+    });
+
+    // No mostrar documentos archivados
+    queryBuilder.andWhere("doc.isArchived = false");
+
+    // Aplicar filtros de permisos para revisores
+    const hasApproveAllPermission = userPermissions.some((p) =>
+      p.includes("knowledge.approve.all"),
+    );
+
+    if (!hasApproveAllPermission) {
+      // Para permisos de equipo, filtrar por creador en el mismo equipo
+      // Por ahora, mostrar solo documentos del creador actual o de su equipo
+      console.log(`Filtrando documentos pendientes para usuario ${userId}`);
+    }
+
+    const offset = (page - 1) * limit;
+
+    const [documents, total] = await queryBuilder
+      .orderBy("doc.updatedAt", "DESC")
+      .skip(offset)
+      .take(limit)
+      .getManyAndCount();
+
+    // Mapear documentos con información del autor
+    const documentsWithInfo = await Promise.all(
+      documents.map(async (doc) => {
+        const createdByUser = await doc.createdByUser;
+        const documentType = await doc.documentType;
+
+        const tags =
+          doc.tagRelations && doc.tagRelations.length > 0
+            ? doc.tagRelations.map((relation) => ({
+                id: relation.tag.id,
+                tagName: relation.tag.tagName,
+                color: relation.tag.color,
+                category: relation.tag.category,
+              }))
+            : [];
+
+        return {
+          ...doc,
+          documentType: documentType
+            ? {
+                id: documentType.id,
+                name: documentType.name,
+                color: documentType.color,
+              }
+            : null,
+          __createdByUser__: createdByUser
+            ? {
+                id: createdByUser.id,
+                email: createdByUser.email,
+                fullName: createdByUser.fullName,
+              }
+            : null,
+          tags,
+          tagRelations: undefined,
+        };
+      }),
+    );
+
+    return {
+      documents: documentsWithInfo,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
 }

@@ -209,7 +209,7 @@ export const useModulePermissions = () => {
 
     // Función para verificar si el usuario puede acceder a un módulo específico
     const canAccessModuleWithPermissions = (
-      module: ModulePermission
+      module: ModulePermission,
     ): boolean => {
       // Si tiene permisos administrativos, puede acceder a todo
       if (isAdmin) {
@@ -228,7 +228,7 @@ export const useModulePermissions = () => {
 
       // Verificar si tiene al menos uno de los permisos requeridos
       const hasAccess = module.permissions.some((permission) =>
-        hasPermission(permission)
+        hasPermission(permission),
       );
 
       return hasAccess;
@@ -236,7 +236,7 @@ export const useModulePermissions = () => {
 
     // Función para verificar acceso a secciones administrativas
     const canAccessAdminSection = (
-      section: (typeof ADMIN_SECTIONS)[0]
+      section: (typeof ADMIN_SECTIONS)[0],
     ): boolean => {
       // Si es administrador, puede ver todas las secciones
       if (isAdmin) {
@@ -250,7 +250,7 @@ export const useModulePermissions = () => {
 
       // Verificar si tiene acceso a al menos un item de la sección
       const hasAccessToItems = section.items.some((item) =>
-        canAccessModuleWithPermissions(item)
+        canAccessModuleWithPermissions(item),
       );
 
       return hasAccessToItems;
@@ -258,7 +258,7 @@ export const useModulePermissions = () => {
 
     // Filtrar módulos permitidos
     const allowedModules = SYSTEM_MODULES.filter(
-      canAccessModuleWithPermissions
+      canAccessModuleWithPermissions,
     );
 
     // Filtrar secciones administrativas permitidas
@@ -356,6 +356,13 @@ export const useFeaturePermissions = () => {
         hasPermission("knowledge.duplicate.own") ||
         hasPermission("knowledge.duplicate.team") ||
         hasPermission("knowledge.duplicate.all"),
+      canReviewKnowledge:
+        hasPermission("knowledge.review.own") ||
+        hasPermission("knowledge.review.team") ||
+        hasPermission("knowledge.review.all"),
+      canApproveKnowledge:
+        hasPermission("knowledge.approve.team") ||
+        hasPermission("knowledge.approve.all"),
 
       // Permisos de disposiciones (usando permisos estandarizados de BD)
       canCreateDispositions:
@@ -395,7 +402,7 @@ export const useScopePermissions = () => {
   const checkScopePermission = (
     resource: string,
     action: string,
-    targetUserId?: string
+    targetUserId?: string,
   ): boolean => {
     // Si es administrador, puede hacer todo
     const isAdmin =
@@ -445,7 +452,7 @@ export const usePermissions = () => {
     // DEPRECATED: Este hook usa el contexto de autenticación principal
     // que ya maneja permisos dinámicos desde la base de datos
     console.warn(
-      "🚨 usePermissions hook is deprecated. Use useAuth().hasPermission instead"
+      "🚨 usePermissions hook is deprecated. Use useAuth().hasPermission instead",
     );
 
     // Retornar false para forzar el uso del sistema principal

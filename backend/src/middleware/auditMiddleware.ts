@@ -32,7 +32,7 @@ export class AuditMiddleware {
    * Espera hasta que el DataSource esté inicializado
    */
   private static async waitForDataSource(
-    maxWaitMs: number = 10000
+    maxWaitMs: number = 10000,
   ): Promise<boolean> {
     const startTime = Date.now();
 
@@ -50,7 +50,7 @@ export class AuditMiddleware {
     const isReady = await AuditMiddleware.waitForDataSource();
     if (!isReady) {
       console.error(
-        "DataSource no está inicializado para obtener el repositorio de AuditLog después de esperar"
+        "DataSource no está inicializado para obtener el repositorio de AuditLog después de esperar",
       );
       return null;
     }
@@ -64,7 +64,7 @@ export class AuditMiddleware {
     const isReady = await AuditMiddleware.waitForDataSource();
     if (!isReady) {
       console.error(
-        "DataSource no está inicializado para obtener el repositorio de AuditEntityChange después de esperar"
+        "DataSource no está inicializado para obtener el repositorio de AuditEntityChange después de esperar",
       );
       return null;
     }
@@ -119,7 +119,7 @@ export class AuditMiddleware {
   static initializeAuditContext = async (
     req: AuditableRequest,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ): Promise<void> => {
     try {
       // Extraer información del usuario de la request
@@ -133,7 +133,7 @@ export class AuditMiddleware {
         userName: user?.fullName || user?.name || "Usuario del Sistema",
         userRole: user?.roleName || user?.role || "unknown",
         module: AuditMiddleware.extractModuleFromPath(
-          req.originalUrl || req.path
+          req.originalUrl || req.path,
         ),
         ipAddress,
         userAgent: req.get("User-Agent"),
@@ -170,7 +170,7 @@ export class AuditMiddleware {
     return async (
       req: AuditableRequest,
       res: Response,
-      next: NextFunction
+      next: NextFunction,
     ): Promise<void> => {
       // Interceptar la respuesta para obtener el ID de la entidad creada
       const originalSend = res.send;
@@ -198,7 +198,7 @@ export class AuditMiddleware {
 
               // Generar cambios basados en los datos enviados
               const changes = AuditMiddleware.generateChangesForCreate(
-                req.body
+                req.body,
               );
 
               // Registrar auditoría de forma asíncrona
@@ -237,7 +237,7 @@ export class AuditMiddleware {
     return async (
       req: AuditableRequest,
       res: Response,
-      next: NextFunction
+      next: NextFunction,
     ): Promise<void> => {
       // Almacenar datos originales antes de la actualización
       let originalEntity: any = null;
@@ -248,13 +248,13 @@ export class AuditMiddleware {
         if (entityId) {
           originalEntity = await AuditMiddleware.getOriginalEntity(
             entityType || AuditMiddleware.getEntityTypeFromRoute(req.path),
-            entityId
+            entityId,
           );
         }
       } catch (error) {
         console.error(
           "Error obteniendo entidad original para auditoría:",
-          error
+          error,
         );
       }
 
@@ -282,7 +282,7 @@ export class AuditMiddleware {
               // Generar cambios comparando original con nuevo
               const changes = AuditMiddleware.generateChangesForUpdate(
                 originalEntity,
-                req.body
+                req.body,
               );
 
               // Solo registrar si hay cambios reales
@@ -324,7 +324,7 @@ export class AuditMiddleware {
     return async (
       req: AuditableRequest,
       res: Response,
-      next: NextFunction
+      next: NextFunction,
     ): Promise<void> => {
       // Obtener entidad antes de eliminar
       let originalEntity: any = null;
@@ -334,7 +334,7 @@ export class AuditMiddleware {
         if (entityId) {
           originalEntity = await AuditMiddleware.getOriginalEntity(
             entityType || AuditMiddleware.getEntityTypeFromRoute(req.path),
-            entityId
+            entityId,
           );
         }
       } catch (error) {
@@ -421,7 +421,7 @@ export class AuditMiddleware {
                   requestBody: req.params,
                   responseStatus: res.statusCode,
                   downloadUrl: req.originalUrl,
-                }
+                },
               ).catch((error) => {
                 console.error("Error registrando auditoría DOWNLOAD:", error);
               });
@@ -477,7 +477,7 @@ export class AuditMiddleware {
                   requestBody: req.params,
                   responseStatus: res.statusCode,
                   viewUrl: req.originalUrl,
-                }
+                },
               ).catch((error) => {
                 console.error("Error registrando auditoría VIEW:", error);
               });
@@ -534,7 +534,7 @@ export class AuditMiddleware {
                   requestBody: req.query,
                   responseStatus: res.statusCode,
                   reportPath: req.originalUrl,
-                }
+                },
               ).catch((error) => {
                 console.error("Error registrando auditoría REPORT:", error);
               });
@@ -564,7 +564,7 @@ export class AuditMiddleware {
     entityId: string,
     entityName?: string,
     changes: EntityChange[] = [],
-    operationContext?: any
+    operationContext?: any,
   ): Promise<void> {
     try {
       await AuditMiddleware.logAudit({
@@ -694,7 +694,7 @@ export class AuditMiddleware {
 
       const savedAuditLog = await auditLogRepository.save(auditLog);
       console.log(
-        `✅ Auditoría registrada: ${action} en ${entityType} (${entityId}) por ${context.userName}`
+        `✅ Auditoría registrada: ${action} en ${entityType} (${entityId}) por ${context.userName}`,
       );
 
       // Crear registros de cambios detallados
@@ -721,7 +721,7 @@ export class AuditMiddleware {
           await AuditMiddleware.getAuditChangeRepository();
         if (!auditChangeRepository) {
           console.error(
-            "No se pudo obtener el repositorio de AuditEntityChange"
+            "No se pudo obtener el repositorio de AuditEntityChange",
           );
           return;
         }
@@ -801,7 +801,7 @@ export class AuditMiddleware {
    */
   private static getEntityTypeFromRoute(path: string): string {
     for (const [route, entityType] of Object.entries(
-      AuditMiddleware.ROUTE_ENTITY_MAPPING
+      AuditMiddleware.ROUTE_ENTITY_MAPPING,
     )) {
       if (path.includes(route.replace("/api/", ""))) {
         return entityType;
@@ -835,22 +835,51 @@ export class AuditMiddleware {
    */
   private static async getOriginalEntity(
     entityType: string,
-    entityId: string
+    entityId: string,
   ): Promise<any> {
     try {
       // Mapeo de tipos de entidad a repositorios
+      // IMPORTANTE: Los nombres deben coincidir con AuditEntityType enum en audit.dto.ts
       const entityRepositoryMap: Record<string, any> = {
-        manual_time_entries: "ManualTimeEntry",
+        // Entidades principales
         cases: "Case",
         todos: "Todo",
-        users: "UserProfile",
+        user_profiles: "UserProfile",
+        users: "UserProfile", // Alias para compatibilidad
         roles: "Role",
         permissions: "Permission",
         notes: "Note",
+
+        // Entradas de tiempo
         time_entries: "TimeEntry",
+        manual_time_entries: "ManualTimeEntry",
+        todo_time_entries: "TodoTimeEntry",
+        todo_manual_time_entries: "TodoManualTimeEntry",
+
+        // Controles
+        case_control: "CaseControl",
+        todo_control: "TodoControl",
+        case_status_control: "CaseStatusControl",
+        todo_priorities: "TodoPriority",
+
+        // Catálogos
         applications: "Application",
         origins: "Origin",
         dispositions: "Disposition",
+        document_types: "DocumentType",
+
+        // Base de conocimiento
+        knowledge_documents: "KnowledgeDocument",
+        knowledge_tags: "KnowledgeTag",
+
+        // Archivo
+        archived_cases: "ArchivedCase",
+        archived_todos: "ArchivedTodo",
+        archived_items: "ArchivedCase", // Alias genérico para archived_items
+
+        // Equipos
+        teams: "Team",
+        team_members: "TeamMember",
       };
 
       const entityName = entityRepositoryMap[entityType];
@@ -863,12 +892,7 @@ export class AuditMiddleware {
       let EntityClass;
       try {
         switch (entityName) {
-          case "ManualTimeEntry":
-            const { ManualTimeEntry } = await import(
-              "../entities/ManualTimeEntry"
-            );
-            EntityClass = ManualTimeEntry;
-            break;
+          // Entidades principales
           case "Case":
             const { Case } = await import("../entities/Case");
             EntityClass = Case;
@@ -885,10 +909,104 @@ export class AuditMiddleware {
             const { Role } = await import("../entities/Role");
             EntityClass = Role;
             break;
+          case "Permission":
+            const { Permission } = await import("../entities/Permission");
+            EntityClass = Permission;
+            break;
+          case "Note":
+            const { Note } = await import("../entities/Note");
+            EntityClass = Note;
+            break;
+
+          // Entradas de tiempo
           case "TimeEntry":
             const { TimeEntry } = await import("../entities/TimeEntry");
             EntityClass = TimeEntry;
             break;
+          case "ManualTimeEntry":
+            const { ManualTimeEntry } =
+              await import("../entities/ManualTimeEntry");
+            EntityClass = ManualTimeEntry;
+            break;
+          case "TodoTimeEntry":
+            const { TodoTimeEntry } = await import("../entities/TodoTimeEntry");
+            EntityClass = TodoTimeEntry;
+            break;
+          case "TodoManualTimeEntry":
+            const { TodoManualTimeEntry } =
+              await import("../entities/TodoManualTimeEntry");
+            EntityClass = TodoManualTimeEntry;
+            break;
+
+          // Controles
+          case "CaseControl":
+            const { CaseControl } = await import("../entities/CaseControl");
+            EntityClass = CaseControl;
+            break;
+          case "TodoControl":
+            const { TodoControl } = await import("../entities/TodoControl");
+            EntityClass = TodoControl;
+            break;
+          case "CaseStatusControl":
+            const { CaseStatusControl } =
+              await import("../entities/CaseStatusControl");
+            EntityClass = CaseStatusControl;
+            break;
+          case "TodoPriority":
+            const { TodoPriority } = await import("../entities/TodoPriority");
+            EntityClass = TodoPriority;
+            break;
+
+          // Catálogos
+          case "Application":
+            const { Application } = await import("../entities/Application");
+            EntityClass = Application;
+            break;
+          case "Origin":
+            const { Origin } = await import("../entities/Origin");
+            EntityClass = Origin;
+            break;
+          case "Disposition":
+            const { Disposition } = await import("../entities/Disposition");
+            EntityClass = Disposition;
+            break;
+          case "DocumentType":
+            const { DocumentType } = await import("../entities/DocumentType");
+            EntityClass = DocumentType;
+            break;
+
+          // Base de conocimiento
+          case "KnowledgeDocument":
+            const { KnowledgeDocument } =
+              await import("../entities/KnowledgeDocument");
+            EntityClass = KnowledgeDocument;
+            break;
+          case "KnowledgeTag":
+            const { KnowledgeTag } = await import("../entities/KnowledgeTag");
+            EntityClass = KnowledgeTag;
+            break;
+
+          // Archivo
+          case "ArchivedCase":
+            const { ArchivedCase } = await import("../entities/ArchivedCase");
+            EntityClass = ArchivedCase;
+            break;
+          case "ArchivedTodo":
+            const { ArchivedTodo } =
+              await import("../entities/archive/ArchivedTodo.entity");
+            EntityClass = ArchivedTodo;
+            break;
+
+          // Equipos
+          case "Team":
+            const { Team } = await import("../entities/Team");
+            EntityClass = Team;
+            break;
+          case "TeamMember":
+            const { TeamMember } = await import("../entities/TeamMember");
+            EntityClass = TeamMember;
+            break;
+
           default:
             console.warn(`Entidad no implementada: ${entityName}`);
             return null;
@@ -932,7 +1050,7 @@ export class AuditMiddleware {
    */
   private static generateChangesForUpdate(
     originalData: any,
-    updateData: any
+    updateData: any,
   ): EntityChange[] {
     if (!updateData || typeof updateData !== "object") return [];
 
@@ -1021,7 +1139,7 @@ export class AuditMiddleware {
   private static isSensitiveField(fieldName: string): boolean {
     const lowerFieldName = fieldName.toLowerCase();
     return AuditMiddleware.SENSITIVE_FIELDS.some((sensitive) =>
-      lowerFieldName.includes(sensitive)
+      lowerFieldName.includes(sensitive),
     );
   }
 
@@ -1064,7 +1182,7 @@ export class AuditMiddleware {
             // Crear
             if (!req.path.includes("/login") && !req.path.includes("/auth")) {
               const entityType = AuditMiddleware.getEntityTypeFromRoute(
-                req.path
+                req.path,
               );
               AuditMiddleware.auditCreate(entityType)(req, res, () => {});
             }
@@ -1074,7 +1192,7 @@ export class AuditMiddleware {
           case "PATCH":
             // Actualizar
             const entityTypeUpdate = AuditMiddleware.getEntityTypeFromRoute(
-              req.path
+              req.path,
             );
             AuditMiddleware.auditUpdate(entityTypeUpdate)(req, res, () => {});
             break;
@@ -1082,7 +1200,7 @@ export class AuditMiddleware {
           case "DELETE":
             // Eliminar
             const entityTypeDelete = AuditMiddleware.getEntityTypeFromRoute(
-              req.path
+              req.path,
             );
             AuditMiddleware.auditDelete(entityTypeDelete)(req, res, () => {});
             break;

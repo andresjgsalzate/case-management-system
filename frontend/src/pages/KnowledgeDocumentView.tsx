@@ -7,6 +7,11 @@ import {
   useDeleteKnowledgeDocument,
   useCreateDocumentFeedback,
   useCheckUserFeedback,
+  useCheckFavorite,
+  useToggleFavorite,
+  useSubmitForReview,
+  useApproveDocument,
+  useRejectDocument,
   knowledgeKeys,
 } from "../hooks/useKnowledge";
 import { useFeaturePermissions } from "../hooks/usePermissions";
@@ -30,6 +35,10 @@ const KnowledgeDocumentView: React.FC = () => {
   // Modal states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectNotes, setRejectNotes] = useState("");
+  const [approveNotes, setApproveNotes] = useState("");
 
   // Permisos y autenticación
   const permissions = useFeaturePermissions();
@@ -48,6 +57,51 @@ const KnowledgeDocumentView: React.FC = () => {
   const archiveMutation = useArchiveKnowledgeDocument();
   const deleteMutation = useDeleteKnowledgeDocument();
   const feedbackMutation = useCreateDocumentFeedback();
+
+  // Favorite hooks
+  const { data: favoriteData } = useCheckFavorite(id || "");
+  const toggleFavoriteMutation = useToggleFavorite({
+    onSuccess: (data) => {
+      success(
+        data.isFavorite ? "Añadido a favoritos" : "Eliminado de favoritos",
+      );
+    },
+    onError: (error: any) => {
+      showError(`Error al actualizar favoritos: ${error.message}`);
+    },
+  });
+
+  // Review hooks
+  const submitForReviewMutation = useSubmitForReview({
+    onSuccess: () => {
+      success("Documento enviado a revisión");
+    },
+    onError: (error: any) => {
+      showError(`Error al enviar a revisión: ${error.message}`);
+    },
+  });
+
+  const approveDocumentMutation = useApproveDocument({
+    onSuccess: () => {
+      success("Documento aprobado y publicado");
+      setShowReviewModal(false);
+      setApproveNotes("");
+    },
+    onError: (error: any) => {
+      showError(`Error al aprobar documento: ${error.message}`);
+    },
+  });
+
+  const rejectDocumentMutation = useRejectDocument({
+    onSuccess: () => {
+      success("Documento rechazado");
+      setShowRejectModal(false);
+      setRejectNotes("");
+    },
+    onError: (error: any) => {
+      showError(`Error al rechazar documento: ${error.message}`);
+    },
+  });
 
   // Check if user has already provided feedback
   const { data: feedbackCheck } = useCheckUserFeedback(id || "");
@@ -138,12 +192,48 @@ const KnowledgeDocumentView: React.FC = () => {
     return { text: "Borrador", color: "bg-yellow-100 text-yellow-800" };
   };
 
+  // Get review status info
+  const getReviewStatusInfo = (reviewStatus?: string) => {
+    switch (reviewStatus) {
+      case "pending_review":
+        return {
+          text: "En Revisión",
+          color:
+            "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+          icon: "🔍",
+        };
+      case "approved":
+        return {
+          text: "Aprobado",
+          color:
+            "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+          icon: "✓",
+        };
+      case "rejected":
+        return {
+          text: "Rechazado",
+          color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+          icon: "✗",
+        };
+      case "published":
+        return {
+          text: "Publicado",
+          color:
+            "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
+          icon: "📢",
+        };
+      case "draft":
+      default:
+        return null; // Don't show badge for draft (it's the default)
+    }
+  };
+
   // Helper para obtener información de casos asociados
   const getAssociatedCasesInfo = () => {
     if (!document?.associatedCases || !casesData) return [];
 
     const associatedCases = casesData.filter((caso: Case) =>
-      document.associatedCases?.includes(caso.id)
+      document.associatedCases?.includes(caso.id),
     );
 
     return associatedCases;
@@ -151,7 +241,34 @@ const KnowledgeDocumentView: React.FC = () => {
 
   // Handle actions
   const handleToggleFavorite = () => {
-    // TODO: Implement favorite functionality
+    if (id) {
+      toggleFavoriteMutation.mutate(id);
+    }
+  };
+
+  const handleSubmitForReview = () => {
+    if (id) {
+      submitForReviewMutation.mutate(id);
+    }
+  };
+
+  const handleApproveDocument = () => {
+    if (id) {
+      approveDocumentMutation.mutate({
+        documentId: id,
+        notes: approveNotes || undefined,
+        autoPublish: true,
+      });
+    }
+  };
+
+  const handleRejectDocument = () => {
+    if (id && rejectNotes.trim()) {
+      rejectDocumentMutation.mutate({
+        documentId: id,
+        notes: rejectNotes.trim(),
+      });
+    }
   };
 
   const handleArchive = () => {
@@ -173,7 +290,7 @@ const KnowledgeDocumentView: React.FC = () => {
           onError: (error: any) => {
             showError(`Error al archivar documento: ${error.message}`);
           },
-        }
+        },
       );
     }
   };
@@ -211,7 +328,7 @@ const KnowledgeDocumentView: React.FC = () => {
           onError: (error: any) => {
             showError(`Error al restaurar documento: ${error.message}`);
           },
-        }
+        },
       );
     }
   };
@@ -220,7 +337,7 @@ const KnowledgeDocumentView: React.FC = () => {
     // Check if user has already provided feedback
     if (feedbackCheck?.hasFeedback) {
       showError(
-        "Ya has proporcionado feedback para este documento. Solo se permite un feedback por documento."
+        "Ya has proporcionado feedback para este documento. Solo se permite un feedback por documento.",
       );
       return;
     }
@@ -243,17 +360,17 @@ const KnowledgeDocumentView: React.FC = () => {
           if (
             error.response?.status === 400 &&
             error.response?.data?.message?.includes(
-              "Ya has proporcionado feedback"
+              "Ya has proporcionado feedback",
             )
           ) {
             showError(
-              "Ya has proporcionado feedback para este documento. Solo se permite un feedback por documento."
+              "Ya has proporcionado feedback para este documento. Solo se permite un feedback por documento.",
             );
           } else {
             showError(
               `Error al enviar feedback: ${
                 error.message || "Error desconocido"
-              }`
+              }`,
             );
           }
         },
@@ -402,11 +519,115 @@ const KnowledgeDocumentView: React.FC = () => {
             <div className="flex items-center space-x-2 border-l border-gray-200 pl-4 ml-4">
               <button
                 onClick={handleToggleFavorite}
-                className="p-2 text-gray-400 hover:text-yellow-500 rounded-md hover:bg-gray-100"
-                title="Agregar a favoritos"
+                disabled={toggleFavoriteMutation.isPending}
+                className={`p-2 rounded-md hover:bg-gray-100 transition-colors ${
+                  favoriteData?.isFavorite
+                    ? "text-yellow-500 hover:text-yellow-600"
+                    : "text-gray-400 hover:text-yellow-500"
+                }`}
+                title={
+                  favoriteData?.isFavorite
+                    ? "Quitar de favoritos"
+                    : "Agregar a favoritos"
+                }
               >
-                <ActionIcon action="favorite" size="sm" color="yellow" />
+                {favoriteData?.isFavorite ? (
+                  <svg className="h-5 w-5 fill-current" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ) : (
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                    />
+                  </svg>
+                )}
               </button>
+              {favoriteData?.favoriteCount !== undefined &&
+                favoriteData.favoriteCount > 0 && (
+                  <span className="text-xs text-gray-500">
+                    {favoriteData.favoriteCount}
+                  </span>
+                )}
+
+              {/* Review Workflow Actions */}
+              {!document.isPublished &&
+                !document.isArchived &&
+                (document as any).reviewStatus !== "pending_review" && (
+                  <button
+                    onClick={handleSubmitForReview}
+                    disabled={submitForReviewMutation.isPending}
+                    className="p-2 text-gray-400 hover:text-purple-600 rounded-md hover:bg-gray-100"
+                    title="Enviar a revisión"
+                  >
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                      />
+                    </svg>
+                  </button>
+                )}
+
+              {/* Approve/Reject buttons for reviewers */}
+              {(document as any).reviewStatus === "pending_review" &&
+                permissions.canApproveKnowledge && (
+                  <>
+                    <button
+                      onClick={() => setShowReviewModal(true)}
+                      className="p-2 text-gray-400 hover:text-green-600 rounded-md hover:bg-gray-100"
+                      title="Aprobar documento"
+                    >
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => setShowRejectModal(true)}
+                      className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100"
+                      title="Rechazar documento"
+                    >
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </>
+                )}
 
               {permissions.canDuplicateKnowledge && (
                 <button
@@ -429,7 +650,7 @@ const KnowledgeDocumentView: React.FC = () => {
                         downloadPDF(pdfDocument, {
                           fileName: `${document.title || "documento"}.pdf`,
                         });
-                      }
+                      },
                     );
                   }}
                   className="p-2 text-gray-400 hover:text-red-600 rounded-md hover:bg-gray-100"
@@ -499,12 +720,48 @@ const KnowledgeDocumentView: React.FC = () => {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex-1 mr-4">
               {document.title}
             </h1>
-            <span
-              className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color}`}
-            >
-              {statusInfo.text}
-            </span>
+            <div className="flex items-center gap-2">
+              {/* Review Status Badge */}
+              {getReviewStatusInfo(document.reviewStatus) && (
+                <span
+                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getReviewStatusInfo(document.reviewStatus)?.color}`}
+                >
+                  {getReviewStatusInfo(document.reviewStatus)?.icon}
+                  {getReviewStatusInfo(document.reviewStatus)?.text}
+                </span>
+              )}
+              {/* Publication Status Badge */}
+              <span
+                className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color}`}
+              >
+                {statusInfo.text}
+              </span>
+            </div>
           </div>
+
+          {/* Review Notes (if rejected) */}
+          {document.reviewStatus === "rejected" && document.reviewNotes && (
+            <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <div className="flex items-start gap-2">
+                <span className="text-red-500 dark:text-red-400 mt-0.5">
+                  ⚠️
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                    Motivo del rechazo:
+                  </p>
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                    {document.reviewNotes}
+                  </p>
+                  {document.reviewedAt && (
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                      Rechazado el {formatDate(document.reviewedAt)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Metadata */}
@@ -561,19 +818,19 @@ const KnowledgeDocumentView: React.FC = () => {
                     document.priority === "urgent"
                       ? "bg-red-100 text-red-800"
                       : document.priority === "high"
-                      ? "bg-orange-100 text-orange-800"
-                      : document.priority === "medium"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : "bg-gray-100 text-gray-800"
+                        ? "bg-orange-100 text-orange-800"
+                        : document.priority === "medium"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-gray-100 text-gray-800"
                   }`}
                 >
                   {document.priority === "urgent"
                     ? "Urgente"
                     : document.priority === "high"
-                    ? "Alta"
-                    : document.priority === "medium"
-                    ? "Media"
-                    : "Baja"}
+                      ? "Alta"
+                      : document.priority === "medium"
+                        ? "Media"
+                        : "Baja"}
                 </span>
               </div>
 
@@ -708,7 +965,7 @@ const KnowledgeDocumentView: React.FC = () => {
               {Math.round(
                 (document.helpfulCount /
                   (document.helpfulCount + document.notHelpfulCount)) *
-                  100
+                  100,
               )}
               % de las personas encontraron este documento útil
             </p>
@@ -753,6 +1010,151 @@ const KnowledgeDocumentView: React.FC = () => {
         cancelText="Cancelar"
         type="danger"
       />
+
+      {/* Approve Document Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-70 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 dark:border-gray-600">
+            <div className="mt-3">
+              <div className="flex items-center justify-between pb-3">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  Aprobar Documento
+                </h3>
+                <button
+                  onClick={() => setShowReviewModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="py-3">
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                  Al aprobar este documento, será publicado automáticamente y
+                  estará disponible para todos los usuarios.
+                </p>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    Notas de aprobación (opcional)
+                  </label>
+                  <textarea
+                    value={approveNotes}
+                    onChange={(e) => setApproveNotes(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-green-500 focus:border-green-500 dark:focus:ring-green-400 dark:focus:border-green-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Notas para el autor del documento..."
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end pt-3 border-t border-gray-200 dark:border-gray-600 space-x-3">
+                <button
+                  onClick={() => setShowReviewModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleApproveDocument}
+                  disabled={approveDocumentMutation.isPending}
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md shadow-sm disabled:opacity-50"
+                >
+                  {approveDocumentMutation.isPending
+                    ? "Aprobando..."
+                    : "Aprobar y Publicar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Document Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 dark:bg-gray-900 dark:bg-opacity-70 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800 dark:border-gray-600">
+            <div className="mt-3">
+              <div className="flex items-center justify-between pb-3">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  Rechazar Documento
+                </h3>
+                <button
+                  onClick={() => setShowRejectModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="py-3">
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                  Por favor, indica el motivo del rechazo para que el autor
+                  pueda mejorar el documento.
+                </p>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    Motivo del rechazo *
+                  </label>
+                  <textarea
+                    value={rejectNotes}
+                    onChange={(e) => setRejectNotes(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-red-500 focus:border-red-500 dark:focus:ring-red-400 dark:focus:border-red-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Explica qué debe mejorarse o corregirse..."
+                    rows={4}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end pt-3 border-t border-gray-200 dark:border-gray-600 space-x-3">
+                <button
+                  onClick={() => setShowRejectModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleRejectDocument}
+                  disabled={
+                    rejectDocumentMutation.isPending || !rejectNotes.trim()
+                  }
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md shadow-sm disabled:opacity-50"
+                >
+                  {rejectDocumentMutation.isPending
+                    ? "Rechazando..."
+                    : "Rechazar Documento"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,0 +1,20 @@
+                             Table "public.permissions"
+   Column    |           Type           | Collation | Nullable |      Default       
+-------------+--------------------------+-----------+----------+--------------------
+ id          | uuid                     |           | not null | uuid_generate_v4()
+ name        | character varying(100)   |           | not null | 
+ description | text                     |           |          | 
+ module      | character varying(50)    |           | not null | 
+ action      | character varying(20)    |           | not null | 
+ scope       | character varying(10)    |           | not null | 
+ isActive    | boolean                  |           | not null | true
+ createdAt   | timestamp with time zone |           | not null | now()
+ updatedAt   | timestamp with time zone |           | not null | now()
+Indexes:
+    "permissions_pkey" PRIMARY KEY, btree (id)
+    "permissions_name_key" UNIQUE CONSTRAINT, btree (name)
+Referenced by:
+    TABLE "role_permissions" CONSTRAINT "FK_06792d0c62ce6b0203c03643cdd" FOREIGN KEY ("permissionId") REFERENCES permissions(id)
+Triggers:
+    update_permissions_updated_at BEFORE UPDATE ON permissions FOR EACH ROW EXECUTE FUNCTION update_permissions_updated_at()
+

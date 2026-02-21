@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ActionIcon } from "../components/ui/ActionIcons";
 import {
@@ -9,6 +15,7 @@ import {
   useAllTags,
   useSearchTags,
   useCreateTag,
+  useSubmitForReview,
 } from "../hooks/useKnowledge";
 import { useCases } from "../hooks/useCases";
 import { Case } from "../services/api";
@@ -28,6 +35,7 @@ import BlockNoteEditor from "../components/knowledge/BlockNoteEditor";
 import FileUpload from "../components/FileUpload";
 import AttachmentsList from "../components/AttachmentsList";
 import { Button } from "../components/ui/Button";
+import { getSuggestedTags, TagSuggestion } from "../utils/nlpUtils";
 import { Input } from "../components/ui/Input";
 import { Select } from "../components/ui/Select";
 import { useToast } from "../hooks/useNotification";
@@ -51,11 +59,13 @@ const KnowledgeDocumentForm: React.FC = () => {
   const [difficultyLevel, setDifficultyLevel] = useState<number>(1);
   const [isTemplate, setIsTemplate] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
+  const [wantsToSubmitForReview, setWantsToSubmitForReview] = useState(false); // Nuevo estado para enviar a revisión
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [showSuggestedTags, setShowSuggestedTags] = useState(false);
   const [userHidTags, setUserHidTags] = useState(false); // Track if user manually hid tags
   const [showPredictiveTags, setShowPredictiveTags] = useState(false);
+  const [showNlpSuggestions, setShowNlpSuggestions] = useState(true); // NLP-based tag suggestions
   const [showAttachments, setShowAttachments] = useState(false); // Para mostrar/ocultar sección de archivos
   const [showAllPopular, setShowAllPopular] = useState(false); // Para mostrar/ocultar etiquetas populares
   const [associatedCases, setAssociatedCases] = useState<string[]>([]); // IDs de casos asociados
@@ -77,12 +87,12 @@ const KnowledgeDocumentForm: React.FC = () => {
         jsonContent &&
         jsonContent.length > 0 &&
         jsonContent.some(
-          (block: any) => block.content && block.content.length > 0
+          (block: any) => block.content && block.content.length > 0,
         );
 
       if (hasContent) {
         const confirm = window.confirm(
-          "El documento ya tiene contenido. ¿Deseas reemplazarlo con la plantilla de documentación?"
+          "El documento ya tiene contenido. ¿Deseas reemplazarlo con la plantilla de documentación?",
         );
         if (!confirm) {
           setUseDocTemplate(false);
@@ -123,13 +133,13 @@ const KnowledgeDocumentForm: React.FC = () => {
         setHasLocalBackup(true);
         console.log(
           "💾 Backup local guardado:",
-          new Date().toLocaleTimeString()
+          new Date().toLocaleTimeString(),
         );
       } catch (e) {
         console.error("Error guardando backup local:", e);
       }
     },
-    [id, LOCAL_BACKUP_KEY]
+    [id, LOCAL_BACKUP_KEY],
   );
 
   // Función para limpiar backup local
@@ -168,6 +178,20 @@ const KnowledgeDocumentForm: React.FC = () => {
     onError: (error: any) => {
       showError(`Error al actualizar documento: ${error.message}`);
       setShouldNavigateAfterSave(false);
+    },
+  });
+
+  // ✅ REVISIÓN: Mutación para enviar documento a revisión
+  const submitForReviewMutation = useSubmitForReview({
+    onSuccess: () => {
+      success("Documento enviado a revisión. Un aprobador lo revisará pronto.");
+      setWantsToSubmitForReview(false);
+      if (shouldNavigateAfterSave) {
+        navigate("/knowledge");
+      }
+    },
+    onError: (error: any) => {
+      showError(`Error al enviar a revisión: ${error.message}`);
     },
   });
 
@@ -228,7 +252,7 @@ const KnowledgeDocumentForm: React.FC = () => {
 
   // Queries
   const { data: document, isLoading: documentLoading } = useKnowledgeDocument(
-    id || ""
+    id || "",
   );
   const { data: documentTypes } = useDocumentTypes();
   // Sistema de tags habilitado - usar todas las etiquetas en lugar de solo populares
@@ -240,6 +264,29 @@ const KnowledgeDocumentForm: React.FC = () => {
 
   // Sistema de predicción de tags
   const { data: predictiveTags } = useSearchTags(tagInput);
+
+  // NLP-based tag suggestions - calculate when content changes
+  const nlpSuggestedTags: TagSuggestion[] = useMemo(() => {
+    if (!showNlpSuggestions || !popularTags) return [];
+
+    // Only calculate if we have meaningful content
+    const contentLength = (textContent?.length || 0) + (title?.length || 0);
+    if (contentLength < 30) return [];
+
+    const existingTagsData = popularTags.map((t: KnowledgeDocumentTag) => ({
+      tagName: t.tagName,
+      color: t.color,
+      usageCount: t.usageCount,
+    }));
+
+    return getSuggestedTags(
+      `${title || ""} ${textContent || ""}`,
+      jsonContent,
+      existingTagsData,
+      tags,
+      8,
+    );
+  }, [textContent, title, jsonContent, popularTags, tags, showNlpSuggestions]);
 
   // Query para obtener casos (incluyendo archivados)
   const { data: casesData } = useCases();
@@ -342,7 +389,7 @@ const KnowledgeDocumentForm: React.FC = () => {
             const useBackup = window.confirm(
               `Se encontró un backup local guardado el ${backupTime.toLocaleString()}.\n\n` +
                 `Esto puede contener cambios que no se guardaron debido a una sesión expirada.\n\n` +
-                `¿Deseas restaurar el backup local? (Cancelar para usar la versión del servidor)`
+                `¿Deseas restaurar el backup local? (Cancelar para usar la versión del servidor)`,
             );
 
             if (useBackup) {
@@ -352,20 +399,20 @@ const KnowledgeDocumentForm: React.FC = () => {
                 localBackup.content ||
                   localBackup.textContent ||
                   document.content ||
-                  ""
+                  "",
               );
               setDocumentTypeId(
-                localBackup.documentTypeId || document.documentTypeId || ""
+                localBackup.documentTypeId || document.documentTypeId || "",
               );
               setPriority(localBackup.priority || document.priority);
               setDifficultyLevel(
-                localBackup.difficultyLevel || document.difficultyLevel
+                localBackup.difficultyLevel || document.difficultyLevel,
               );
               setIsTemplate(
-                localBackup.isTemplate ?? document.isTemplate ?? false
+                localBackup.isTemplate ?? document.isTemplate ?? false,
               );
               setIsPublished(
-                localBackup.isPublished ?? document.isPublished ?? false
+                localBackup.isPublished ?? document.isPublished ?? false,
               );
               const backupTags = localBackup.tags || [];
               setTags(backupTags);
@@ -416,7 +463,7 @@ const KnowledgeDocumentForm: React.FC = () => {
       setIsPublished(document.isPublished || false);
       const documentTags =
         document.tags?.map((tag) =>
-          typeof tag === "string" ? tag : tag.tagName
+          typeof tag === "string" ? tag : tag.tagName,
         ) || [];
       setTags(documentTags);
 
@@ -472,7 +519,7 @@ const KnowledgeDocumentForm: React.FC = () => {
     if (currentContent === lastSavedContentRef.current) {
       // No hay cambios, no es necesario guardar
       console.log(
-        "⏭️ [AUTOGUARDADO] Sin cambios detectados, omitiendo guardado"
+        "⏭️ [AUTOGUARDADO] Sin cambios detectados, omitiendo guardado",
       );
       return;
     }
@@ -548,7 +595,7 @@ const KnowledgeDocumentForm: React.FC = () => {
     console.log(
       "✅ [AUTOGUARDADO] Iniciando intervalo de autoguardado cada",
       AUTOSAVE_INTERVAL / 1000,
-      "segundos"
+      "segundos",
     );
 
     // Configurar nuevo timer usando la ref estable
@@ -698,7 +745,7 @@ const KnowledgeDocumentForm: React.FC = () => {
 
       // Verificación case-insensitive para evitar duplicados
       const isDuplicate = tags.some(
-        (existingTag) => existingTag.toLowerCase() === newTag.toLowerCase()
+        (existingTag) => existingTag.toLowerCase() === newTag.toLowerCase(),
       );
 
       if (isDuplicate) {
@@ -721,7 +768,7 @@ const KnowledgeDocumentForm: React.FC = () => {
         const normalizedName = createdTag.tagName;
         const isStillDuplicate = tags.some(
           (existingTag) =>
-            existingTag.toLowerCase() === normalizedName.toLowerCase()
+            existingTag.toLowerCase() === normalizedName.toLowerCase(),
         );
 
         if (!isStillDuplicate) {
@@ -746,7 +793,7 @@ const KnowledgeDocumentForm: React.FC = () => {
   const handleAddSuggestedTag = async (tagName: string) => {
     // Verificación case-insensitive para evitar duplicados
     const isDuplicate = tags.some(
-      (existingTag) => existingTag.toLowerCase() === tagName.toLowerCase()
+      (existingTag) => existingTag.toLowerCase() === tagName.toLowerCase(),
     );
 
     if (isDuplicate) {
@@ -789,7 +836,7 @@ const KnowledgeDocumentForm: React.FC = () => {
             .includes(caseSearchInput.toLowerCase()) ||
           caso.descripcion
             ?.toLowerCase()
-            .includes(caseSearchInput.toLowerCase()))
+            .includes(caseSearchInput.toLowerCase())),
     );
   };
 
@@ -798,6 +845,7 @@ const KnowledgeDocumentForm: React.FC = () => {
     e.preventDefault();
 
     // Construir objeto de datos limpio (sin propiedades undefined)
+    // ✅ REVISIÓN: No enviar isPublished=true directamente, usar flujo de revisión
     const documentData: UpdateKnowledgeDocumentDto = {
       title,
       content: textContent,
@@ -805,7 +853,7 @@ const KnowledgeDocumentForm: React.FC = () => {
       priority,
       difficultyLevel,
       isTemplate,
-      isPublished,
+      isPublished: false, // Siempre false, la publicación se hace vía aprobación
       associatedCases: associatedCases,
     };
 
@@ -821,13 +869,16 @@ const KnowledgeDocumentForm: React.FC = () => {
 
     try {
       // Indicar que queremos navegar después de guardar exitosamente
-      setShouldNavigateAfterSave(true);
+      setShouldNavigateAfterSave(!wantsToSubmitForReview); // Si va a revisión, no navegar aún
+
+      let savedDocumentId: string | undefined;
 
       if (isEditing) {
         await updateMutation.mutateAsync({
           id: id!,
           data: documentData,
         });
+        savedDocumentId = id;
         // ✅ AUTOGUARDADO: Actualizar referencia del contenido guardado
         lastSavedContentRef.current = JSON.stringify({
           title,
@@ -837,14 +888,21 @@ const KnowledgeDocumentForm: React.FC = () => {
           priority,
           difficultyLevel,
           isTemplate,
-          isPublished,
+          isPublished: false,
           tags,
           associatedCases,
         });
       } else {
-        await createMutation.mutateAsync(
-          documentData as CreateKnowledgeDocumentDto
+        const newDocument = await createMutation.mutateAsync(
+          documentData as CreateKnowledgeDocumentDto,
         );
+        savedDocumentId = newDocument?.id;
+      }
+
+      // ✅ REVISIÓN: Si el usuario marcó enviar a revisión, hacer la solicitud
+      if (wantsToSubmitForReview && savedDocumentId) {
+        await submitForReviewMutation.mutateAsync(savedDocumentId);
+        // La navegación se maneja en el onSuccess de submitForReviewMutation
       }
 
       // La navegación ahora se maneja en los callbacks onSuccess de las mutaciones
@@ -857,7 +915,7 @@ const KnowledgeDocumentForm: React.FC = () => {
         saveLocalBackup(documentData);
         showError(
           "Tu sesión ha expirado. El documento se ha guardado localmente. " +
-            "Por favor, inicia sesión de nuevo y tus cambios se restaurarán automáticamente."
+            "Por favor, inicia sesión de nuevo y tus cambios se restaurarán automáticamente.",
         );
       }
     }
@@ -921,7 +979,7 @@ const KnowledgeDocumentForm: React.FC = () => {
         saveLocalBackup(documentData);
         showError(
           "Tu sesión ha expirado. El documento se ha guardado localmente. " +
-            "Por favor, inicia sesión de nuevo y tus cambios se restaurarán automáticamente."
+            "Por favor, inicia sesión de nuevo y tus cambios se restaurarán automáticamente.",
         );
       }
     }
@@ -1092,8 +1150,8 @@ const KnowledgeDocumentForm: React.FC = () => {
                   {createMutation.isPending || updateMutation.isPending
                     ? "Guardando..."
                     : isEditing
-                    ? "Guardar y salir"
-                    : "Crear"}
+                      ? "Guardar y salir"
+                      : "Crear"}
                 </Button>
               </div>
             </div>
@@ -1163,7 +1221,7 @@ const KnowledgeDocumentForm: React.FC = () => {
               </Select>
 
               {/* Options */}
-              <div className="flex gap-4">
+              <div className="flex flex-col gap-3">
                 <label className="flex items-center">
                   <input
                     type="checkbox"
@@ -1175,17 +1233,69 @@ const KnowledgeDocumentForm: React.FC = () => {
                     Es una plantilla
                   </span>
                 </label>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={isPublished}
-                    onChange={(e) => setIsPublished(e.target.checked)}
-                    className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                    Publicar documento
-                  </span>
-                </label>
+
+                {/* Estado de revisión/publicación */}
+                {document?.isPublished ? (
+                  <div className="flex items-center px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <ActionIcon
+                      action="success"
+                      className="w-4 h-4 text-green-600 mr-2"
+                    />
+                    <span className="text-sm text-green-700 dark:text-green-300 font-medium">
+                      Documento publicado
+                    </span>
+                  </div>
+                ) : document?.reviewStatus === "pending_review" ? (
+                  <div className="flex items-center px-3 py-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                    <ActionIcon
+                      action="time"
+                      className="w-4 h-4 text-yellow-600 mr-2"
+                    />
+                    <span className="text-sm text-yellow-700 dark:text-yellow-300 font-medium">
+                      Pendiente de aprobación
+                    </span>
+                  </div>
+                ) : document?.reviewStatus === "rejected" ? (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center px-3 py-2 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                      <ActionIcon
+                        action="error"
+                        className="w-4 h-4 text-red-600 mr-2"
+                      />
+                      <span className="text-sm text-red-700 dark:text-red-300 font-medium">
+                        Rechazado -{" "}
+                        {document.reviewNotes || "Sin motivo especificado"}
+                      </span>
+                    </div>
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={wantsToSubmitForReview}
+                        onChange={(e) =>
+                          setWantsToSubmitForReview(e.target.checked)
+                        }
+                        className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                        Reenviar a revisión para publicación
+                      </span>
+                    </label>
+                  </div>
+                ) : (
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={wantsToSubmitForReview}
+                      onChange={(e) =>
+                        setWantsToSubmitForReview(e.target.checked)
+                      }
+                      className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      Enviar a revisión para publicación
+                    </span>
+                  </label>
+                )}
               </div>
             </div>
           </div>
@@ -1245,7 +1355,7 @@ const KnowledgeDocumentForm: React.FC = () => {
                           {predictiveTags
                             .filter(
                               (tag: KnowledgeDocumentTag) =>
-                                !tags.includes(tag.tagName)
+                                !tags.includes(tag.tagName),
                             )
                             .slice(0, 5)
                             .map((tag: KnowledgeDocumentTag) => (
@@ -1276,6 +1386,88 @@ const KnowledgeDocumentForm: React.FC = () => {
                   </div>
                 </div>
 
+                {/* NLP-based Smart Tag Suggestions */}
+                {showNlpSuggestions && nlpSuggestedTags.length > 0 && (
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-700">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">🤖</span>
+                        <h4 className="text-sm font-semibold text-purple-800 dark:text-purple-200">
+                          Sugerencias Inteligentes
+                        </h4>
+                        <span className="text-xs bg-purple-200 dark:bg-purple-700 text-purple-700 dark:text-purple-200 px-2 py-0.5 rounded-full">
+                          Basado en tu contenido
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowNlpSuggestions(false)}
+                        className="text-xs text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200"
+                      >
+                        Ocultar
+                      </button>
+                    </div>
+                    <p className="text-xs text-purple-600 dark:text-purple-300 mb-3">
+                      Etiquetas sugeridas automáticamente basadas en el análisis
+                      del contenido de tu documento.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {nlpSuggestedTags.map((suggestion, index) => (
+                        <button
+                          key={`nlp-${suggestion.tagName}-${index}`}
+                          type="button"
+                          onClick={() =>
+                            handleAddSuggestedTag(suggestion.tagName)
+                          }
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all hover:shadow-md ${
+                            suggestion.isNew
+                              ? "bg-white dark:bg-gray-700 border-2 border-dashed border-purple-400 dark:border-purple-500 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30"
+                              : "text-white shadow-sm hover:opacity-90"
+                          }`}
+                          style={
+                            suggestion.isNew
+                              ? {}
+                              : {
+                                  backgroundColor:
+                                    suggestion.color || "#8B5CF6",
+                                }
+                          }
+                          title={
+                            suggestion.isNew
+                              ? "Nueva etiqueta sugerida - se creará al agregar"
+                              : suggestion.usageCount
+                                ? `Usada ${suggestion.usageCount} veces`
+                                : undefined
+                          }
+                        >
+                          {suggestion.isNew ? (
+                            <span className="text-base">✨</span>
+                          ) : (
+                            <ActionIcon action="tag" size="xs" />
+                          )}
+                          {suggestion.tagName}
+                          {suggestion.isNew && (
+                            <span className="text-[10px] bg-purple-100 dark:bg-purple-800 text-purple-600 dark:text-purple-300 px-1 py-0.5 rounded ml-1">
+                              Nueva
+                            </span>
+                          )}
+                          {!suggestion.isNew &&
+                            suggestion.usageCount !== undefined && (
+                              <span className="opacity-75 text-[10px]">
+                                ({suggestion.usageCount})
+                              </span>
+                            )}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-purple-500 dark:text-purple-400 mt-2 flex items-center gap-1">
+                      <span>💡</span>
+                      Las etiquetas nuevas se crearán automáticamente al
+                      agregarlas.
+                    </p>
+                  </div>
+                )}
+
                 {/* Suggested Tags */}
                 {((showSuggestedTags &&
                   popularTags &&
@@ -1304,7 +1496,7 @@ const KnowledgeDocumentForm: React.FC = () => {
                         const filteredTags = popularTags
                           ?.filter(
                             (tag: KnowledgeDocumentTag) =>
-                              !tags.includes(tag.tagName)
+                              !tags.includes(tag.tagName),
                           )
                           .slice(0, 12);
 
@@ -1327,7 +1519,7 @@ const KnowledgeDocumentForm: React.FC = () => {
                                 ({tag.usageCount})
                               </span>
                             </button>
-                          )
+                          ),
                         );
                       })()}
                     </div>
@@ -1350,7 +1542,7 @@ const KnowledgeDocumentForm: React.FC = () => {
                       {tags.map((tag) => {
                         // Find the color for this tag from popularTags or use default
                         const tagInfo = popularTags?.find(
-                          (t: KnowledgeDocumentTag) => t.tagName === tag
+                          (t: KnowledgeDocumentTag) => t.tagName === tag,
                         );
                         const color = tagInfo?.color || "#6B7280";
 

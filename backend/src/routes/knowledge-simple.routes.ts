@@ -4,6 +4,7 @@ import { KnowledgeDocumentService } from "../services/knowledge-document.service
 import { DocumentTypeService } from "../services/document-type.service";
 import { DocumentFeedbackService } from "../services/document-feedback.service";
 import { KnowledgeTagService } from "../services/knowledge-tag.service";
+import { KnowledgeDocumentFavoriteService } from "../services/knowledge-document-favorite.service";
 import { authenticateToken } from "../middleware/auth";
 import { AuditMiddleware } from "../middleware/auditMiddleware";
 import {
@@ -25,12 +26,13 @@ const knowledgeDocumentService = new KnowledgeDocumentService();
 const documentTypeService = new DocumentTypeService();
 const knowledgeTagService = new KnowledgeTagService();
 const documentFeedbackService = new DocumentFeedbackService();
+const knowledgeFavoriteService = new KnowledgeDocumentFavoriteService();
 
 // Helper para manejo de errores
 const handleError = (
   res: Response,
   error: any,
-  defaultStatus: number = 500
+  defaultStatus: number = 500,
 ) => {
   console.error("Error:", error);
   const status = error.status || defaultStatus;
@@ -57,20 +59,20 @@ router.get(
 
       console.log(
         `📚 [KNOWLEDGE] Usuario ${userId} solicitando documentos con permisos: ${userPermissions.join(
-          ", "
-        )}`
+          ", ",
+        )}`,
       );
 
       const result = await knowledgeDocumentService.findAll(
         req.query as any,
         userId,
-        userPermissions
+        userPermissions,
       );
       res.json(result);
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/search - Búsqueda de contenido
@@ -91,21 +93,21 @@ router.get(
 
       console.log(
         `🔍 [SEARCH] Usuario ${userId} buscando: "${q}" con permisos: ${userPermissions.join(
-          ", "
-        )}`
+          ", ",
+        )}`,
       );
 
       const documents = await knowledgeDocumentService.searchContent(
         q,
         parseInt(limit as string) || 10,
         userId,
-        userPermissions
+        userPermissions,
       );
       res.json(documents);
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/search/suggestions - Sugerencias de búsqueda
@@ -128,21 +130,21 @@ router.get(
 
       console.log(
         `💡 [SUGGESTIONS] Usuario ${userId} buscando sugerencias: "${q}" con permisos: ${userPermissions.join(
-          ", "
-        )}`
+          ", ",
+        )}`,
       );
 
       const suggestions = await knowledgeDocumentService.getSearchSuggestions(
         q,
         parseInt(limit as string) || 5,
         userId,
-        userPermissions
+        userPermissions,
       );
       res.json(suggestions);
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // POST /api/knowledge/search/advanced - Búsqueda avanzada
@@ -160,15 +162,15 @@ router.post(
 
       console.log(
         `🔎 [ADVANCED_SEARCH] Usuario ${userId} realizando búsqueda avanzada con permisos: ${userPermissions.join(
-          ", "
-        )}`
+          ", ",
+        )}`,
       );
 
       const searchQuery = req.body;
       const result = await knowledgeDocumentService.enhancedSearch(
         searchQuery,
         userId,
-        userPermissions
+        userPermissions,
       );
 
       res.json({
@@ -181,7 +183,7 @@ router.post(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // ================================
@@ -205,7 +207,7 @@ router.get(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/tags/popular - Obtener etiquetas populares
@@ -234,7 +236,7 @@ router.get(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/tags/details/:id - Obtener detalles de una etiqueta específica
@@ -269,7 +271,7 @@ router.get(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/tags/:id - Obtener etiqueta por ID con uso real
@@ -302,7 +304,7 @@ router.get(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/tags/:tagName - Obtener etiqueta por nombre
@@ -337,7 +339,7 @@ router.get(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // POST /api/knowledge/tags - Crear una nueva etiqueta
@@ -368,7 +370,7 @@ router.post(
       // Usar findOrCreateTag que maneja la lógica de búsqueda y creación
       const tag = await knowledgeTagService.findOrCreateTag(
         normalizedTagName,
-        userId
+        userId,
       );
 
       // Si se proporcionan metadatos adicionales, actualizar la etiqueta
@@ -385,7 +387,7 @@ router.post(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // PUT /api/knowledge/tags/:id - Actualizar etiqueta
@@ -409,7 +411,7 @@ router.put(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // DELETE /api/knowledge/tags/:id - Eliminar etiqueta por ID
@@ -432,7 +434,7 @@ router.delete(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/:id - Obtener documento específico
@@ -446,7 +448,7 @@ router.get(
     } catch (error) {
       handleError(res, error, 404);
     }
-  }
+  },
 );
 
 // POST /api/knowledge - Crear documento
@@ -465,7 +467,7 @@ router.post(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/search - Búsqueda avanzada
@@ -486,21 +488,21 @@ router.get(
 
       console.log(
         `🔍 [ADVANCED SEARCH] Usuario ${userId} buscando: "${searchTerm}" con permisos: ${userPermissions.join(
-          ", "
-        )}`
+          ", ",
+        )}`,
       );
 
       const result = await knowledgeDocumentService.searchContent(
         searchTerm,
         limit,
         userId,
-        userPermissions
+        userPermissions,
       );
       res.json(result);
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/:id - Obtener documento por ID
@@ -522,7 +524,7 @@ router.get(
     } catch (error) {
       handleError(res, error, 404);
     }
-  }
+  },
 );
 
 // PUT /api/knowledge/:id - Actualizar documento
@@ -547,13 +549,13 @@ router.put(
       const result = await knowledgeDocumentService.update(
         documentId,
         req.body,
-        userId
+        userId,
       );
       res.json(result);
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // NOTA: Esta ruta ya está definida arriba con middleware de autorización - eliminar duplicado
@@ -569,13 +571,13 @@ router.put(
       const document = await knowledgeDocumentService.publish(
         req.params.id!,
         req.body,
-        userId
+        userId,
       );
       res.json(document);
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // PUT /api/knowledge/:id/archive - Archivar/desarchivar documento
@@ -589,13 +591,13 @@ router.put(
       const document = await knowledgeDocumentService.archive(
         req.params.id!,
         req.body,
-        userId
+        userId,
       );
       res.json(document);
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // DELETE /api/knowledge/:id - Eliminar documento
@@ -610,7 +612,7 @@ router.delete(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/:id/versions - Obtener versiones del documento
@@ -620,13 +622,13 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const versions = await knowledgeDocumentService.getVersions(
-        req.params.id!
+        req.params.id!,
       );
       res.json(versions);
     } catch (error) {
       handleError(res, error, 404);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/:id/versions/:version - Obtener versión específica
@@ -637,13 +639,13 @@ router.get(
     try {
       const version = await knowledgeDocumentService.getVersion(
         req.params.id!,
-        parseInt(req.params.version!)
+        parseInt(req.params.version!),
       );
       res.json(version);
     } catch (error) {
       handleError(res, error, 404);
     }
-  }
+  },
 );
 
 // ===========================================
@@ -662,7 +664,7 @@ router.get(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // GET /api/document-types/:id - Obtener tipo específico
@@ -676,7 +678,7 @@ router.get(
     } catch (error) {
       handleError(res, error, 404);
     }
-  }
+  },
 );
 
 // POST /api/document-types - Crear tipo de documento
@@ -692,7 +694,7 @@ router.post(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // PUT /api/document-types/:id - Actualizar tipo de documento
@@ -707,7 +709,7 @@ router.put(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // PUT /api/document-types/:id/toggle - Activar/desactivar tipo
@@ -722,7 +724,7 @@ router.put(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // DELETE /api/document-types/:id - Eliminar tipo
@@ -737,7 +739,7 @@ router.delete(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // ===========================================
@@ -751,13 +753,13 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const feedback = await documentFeedbackService.findByDocument(
-        req.params.id!
+        req.params.id!,
       );
       res.json(feedback);
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // GET /api/feedback/check/:documentId - Verificar si el usuario ya ha dado feedback
@@ -770,7 +772,7 @@ router.get(
       const documentId = req.params.documentId!;
       const feedback = await documentFeedbackService.findUserFeedback(
         documentId,
-        userId
+        userId,
       );
       res.json({
         hasFeedback: !!feedback,
@@ -779,7 +781,7 @@ router.get(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // POST /api/feedback - Crear feedback
@@ -794,7 +796,7 @@ router.post(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // PUT /api/feedback/:id - Actualizar feedback
@@ -807,13 +809,13 @@ router.put(
       const feedback = await documentFeedbackService.update(
         req.params.id!,
         req.body,
-        userId
+        userId,
       );
       res.json(feedback);
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // DELETE /api/feedback/:id - Eliminar feedback
@@ -828,7 +830,7 @@ router.delete(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/:id/stats - Estadísticas de feedback del documento
@@ -838,13 +840,13 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const stats = await documentFeedbackService.getDocumentStats(
-        req.params.id!
+        req.params.id!,
       );
       res.json(stats);
     } catch (error) {
       handleError(res, error, 404);
     }
-  }
+  },
 );
 
 // GET /api/feedback/my - Obtener mi feedback
@@ -859,7 +861,7 @@ router.get(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // ===========================================
@@ -886,7 +888,7 @@ router.post(
       // Usar findOrCreateTag que maneja la lógica de búsqueda y creación
       const tag = await knowledgeTagService.findOrCreateTag(
         normalizedTagName,
-        userId
+        userId,
       );
 
       // Si se proporcionan metadatos adicionales, actualizar la etiqueta
@@ -903,7 +905,7 @@ router.post(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/tags/popular - Obtener etiquetas populares (debe ir ANTES de /:tagName)
@@ -926,7 +928,7 @@ router.get(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/tags - Obtener todas las etiquetas
@@ -940,7 +942,7 @@ router.get(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/tags/:tagName - Obtener etiqueta por nombre
@@ -969,7 +971,7 @@ router.get(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // DELETE /api/knowledge/tags/:id - Eliminar etiqueta por ID
@@ -992,7 +994,245 @@ router.delete(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
+);
+
+// ==========================================
+// KNOWLEDGE DOCUMENT FAVORITES ROUTES
+// ==========================================
+
+// POST /api/knowledge/:id/favorite - Toggle favorite
+router.post(
+  "/knowledge/:id/favorite",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const documentId = req.params.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      if (!documentId) {
+        return res.status(400).json({ error: "ID de documento requerido" });
+      }
+
+      const result = await knowledgeFavoriteService.toggleFavorite(
+        documentId,
+        userId,
+      );
+
+      res.json(result);
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+// GET /api/knowledge/:id/favorite - Check if favorited
+router.get(
+  "/knowledge/:id/favorite",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const documentId = req.params.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      if (!documentId) {
+        return res.status(400).json({ error: "ID de documento requerido" });
+      }
+
+      const result = await knowledgeFavoriteService.checkFavorite(
+        documentId,
+        userId,
+      );
+
+      res.json(result);
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+// GET /api/knowledge/favorites/my - Get user's favorites
+router.get(
+  "/knowledge/favorites/my",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      const result = await knowledgeFavoriteService.getUserFavorites(
+        userId,
+        page,
+        limit,
+      );
+
+      res.json(result);
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+// GET /api/knowledge/favorites/popular - Get most favorited documents
+router.get(
+  "/knowledge/favorites/popular",
+  authenticateToken,
+  async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const result = await knowledgeFavoriteService.getMostFavorited(limit);
+      res.json(result);
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+// ==========================================
+// KNOWLEDGE DOCUMENT REVIEW WORKFLOW ROUTES
+// ==========================================
+
+// PUT /api/knowledge/:id/submit-review - Submit document for review
+router.put(
+  "/knowledge/:id/submit-review",
+  requireAnyPermission([
+    "knowledge.review.own",
+    "knowledge.review.team",
+    "knowledge.review.all",
+  ]),
+  AuditMiddleware.auditUpdate("knowledge_documents"),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const documentId = req.params.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      if (!documentId) {
+        return res.status(400).json({ error: "ID de documento requerido" });
+      }
+
+      const result = await knowledgeDocumentService.submitForReview(
+        documentId,
+        userId,
+      );
+
+      res.json(result);
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+// PUT /api/knowledge/:id/approve - Approve document
+router.put(
+  "/knowledge/:id/approve",
+  requireAnyPermission(["knowledge.approve.team", "knowledge.approve.all"]),
+  AuditMiddleware.auditUpdate("knowledge_documents"),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const documentId = req.params.id;
+      const { notes, autoPublish = true } = req.body;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      if (!documentId) {
+        return res.status(400).json({ error: "ID de documento requerido" });
+      }
+
+      const result = await knowledgeDocumentService.approveDocument(
+        documentId,
+        userId,
+        notes,
+        autoPublish,
+      );
+
+      res.json(result);
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+// PUT /api/knowledge/:id/reject - Reject document
+router.put(
+  "/knowledge/:id/reject",
+  requireAnyPermission(["knowledge.approve.team", "knowledge.approve.all"]),
+  AuditMiddleware.auditUpdate("knowledge_documents"),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const documentId = req.params.id;
+      const { notes } = req.body;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Usuario no autenticado" });
+      }
+
+      if (!documentId) {
+        return res.status(400).json({ error: "ID de documento requerido" });
+      }
+
+      if (!notes || typeof notes !== "string" || !notes.trim()) {
+        return res.status(400).json({
+          error: "Se requiere una nota explicando el motivo del rechazo",
+        });
+      }
+
+      const result = await knowledgeDocumentService.rejectDocument(
+        documentId,
+        userId,
+        notes.trim(),
+      );
+
+      res.json(result);
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
+);
+
+// GET /api/knowledge/pending-review - Get documents pending review
+router.get(
+  "/knowledge/pending-review",
+  requireAnyPermission(["knowledge.approve.team", "knowledge.approve.all"]),
+  async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      const userPermissions = (req as any).user?.permissions || [];
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+
+      const result = await knowledgeDocumentService.getPendingReviewDocuments(
+        userId,
+        userPermissions,
+        page,
+        limit,
+      );
+
+      res.json(result);
+    } catch (error) {
+      handleError(res, error);
+    }
+  },
 );
 
 export default router;

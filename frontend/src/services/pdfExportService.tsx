@@ -11,10 +11,11 @@ import {
   Text,
   View,
   StyleSheet,
-  Image,
+  Image as PdfImage,
 } from "@react-pdf/renderer";
 import { saveAs } from "file-saver";
 import { codeToHtml } from "shiki";
+import mermaid from "mermaid";
 import { securityService } from "./security.service";
 import {
   KnowledgeDocumentPDF,
@@ -22,6 +23,16 @@ import {
   PDFExportOptions,
   ColoredTextToken,
 } from "../types/pdf";
+import { isMermaidCode } from "../components/knowledge/MermaidRenderer";
+
+// Inicializar mermaid para exportación PDF
+mermaid.initialize({
+  startOnLoad: false,
+  theme: "default",
+  securityLevel: "loose",
+  fontFamily: "Arial, sans-serif",
+});
+
 // =================== CONFIGURACIÓN DE FUENTES ===================
 // Usar fuentes del sistema para mayor confiabilidad
 // React PDF tiene mejor soporte con fuentes incorporadas
@@ -72,7 +83,7 @@ const getFontFamily = (baseFamily?: string): string => {
 const renderTextWithEmojiSupport = (
   text: string,
   baseStyle: any = {},
-  forceFont?: string
+  forceFont?: string,
 ): React.ReactNode => {
   if (!text || typeof text !== "string" || !text.trim()) {
     return null;
@@ -133,7 +144,7 @@ const extractTextFromContent = (content: any): string => {
  */
 const processCodeWithSyntaxHighlighting = async (
   code: string,
-  language: string
+  language: string,
 ): Promise<ColoredTextToken[]> => {
   try {
     // Mapeo de lenguajes comunes
@@ -266,7 +277,7 @@ const cleanHtmlEntities = (text: string): string => {
 const getAttachmentIcon = (
   fileType?: string,
   mimeType?: string,
-  fileName?: string
+  fileName?: string,
 ): string => {
   const type = fileType?.toLowerCase() || "";
   const mime = mimeType?.toLowerCase() || "";
@@ -347,6 +358,103 @@ const formatAttachmentFileSize = (bytes: number): string => {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
+
+// =================== MERMAID A IMAGEN ===================
+/**
+ * Renderiza un diagrama Mermaid a una imagen en formato data URL (PNG)
+ * @param code Código Mermaid a renderizar
+ * @returns Data URL de la imagen o null si falla
+ */
+const renderMermaidToDataUrl = async (code: string): Promise<string | null> => {
+  try {
+    // Generar ID único para el diagrama
+    const diagramId = `mermaid-pdf-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Crear contenedor temporal para renderizar
+    const container = document.createElement("div");
+    container.style.position = "absolute";
+    container.style.left = "-9999px";
+    container.style.top = "-9999px";
+    container.style.width = "800px";
+    container.style.height = "600px";
+    container.id = `container-${diagramId}`;
+    document.body.appendChild(container);
+
+    try {
+      // Reinicializar Mermaid con configuración específica para PDF
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: "default",
+        securityLevel: "loose",
+        fontFamily: "Arial, sans-serif",
+        flowchart: {
+          useMaxWidth: false,
+          htmlLabels: true,
+        },
+      });
+
+      // Renderizar el diagrama
+      const { svg } = await mermaid.render(diagramId, code);
+
+      if (!svg || svg.length < 100) {
+        return null;
+      }
+
+      // Convertir SVG a data URL base64 directamente para evitar problemas de CORS
+      const svgBase64 = btoa(unescape(encodeURIComponent(svg)));
+      const svgDataUrl = `data:image/svg+xml;base64,${svgBase64}`;
+
+      // Crear imagen y convertir a canvas para obtener PNG
+      return new Promise((resolve) => {
+        const img = new window.Image();
+        img.crossOrigin = "anonymous";
+
+        img.onload = () => {
+          try {
+            if (img.width === 0 || img.height === 0) {
+              resolve(null);
+              return;
+            }
+
+            const canvas = document.createElement("canvas");
+            // Escalar para mejor calidad en PDF
+            const scale = 2;
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.fillStyle = "#FFFFFF";
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.scale(scale, scale);
+              ctx.drawImage(img, 0, 0);
+
+              const dataUrl = canvas.toDataURL("image/png", 1.0);
+              resolve(dataUrl);
+            } else {
+              resolve(null);
+            }
+          } catch (canvasError) {
+            resolve(null);
+          }
+        };
+        img.onerror = () => {
+          // Fallback: usar SVG directamente
+          resolve(svgDataUrl);
+        };
+        img.src = svgDataUrl;
+      });
+    } finally {
+      // Limpiar contenedor temporal
+      if (container.parentNode) {
+        container.parentNode.removeChild(container);
+      }
+    }
+  } catch (error: any) {
+    return null;
+  }
+};
+
 // =================== ESTILOS PDF ===================
 const styles = StyleSheet.create({
   page: {
@@ -667,6 +775,48 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: "#6B7280",
   },
+  // Estilos para diagramas Mermaid
+  mermaidDiagram: {
+    marginVertical: 12,
+    padding: 16,
+    backgroundColor: "#FFFFFF",
+    border: "1pt solid #E5E7EB",
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  mermaidLabel: {
+    fontSize: 10,
+    color: "#6B7280",
+    marginBottom: 8,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  mermaidImage: {
+    maxWidth: "100%",
+    objectFit: "contain",
+  },
+  mermaidPlaceholder: {
+    padding: 20,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mermaidPlaceholderText: {
+    fontSize: 11,
+    color: "#6B7280",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  mermaidCode: {
+    fontSize: 9,
+    fontFamily: "Courier",
+    color: "#374151",
+    backgroundColor: "#F9FAFB",
+    padding: 8,
+    borderRadius: 4,
+    maxHeight: 100,
+  },
   // Footer - más compacto y siempre presente
   footer: {
     position: "absolute",
@@ -705,7 +855,7 @@ const styles = StyleSheet.create({
 const renderHeadingInlineContent = (
   content: any,
   baseStyle: any,
-  blockProps?: any
+  blockProps?: any,
 ): React.ReactNode => {
   if (typeof content === "string") {
     if (content.trim()) {
@@ -778,7 +928,7 @@ const renderHeadingInlineContent = (
                     ? "styles.textColor"
                     : "textColor",
                   text: item.text?.substring(0, 30) + "...",
-                }
+                },
               );
           }
           // Aplicar color de fondo en heading si existe
@@ -818,7 +968,7 @@ const renderHeadingInlineContent = (
     // Detectar si hay emojis en el contenido combinado del heading
     const allText = renderedItems
       .map((item) =>
-        typeof item === "string" ? item : item?.props?.children || ""
+        typeof item === "string" ? item : item?.props?.children || "",
       )
       .join("");
     const fontFamily = getFontFamily(baseStyle.fontFamily);
@@ -860,7 +1010,7 @@ const renderHeadingInlineContent = (
 };
 const renderInlineContent = (
   content: any,
-  blockProps?: any
+  blockProps?: any,
 ): React.ReactNode => {
   // Validación inicial para evitar contenido vacío o inválido
   if (!content) {
@@ -893,7 +1043,7 @@ const renderInlineContent = (
           : null,
       });
     const hasStyles = content.some(
-      (item) => item?.styles?.textColor || item?.textColor
+      (item) => item?.styles?.textColor || item?.textColor,
     );
     if (hasStyles) {
       false &&
@@ -1016,8 +1166,8 @@ const renderInlineContent = (
                   source: blockProps?.textColor
                     ? "blockProps.textColor"
                     : item.styles?.textColor
-                    ? "styles.textColor"
-                    : "textColor",
+                      ? "styles.textColor"
+                      : "textColor",
                 });
             }
             // Aplicar color de fondo si existe
@@ -1156,7 +1306,7 @@ const renderInlineContent = (
 const renderBlock = (
   block: PDFContentBlock,
   index: number,
-  numberedListCounter?: { value: number }
+  numberedListCounter?: { value: number },
 ): React.ReactElement => {
   switch (block.type) {
     case "paragraph":
@@ -1198,7 +1348,7 @@ const renderBlock = (
       const headingContent = renderHeadingInlineContent(
         block.content,
         headingStyle,
-        block.props
+        block.props,
       );
       false &&
         console.log(`📝 [PDF] Renderizando H${headingLevel} con estilos:`, {
@@ -1210,7 +1360,7 @@ const renderBlock = (
       const headingElement = renderHeadingInlineContent(
         block.content,
         headingStyle,
-        block.props
+        block.props,
       );
       return headingElement ? (
         <View key={index}>{headingElement}</View>
@@ -1260,6 +1410,40 @@ const renderBlock = (
     case "codeBlock":
       const language = (block.props as any)?.language || "";
       const blockAny = block as any;
+
+      // Verificar si es un diagrama Mermaid procesado
+      if (blockAny.isMermaid && blockAny.isProcessed) {
+        // Si tenemos la imagen del diagrama, renderizarla
+        if (blockAny.mermaidImage) {
+          return (
+            <View key={index} style={styles.mermaidDiagram}>
+              <Text style={styles.mermaidLabel}>DIAGRAMA MERMAID</Text>
+              <PdfImage
+                src={blockAny.mermaidImage}
+                style={styles.mermaidImage}
+              />
+            </View>
+          );
+        }
+        // Fallback: mostrar el código si no se pudo generar la imagen
+        return (
+          <View key={index} style={styles.mermaidDiagram}>
+            <View style={styles.mermaidPlaceholder}>
+              <Text style={styles.mermaidPlaceholderText}>
+                📊 Diagrama Mermaid
+              </Text>
+              <Text style={styles.mermaidPlaceholderText}>
+                (No fue posible renderizar el diagrama)
+              </Text>
+              <Text style={styles.mermaidCode}>
+                {blockAny.mermaidCode?.substring(0, 200) || ""}
+                {(blockAny.mermaidCode?.length || 0) > 200 ? "..." : ""}
+              </Text>
+            </View>
+          </View>
+        );
+      }
+
       // Verificar si el bloque tiene tokens de syntax highlighting
       if (blockAny.syntaxTokens && blockAny.isProcessed) {
         return (
@@ -1279,7 +1463,7 @@ const renderBlock = (
                   >
                     {token.text}
                   </Text>
-                )
+                ),
               )}
             </Text>
           </View>
@@ -1314,7 +1498,7 @@ const renderBlock = (
     default:
       const defaultContent = renderInlineContent(
         (block as any).content,
-        (block as any).props
+        (block as any).props,
       );
       if (!defaultContent) {
         return <View key={index} />;
@@ -1328,7 +1512,7 @@ const renderBlock = (
 };
 const renderTable = (
   block: PDFContentBlock,
-  index: number
+  index: number,
 ): React.ReactElement => {
   if (!block.content || !Array.isArray(block.content)) {
     return <View key={index} />;
@@ -1369,7 +1553,7 @@ const renderTable = (
  * Convierte una imagen a data URL para usar en PDF
  */
 const convertImageToDataUrl = async (
-  imageUrl: string
+  imageUrl: string,
 ): Promise<string | null> => {
   try {
     // Obtener token válido para autenticación
@@ -1397,7 +1581,7 @@ const convertImageToDataUrl = async (
     const blob = await response.blob();
     false &&
       console.log(
-        "✅ [PDF] Imagen obtenida exitosamente, convirtiendo a data URL"
+        "✅ [PDF] Imagen obtenida exitosamente, convirtiendo a data URL",
       );
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -1406,7 +1590,7 @@ const convertImageToDataUrl = async (
         false &&
           console.log(
             "✅ [PDF] Imagen convertida a data URL:",
-            result.substring(0, 50) + "..."
+            result.substring(0, 50) + "...",
           );
         resolve(result);
       };
@@ -1423,7 +1607,7 @@ const convertImageToDataUrl = async (
 };
 const renderImage = (
   block: PDFContentBlock,
-  index: number
+  index: number,
 ): React.ReactElement => {
   if (block.type !== "image") {
     return <View key={index} />;
@@ -1465,7 +1649,7 @@ const renderImage = (
           if (tokens && tokens.token) {
             const separator = finalImageSrc.includes("?") ? "&" : "?";
             finalImageSrc = `${finalImageSrc}${separator}token=${encodeURIComponent(
-              tokens.token
+              tokens.token,
             )}`;
           }
         } catch (error) {
@@ -1500,7 +1684,7 @@ const renderImage = (
     <View key={index} style={{ marginVertical: 12, alignItems: "center" }}>
       {isLocalImage ? (
         // Para imágenes locales y data URLs, renderizar directamente
-        <Image
+        <PdfImage
           src={finalImageSrc}
           style={{
             maxWidth: 500,
@@ -1562,29 +1746,60 @@ const renderImage = (
  * Preprocesa el documento completo aplicando syntax highlighting a bloques de código
  */
 const preprocessDocumentWithSyntaxHighlighting = async (
-  document: KnowledgeDocumentPDF
+  document: KnowledgeDocumentPDF,
 ): Promise<KnowledgeDocumentPDF> => {
   try {
-    false &&
-      console.log(
-        "🎨 [PDF] Iniciando preprocesamiento con syntax highlighting e imágenes..."
-      );
     if (!document.content || !Array.isArray(document.content)) {
-      console.warn("⚠️ [PDF] Documento sin contenido válido");
       return document;
     }
+
     // Procesar todos los bloques de código e imágenes
     const processedContent = await Promise.all(
       document.content.map(async (block: any) => {
         // Procesar bloques de código
         if (block.type === "codeBlock") {
-          const language = block.props?.language || "";
+          const language = (block.props?.language || "").toLowerCase();
           const codeContent = extractTextFromContent(block.content);
+
+          // Verificar si es un diagrama Mermaid
+          const isMermaidLanguage = language === "mermaid";
+          const isMermaidContent = isMermaidCode(codeContent);
+          const isMermaidBlock = isMermaidLanguage || isMermaidContent;
+
+          if (isMermaidBlock && codeContent.trim()) {
+            try {
+              const mermaidDataUrl = await renderMermaidToDataUrl(codeContent);
+              if (mermaidDataUrl) {
+                return {
+                  ...block,
+                  isMermaid: true,
+                  mermaidImage: mermaidDataUrl,
+                  mermaidCode: codeContent,
+                  isProcessed: true,
+                };
+              } else {
+                return {
+                  ...block,
+                  isMermaid: true,
+                  mermaidCode: codeContent,
+                  isProcessed: true,
+                };
+              }
+            } catch (error) {
+              return {
+                ...block,
+                isMermaid: true,
+                mermaidCode: codeContent,
+                isProcessed: true,
+              };
+            }
+          }
+
           if (codeContent.trim()) {
             try {
               const syntaxTokens = await processCodeWithSyntaxHighlighting(
                 codeContent,
-                language
+                language,
               );
               // Agregar tokens al bloque
               return {
@@ -1595,7 +1810,7 @@ const preprocessDocumentWithSyntaxHighlighting = async (
             } catch (error) {
               console.warn(
                 "⚠️ [PDF] Error procesando bloque de código:",
-                error
+                error,
               );
               return block;
             }
@@ -1626,7 +1841,7 @@ const preprocessDocumentWithSyntaxHighlighting = async (
                   if (tokens && tokens.token) {
                     const separator = finalImageSrc.includes("?") ? "&" : "?";
                     finalImageSrc = `${finalImageSrc}${separator}token=${encodeURIComponent(
-                      tokens.token
+                      tokens.token,
                     )}`;
                   }
                 } catch (error) {
@@ -1639,7 +1854,7 @@ const preprocessDocumentWithSyntaxHighlighting = async (
                 if (dataUrl) {
                   false &&
                     console.log(
-                      "✅ [PDF] Imagen convertida a data URL exitosamente"
+                      "✅ [PDF] Imagen convertida a data URL exitosamente",
                     );
                   return {
                     ...block,
@@ -1654,13 +1869,13 @@ const preprocessDocumentWithSyntaxHighlighting = async (
               } catch (error) {
                 console.warn(
                   "⚠️ [PDF] Error convirtiendo imagen a data URL:",
-                  error
+                  error,
                 );
               }
               // Si no se pudo convertir, usar URL original con mejoras
               if (
                 !finalImageSrc.match(
-                  /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|$|&)/i
+                  /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|$|&)/i,
                 )
               ) {
                 const separator = finalImageSrc.includes("?") ? "&" : "?";
@@ -1679,7 +1894,7 @@ const preprocessDocumentWithSyntaxHighlighting = async (
           }
         }
         return block;
-      })
+      }),
     );
     return {
       ...document,
@@ -1726,13 +1941,13 @@ const PDFDocumentComponent: React.FC<PDFDocumentProps> = ({
         fileType !== "image" &&
         !attachment.is_embedded
       );
-    }
+    },
   );
   // Debug: Log de los adjuntos filtrados
   false &&
     console.log(
       "📎 [PDF DEBUG] Adjuntos documentales encontrados:",
-      documentAttachments.length
+      documentAttachments.length,
     );
   documentAttachments.forEach((att: any, idx: number) => {
     false &&
@@ -1853,7 +2068,7 @@ const PDFDocumentComponent: React.FC<PDFDocumentProps> = ({
                     isInNumberedList = true;
                   }
                   return renderBlock(block, index, numberedListCounter);
-                }
+                },
               );
             })()}
         </View>
@@ -1936,16 +2151,15 @@ const PDFDocumentComponent: React.FC<PDFDocumentProps> = ({
  */
 export const downloadPDF = async (
   document: KnowledgeDocumentPDF,
-  options: PDFExportOptions = {}
+  options: PDFExportOptions = {},
 ): Promise<void> => {
   try {
     // Preprocesar documento con syntax highlighting
-    const preprocessedDocument = await preprocessDocumentWithSyntaxHighlighting(
-      document
-    );
+    const preprocessedDocument =
+      await preprocessDocumentWithSyntaxHighlighting(document);
     // Generar PDF
     const blob = await pdf(
-      <PDFDocumentComponent document={preprocessedDocument} />
+      <PDFDocumentComponent document={preprocessedDocument} />,
     ).toBlob();
     // Determinar nombre del archivo
     const filename =
@@ -1965,7 +2179,7 @@ export const downloadPDF = async (
  */
 export const createFallbackPDF = async (
   title: string = "Documento",
-  content: string = "Sin contenido disponible"
+  content: string = "Sin contenido disponible",
 ): Promise<void> => {
   try {
     const fallbackDocument: KnowledgeDocumentPDF = {
@@ -1992,19 +2206,18 @@ export const createFallbackPDF = async (
  * Función para obtener vista previa (opcional - para futuras implementaciones)
  */
 export const getPDFPreview = async (
-  document: KnowledgeDocumentPDF
+  document: KnowledgeDocumentPDF,
 ): Promise<string> => {
   try {
     false &&
       console.log(
-        "👁️ [PDF Preview] Generando vista previa con syntax highlighting..."
+        "👁️ [PDF Preview] Generando vista previa con syntax highlighting...",
       );
     // Preprocesar documento con syntax highlighting
-    const preprocessedDocument = await preprocessDocumentWithSyntaxHighlighting(
-      document
-    );
+    const preprocessedDocument =
+      await preprocessDocumentWithSyntaxHighlighting(document);
     const blob = await pdf(
-      <PDFDocumentComponent document={preprocessedDocument} />
+      <PDFDocumentComponent document={preprocessedDocument} />,
     ).toBlob();
     return URL.createObjectURL(blob);
   } catch (error) {

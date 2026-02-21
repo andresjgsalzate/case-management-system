@@ -66,9 +66,8 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
   const loadLogs = useCallback(async () => {
     try {
       setLoading(true);
-      const response: AuditLogResponse = await auditService.getAuditLogs(
-        filters
-      );
+      const response: AuditLogResponse =
+        await auditService.getAuditLogs(filters);
 
       setLogs(response.logs || []);
       setPagination({
@@ -168,6 +167,31 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
       minute: "2-digit",
       second: "2-digit",
     });
+  };
+
+  // Formatear valor JSON o texto para visualización
+  const formatJsonValue = (value: string | null | undefined): string => {
+    if (!value) return "(vacío)";
+
+    // Intentar parsear como JSON
+    try {
+      const parsed = JSON.parse(value);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      // Si no es JSON válido, devolver tal cual
+      return value;
+    }
+  };
+
+  // Verificar si un valor es JSON
+  const isJsonValue = (value: string | null | undefined): boolean => {
+    if (!value) return false;
+    try {
+      const parsed = JSON.parse(value);
+      return typeof parsed === "object" && parsed !== null;
+    } catch {
+      return false;
+    }
   };
 
   return (
@@ -370,7 +394,7 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                     "operationSuccess",
                     e.target.value === ""
                       ? undefined
-                      : e.target.value === "true"
+                      : e.target.value === "true",
                   )
                 }
                 className="dark:bg-gray-800 dark:border-gray-600 dark:text-white"
@@ -483,7 +507,7 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                             <div className="text-sm">
                               <div className="font-medium text-gray-900 dark:text-gray-100">
                                 {getEntityTypeLabel(
-                                  log.entityType as AuditEntityType
+                                  log.entityType as AuditEntityType,
                                 )}
                               </div>
                               {log.entityName && (
@@ -556,12 +580,12 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                     Mostrando{" "}
                     {Math.min(
                       (pagination.page - 1) * pagination.limit + 1,
-                      pagination.total
+                      pagination.total,
                     )}
                     -
                     {Math.min(
                       pagination.page * pagination.limit,
-                      pagination.total
+                      pagination.total,
                     )}{" "}
                     de {pagination.total} registros
                   </div>
@@ -605,7 +629,7 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
         isOpen={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}
         title="Detalles del Log de Auditoría"
-        size="lg"
+        size="2xl"
       >
         {selectedLog && (
           <div className="space-y-6">
@@ -660,7 +684,7 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                 </Label>
                 <p className="text-sm text-gray-900 dark:text-gray-100">
                   {getEntityTypeLabel(
-                    selectedLog.entityType as AuditEntityType
+                    selectedLog.entityType as AuditEntityType,
                   )}
                 </p>
               </div>
@@ -742,40 +766,84 @@ const AuditLogsPage: React.FC<AuditLogsPageProps> = () => {
                 <Label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   Cambios Realizados
                 </Label>
-                <div className="mt-2 space-y-2">
+                <div className="mt-2 space-y-3">
                   {selectedLog.changes.map((change, index) => (
                     <div
                       key={index}
-                      className="bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded p-3"
+                      className="bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-4"
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="font-medium text-gray-900 dark:text-gray-100">
+                      <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-200 dark:border-gray-600">
+                        <div className="font-semibold text-gray-900 dark:text-gray-100">
                           {change.fieldName}
                         </div>
                         <Badge variant="secondary">{change.changeType}</Badge>
                       </div>
-                      <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                        {change.oldValue && (
-                          <div>
-                            <span className="font-medium text-red-600 dark:text-red-400">
-                              Valor anterior:
-                            </span>
-                            <p className="text-gray-700 dark:text-gray-300 mt-1">
-                              {change.oldValue}
-                            </p>
+
+                      {/* Si es JSON, mostrar en columnas separadas con scroll */}
+                      {isJsonValue(change.oldValue) ||
+                      isJsonValue(change.newValue) ? (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                          {/* Valor Anterior */}
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                              <span className="font-medium text-red-600 dark:text-red-400 text-sm">
+                                Valor anterior
+                              </span>
+                            </div>
+                            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-3 overflow-x-auto max-h-64 overflow-y-auto">
+                              <pre className="text-xs text-gray-800 dark:text-gray-200 whitespace-pre font-mono">
+                                {formatJsonValue(change.oldValue)}
+                              </pre>
+                            </div>
                           </div>
-                        )}
-                        {change.newValue && (
-                          <div>
-                            <span className="font-medium text-green-600 dark:text-green-400">
-                              Valor nuevo:
-                            </span>
-                            <p className="text-gray-700 dark:text-gray-300 mt-1">
-                              {change.newValue}
-                            </p>
+
+                          {/* Valor Nuevo */}
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                              <span className="font-medium text-green-600 dark:text-green-400 text-sm">
+                                Valor nuevo
+                              </span>
+                            </div>
+                            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded p-3 overflow-x-auto max-h-64 overflow-y-auto">
+                              <pre className="text-xs text-gray-800 dark:text-gray-200 whitespace-pre font-mono">
+                                {formatJsonValue(change.newValue)}
+                              </pre>
+                            </div>
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        /* Para valores simples, mostrar en línea */
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          {change.oldValue && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                                <span className="font-medium text-red-600 dark:text-red-400">
+                                  Valor anterior:
+                                </span>
+                              </div>
+                              <p className="text-gray-700 dark:text-gray-300 pl-4 break-words">
+                                {change.oldValue}
+                              </p>
+                            </div>
+                          )}
+                          {change.newValue && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                <span className="font-medium text-green-600 dark:text-green-400">
+                                  Valor nuevo:
+                                </span>
+                              </div>
+                              <p className="text-gray-700 dark:text-gray-300 pl-4 break-words">
+                                {change.newValue}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

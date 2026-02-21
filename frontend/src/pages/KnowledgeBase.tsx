@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ActionIcon } from "../components/ui/ActionIcons";
 import SmartSearch from "../components/search/SmartSearch";
@@ -7,8 +7,9 @@ import ActiveFiltersBar, {
 } from "../components/search/ActiveFiltersBar";
 import RelevanceIndicator from "../components/search/RelevanceIndicator";
 import {
-  useKnowledgeDocuments,
+  useInfiniteKnowledgeDocuments,
   useCreateKnowledgeDocument,
+  usePendingReviewDocuments,
 } from "../hooks/useKnowledge";
 import { useCases } from "../hooks/useCases";
 import { KnowledgeDocument } from "../types/knowledge";
@@ -28,6 +29,43 @@ import {
 } from "../constants/documentationTemplate";
 
 interface KnowledgeBaseProps {}
+
+// Banner component for pending review documents
+const PendingReviewBanner: React.FC = () => {
+  const { data: pendingData } = usePendingReviewDocuments(1, 1); // Solo necesitamos el total
+  const pendingCount = pendingData?.total || 0;
+
+  if (pendingCount === 0) return null;
+
+  return (
+    <Link
+      to="/knowledge/pending-review"
+      className="block mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <ActionIcon
+            name="clipboard-check"
+            className="w-6 h-6 text-yellow-600 dark:text-yellow-400 mr-3"
+          />
+          <div>
+            <p className="font-medium text-yellow-800 dark:text-yellow-200">
+              {pendingCount} documento{pendingCount !== 1 ? "s" : ""} pendiente
+              {pendingCount !== 1 ? "s" : ""} de revisión
+            </p>
+            <p className="text-sm text-yellow-600 dark:text-yellow-400">
+              Haz clic aquí para revisar y aprobar los documentos
+            </p>
+          </div>
+        </div>
+        <ActionIcon
+          name="chevron-right"
+          className="w-5 h-5 text-yellow-600 dark:text-yellow-400"
+        />
+      </div>
+    </Link>
+  );
+};
 
 const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   const navigate = useNavigate();
@@ -55,18 +93,47 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [useDocTemplate, setUseDocTemplate] = useState(false);
 
-  // Fetch data
+  // Ref for infinite scroll sentinel
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Fetch data with infinite scroll
   const {
     data: documentsResponse,
     isLoading: documentsLoading,
     error: documentsError,
-  } = useKnowledgeDocuments({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteKnowledgeDocuments({
     search: searchQuery,
     documentTypeId: undefined,
     sortBy,
     sortOrder,
-    limit: 20,
+    limit: 12, // Load 12 documents per page for grid display
   });
+
+  // Flatten pages into single documents array
+  const allDocuments =
+    documentsResponse?.pages?.flatMap((page) => page.documents) ?? [];
+  const totalDocuments = documentsResponse?.pages?.[0]?.total ?? 0;
+
+  // Infinite scroll observer
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1, rootMargin: "100px" },
+    );
+
+    observer.observe(loadMoreRef.current);
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const { data: casesData } = useCases(); // Para obtener información de los casos
 
@@ -392,9 +459,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   };
 
   const documents =
-    isAdvancedSearch && searchResults
-      ? searchResults
-      : documentsResponse?.documents || [];
+    isAdvancedSearch && searchResults ? searchResults : allDocuments;
 
   if (documentsLoading) {
     return (
@@ -416,6 +481,10 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Pending Review Banner - only for approvers */}
+      {(permissions?.knowledge?.approve?.all ||
+        permissions?.knowledge?.approve?.team) && <PendingReviewBanner />}
+
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
@@ -550,9 +619,8 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
               </>
             ) : (
               <>
-                {documents?.length || 0} documento
-                {documents?.length !== 1 ? "s" : ""} encontrado
-                {documents?.length !== 1 ? "s" : ""}
+                Mostrando {documents.length} de {totalDocuments} documento
+                {totalDocuments !== 1 ? "s" : ""}
               </>
             )}
           </p>
@@ -744,6 +812,30 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
               <ActionIcon action="add" size="sm" color="primary" />
               Crear Primer Documento
             </button>
+          )}
+        </div>
+      )}
+
+      {/* Infinite Scroll Load More Sentinel */}
+      {!isAdvancedSearch && documents.length > 0 && (
+        <div ref={loadMoreRef} className="flex justify-center py-8">
+          {isFetchingNextPage ? (
+            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 dark:border-blue-400"></div>
+              <span>Cargando más documentos...</span>
+            </div>
+          ) : hasNextPage ? (
+            <button
+              onClick={() => fetchNextPage()}
+              className="px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+            >
+              Cargar más
+            </button>
+          ) : (
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {documents.length > 0 &&
+                `Has visto todos los ${totalDocuments} documentos`}
+            </span>
           )}
         </div>
       )}

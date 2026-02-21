@@ -7,6 +7,7 @@ import {
   MinLength,
   IsEnum,
 } from "class-validator";
+import { Transform, Type } from "class-transformer";
 
 export class CreateUserDto {
   @IsEmail()
@@ -96,6 +97,11 @@ export class UserFilterDto {
   roleName?: string;
 
   @IsOptional()
+  @Transform(({ value }) => {
+    if (value === "true" || value === true) return true;
+    if (value === "false" || value === false) return false;
+    return value;
+  })
   @IsBoolean()
   isActive?: boolean;
 
@@ -108,9 +114,11 @@ export class UserFilterDto {
   sortOrder?: "ASC" | "DESC";
 
   @IsOptional()
+  @Type(() => Number)
   page?: number;
 
   @IsOptional()
+  @Type(() => Number)
   limit?: number;
 }
 

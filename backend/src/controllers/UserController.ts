@@ -259,7 +259,9 @@ export class UserController {
   // Listar usuarios con filtros y paginación
   async getUsers(req: Request, res: Response): Promise<void> {
     try {
-      const filterDto = plainToClass(UserFilterDto, req.query);
+      const filterDto = plainToClass(UserFilterDto, req.query, {
+        enableImplicitConversion: true,
+      });
 
       // Validar parámetros de consulta
       const errors = await validate(filterDto);

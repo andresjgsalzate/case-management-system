@@ -2,6 +2,7 @@ import { Repository, SelectQueryBuilder, ILike, DataSource, In } from "typeorm";
 import { KnowledgeDocument } from "../entities/KnowledgeDocument";
 import { KnowledgeDocumentVersion } from "../entities/KnowledgeDocumentVersion";
 import { Case } from "../entities/Case";
+import { TeamMember } from "../entities/TeamMember";
 import { AppDataSource } from "../config/database";
 import { KnowledgeTagService } from "./knowledge-tag.service";
 import {
@@ -16,6 +17,7 @@ export class KnowledgeDocumentService {
   private knowledgeDocumentRepository: Repository<KnowledgeDocument>;
   private versionRepository: Repository<KnowledgeDocumentVersion>;
   private caseRepository: Repository<Case>;
+  private teamMemberRepository: Repository<TeamMember>;
   private knowledgeTagService: KnowledgeTagService;
 
   constructor(dataSource?: DataSource) {
@@ -23,7 +25,27 @@ export class KnowledgeDocumentService {
     this.knowledgeDocumentRepository = ds.getRepository(KnowledgeDocument);
     this.versionRepository = ds.getRepository(KnowledgeDocumentVersion);
     this.caseRepository = ds.getRepository(Case);
+    this.teamMemberRepository = ds.getRepository(TeamMember);
     this.knowledgeTagService = new KnowledgeTagService(ds);
+  }
+
+  /**
+   * Obtiene los IDs de equipos a los que pertenece un usuario
+   */
+  private async getUserTeamIds(userId: string): Promise<string[]> {
+    try {
+      const memberships = await this.teamMemberRepository.find({
+        where: {
+          userId: userId,
+          isActive: true,
+        },
+        select: ["teamId"],
+      });
+      return memberships.map((m) => m.teamId);
+    } catch (error) {
+      console.error(`Error obteniendo equipos del usuario ${userId}:`, error);
+      return [];
+    }
   }
 
   async create(
@@ -79,8 +101,16 @@ export class KnowledgeDocumentService {
   }> {
     const queryBuilder = this.createQueryBuilder();
 
+    // Obtener equipos del usuario para filtros de visibilidad
+    const userTeamIds = userId ? await this.getUserTeamIds(userId) : [];
+
     this.applyFilters(queryBuilder, query);
-    this.applyPermissionFilters(queryBuilder, userId, userPermissions);
+    this.applyPermissionAndVisibilityFilters(
+      queryBuilder,
+      userId,
+      userPermissions,
+      userTeamIds,
+    );
     this.applySorting(queryBuilder, query);
 
     const page = query.page || 1;
@@ -406,6 +436,9 @@ export class KnowledgeDocumentService {
     userId?: string,
     userPermissions?: string[],
   ): Promise<KnowledgeDocument[]> {
+    // Obtener equipos del usuario para filtros de visibilidad
+    const userTeamIds = userId ? await this.getUserTeamIds(userId) : [];
+
     const queryBuilder = this.knowledgeDocumentRepository
       .createQueryBuilder("doc")
       .leftJoinAndSelect("doc.tags", "tags")
@@ -429,8 +462,13 @@ export class KnowledgeDocumentService {
         },
       );
 
-    // Aplicar filtros de permisos
-    this.applyPermissionFilters(queryBuilder, userId, userPermissions);
+    // Aplicar filtros de permisos y visibilidad
+    this.applyPermissionAndVisibilityFilters(
+      queryBuilder,
+      userId,
+      userPermissions,
+      userTeamIds,
+    );
 
     return queryBuilder
       .orderBy("doc.viewCount", "DESC")
@@ -482,7 +520,14 @@ export class KnowledgeDocumentService {
       )
       .andWhere("doc.isArchived = :archived", { archived: false });
 
-    this.applyPermissionFilters(documentSuggestions, userId, userPermissions);
+    // Obtener equipos del usuario para filtros de visibilidad
+    const userTeamIds = userId ? await this.getUserTeamIds(userId) : [];
+    this.applyPermissionAndVisibilityFilters(
+      documentSuggestions,
+      userId,
+      userPermissions,
+      userTeamIds,
+    );
 
     const documentsRaw = await documentSuggestions
       .orderBy(
@@ -818,8 +863,14 @@ export class KnowledgeDocumentService {
       });
     }
 
-    // Aplicar filtros de permisos
-    this.applyPermissionFilters(queryBuilder, userId, userPermissions);
+    // Aplicar filtros de permisos y visibilidad
+    const userTeamIds = userId ? await this.getUserTeamIds(userId) : [];
+    this.applyPermissionAndVisibilityFilters(
+      queryBuilder,
+      userId,
+      userPermissions,
+      userTeamIds,
+    );
 
     // Paginación
     const page = query.page || 1;
@@ -1067,17 +1118,24 @@ export class KnowledgeDocumentService {
     }
   }
 
-  private applyPermissionFilters(
+  private applyPermissionAndVisibilityFilters(
     queryBuilder: SelectQueryBuilder<KnowledgeDocument>,
     userId?: string,
     userPermissions?: string[],
+    userTeamIds: string[] = [],
   ): void {
     if (!userId || !userPermissions) {
-      // Si no hay información de usuario, mostrar solo documentos publicados
+      // Si no hay información de usuario, mostrar solo documentos publicados y públicos
       queryBuilder.andWhere("doc.isPublished = :published", {
         published: true,
       });
       queryBuilder.andWhere("doc.isArchived = :archived", { archived: false });
+      queryBuilder.andWhere(
+        "(doc.visibility = :publicVisibility OR doc.visibility IS NULL)",
+        {
+          publicVisibility: "public",
+        },
+      );
       return;
     }
 
@@ -1115,20 +1173,67 @@ export class KnowledgeDocumentService {
     // Siempre excluir documentos archivados
     queryBuilder.andWhere("doc.isArchived = :archived", { archived: false });
 
+    // Construir la condición de visibilidad
+    // visibility = 'public': visible para todos
+    // visibility = 'private': solo visible para el autor
+    // visibility = 'team': visible para miembros del mismo equipo que el autor
+    // visibility = 'custom': visible para usuarios/equipos específicos en visibleToUsers/visibleToTeams
+    const visibilityConditions: string[] = [];
+    const visibilityParams: any = {};
+
+    // 1. Documentos públicos siempre visibles
+    visibilityConditions.push(
+      "(doc.visibility = 'public' OR doc.visibility IS NULL)",
+    );
+
+    // 2. Documentos propios siempre visibles
+    visibilityConditions.push("doc.createdBy = :visUserId");
+    visibilityParams.visUserId = userId;
+
+    // 3. Documentos con visibilidad 'team' - visible si el usuario está en los mismos equipos que el autor
+    if (userTeamIds.length > 0) {
+      // Verificar si el autor del documento está en alguno de los equipos del usuario
+      visibilityConditions.push(`(
+        doc.visibility = 'team' AND EXISTS (
+          SELECT 1 FROM team_members tm_author
+          WHERE tm_author.user_id = doc.created_by
+          AND tm_author.is_active = true
+          AND tm_author.team_id IN (:...userTeamIdsVis)
+        )
+      )`);
+      visibilityParams.userTeamIdsVis = userTeamIds;
+    }
+
+    // 4. Documentos con visibilidad 'custom' - visible si el usuario o sus equipos están en las listas
+    visibilityConditions.push(`(
+      doc.visibility = 'custom' AND (
+        doc.visible_to_users::jsonb ? :visUserIdJson
+        ${userTeamIds.length > 0 ? "OR doc.visible_to_teams::jsonb ?| :userTeamIdsJson" : ""}
+      )
+    )`);
+    visibilityParams.visUserIdJson = userId;
+    if (userTeamIds.length > 0) {
+      visibilityParams.userTeamIdsJson = userTeamIds;
+    }
+
+    // Combinar condiciones de visibilidad
+    const visibilityFilter = `(${visibilityConditions.join(" OR ")})`;
+
     if (hasAllEditPermissions) {
       // Usuario con permisos de EDICIÓN ALL: puede ver todos los documentos (publicados y no publicados)
+      // pero aún respeta la visibilidad del documento
       console.log(
-        `🔓 Usuario ${userId} tiene permisos de EDICIÓN ALL - puede ver todos los documentos`,
+        `🔓 Usuario ${userId} tiene permisos de EDICIÓN ALL - puede ver todos los documentos respetando visibilidad`,
       );
-      // No agregar filtros adicionales
+      queryBuilder.andWhere(visibilityFilter, visibilityParams);
     } else if (hasTeamEditPermissions) {
       // Usuario con permisos de EDICIÓN TEAM: puede ver documentos del team completos + documentos publicados de otros
       console.log(
         `👥 Usuario ${userId} tiene permisos de EDICIÓN TEAM - aplicando filtros apropiados`,
       );
       queryBuilder.andWhere(
-        "(doc.createdBy = :userId OR doc.isPublished = :published)",
-        { userId, published: true },
+        `(doc.createdBy = :userId OR doc.isPublished = :published) AND ${visibilityFilter}`,
+        { userId, published: true, ...visibilityParams },
       );
     } else if (hasOwnEditPermissions || hasOwnReadPermissions) {
       // Usuario con permisos OWN (edición o solo lectura): puede ver sus documentos completos + documentos publicados de otros
@@ -1136,8 +1241,8 @@ export class KnowledgeDocumentService {
         `👤 Usuario ${userId} tiene permisos OWN - puede ver sus documentos + documentos publicados de otros`,
       );
       queryBuilder.andWhere(
-        "(doc.createdBy = :userId OR doc.isPublished = :published)",
-        { userId, published: true },
+        `(doc.createdBy = :userId OR doc.isPublished = :published) AND ${visibilityFilter}`,
+        { userId, published: true, ...visibilityParams },
       );
     } else if (hasAllReadPermissions || hasTeamReadPermissions) {
       // Usuario con solo permisos de LECTURA (sin edición): solo documentos publicados + sus propios documentos
@@ -1145,17 +1250,18 @@ export class KnowledgeDocumentService {
         `📖 Usuario ${userId} tiene solo permisos de LECTURA - solo documentos publicados + propios`,
       );
       queryBuilder.andWhere(
-        "(doc.createdBy = :userId OR doc.isPublished = :published)",
-        { userId, published: true },
+        `(doc.createdBy = :userId OR doc.isPublished = :published) AND ${visibilityFilter}`,
+        { userId, published: true, ...visibilityParams },
       );
     } else {
       // Usuario sin permisos específicos: solo documentos publicados
       console.log(
         `🔒 Usuario ${userId} sin permisos específicos - solo documentos publicados`,
       );
-      queryBuilder.andWhere("doc.isPublished = :published", {
-        published: true,
-      });
+      queryBuilder.andWhere(
+        `doc.isPublished = :published AND ${visibilityFilter}`,
+        { published: true, ...visibilityParams },
+      );
     }
   }
 

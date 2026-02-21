@@ -2,6 +2,8 @@
 
 export type Priority = "low" | "medium" | "high" | "urgent";
 
+export type DocumentVisibility = "public" | "private" | "team" | "custom";
+
 export type RelationType = "related" | "replaces" | "prerequisite" | "follows";
 
 export type FileType = "image" | "document" | "spreadsheet" | "other";
@@ -83,6 +85,11 @@ export interface KnowledgeDocument {
   attachments?: KnowledgeDocumentAttachment[];
   feedback?: KnowledgeDocumentFeedback[];
   associatedCases?: string[]; // IDs de casos asociados
+
+  // Visibility settings
+  visibility?: DocumentVisibility;
+  visibleToUsers?: string[]; // User IDs
+  visibleToTeams?: string[]; // Team IDs
 
   // Relevancia de búsqueda (cuando viene de enhancedSearch)
   relevanceScore?: number; // 0-100 porcentaje de coincidencia
@@ -184,6 +191,9 @@ export interface CreateKnowledgeDocumentDto {
   isTemplate?: boolean;
   tags?: string[];
   associatedCases?: string[]; // IDs de casos asociados
+  visibility?: DocumentVisibility;
+  visibleToUsers?: string[];
+  visibleToTeams?: string[];
 }
 
 export interface UpdateKnowledgeDocumentDto {
@@ -197,6 +207,9 @@ export interface UpdateKnowledgeDocumentDto {
   isPublished?: boolean;
   tags?: string[];
   associatedCases?: string[]; // IDs de casos asociados
+  visibility?: DocumentVisibility;
+  visibleToUsers?: string[];
+  visibleToTeams?: string[];
   changeSummary?: string;
 }
 

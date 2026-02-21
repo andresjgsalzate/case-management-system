@@ -21,6 +21,13 @@ export enum Priority {
   URGENT = "urgent",
 }
 
+export enum DocumentVisibility {
+  PUBLIC = "public",
+  PRIVATE = "private",
+  TEAM = "team",
+  CUSTOM = "custom",
+}
+
 export class CreateKnowledgeDocumentDto {
   @IsString()
   @MaxLength(500)
@@ -35,7 +42,7 @@ export class CreateKnowledgeDocumentDto {
 
   @IsOptional()
   @Transform(({ value }) =>
-    value === "" || value === null ? undefined : value
+    value === "" || value === null ? undefined : value,
   )
   @IsUUID()
   documentTypeId?: string;
@@ -63,6 +70,20 @@ export class CreateKnowledgeDocumentDto {
   @IsArray()
   @IsString({ each: true })
   associatedCases?: string[] = [];
+
+  @IsOptional()
+  @IsEnum(DocumentVisibility)
+  visibility?: DocumentVisibility = DocumentVisibility.PUBLIC;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID("4", { each: true })
+  visibleToUsers?: string[] = [];
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID("4", { each: true })
+  visibleToTeams?: string[] = [];
 }
 
 export class UpdateKnowledgeDocumentDto {
@@ -81,7 +102,7 @@ export class UpdateKnowledgeDocumentDto {
 
   @IsOptional()
   @Transform(({ value }) =>
-    value === "" || value === null ? undefined : value
+    value === "" || value === null ? undefined : value,
   )
   @IsUUID()
   documentTypeId?: string;
@@ -113,6 +134,20 @@ export class UpdateKnowledgeDocumentDto {
   @IsArray()
   @IsString({ each: true })
   associatedCases?: string[];
+
+  @IsOptional()
+  @IsEnum(DocumentVisibility)
+  visibility?: DocumentVisibility;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID("4", { each: true })
+  visibleToUsers?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID("4", { each: true })
+  visibleToTeams?: string[];
 
   @IsOptional()
   @IsString()

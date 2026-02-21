@@ -6,6 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { ActionIcon } from "../components/ui/ActionIcons";
 import {
   useCreateKnowledgeDocument,
@@ -19,14 +20,18 @@ import {
 } from "../hooks/useKnowledge";
 import { useCases } from "../hooks/useCases";
 import { Case } from "../services/api";
+import { userService } from "../services/userService";
+import { teamsApi } from "../services/teamsApi";
+import { Team } from "../types/teams";
+import { User } from "../types/user";
 // import { getCaseStatuses } from "../services/api/caseControlApi";
 // import { CaseStatus } from "../types/caseControl";
-// import { useQuery } from "@tanstack/react-query";
 import {
   CreateKnowledgeDocumentDto,
   UpdateKnowledgeDocumentDto,
   Priority,
   KnowledgeDocumentTag,
+  DocumentVisibility,
 } from "../types/knowledge";
 // import {
 //   TAG_COLORS,
@@ -71,6 +76,15 @@ const KnowledgeDocumentForm: React.FC = () => {
   const [associatedCases, setAssociatedCases] = useState<string[]>([]); // IDs de casos asociados
   const [caseSearchInput, setCaseSearchInput] = useState(""); // Input para buscar casos
   const [showCaseSearch, setShowCaseSearch] = useState(false); // Mostrar/ocultar búsqueda de casos
+
+  // ✅ VISIBILIDAD: Estados para controlar quién puede ver el documento
+  const [visibility, setVisibility] = useState<DocumentVisibility>("public");
+  const [visibleToUsers, setVisibleToUsers] = useState<string[]>([]);
+  const [visibleToTeams, setVisibleToTeams] = useState<string[]>([]);
+  const [userSearchInput, setUserSearchInput] = useState(""); // Input para buscar usuarios
+  const [teamSearchInput, setTeamSearchInput] = useState(""); // Input para buscar equipos
+  const [showUserSearch, setShowUserSearch] = useState(false); // Mostrar/ocultar búsqueda de usuarios
+  const [showTeamSearch, setShowTeamSearch] = useState(false); // Mostrar/ocultar búsqueda de equipos
 
   // ✅ PLANTILLA BASE: Estado para usar plantilla de documentación
   const [useDocTemplate, setUseDocTemplate] = useState(false);
@@ -291,6 +305,38 @@ const KnowledgeDocumentForm: React.FC = () => {
   // Query para obtener casos (incluyendo archivados)
   const { data: casesData } = useCases();
 
+  // ✅ VISIBILIDAD: Queries para obtener usuarios y equipos disponibles
+  const {
+    data: usersData,
+    isLoading: isLoadingUsers,
+    error: usersError,
+  } = useQuery({
+    queryKey: ["users-for-visibility"],
+    queryFn: async () => {
+      const response = await userService.getUsers({
+        isActive: true,
+        limit: 100,
+      });
+      return response.users || [];
+    },
+    enabled: visibility === "custom",
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+
+  const {
+    data: teamsData,
+    isLoading: isLoadingTeams,
+    error: teamsError,
+  } = useQuery({
+    queryKey: ["teams-for-visibility"],
+    queryFn: async () => {
+      const teams = await teamsApi.getTeams({ isActive: true });
+      return teams || [];
+    },
+    enabled: visibility === "custom",
+    staleTime: 5 * 60 * 1000, // 5 minutos
+  });
+
   // ✅ BACKUP LOCAL: Verificar si hay backup al montar el componente
   useEffect(() => {
     const backupStr = localStorage.getItem(LOCAL_BACKUP_KEY);
@@ -340,6 +386,13 @@ const KnowledgeDocumentForm: React.FC = () => {
       const target = event.target as Element;
       if (!target.closest(".tag-input-container")) {
         setShowPredictiveTags(false);
+      }
+      // Cerrar dropdowns de visibilidad personalizada
+      if (!target.closest(".visibility-user-search")) {
+        setShowUserSearch(false);
+      }
+      if (!target.closest(".visibility-team-search")) {
+        setShowTeamSearch(false);
       }
     };
 
@@ -473,6 +526,11 @@ const KnowledgeDocumentForm: React.FC = () => {
       } else {
         setAssociatedCases([]); // Limpiar casos si no hay ninguno
       }
+
+      // ✅ VISIBILIDAD: Cargar configuración de visibilidad
+      setVisibility(document.visibility || "public");
+      setVisibleToUsers(document.visibleToUsers || []);
+      setVisibleToTeams(document.visibleToTeams || []);
 
       // ✅ AUTOGUARDADO: Inicializar el contenido guardado al cargar el documento
       lastSavedContentRef.current = JSON.stringify({
@@ -840,6 +898,65 @@ const KnowledgeDocumentForm: React.FC = () => {
     );
   };
 
+  // ✅ VISIBILIDAD: Helper functions para usuarios y equipos
+  const handleAddUser = (userId: string) => {
+    if (!visibleToUsers.includes(userId)) {
+      setVisibleToUsers([...visibleToUsers, userId]);
+    }
+    setUserSearchInput("");
+    setShowUserSearch(false);
+  };
+
+  const handleRemoveUser = (userId: string) => {
+    setVisibleToUsers(visibleToUsers.filter((id) => id !== userId));
+  };
+
+  const handleAddTeam = (teamId: string) => {
+    if (!visibleToTeams.includes(teamId)) {
+      setVisibleToTeams([...visibleToTeams, teamId]);
+    }
+    setTeamSearchInput("");
+    setShowTeamSearch(false);
+  };
+
+  const handleRemoveTeam = (teamId: string) => {
+    setVisibleToTeams(visibleToTeams.filter((id) => id !== teamId));
+  };
+
+  const getSelectedUsers = (): User[] => {
+    if (!usersData) return [];
+    return usersData.filter((user: User) => visibleToUsers.includes(user.id));
+  };
+
+  const getSelectedTeams = (): Team[] => {
+    if (!teamsData) return [];
+    return teamsData.filter((team: Team) => visibleToTeams.includes(team.id));
+  };
+
+  const getAvailableUsers = (): User[] => {
+    if (!usersData) return [];
+    return usersData.filter(
+      (user: User) =>
+        !visibleToUsers.includes(user.id) &&
+        (userSearchInput === "" ||
+          user.fullName
+            ?.toLowerCase()
+            .includes(userSearchInput.toLowerCase()) ||
+          user.email?.toLowerCase().includes(userSearchInput.toLowerCase())),
+    );
+  };
+
+  const getAvailableTeams = (): Team[] => {
+    if (!teamsData) return [];
+    return teamsData.filter(
+      (team: Team) =>
+        !visibleToTeams.includes(team.id) &&
+        (teamSearchInput === "" ||
+          team.name?.toLowerCase().includes(teamSearchInput.toLowerCase()) ||
+          team.code?.toLowerCase().includes(teamSearchInput.toLowerCase())),
+    );
+  };
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -855,6 +972,9 @@ const KnowledgeDocumentForm: React.FC = () => {
       isTemplate,
       isPublished: false, // Siempre false, la publicación se hace vía aprobación
       associatedCases: associatedCases,
+      visibility,
+      visibleToUsers: visibility === "custom" ? visibleToUsers : [],
+      visibleToTeams: visibility === "custom" ? visibleToTeams : [],
     };
 
     // Solo incluir documentTypeId si tiene valor
@@ -940,6 +1060,9 @@ const KnowledgeDocumentForm: React.FC = () => {
       isTemplate,
       isPublished,
       associatedCases: associatedCases,
+      visibility,
+      visibleToUsers: visibility === "custom" ? visibleToUsers : [],
+      visibleToTeams: visibility === "custom" ? visibleToTeams : [],
     };
 
     // Solo incluir documentTypeId si tiene valor
@@ -1219,6 +1342,261 @@ const KnowledgeDocumentForm: React.FC = () => {
                   </option>
                 ))}
               </Select>
+
+              {/* ✅ VISIBILIDAD: Selector de quién puede ver el documento */}
+              <div className="space-y-3">
+                <Select
+                  label="Visibilidad del Documento"
+                  value={visibility}
+                  onChange={(e) =>
+                    setVisibility(e.target.value as DocumentVisibility)
+                  }
+                >
+                  <option value="public">
+                    🌐 Público - Visible para todos los usuarios
+                  </option>
+                  <option value="private">
+                    🔒 Privado - Solo visible para el autor
+                  </option>
+                  <option value="team">
+                    👥 Equipo - Visible para miembros del mismo equipo
+                  </option>
+                  <option value="custom">
+                    🎯 Personalizado - Usuarios/equipos específicos
+                  </option>
+                </Select>
+
+                {visibility === "private" && (
+                  <div className="px-3 py-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                    <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                      <ActionIcon
+                        action="warning"
+                        className="w-4 h-4 inline mr-1"
+                      />
+                      Este documento solo será visible para ti.
+                    </p>
+                  </div>
+                )}
+
+                {visibility === "team" && (
+                  <div className="px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      <ActionIcon
+                        action="info"
+                        className="w-4 h-4 inline mr-1"
+                      />
+                      Este documento será visible para todos los miembros de tus
+                      equipos.
+                    </p>
+                  </div>
+                )}
+
+                {visibility === "custom" && (
+                  <div className="space-y-4">
+                    <div className="px-3 py-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <p className="text-sm text-purple-700 dark:text-purple-300">
+                        <ActionIcon
+                          action="settings"
+                          className="w-4 h-4 inline mr-1"
+                        />
+                        Selecciona usuarios y/o equipos específicos que podrán
+                        ver este documento.
+                      </p>
+                    </div>
+
+                    {/* Selección de Usuarios */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Usuarios con acceso
+                      </label>
+                      <div className="relative visibility-user-search">
+                        <Input
+                          type="text"
+                          value={userSearchInput}
+                          onChange={(e) => {
+                            setUserSearchInput(e.target.value);
+                            setShowUserSearch(true);
+                          }}
+                          onFocus={() => setShowUserSearch(true)}
+                          placeholder="Buscar usuarios por nombre o email..."
+                          className="w-full"
+                        />
+                        {showUserSearch && (
+                          <div className="absolute z-10 w-full mt-1 max-h-48 overflow-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+                            {usersError ? (
+                              <div className="px-3 py-4 text-center text-red-500 dark:text-red-400 text-sm">
+                                Error cargando usuarios:{" "}
+                                {(usersError as Error)?.message ||
+                                  "Error desconocido"}
+                              </div>
+                            ) : isLoadingUsers ? (
+                              <div className="px-3 py-4 text-center text-gray-500 dark:text-gray-400">
+                                <div className="inline-block w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                Cargando usuarios...
+                              </div>
+                            ) : getAvailableUsers().length > 0 ? (
+                              getAvailableUsers()
+                                .slice(0, 10)
+                                .map((user) => (
+                                  <button
+                                    key={user.id}
+                                    type="button"
+                                    onClick={() => handleAddUser(user.id)}
+                                    className="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                  >
+                                    <span className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 text-sm font-medium">
+                                      {user.fullName
+                                        ?.charAt(0)
+                                        ?.toUpperCase() || "U"}
+                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                        {user.fullName || "Sin nombre"}
+                                      </p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                        {user.email}
+                                      </p>
+                                    </div>
+                                  </button>
+                                ))
+                            ) : (
+                              <div className="px-3 py-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+                                {userSearchInput
+                                  ? "No se encontraron usuarios"
+                                  : `No hay usuarios disponibles (total: ${usersData?.length || 0})`}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Usuarios seleccionados */}
+                      {getSelectedUsers().length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {getSelectedUsers().map((user) => (
+                            <span
+                              key={user.id}
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 rounded-full text-sm"
+                            >
+                              <span className="w-5 h-5 rounded-full bg-blue-200 dark:bg-blue-800 flex items-center justify-center text-xs">
+                                {user.fullName?.charAt(0)?.toUpperCase() || "U"}
+                              </span>
+                              {user.fullName || user.email}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveUser(user.id)}
+                                className="ml-1 text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Selección de Equipos */}
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Equipos con acceso
+                      </label>
+                      <div className="relative visibility-team-search">
+                        <Input
+                          type="text"
+                          value={teamSearchInput}
+                          onChange={(e) => {
+                            setTeamSearchInput(e.target.value);
+                            setShowTeamSearch(true);
+                          }}
+                          onFocus={() => setShowTeamSearch(true)}
+                          placeholder="Buscar equipos por nombre o código..."
+                          className="w-full"
+                        />
+                        {showTeamSearch && (
+                          <div className="absolute z-10 w-full mt-1 max-h-48 overflow-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+                            {isLoadingTeams ? (
+                              <div className="px-3 py-4 text-center text-gray-500 dark:text-gray-400">
+                                <div className="inline-block w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                Cargando equipos...
+                              </div>
+                            ) : getAvailableTeams().length > 0 ? (
+                              getAvailableTeams()
+                                .slice(0, 10)
+                                .map((team) => (
+                                  <button
+                                    key={team.id}
+                                    type="button"
+                                    onClick={() => handleAddTeam(team.id)}
+                                    className="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                  >
+                                    <span
+                                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-medium"
+                                      style={{
+                                        backgroundColor:
+                                          team.color || "#6366f1",
+                                      }}
+                                    >
+                                      {team.code
+                                        ?.substring(0, 2)
+                                        ?.toUpperCase() || "T"}
+                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                        {team.name}
+                                      </p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                        {team.memberCount || 0} miembros
+                                      </p>
+                                    </div>
+                                  </button>
+                                ))
+                            ) : (
+                              <div className="px-3 py-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+                                {teamSearchInput
+                                  ? "No se encontraron equipos"
+                                  : "No hay equipos disponibles"}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Equipos seleccionados */}
+                      {getSelectedTeams().length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {getSelectedTeams().map((team) => (
+                            <span
+                              key={team.id}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm text-white"
+                              style={{
+                                backgroundColor: team.color || "#6366f1",
+                              }}
+                            >
+                              <span className="font-medium">{team.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveTeam(team.id)}
+                                className="ml-1 opacity-80 hover:opacity-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Mensaje si no hay selección */}
+                    {getSelectedUsers().length === 0 &&
+                      getSelectedTeams().length === 0 && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                          No has seleccionado ningún usuario ni equipo. Solo tú
+                          podrás ver este documento.
+                        </p>
+                      )}
+                  </div>
+                )}
+              </div>
 
               {/* Options */}
               <div className="flex flex-col gap-3">

@@ -26,9 +26,12 @@ export type ReviewStatus =
   | "approved"
   | "rejected"
   | "published";
+export type DocumentVisibility = "public" | "private" | "team" | "custom";
 
 @Entity("knowledge_documents")
 @Index(["title"]) // Solo índice en title - content puede ser muy grande para B-tree
+@Index(["visibility"]) // Índice para filtrar por visibilidad
+@Index(["createdBy", "visibility"]) // Índice compuesto para documentos propios por visibilidad
 export class KnowledgeDocument {
   @PrimaryGeneratedColumn("uuid")
   id: string;
@@ -173,6 +176,29 @@ export class KnowledgeDocument {
 
   @Column({ name: "review_notes", type: "text", nullable: true })
   reviewNotes: string | null;
+
+  // Visibility and Access Control
+  @Column({
+    name: "visibility",
+    type: "varchar",
+    length: 20,
+    default: "public",
+  })
+  visibility: DocumentVisibility;
+
+  @Column({
+    name: "visible_to_users",
+    type: "jsonb",
+    default: () => "'[]'::jsonb",
+  })
+  visibleToUsers: string[]; // UUIDs de usuarios con acceso
+
+  @Column({
+    name: "visible_to_teams",
+    type: "jsonb",
+    default: () => "'[]'::jsonb",
+  })
+  visibleToTeams: string[]; // UUIDs de equipos con acceso
 
   // Relaciones
   @OneToMany(() => KnowledgeDocumentTag, (tag) => tag.document)

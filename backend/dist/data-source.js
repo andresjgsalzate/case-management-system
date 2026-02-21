@@ -36,6 +36,7 @@ const AuditEntityChange_1 = require("./entities/AuditEntityChange");
 const Team_1 = require("./entities/Team");
 const TeamMember_1 = require("./entities/TeamMember");
 const UserSession_1 = require("./entities/UserSession");
+const KnowledgeDocumentFavorite_1 = require("./entities/KnowledgeDocumentFavorite");
 exports.default = new typeorm_1.DataSource({
     type: "postgres",
     host: environment_1.config.database.host,
@@ -80,6 +81,7 @@ exports.default = new typeorm_1.DataSource({
         Team_1.Team,
         TeamMember_1.TeamMember,
         UserSession_1.UserSession,
+        KnowledgeDocumentFavorite_1.KnowledgeDocumentFavorite,
     ],
     migrations: ["src/database/migrations/**/*.ts"],
     subscribers: ["src/database/subscribers/**/*.ts"],

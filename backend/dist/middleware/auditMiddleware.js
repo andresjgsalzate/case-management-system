@@ -282,17 +282,32 @@ class AuditMiddleware {
     static async getOriginalEntity(entityType, entityId) {
         try {
             const entityRepositoryMap = {
-                manual_time_entries: "ManualTimeEntry",
                 cases: "Case",
                 todos: "Todo",
+                user_profiles: "UserProfile",
                 users: "UserProfile",
                 roles: "Role",
                 permissions: "Permission",
                 notes: "Note",
                 time_entries: "TimeEntry",
+                manual_time_entries: "ManualTimeEntry",
+                todo_time_entries: "TodoTimeEntry",
+                todo_manual_time_entries: "TodoManualTimeEntry",
+                case_control: "CaseControl",
+                todo_control: "TodoControl",
+                case_status_control: "CaseStatusControl",
+                todo_priorities: "TodoPriority",
                 applications: "Application",
                 origins: "Origin",
                 dispositions: "Disposition",
+                document_types: "DocumentType",
+                knowledge_documents: "KnowledgeDocument",
+                knowledge_tags: "KnowledgeTag",
+                archived_cases: "ArchivedCase",
+                archived_todos: "ArchivedTodo",
+                archived_items: "ArchivedCase",
+                teams: "Team",
+                team_members: "TeamMember",
             };
             const entityName = entityRepositoryMap[entityType];
             if (!entityName) {
@@ -302,10 +317,6 @@ class AuditMiddleware {
             let EntityClass;
             try {
                 switch (entityName) {
-                    case "ManualTimeEntry":
-                        const { ManualTimeEntry } = await Promise.resolve().then(() => __importStar(require("../entities/ManualTimeEntry")));
-                        EntityClass = ManualTimeEntry;
-                        break;
                     case "Case":
                         const { Case } = await Promise.resolve().then(() => __importStar(require("../entities/Case")));
                         EntityClass = Case;
@@ -322,9 +333,85 @@ class AuditMiddleware {
                         const { Role } = await Promise.resolve().then(() => __importStar(require("../entities/Role")));
                         EntityClass = Role;
                         break;
+                    case "Permission":
+                        const { Permission } = await Promise.resolve().then(() => __importStar(require("../entities/Permission")));
+                        EntityClass = Permission;
+                        break;
+                    case "Note":
+                        const { Note } = await Promise.resolve().then(() => __importStar(require("../entities/Note")));
+                        EntityClass = Note;
+                        break;
                     case "TimeEntry":
                         const { TimeEntry } = await Promise.resolve().then(() => __importStar(require("../entities/TimeEntry")));
                         EntityClass = TimeEntry;
+                        break;
+                    case "ManualTimeEntry":
+                        const { ManualTimeEntry } = await Promise.resolve().then(() => __importStar(require("../entities/ManualTimeEntry")));
+                        EntityClass = ManualTimeEntry;
+                        break;
+                    case "TodoTimeEntry":
+                        const { TodoTimeEntry } = await Promise.resolve().then(() => __importStar(require("../entities/TodoTimeEntry")));
+                        EntityClass = TodoTimeEntry;
+                        break;
+                    case "TodoManualTimeEntry":
+                        const { TodoManualTimeEntry } = await Promise.resolve().then(() => __importStar(require("../entities/TodoManualTimeEntry")));
+                        EntityClass = TodoManualTimeEntry;
+                        break;
+                    case "CaseControl":
+                        const { CaseControl } = await Promise.resolve().then(() => __importStar(require("../entities/CaseControl")));
+                        EntityClass = CaseControl;
+                        break;
+                    case "TodoControl":
+                        const { TodoControl } = await Promise.resolve().then(() => __importStar(require("../entities/TodoControl")));
+                        EntityClass = TodoControl;
+                        break;
+                    case "CaseStatusControl":
+                        const { CaseStatusControl } = await Promise.resolve().then(() => __importStar(require("../entities/CaseStatusControl")));
+                        EntityClass = CaseStatusControl;
+                        break;
+                    case "TodoPriority":
+                        const { TodoPriority } = await Promise.resolve().then(() => __importStar(require("../entities/TodoPriority")));
+                        EntityClass = TodoPriority;
+                        break;
+                    case "Application":
+                        const { Application } = await Promise.resolve().then(() => __importStar(require("../entities/Application")));
+                        EntityClass = Application;
+                        break;
+                    case "Origin":
+                        const { Origin } = await Promise.resolve().then(() => __importStar(require("../entities/Origin")));
+                        EntityClass = Origin;
+                        break;
+                    case "Disposition":
+                        const { Disposition } = await Promise.resolve().then(() => __importStar(require("../entities/Disposition")));
+                        EntityClass = Disposition;
+                        break;
+                    case "DocumentType":
+                        const { DocumentType } = await Promise.resolve().then(() => __importStar(require("../entities/DocumentType")));
+                        EntityClass = DocumentType;
+                        break;
+                    case "KnowledgeDocument":
+                        const { KnowledgeDocument } = await Promise.resolve().then(() => __importStar(require("../entities/KnowledgeDocument")));
+                        EntityClass = KnowledgeDocument;
+                        break;
+                    case "KnowledgeTag":
+                        const { KnowledgeTag } = await Promise.resolve().then(() => __importStar(require("../entities/KnowledgeTag")));
+                        EntityClass = KnowledgeTag;
+                        break;
+                    case "ArchivedCase":
+                        const { ArchivedCase } = await Promise.resolve().then(() => __importStar(require("../entities/ArchivedCase")));
+                        EntityClass = ArchivedCase;
+                        break;
+                    case "ArchivedTodo":
+                        const { ArchivedTodo } = await Promise.resolve().then(() => __importStar(require("../entities/archive/ArchivedTodo.entity")));
+                        EntityClass = ArchivedTodo;
+                        break;
+                    case "Team":
+                        const { Team } = await Promise.resolve().then(() => __importStar(require("../entities/Team")));
+                        EntityClass = Team;
+                        break;
+                    case "TeamMember":
+                        const { TeamMember } = await Promise.resolve().then(() => __importStar(require("../entities/TeamMember")));
+                        EntityClass = TeamMember;
                         break;
                     default:
                         console.warn(`Entidad no implementada: ${entityName}`);

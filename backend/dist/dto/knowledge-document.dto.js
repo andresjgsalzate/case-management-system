@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.EnhancedSearchResponseDto = exports.SearchSuggestionsDto = exports.KnowledgeDocumentQueryDto = exports.ArchiveKnowledgeDocumentDto = exports.PublishKnowledgeDocumentDto = exports.UpdateKnowledgeDocumentDto = exports.CreateKnowledgeDocumentDto = exports.Priority = void 0;
+exports.EnhancedSearchResponseDto = exports.SearchSuggestionsDto = exports.KnowledgeDocumentQueryDto = exports.ArchiveKnowledgeDocumentDto = exports.PublishKnowledgeDocumentDto = exports.UpdateKnowledgeDocumentDto = exports.CreateKnowledgeDocumentDto = exports.DocumentVisibility = exports.Priority = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 var Priority;
@@ -19,6 +19,13 @@ var Priority;
     Priority["HIGH"] = "high";
     Priority["URGENT"] = "urgent";
 })(Priority || (exports.Priority = Priority = {}));
+var DocumentVisibility;
+(function (DocumentVisibility) {
+    DocumentVisibility["PUBLIC"] = "public";
+    DocumentVisibility["PRIVATE"] = "private";
+    DocumentVisibility["TEAM"] = "team";
+    DocumentVisibility["CUSTOM"] = "custom";
+})(DocumentVisibility || (exports.DocumentVisibility = DocumentVisibility = {}));
 class CreateKnowledgeDocumentDto {
     constructor() {
         this.priority = Priority.MEDIUM;
@@ -26,6 +33,9 @@ class CreateKnowledgeDocumentDto {
         this.isTemplate = false;
         this.tags = [];
         this.associatedCases = [];
+        this.visibility = DocumentVisibility.PUBLIC;
+        this.visibleToUsers = [];
+        this.visibleToTeams = [];
     }
 }
 exports.CreateKnowledgeDocumentDto = CreateKnowledgeDocumentDto;
@@ -78,6 +88,23 @@ __decorate([
     (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
 ], CreateKnowledgeDocumentDto.prototype, "associatedCases", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(DocumentVisibility),
+    __metadata("design:type", String)
+], CreateKnowledgeDocumentDto.prototype, "visibility", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsUUID)("4", { each: true }),
+    __metadata("design:type", Array)
+], CreateKnowledgeDocumentDto.prototype, "visibleToUsers", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsUUID)("4", { each: true }),
+    __metadata("design:type", Array)
+], CreateKnowledgeDocumentDto.prototype, "visibleToTeams", void 0);
 class UpdateKnowledgeDocumentDto {
 }
 exports.UpdateKnowledgeDocumentDto = UpdateKnowledgeDocumentDto;
@@ -137,6 +164,23 @@ __decorate([
     (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
 ], UpdateKnowledgeDocumentDto.prototype, "associatedCases", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(DocumentVisibility),
+    __metadata("design:type", String)
+], UpdateKnowledgeDocumentDto.prototype, "visibility", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsUUID)("4", { each: true }),
+    __metadata("design:type", Array)
+], UpdateKnowledgeDocumentDto.prototype, "visibleToUsers", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsUUID)("4", { each: true }),
+    __metadata("design:type", Array)
+], UpdateKnowledgeDocumentDto.prototype, "visibleToTeams", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),

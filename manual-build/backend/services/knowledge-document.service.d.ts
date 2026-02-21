@@ -6,8 +6,10 @@ export declare class KnowledgeDocumentService {
     private knowledgeDocumentRepository;
     private versionRepository;
     private caseRepository;
+    private teamMemberRepository;
     private knowledgeTagService;
     constructor(dataSource?: DataSource);
+    private getUserTeamIds;
     create(createDto: CreateKnowledgeDocumentDto, userId: string): Promise<KnowledgeDocument>;
     findAll(query: KnowledgeDocumentQueryDto, userId?: string, userPermissions?: string[]): Promise<{
         documents: any[];
@@ -68,9 +70,18 @@ export declare class KnowledgeDocumentService {
     }>;
     private createQueryBuilder;
     private applyFilters;
-    private applyPermissionFilters;
+    private applyPermissionAndVisibilityFilters;
     private applySorting;
     private updateTags;
     private loadDocumentTags;
     private createVersion;
+    submitForReview(documentId: string, userId: string): Promise<KnowledgeDocument>;
+    approveDocument(documentId: string, reviewerId: string, notes?: string, autoPublish?: boolean): Promise<KnowledgeDocument>;
+    rejectDocument(documentId: string, reviewerId: string, notes: string): Promise<KnowledgeDocument>;
+    getPendingReviewDocuments(userId: string, userPermissions: string[], page?: number, limit?: number): Promise<{
+        documents: any[];
+        total: number;
+        page: number;
+        totalPages: number;
+    }>;
 }

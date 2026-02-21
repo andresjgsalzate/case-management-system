@@ -45,7 +45,7 @@ const PendingReviewBanner: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           <ActionIcon
-            name="clipboard-check"
+            action="clipboard"
             className="w-6 h-6 text-yellow-600 dark:text-yellow-400 mr-3"
           />
           <div>
@@ -59,7 +59,7 @@ const PendingReviewBanner: React.FC = () => {
           </div>
         </div>
         <ActionIcon
-          name="chevron-right"
+          action="arrowRight"
           className="w-5 h-5 text-yellow-600 dark:text-yellow-400"
         />
       </div>
@@ -482,8 +482,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Pending Review Banner - only for approvers */}
-      {(permissions?.knowledge?.approve?.all ||
-        permissions?.knowledge?.approve?.team) && <PendingReviewBanner />}
+      {permissions.canApproveKnowledge && <PendingReviewBanner />}
 
       {/* Header */}
       <div className="mb-8">

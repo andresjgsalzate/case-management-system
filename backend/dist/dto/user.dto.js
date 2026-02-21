@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserListResponseDto = exports.UserResponseDto = exports.UserFilterDto = exports.UpdatePasswordDto = exports.ChangePasswordDto = exports.UpdateUserDto = exports.CreateUserDto = void 0;
 const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
 class CreateUserDto {
 }
 exports.CreateUserDto = CreateUserDto;
@@ -123,6 +124,13 @@ __decorate([
 ], UserFilterDto.prototype, "roleName", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => {
+        if (value === "true" || value === true)
+            return true;
+        if (value === "false" || value === false)
+            return false;
+        return value;
+    }),
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], UserFilterDto.prototype, "isActive", void 0);
@@ -138,10 +146,12 @@ __decorate([
 ], UserFilterDto.prototype, "sortOrder", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
     __metadata("design:type", Number)
 ], UserFilterDto.prototype, "page", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
     __metadata("design:type", Number)
 ], UserFilterDto.prototype, "limit", void 0);
 class UserResponseDto {

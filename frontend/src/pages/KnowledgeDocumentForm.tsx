@@ -323,11 +323,7 @@ const KnowledgeDocumentForm: React.FC = () => {
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
 
-  const {
-    data: teamsData,
-    isLoading: isLoadingTeams,
-    error: teamsError,
-  } = useQuery({
+  const { data: teamsData, isLoading: isLoadingTeams } = useQuery({
     queryKey: ["teams-for-visibility"],
     queryFn: async () => {
       const teams = await teamsApi.getTeams({ isActive: true });

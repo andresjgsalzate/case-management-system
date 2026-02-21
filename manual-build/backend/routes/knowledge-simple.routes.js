@@ -5,6 +5,7 @@ const knowledge_document_service_1 = require("../services/knowledge-document.ser
 const document_type_service_1 = require("../services/document-type.service");
 const document_feedback_service_1 = require("../services/document-feedback.service");
 const knowledge_tag_service_1 = require("../services/knowledge-tag.service");
+const knowledge_document_favorite_service_1 = require("../services/knowledge-document-favorite.service");
 const auth_1 = require("../middleware/auth");
 const auditMiddleware_1 = require("../middleware/auditMiddleware");
 const authorizationMiddleware_1 = require("../middleware/authorizationMiddleware");
@@ -15,6 +16,7 @@ const knowledgeDocumentService = new knowledge_document_service_1.KnowledgeDocum
 const documentTypeService = new document_type_service_1.DocumentTypeService();
 const knowledgeTagService = new knowledge_tag_service_1.KnowledgeTagService();
 const documentFeedbackService = new document_feedback_service_1.DocumentFeedbackService();
+const knowledgeFavoriteService = new knowledge_document_favorite_service_1.KnowledgeDocumentFavoriteService();
 const handleError = (res, error, defaultStatus = 500) => {
     console.error("Error:", error);
     const status = error.status || defaultStatus;
@@ -614,6 +616,140 @@ router.delete("/knowledge/tags/:id", auth_1.authenticateToken, auditMiddleware_1
         }
         await knowledgeTagService.deleteTag(id);
         res.status(204).send();
+    }
+    catch (error) {
+        handleError(res, error);
+    }
+});
+router.post("/knowledge/:id/favorite", auth_1.authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const documentId = req.params.id;
+        if (!userId) {
+            return res.status(401).json({ error: "Usuario no autenticado" });
+        }
+        if (!documentId) {
+            return res.status(400).json({ error: "ID de documento requerido" });
+        }
+        const result = await knowledgeFavoriteService.toggleFavorite(documentId, userId);
+        res.json(result);
+    }
+    catch (error) {
+        handleError(res, error);
+    }
+});
+router.get("/knowledge/:id/favorite", auth_1.authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const documentId = req.params.id;
+        if (!userId) {
+            return res.status(401).json({ error: "Usuario no autenticado" });
+        }
+        if (!documentId) {
+            return res.status(400).json({ error: "ID de documento requerido" });
+        }
+        const result = await knowledgeFavoriteService.checkFavorite(documentId, userId);
+        res.json(result);
+    }
+    catch (error) {
+        handleError(res, error);
+    }
+});
+router.get("/knowledge/favorites/my", auth_1.authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        if (!userId) {
+            return res.status(401).json({ error: "Usuario no autenticado" });
+        }
+        const result = await knowledgeFavoriteService.getUserFavorites(userId, page, limit);
+        res.json(result);
+    }
+    catch (error) {
+        handleError(res, error);
+    }
+});
+router.get("/knowledge/favorites/popular", auth_1.authenticateToken, async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 10;
+        const result = await knowledgeFavoriteService.getMostFavorited(limit);
+        res.json(result);
+    }
+    catch (error) {
+        handleError(res, error);
+    }
+});
+router.put("/knowledge/:id/submit-review", (0, authorizationMiddleware_1.requireAnyPermission)([
+    "knowledge.review.own",
+    "knowledge.review.team",
+    "knowledge.review.all",
+]), auditMiddleware_1.AuditMiddleware.auditUpdate("knowledge_documents"), async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const documentId = req.params.id;
+        if (!userId) {
+            return res.status(401).json({ error: "Usuario no autenticado" });
+        }
+        if (!documentId) {
+            return res.status(400).json({ error: "ID de documento requerido" });
+        }
+        const result = await knowledgeDocumentService.submitForReview(documentId, userId);
+        res.json(result);
+    }
+    catch (error) {
+        handleError(res, error);
+    }
+});
+router.put("/knowledge/:id/approve", (0, authorizationMiddleware_1.requireAnyPermission)(["knowledge.approve.team", "knowledge.approve.all"]), auditMiddleware_1.AuditMiddleware.auditUpdate("knowledge_documents"), async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const documentId = req.params.id;
+        const { notes, autoPublish = true } = req.body;
+        if (!userId) {
+            return res.status(401).json({ error: "Usuario no autenticado" });
+        }
+        if (!documentId) {
+            return res.status(400).json({ error: "ID de documento requerido" });
+        }
+        const result = await knowledgeDocumentService.approveDocument(documentId, userId, notes, autoPublish);
+        res.json(result);
+    }
+    catch (error) {
+        handleError(res, error);
+    }
+});
+router.put("/knowledge/:id/reject", (0, authorizationMiddleware_1.requireAnyPermission)(["knowledge.approve.team", "knowledge.approve.all"]), auditMiddleware_1.AuditMiddleware.auditUpdate("knowledge_documents"), async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const documentId = req.params.id;
+        const { notes } = req.body;
+        if (!userId) {
+            return res.status(401).json({ error: "Usuario no autenticado" });
+        }
+        if (!documentId) {
+            return res.status(400).json({ error: "ID de documento requerido" });
+        }
+        if (!notes || typeof notes !== "string" || !notes.trim()) {
+            return res.status(400).json({
+                error: "Se requiere una nota explicando el motivo del rechazo",
+            });
+        }
+        const result = await knowledgeDocumentService.rejectDocument(documentId, userId, notes.trim());
+        res.json(result);
+    }
+    catch (error) {
+        handleError(res, error);
+    }
+});
+router.get("/knowledge/pending-review", (0, authorizationMiddleware_1.requireAnyPermission)(["knowledge.approve.team", "knowledge.approve.all"]), async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const userPermissions = req.user?.permissions || [];
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const result = await knowledgeDocumentService.getPendingReviewDocuments(userId, userPermissions, page, limit);
+        res.json(result);
     }
     catch (error) {
         handleError(res, error);

@@ -5,6 +5,12 @@ export declare enum Priority {
     HIGH = "high",
     URGENT = "urgent"
 }
+export declare enum DocumentVisibility {
+    PUBLIC = "public",
+    PRIVATE = "private",
+    TEAM = "team",
+    CUSTOM = "custom"
+}
 export declare class CreateKnowledgeDocumentDto {
     title: string;
     content?: string;
@@ -15,6 +21,9 @@ export declare class CreateKnowledgeDocumentDto {
     isTemplate?: boolean;
     tags?: string[];
     associatedCases?: string[];
+    visibility?: DocumentVisibility;
+    visibleToUsers?: string[];
+    visibleToTeams?: string[];
 }
 export declare class UpdateKnowledgeDocumentDto {
     title?: string;
@@ -27,6 +36,9 @@ export declare class UpdateKnowledgeDocumentDto {
     isPublished?: boolean;
     tags?: string[];
     associatedCases?: string[];
+    visibility?: DocumentVisibility;
+    visibleToUsers?: string[];
+    visibleToTeams?: string[];
     changeSummary?: string;
 }
 export declare class PublishKnowledgeDocumentDto {

@@ -19,6 +19,7 @@ const KnowledgeDocumentVersion_1 = require("./KnowledgeDocumentVersion");
 const KnowledgeDocumentAttachment_1 = require("./KnowledgeDocumentAttachment");
 const KnowledgeDocumentRelation_1 = require("./KnowledgeDocumentRelation");
 const KnowledgeDocumentFeedback_1 = require("./KnowledgeDocumentFeedback");
+const KnowledgeDocumentFavorite_1 = require("./KnowledgeDocumentFavorite");
 let KnowledgeDocument = class KnowledgeDocument {
 };
 exports.KnowledgeDocument = KnowledgeDocument;
@@ -162,6 +163,61 @@ __decorate([
     __metadata("design:type", Array)
 ], KnowledgeDocument.prototype, "associatedCases", void 0);
 __decorate([
+    (0, typeorm_1.Column)({
+        name: "review_status",
+        type: "varchar",
+        length: 20,
+        default: "draft",
+    }),
+    __metadata("design:type", String)
+], KnowledgeDocument.prototype, "reviewStatus", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: "reviewed_by", type: "uuid", nullable: true }),
+    __metadata("design:type", Object)
+], KnowledgeDocument.prototype, "reviewedBy", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => UserProfile_1.UserProfile, { lazy: true }),
+    (0, typeorm_1.JoinColumn)({ name: "reviewed_by" }),
+    __metadata("design:type", Promise)
+], KnowledgeDocument.prototype, "reviewedByUser", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: "reviewed_at",
+        type: "timestamp with time zone",
+        nullable: true,
+    }),
+    __metadata("design:type", Object)
+], KnowledgeDocument.prototype, "reviewedAt", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ name: "review_notes", type: "text", nullable: true }),
+    __metadata("design:type", Object)
+], KnowledgeDocument.prototype, "reviewNotes", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: "visibility",
+        type: "varchar",
+        length: 20,
+        default: "public",
+    }),
+    __metadata("design:type", String)
+], KnowledgeDocument.prototype, "visibility", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: "visible_to_users",
+        type: "jsonb",
+        default: () => "'[]'::jsonb",
+    }),
+    __metadata("design:type", Array)
+], KnowledgeDocument.prototype, "visibleToUsers", void 0);
+__decorate([
+    (0, typeorm_1.Column)({
+        name: "visible_to_teams",
+        type: "jsonb",
+        default: () => "'[]'::jsonb",
+    }),
+    __metadata("design:type", Array)
+], KnowledgeDocument.prototype, "visibleToTeams", void 0);
+__decorate([
     (0, typeorm_1.OneToMany)(() => KnowledgeDocumentTag_1.KnowledgeDocumentTag, (tag) => tag.document),
     __metadata("design:type", Array)
 ], KnowledgeDocument.prototype, "tags", void 0);
@@ -190,6 +246,10 @@ __decorate([
     __metadata("design:type", Array)
 ], KnowledgeDocument.prototype, "feedback", void 0);
 __decorate([
+    (0, typeorm_1.OneToMany)(() => KnowledgeDocumentFavorite_1.KnowledgeDocumentFavorite, (favorite) => favorite.document),
+    __metadata("design:type", Array)
+], KnowledgeDocument.prototype, "favorites", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)({ name: "created_at", type: "timestamp with time zone" }),
     __metadata("design:type", Date)
 ], KnowledgeDocument.prototype, "createdAt", void 0);
@@ -199,5 +259,7 @@ __decorate([
 ], KnowledgeDocument.prototype, "updatedAt", void 0);
 exports.KnowledgeDocument = KnowledgeDocument = __decorate([
     (0, typeorm_1.Entity)("knowledge_documents"),
-    (0, typeorm_1.Index)(["title"])
+    (0, typeorm_1.Index)(["title"]),
+    (0, typeorm_1.Index)(["visibility"]),
+    (0, typeorm_1.Index)(["createdBy", "visibility"])
 ], KnowledgeDocument);

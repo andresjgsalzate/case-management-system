@@ -6,7 +6,10 @@ import { KnowledgeDocumentVersion } from "./KnowledgeDocumentVersion";
 import { KnowledgeDocumentAttachment } from "./KnowledgeDocumentAttachment";
 import { KnowledgeDocumentRelation } from "./KnowledgeDocumentRelation";
 import { KnowledgeDocumentFeedback } from "./KnowledgeDocumentFeedback";
+import { KnowledgeDocumentFavorite } from "./KnowledgeDocumentFavorite";
 export type Priority = "low" | "medium" | "high" | "urgent";
+export type ReviewStatus = "draft" | "pending_review" | "approved" | "rejected" | "published";
+export type DocumentVisibility = "public" | "private" | "team" | "custom";
 export declare class KnowledgeDocument {
     id: string;
     title: string;
@@ -37,6 +40,14 @@ export declare class KnowledgeDocument {
     replacementDocument: Promise<KnowledgeDocument>;
     tagsJson: string[];
     associatedCases: string[];
+    reviewStatus: ReviewStatus;
+    reviewedBy: string | null;
+    reviewedByUser: Promise<UserProfile>;
+    reviewedAt: Date | null;
+    reviewNotes: string | null;
+    visibility: DocumentVisibility;
+    visibleToUsers: string[];
+    visibleToTeams: string[];
     tags: KnowledgeDocumentTag[];
     tagRelations: KnowledgeDocumentTagRelation[];
     versions: KnowledgeDocumentVersion[];
@@ -44,6 +55,7 @@ export declare class KnowledgeDocument {
     parentRelations: KnowledgeDocumentRelation[];
     childRelations: KnowledgeDocumentRelation[];
     feedback: KnowledgeDocumentFeedback[];
+    favorites: KnowledgeDocumentFavorite[];
     createdAt: Date;
     updatedAt: Date;
 }

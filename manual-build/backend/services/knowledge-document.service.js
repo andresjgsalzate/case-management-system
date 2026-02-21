@@ -5,6 +5,7 @@ const typeorm_1 = require("typeorm");
 const KnowledgeDocument_1 = require("../entities/KnowledgeDocument");
 const KnowledgeDocumentVersion_1 = require("../entities/KnowledgeDocumentVersion");
 const Case_1 = require("../entities/Case");
+const TeamMember_1 = require("../entities/TeamMember");
 const database_1 = require("../config/database");
 const knowledge_tag_service_1 = require("./knowledge-tag.service");
 class KnowledgeDocumentService {
@@ -13,7 +14,24 @@ class KnowledgeDocumentService {
         this.knowledgeDocumentRepository = ds.getRepository(KnowledgeDocument_1.KnowledgeDocument);
         this.versionRepository = ds.getRepository(KnowledgeDocumentVersion_1.KnowledgeDocumentVersion);
         this.caseRepository = ds.getRepository(Case_1.Case);
+        this.teamMemberRepository = ds.getRepository(TeamMember_1.TeamMember);
         this.knowledgeTagService = new knowledge_tag_service_1.KnowledgeTagService(ds);
+    }
+    async getUserTeamIds(userId) {
+        try {
+            const memberships = await this.teamMemberRepository.find({
+                where: {
+                    userId: userId,
+                    isActive: true,
+                },
+                select: ["teamId"],
+            });
+            return memberships.map((m) => m.teamId);
+        }
+        catch (error) {
+            console.error(`Error obteniendo equipos del usuario ${userId}:`, error);
+            return [];
+        }
     }
     async create(createDto, userId) {
         const { tags, associatedCases, ...documentData } = createDto;
@@ -40,8 +58,9 @@ class KnowledgeDocumentService {
     }
     async findAll(query, userId, userPermissions) {
         const queryBuilder = this.createQueryBuilder();
+        const userTeamIds = userId ? await this.getUserTeamIds(userId) : [];
         this.applyFilters(queryBuilder, query);
-        this.applyPermissionFilters(queryBuilder, userId, userPermissions);
+        this.applyPermissionAndVisibilityFilters(queryBuilder, userId, userPermissions, userTeamIds);
         this.applySorting(queryBuilder, query);
         const page = query.page || 1;
         const limit = Math.min(query.limit || 10, 50);
@@ -259,6 +278,7 @@ class KnowledgeDocumentService {
         return version;
     }
     async searchContent(searchTerm, limit = 10, userId, userPermissions) {
+        const userTeamIds = userId ? await this.getUserTeamIds(userId) : [];
         const queryBuilder = this.knowledgeDocumentRepository
             .createQueryBuilder("doc")
             .leftJoinAndSelect("doc.tags", "tags")
@@ -278,7 +298,7 @@ class KnowledgeDocumentService {
             search: `%${searchTerm}%`,
             searchTermJson: JSON.stringify([searchTerm]),
         });
-        this.applyPermissionFilters(queryBuilder, userId, userPermissions);
+        this.applyPermissionAndVisibilityFilters(queryBuilder, userId, userPermissions, userTeamIds);
         return queryBuilder
             .orderBy("doc.viewCount", "DESC")
             .addOrderBy("doc.updatedAt", "DESC")
@@ -304,7 +324,8 @@ class KnowledgeDocumentService {
           OR unaccent(lower(doc.content)) LIKE unaccent(lower(:search))
           OR unaccent(lower(tags."tag_name")) LIKE unaccent(lower(:search)))`, { search: `%${searchTerm}%` })
             .andWhere("doc.isArchived = :archived", { archived: false });
-        this.applyPermissionFilters(documentSuggestions, userId, userPermissions);
+        const userTeamIds = userId ? await this.getUserTeamIds(userId) : [];
+        this.applyPermissionAndVisibilityFilters(documentSuggestions, userId, userPermissions, userTeamIds);
         const documentsRaw = await documentSuggestions
             .orderBy(`CASE WHEN unaccent(lower(doc.title)) LIKE unaccent(lower(:search)) THEN 0 ELSE 1 END`, "ASC")
             .addOrderBy("doc.viewCount", "DESC")
@@ -517,7 +538,8 @@ class KnowledgeDocumentService {
                 published: query.isPublished,
             });
         }
-        this.applyPermissionFilters(queryBuilder, userId, userPermissions);
+        const userTeamIds = userId ? await this.getUserTeamIds(userId) : [];
+        this.applyPermissionAndVisibilityFilters(queryBuilder, userId, userPermissions, userTeamIds);
         const page = query.page || 1;
         const limit = Math.min(query.limit || 10, 50);
         const offset = (page - 1) * limit;
@@ -703,42 +725,73 @@ class KnowledgeDocumentService {
             queryBuilder.andWhere(`(${tagConditions})`, tagParams);
         }
     }
-    applyPermissionFilters(queryBuilder, userId, userPermissions) {
+    applyPermissionAndVisibilityFilters(queryBuilder, userId, userPermissions, userTeamIds = []) {
         if (!userId || !userPermissions) {
             queryBuilder.andWhere("doc.isPublished = :published", {
                 published: true,
             });
             queryBuilder.andWhere("doc.isArchived = :archived", { archived: false });
+            queryBuilder.andWhere("(doc.visibility = :publicVisibility OR doc.visibility IS NULL)", {
+                publicVisibility: "public",
+            });
             return;
         }
-        const hasAllEditPermissions = userPermissions.some((p) => p.includes("knowledge.update.all") || p.includes("knowledge.delete.all"));
+        const hasAllEditPermissions = userPermissions.some((p) => p.includes("knowledge.update.all") ||
+            p.includes("knowledge.delete.all"));
         const hasTeamEditPermissions = userPermissions.some((p) => p.includes("knowledge.update.team") ||
             p.includes("knowledge.delete.team"));
-        const hasOwnEditPermissions = userPermissions.some((p) => p.includes("knowledge.update.own") || p.includes("knowledge.delete.own"));
+        const hasOwnEditPermissions = userPermissions.some((p) => p.includes("knowledge.update.own") ||
+            p.includes("knowledge.delete.own"));
         const hasAllReadPermissions = userPermissions.some((p) => p.includes("knowledge.read.all"));
         const hasTeamReadPermissions = userPermissions.some((p) => p.includes("knowledge.read.team"));
         const hasOwnReadPermissions = userPermissions.some((p) => p.includes("knowledge.read.own"));
         queryBuilder.andWhere("doc.isArchived = :archived", { archived: false });
+        const visibilityConditions = [];
+        const visibilityParams = {};
+        visibilityConditions.push("(doc.visibility = 'public' OR doc.visibility IS NULL)");
+        visibilityConditions.push("doc.createdBy = :visUserId");
+        visibilityParams.visUserId = userId;
+        if (userTeamIds.length > 0) {
+            visibilityConditions.push(`(
+        doc.visibility = 'team' AND EXISTS (
+          SELECT 1 FROM team_members tm_author
+          WHERE tm_author.user_id = doc.created_by
+          AND tm_author.is_active = true
+          AND tm_author.team_id IN (:...userTeamIdsVis)
+        )
+      )`);
+            visibilityParams.userTeamIdsVis = userTeamIds;
+        }
+        visibilityConditions.push(`(
+      doc.visibility = 'custom' AND (
+        doc.visible_to_users::jsonb ? :visUserIdJson
+        ${userTeamIds.length > 0 ? "OR doc.visible_to_teams::jsonb ?| :userTeamIdsJson" : ""}
+      )
+    )`);
+        visibilityParams.visUserIdJson = userId;
+        if (userTeamIds.length > 0) {
+            visibilityParams.userTeamIdsJson = userTeamIds;
+        }
+        const visibilityFilter = `(${visibilityConditions.join(" OR ")})`;
         if (hasAllEditPermissions) {
-            console.log(`🔓 Usuario ${userId} tiene permisos de EDICIÓN ALL - puede ver todos los documentos`);
+            console.log(`🔓 Usuario ${userId} tiene permisos de EDICIÓN ALL - puede ver todos los documentos respetando visibilidad`);
+            queryBuilder.andWhere(visibilityFilter, visibilityParams);
         }
         else if (hasTeamEditPermissions) {
             console.log(`👥 Usuario ${userId} tiene permisos de EDICIÓN TEAM - aplicando filtros apropiados`);
-            queryBuilder.andWhere("(doc.createdBy = :userId OR doc.isPublished = :published)", { userId, published: true });
+            queryBuilder.andWhere(`(doc.createdBy = :userId OR doc.isPublished = :published) AND ${visibilityFilter}`, { userId, published: true, ...visibilityParams });
         }
         else if (hasOwnEditPermissions || hasOwnReadPermissions) {
             console.log(`👤 Usuario ${userId} tiene permisos OWN - puede ver sus documentos + documentos publicados de otros`);
-            queryBuilder.andWhere("(doc.createdBy = :userId OR doc.isPublished = :published)", { userId, published: true });
+            queryBuilder.andWhere(`(doc.createdBy = :userId OR doc.isPublished = :published) AND ${visibilityFilter}`, { userId, published: true, ...visibilityParams });
         }
         else if (hasAllReadPermissions || hasTeamReadPermissions) {
             console.log(`📖 Usuario ${userId} tiene solo permisos de LECTURA - solo documentos publicados + propios`);
-            queryBuilder.andWhere("(doc.createdBy = :userId OR doc.isPublished = :published)", { userId, published: true });
+            queryBuilder.andWhere(`(doc.createdBy = :userId OR doc.isPublished = :published) AND ${visibilityFilter}`, { userId, published: true, ...visibilityParams });
         }
         else {
             console.log(`🔒 Usuario ${userId} sin permisos específicos - solo documentos publicados`);
-            queryBuilder.andWhere("doc.isPublished = :published", {
-                published: true,
-            });
+            queryBuilder.andWhere(`doc.isPublished = :published AND ${visibilityFilter}`, { published: true, ...visibilityParams });
         }
     }
     applySorting(queryBuilder, query) {
@@ -800,6 +853,153 @@ class KnowledgeDocumentService {
             createdBy: userId,
         });
         return this.versionRepository.save(version);
+    }
+    async submitForReview(documentId, userId) {
+        const document = await this.findOne(documentId);
+        if (!document) {
+            throw new Error(`Documento con ID ${documentId} no encontrado`);
+        }
+        if (document.isArchived) {
+            throw new Error("No se puede enviar a revisión un documento archivado");
+        }
+        if (document.reviewStatus === "pending_review") {
+            throw new Error("Este documento ya está pendiente de revisión");
+        }
+        if (document.isPublished) {
+            throw new Error("Este documento ya está publicado");
+        }
+        if (!document.title.trim()) {
+            throw new Error("El documento debe tener un título");
+        }
+        await this.knowledgeDocumentRepository.update(documentId, {
+            reviewStatus: "pending_review",
+            lastEditedBy: userId,
+        });
+        await this.createVersion(documentId, {
+            content: document.jsonContent,
+            title: document.title,
+            changeSummary: "Enviado a revisión",
+        }, userId);
+        const result = await this.findOne(documentId);
+        if (!result) {
+            throw new Error(`Documento ${documentId} no encontrado después de actualización`);
+        }
+        return result;
+    }
+    async approveDocument(documentId, reviewerId, notes, autoPublish = true) {
+        const document = await this.findOne(documentId);
+        if (!document) {
+            throw new Error(`Documento con ID ${documentId} no encontrado`);
+        }
+        if (document.reviewStatus !== "pending_review") {
+            throw new Error("Este documento no está pendiente de revisión");
+        }
+        const now = new Date();
+        const updateData = {
+            reviewStatus: autoPublish ? "published" : "approved",
+            reviewedBy: reviewerId,
+            reviewedAt: now,
+            reviewNotes: notes || null,
+            lastEditedBy: reviewerId,
+        };
+        if (autoPublish) {
+            updateData.isPublished = true;
+            updateData.publishedAt = now;
+        }
+        await this.knowledgeDocumentRepository.update(documentId, updateData);
+        await this.createVersion(documentId, {
+            content: document.jsonContent,
+            title: document.title,
+            changeSummary: autoPublish
+                ? "Documento aprobado y publicado"
+                : "Documento aprobado",
+        }, reviewerId);
+        const result = await this.findOne(documentId);
+        if (!result) {
+            throw new Error(`Documento ${documentId} no encontrado después de aprobación`);
+        }
+        return result;
+    }
+    async rejectDocument(documentId, reviewerId, notes) {
+        const document = await this.findOne(documentId);
+        if (!document) {
+            throw new Error(`Documento con ID ${documentId} no encontrado`);
+        }
+        if (document.reviewStatus !== "pending_review") {
+            throw new Error("Este documento no está pendiente de revisión");
+        }
+        const now = new Date();
+        await this.knowledgeDocumentRepository.update(documentId, {
+            reviewStatus: "rejected",
+            reviewedBy: reviewerId,
+            reviewedAt: now,
+            reviewNotes: notes,
+            lastEditedBy: reviewerId,
+        });
+        await this.createVersion(documentId, {
+            content: document.jsonContent,
+            title: document.title,
+            changeSummary: `Documento rechazado: ${notes}`,
+        }, reviewerId);
+        const result = await this.findOne(documentId);
+        if (!result) {
+            throw new Error(`Documento ${documentId} no encontrado después de rechazo`);
+        }
+        return result;
+    }
+    async getPendingReviewDocuments(userId, userPermissions, page = 1, limit = 20) {
+        const queryBuilder = this.createQueryBuilder();
+        queryBuilder.andWhere("doc.reviewStatus = :reviewStatus", {
+            reviewStatus: "pending_review",
+        });
+        queryBuilder.andWhere("doc.isArchived = false");
+        const hasApproveAllPermission = userPermissions.some((p) => p.includes("knowledge.approve.all"));
+        if (!hasApproveAllPermission) {
+            console.log(`Filtrando documentos pendientes para usuario ${userId}`);
+        }
+        const offset = (page - 1) * limit;
+        const [documents, total] = await queryBuilder
+            .orderBy("doc.updatedAt", "DESC")
+            .skip(offset)
+            .take(limit)
+            .getManyAndCount();
+        const documentsWithInfo = await Promise.all(documents.map(async (doc) => {
+            const createdByUser = await doc.createdByUser;
+            const documentType = await doc.documentType;
+            const tags = doc.tagRelations && doc.tagRelations.length > 0
+                ? doc.tagRelations.map((relation) => ({
+                    id: relation.tag.id,
+                    tagName: relation.tag.tagName,
+                    color: relation.tag.color,
+                    category: relation.tag.category,
+                }))
+                : [];
+            return {
+                ...doc,
+                documentType: documentType
+                    ? {
+                        id: documentType.id,
+                        name: documentType.name,
+                        color: documentType.color,
+                    }
+                    : null,
+                __createdByUser__: createdByUser
+                    ? {
+                        id: createdByUser.id,
+                        email: createdByUser.email,
+                        fullName: createdByUser.fullName,
+                    }
+                    : null,
+                tags,
+                tagRelations: undefined,
+            };
+        }));
+        return {
+            documents: documentsWithInfo,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit),
+        };
     }
 }
 exports.KnowledgeDocumentService = KnowledgeDocumentService;

@@ -208,7 +208,9 @@ class UserController {
     }
     async getUsers(req, res) {
         try {
-            const filterDto = (0, class_transformer_1.plainToClass)(user_dto_1.UserFilterDto, req.query);
+            const filterDto = (0, class_transformer_1.plainToClass)(user_dto_1.UserFilterDto, req.query, {
+                enableImplicitConversion: true,
+            });
             const errors = await (0, class_validator_1.validate)(filterDto);
             if (errors.length > 0) {
                 res.status(400).json({

@@ -174,7 +174,7 @@ const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
         // Procesar texto en negrilla dentro de las listas
         const processedContent = listContent.replace(
           /\*\*(.*?)\*\*/g,
-          '<strong class="font-bold text-gray-900 dark:text-white">$1</strong>'
+          '<strong class="font-bold text-gray-900 dark:text-white">$1</strong>',
         );
 
         return (
@@ -191,7 +191,7 @@ const MarkdownRenderer: React.FC<{ content: string }> = ({ content }) => {
       // Procesar texto en negrilla para párrafos normales
       const boldText = line.replace(
         /\*\*(.*?)\*\*/g,
-        '<strong class="font-bold text-gray-900 dark:text-white">$1</strong>'
+        '<strong class="font-bold text-gray-900 dark:text-white">$1</strong>',
       );
 
       // Empty lines - dar más espacio
@@ -304,7 +304,7 @@ export const SystemInfoPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedModule, setSelectedModule] = useState<SystemModule | null>(
-    null
+    null,
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -429,7 +429,7 @@ export const SystemInfoPage: React.FC = () => {
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              v{systemInfo?.version || "1.0.0"}
+              v{systemInfo?.version || "1.1.0"}
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400">
               {systemInfo?.environment || "production"}
@@ -486,7 +486,7 @@ export const SystemInfoPage: React.FC = () => {
                     <div className="ml-4">
                       <p className="text-2xl font-bold text-purple-900">
                         {SystemInfoService.formatUptime(
-                          systemInfo.stats.uptime
+                          systemInfo.stats.uptime,
                         )}
                       </p>
                       <p className="text-purple-600">Tiempo Activo</p>
@@ -652,7 +652,7 @@ export const SystemInfoPage: React.FC = () => {
                       <p className="text-orange-100">Tiempo Activo</p>
                       <p className="text-lg font-bold">
                         {SystemInfoService.formatUptime(
-                          systemInfo.stats.uptime
+                          systemInfo.stats.uptime,
                         )}
                       </p>
                     </div>
@@ -682,14 +682,14 @@ export const SystemInfoPage: React.FC = () => {
                           <div
                             className={`w-3 h-3 rounded-full mr-3 ${
                               SystemInfoService.getModuleStatusColor(
-                                module.status
+                                module.status,
                               ).includes("green")
                                 ? "bg-green-500"
                                 : SystemInfoService.getModuleStatusColor(
-                                    module.status
-                                  ).includes("yellow")
-                                ? "bg-yellow-500"
-                                : "bg-red-500"
+                                      module.status,
+                                    ).includes("yellow")
+                                  ? "bg-yellow-500"
+                                  : "bg-red-500"
                             }`}
                           ></div>
                           <span className="text-sm font-medium text-gray-900 dark:text-white">
@@ -705,8 +705,8 @@ export const SystemInfoPage: React.FC = () => {
                                   (module.endpoints.length /
                                     Math.max(
                                       ...systemInfo.modules.map(
-                                        (m) => m.endpoints.length
-                                      )
+                                        (m) => m.endpoints.length,
+                                      ),
                                     )) *
                                   100
                                 }%`,

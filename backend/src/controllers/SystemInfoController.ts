@@ -42,7 +42,7 @@ export class SystemInfoController {
       console.log("Estadísticas calculadas:", stats);
 
       const systemInfo: SystemInfo = {
-        version: "1.0.0",
+        version: "1.1.0",
         name: "Case Management System",
         description:
           "Sistema completo de gestión de casos con funcionalidades avanzadas",
@@ -77,7 +77,7 @@ export class SystemInfoController {
       res.status(200).json({
         success: true,
         data: {
-          version: "1.0.0",
+          version: "1.1.0",
           name: "case-management-backend",
           buildDate: new Date().toISOString(),
         },
@@ -193,7 +193,7 @@ export class SystemInfoController {
       console.error("Error leyendo package.json:", error);
       return {
         name: "case-management-backend",
-        version: "1.0.0",
+        version: "1.1.0",
         description: "Backend API para sistema de gestión de casos",
       };
     }
@@ -206,7 +206,7 @@ export class SystemInfoController {
     return [
       {
         name: "Dashboard",
-        version: "1.0.0",
+        version: "1.1.0",
         description: "Panel principal con métricas en tiempo real",
         features: [
           "Métricas de casos activos/cerrados",
@@ -221,7 +221,7 @@ export class SystemInfoController {
       },
       {
         name: "Control de Casos",
-        version: "1.0.0",
+        version: "1.1.0",
         description: "Timer y control de tiempo por caso",
         features: [
           "Crear, editar, eliminar casos",
@@ -248,7 +248,7 @@ export class SystemInfoController {
       },
       {
         name: "Sistema de TODOs",
-        version: "1.0.0",
+        version: "1.1.0",
         description: "Gestión de tareas con prioridades y seguimiento",
         features: [
           "CRUD de tareas",
@@ -275,7 +275,7 @@ export class SystemInfoController {
       },
       {
         name: "Autenticación y Seguridad",
-        version: "1.0.0",
+        version: "1.1.0",
         description: "Sistema seguro de autenticación con JWT",
         features: [
           "Login/logout seguro",
@@ -297,7 +297,7 @@ export class SystemInfoController {
       },
       {
         name: "Gestión de Usuarios",
-        version: "1.0.0",
+        version: "1.1.0",
         description: "Administración completa de usuarios y roles",
         features: [
           "CRUD de usuarios",
@@ -323,7 +323,7 @@ export class SystemInfoController {
       },
       {
         name: "Sistema de Notas",
-        version: "1.0.0",
+        version: "1.1.0",
         description: "Documentación y notas por caso",
         features: [
           "Editor de texto enriquecido",
@@ -344,7 +344,7 @@ export class SystemInfoController {
       },
       {
         name: "Base de Conocimiento",
-        version: "1.0.0",
+        version: "1.1.0",
         description: "Sistema completo de documentación técnica",
         features: [
           "Editor BlockNote avanzado",
@@ -370,7 +370,7 @@ export class SystemInfoController {
       },
       {
         name: "Sistema de Etiquetas",
-        version: "1.0.0",
+        version: "1.1.0",
         description: "Gestión y organización con etiquetas",
         features: [
           "CRUD de etiquetas",
@@ -385,7 +385,7 @@ export class SystemInfoController {
       },
       {
         name: "Gestión de Disposiciones",
-        version: "1.0.0",
+        version: "1.1.0",
         description: "Control de disposiciones mensuales",
         features: [
           "Disposiciones por período",
@@ -408,7 +408,7 @@ export class SystemInfoController {
       },
       {
         name: "Sistema de Archivo",
-        version: "1.0.0",
+        version: "1.1.0",
         description: "Archivado temporal y eliminación controlada",
         features: [
           "Archivo temporal reversible",
@@ -432,7 +432,7 @@ export class SystemInfoController {
       },
       {
         name: "Control de Tiempo",
-        version: "1.0.0",
+        version: "1.1.0",
         description: "Registro y seguimiento de tiempo",
         features: [
           "Registro manual de tiempo",
@@ -451,7 +451,7 @@ export class SystemInfoController {
       },
       {
         name: "Administración del Sistema",
-        version: "1.0.0",
+        version: "1.1.0",
         description: "Configuración y administración global",
         features: [
           "Gestión de aplicaciones",
@@ -473,7 +473,7 @@ export class SystemInfoController {
       },
       {
         name: "Sistema de Auditoría",
-        version: "1.0.0",
+        version: "1.1.0",
         description: "Sistema completo de auditoría y trazabilidad",
         features: [
           "Auditoría automática de todas las operaciones CRUD",

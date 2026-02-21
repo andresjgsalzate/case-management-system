@@ -1,6 +1,6 @@
 {
     "name": "case-management-backend",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Backend API para sistema de gestión de casos",
     "main": "dist/server.js",
     "scripts": {

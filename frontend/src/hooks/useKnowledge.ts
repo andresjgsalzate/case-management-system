@@ -144,9 +144,17 @@ export const useCreateKnowledgeDocument = (
   });
 };
 
+// Tipo extendido para respuestas que incluyen metadatos
+export interface KnowledgeDocumentResponse extends KnowledgeDocument {
+  _meta?: {
+    revertedToDraft?: boolean;
+    message?: string;
+  };
+}
+
 export const useUpdateKnowledgeDocument = (
   options?: UseMutationOptions<
-    KnowledgeDocument,
+    KnowledgeDocumentResponse,
     Error,
     { id: string; data: UpdateKnowledgeDocumentDto }
   >,
@@ -155,7 +163,7 @@ export const useUpdateKnowledgeDocument = (
 
   return useMutation({
     mutationFn: ({ id, data }) => knowledgeApi.documents.update(id, data),
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables, context) => {
       // Invalidar y refetch inmediatamente las queries relacionadas
       queryClient.invalidateQueries({
         queryKey: knowledgeKeys.document(variables.id),
@@ -174,8 +182,12 @@ export const useUpdateKnowledgeDocument = (
       queryClient.refetchQueries({
         queryKey: knowledgeKeys.document(variables.id),
       });
+
+      // Llamar al onSuccess del usuario si existe, pasando los datos
+      options?.onSuccess?.(data, variables, context);
     },
-    ...options,
+    onError: options?.onError,
+    onSettled: options?.onSettled,
   });
 };
 

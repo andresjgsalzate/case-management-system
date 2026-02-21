@@ -90,7 +90,7 @@ const KnowledgeDocumentForm: React.FC = () => {
   const [useDocTemplate, setUseDocTemplate] = useState(false);
 
   // Notificaciones
-  const { success, error: showError } = useToast();
+  const { success, error: showError, warning } = useToast();
 
   // ✅ PLANTILLA BASE: Handler para aplicar la plantilla
   const handleUseTemplate = (checked: boolean) => {
@@ -178,8 +178,20 @@ const KnowledgeDocumentForm: React.FC = () => {
     },
   });
   const updateMutation = useUpdateKnowledgeDocument({
-    onSuccess: () => {
-      success("Documento actualizado exitosamente");
+    onSuccess: (data) => {
+      // Verificar si el documento fue revertido a borrador
+      const meta = (data as any)?._meta;
+      if (meta?.revertedToDraft) {
+        warning(
+          "Documento modificado - Requiere nueva aprobación",
+          meta.message ||
+            "El documento ha sido revertido a borrador porque fue modificado. Debe ser aprobado nuevamente para publicarse.",
+        );
+        // Actualizar estado local para reflejar que ya no está publicado
+        setIsPublished(false);
+      } else {
+        success("Documento actualizado exitosamente");
+      }
       clearLocalBackup(); // ✅ BACKUP LOCAL: Limpiar backup al guardar exitosamente
       // ✅ AUTOGUARDADO: Marcar como guardado tras guardado manual exitoso
       setHasUnsavedChanges(false);
@@ -211,11 +223,21 @@ const KnowledgeDocumentForm: React.FC = () => {
 
   // ✅ AUTOGUARDADO: Mutación silenciosa (sin notificaciones intrusivas)
   const autoSaveMutation = useUpdateKnowledgeDocument({
-    onSuccess: () => {
+    onSuccess: (data) => {
       setLastAutoSave(new Date());
       setIsAutoSaving(false);
       setHasUnsavedChanges(false);
       clearLocalBackup(); // ✅ BACKUP LOCAL: Limpiar backup al autoguardar exitosamente
+
+      // Verificar si el documento fue revertido a borrador durante autoguardado
+      const meta = (data as any)?._meta;
+      if (meta?.revertedToDraft) {
+        warning(
+          "Documento modificado - Requiere nueva aprobación",
+          "El documento ha sido revertido a borrador porque fue modificado.",
+        );
+        setIsPublished(false);
+      }
 
       // ✅ ACTIVIDAD: Notificar al SecurityService que hubo actividad (el autoguardado cuenta como actividad)
       // Esto reinicia el contador de inactividad y evita que la sesión expire mientras el usuario edita

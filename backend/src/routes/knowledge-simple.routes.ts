@@ -546,12 +546,36 @@ router.put(
       if (!documentId) {
         return res.status(400).json({ error: "ID de documento requerido" });
       }
+
+      // Obtener estado anterior para detectar si fue revertido a borrador
+      const previousDocument =
+        await knowledgeDocumentService.findOne(documentId);
+      const wasPublished =
+        previousDocument?.isPublished ||
+        (previousDocument as any)?.reviewStatus === "published" ||
+        (previousDocument as any)?.reviewStatus === "approved";
+
       const result = await knowledgeDocumentService.update(
         documentId,
         req.body,
         userId,
       );
-      res.json(result);
+
+      // Detectar si el documento fue revertido a borrador
+      const revertedToDraft =
+        wasPublished &&
+        !result.isPublished &&
+        (result as any).reviewStatus === "draft";
+
+      res.json({
+        ...result,
+        _meta: {
+          revertedToDraft,
+          message: revertedToDraft
+            ? "El documento ha sido modificado y requiere nueva aprobación para publicarse"
+            : undefined,
+        },
+      });
     } catch (error) {
       handleError(res, error, 400);
     }

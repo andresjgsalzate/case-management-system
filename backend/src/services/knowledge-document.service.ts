@@ -294,6 +294,21 @@ export class KnowledgeDocumentService {
       throw new Error("No se puede editar un documento archivado");
     }
 
+    // Detectar si hay cambios significativos en el contenido
+    const hasContentChanges =
+      updateDto.jsonContent || updateDto.title || updateDto.content;
+
+    // Si el documento estaba publicado y hay cambios de contenido, volver a borrador
+    const wasPublished =
+      document.isPublished ||
+      (document as any).reviewStatus === "published" ||
+      (document as any).reviewStatus === "approved";
+
+    let revertToDraft = false;
+    if (wasPublished && hasContentChanges) {
+      revertToDraft = true;
+    }
+
     // Si se está actualizando el contenido, crear nueva versión
     if (updateDto.jsonContent) {
       document.version += 1;
@@ -303,7 +318,10 @@ export class KnowledgeDocumentService {
           content: updateDto.jsonContent,
           title: updateDto.title || document.title,
           changeSummary:
-            updateDto.changeSummary || "Actualización de contenido",
+            updateDto.changeSummary ||
+            (revertToDraft
+              ? "Documento modificado - requiere nueva aprobación"
+              : "Actualización de contenido"),
         },
         userId,
       );
@@ -313,12 +331,22 @@ export class KnowledgeDocumentService {
     const { tags, changeSummary, associatedCases, ...updateData } = updateDto;
 
     // Remover las relaciones anidadas para evitar que TypeORM las actualice incorrectamente
-    const documentToUpdate = {
+    const documentToUpdate: any = {
       ...updateData,
       ...(associatedCases !== undefined && { associatedCases }), // Solo actualizar si se proporciona
       lastEditedBy: userId,
       id: document.id,
     };
+
+    // Si hay que volver a borrador, resetear estado de publicación y revisión
+    if (revertToDraft) {
+      documentToUpdate.isPublished = false;
+      documentToUpdate.publishedAt = null;
+      documentToUpdate.reviewStatus = "draft";
+      documentToUpdate.reviewedBy = null;
+      documentToUpdate.reviewedAt = null;
+      documentToUpdate.reviewNotes = null;
+    }
 
     // Usar update en lugar de save para evitar problemas con relaciones anidadas
     await this.knowledgeDocumentRepository.update(id, documentToUpdate);

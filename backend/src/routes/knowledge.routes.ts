@@ -38,7 +38,7 @@ const documentFeedbackService = new DocumentFeedbackService(AppDataSource);
 // Helper para validar DTOs
 async function validateDto<T extends object>(
   dtoClass: new () => T,
-  data: any
+  data: any,
 ): Promise<T> {
   const dto = plainToClass(dtoClass, data);
   const errors = await validate(dto);
@@ -65,7 +65,7 @@ function validateParam(param: string | undefined, paramName: string): string {
 const handleError = (
   res: Response,
   error: any,
-  defaultStatus: number = 500
+  defaultStatus: number = 500,
 ) => {
   console.error("Error:", error);
   const status = error.status || defaultStatus;
@@ -89,7 +89,7 @@ router.get(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/search - Búsqueda de contenido (Mejorada)
@@ -112,13 +112,13 @@ router.get(
         q,
         parseInt(limit as string) || 10,
         userId,
-        userPermissions
+        userPermissions,
       );
       res.json(documents);
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/search/suggestions - Sugerencias de búsqueda
@@ -139,13 +139,13 @@ router.get(
         q,
         parseInt(limit as string) || 5,
         userId,
-        userPermissions
+        userPermissions,
       );
       res.json(suggestions);
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // POST /api/knowledge/search/advanced - Búsqueda avanzada
@@ -161,7 +161,7 @@ router.post(
       const result = await knowledgeDocumentService.enhancedSearch(
         searchQuery,
         userId,
-        userPermissions
+        userPermissions,
       );
 
       res.json({
@@ -174,7 +174,7 @@ router.post(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/:id - Obtener documento específico
@@ -189,7 +189,7 @@ router.get(
     } catch (error) {
       handleError(res, error, 404);
     }
-  }
+  },
 );
 
 // POST /api/knowledge - Crear nuevo documento
@@ -205,7 +205,7 @@ router.post(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // PUT /api/knowledge/:id - Actualizar documento
@@ -217,16 +217,40 @@ router.put(
       const updateDto = await validateDto(UpdateKnowledgeDocumentDto, req.body);
       const userId = (req as any).user.id;
       const documentId = validateParam(req.params.id!, "id");
+
+      // Obtener estado anterior para detectar si fue revertido a borrador
+      const previousDocument =
+        await knowledgeDocumentService.findOne(documentId);
+      const wasPublished =
+        previousDocument?.isPublished ||
+        (previousDocument as any)?.reviewStatus === "published" ||
+        (previousDocument as any)?.reviewStatus === "approved";
+
       const document = await knowledgeDocumentService.update(
         documentId,
         updateDto,
-        userId
+        userId,
       );
-      res.json(document);
+
+      // Detectar si el documento fue revertido a borrador
+      const revertedToDraft =
+        wasPublished &&
+        !document.isPublished &&
+        (document as any).reviewStatus === "draft";
+
+      res.json({
+        ...document,
+        _meta: {
+          revertedToDraft,
+          message: revertedToDraft
+            ? "El documento ha sido modificado y requiere nueva aprobación para publicarse"
+            : undefined,
+        },
+      });
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // PUT /api/knowledge/:id/publish - Publicar/despublicar documento
@@ -242,19 +266,19 @@ router.put(
 
       const publishDto = await validateDto(
         PublishKnowledgeDocumentDto,
-        req.body
+        req.body,
       );
       const userId = (req as any).user.id;
       const document = await knowledgeDocumentService.publish(
         id,
         publishDto,
-        userId
+        userId,
       );
       res.json(document);
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // PUT /api/knowledge/:id/archive - Archivar/desarchivar documento
@@ -270,19 +294,19 @@ router.put(
 
       const archiveDto = await validateDto(
         ArchiveKnowledgeDocumentDto,
-        req.body
+        req.body,
       );
       const userId = (req as any).user.id;
       const document = await knowledgeDocumentService.archive(
         id,
         archiveDto,
-        userId
+        userId,
       );
       res.json(document);
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // DELETE /api/knowledge/:id - Eliminar documento
@@ -301,7 +325,7 @@ router.delete(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/:id/versions - Obtener versiones del documento
@@ -320,7 +344,7 @@ router.get(
     } catch (error) {
       handleError(res, error, 404);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/:id/versions/:version - Obtener versión específica
@@ -343,13 +367,13 @@ router.get(
 
       const versionData = await knowledgeDocumentService.getVersion(
         id,
-        versionNumber
+        versionNumber,
       );
       res.json(versionData);
     } catch (error) {
       handleError(res, error, 404);
     }
-  }
+  },
 );
 
 // ===========================================
@@ -368,7 +392,7 @@ router.get(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // GET /api/document-types/:id - Obtener tipo específico
@@ -382,7 +406,7 @@ router.get(
     } catch (error) {
       handleError(res, error, 404);
     }
-  }
+  },
 );
 
 // POST /api/document-types - Crear tipo de documento
@@ -398,7 +422,7 @@ router.post(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // PUT /api/document-types/:id - Actualizar tipo de documento
@@ -413,7 +437,7 @@ router.put(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // PUT /api/document-types/:id/toggle - Activar/desactivar tipo
@@ -427,7 +451,7 @@ router.put(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // DELETE /api/document-types/:id - Eliminar tipo
@@ -441,7 +465,7 @@ router.delete(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // GET /api/document-types/:id/stats - Estadísticas del tipo
@@ -455,7 +479,7 @@ router.get(
     } catch (error) {
       handleError(res, error, 404);
     }
-  }
+  },
 );
 
 // ===========================================
@@ -469,13 +493,13 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const feedback = await documentFeedbackService.findByDocument(
-        req.params.id!
+        req.params.id!,
       );
       res.json(feedback);
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // GET /api/feedback/check/:documentId - Verificar si el usuario ya ha dado feedback
@@ -488,7 +512,7 @@ router.get(
       const documentId = req.params.documentId!;
       const feedback = await documentFeedbackService.findUserFeedback(
         documentId,
-        userId
+        userId,
       );
       res.json({
         hasFeedback: !!feedback,
@@ -498,7 +522,7 @@ router.get(
       console.error(`📋 Error checking feedback:`, error);
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // POST /api/feedback - Crear feedback
@@ -514,7 +538,7 @@ router.post(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // PUT /api/feedback/:id - Actualizar feedback
@@ -528,13 +552,13 @@ router.put(
       const feedback = await documentFeedbackService.update(
         req.params.id!,
         updateDto,
-        userId
+        userId,
       );
       res.json(feedback);
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // DELETE /api/feedback/:id - Eliminar feedback
@@ -549,7 +573,7 @@ router.delete(
     } catch (error) {
       handleError(res, error, 400);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/:id/stats - Estadísticas de feedback del documento
@@ -559,13 +583,13 @@ router.get(
   async (req: Request, res: Response) => {
     try {
       const stats = await documentFeedbackService.getDocumentStats(
-        req.params.id!
+        req.params.id!,
       );
       res.json(stats);
     } catch (error) {
       handleError(res, error, 404);
     }
-  }
+  },
 );
 
 // GET /api/feedback/my - Obtener mi feedback
@@ -580,7 +604,7 @@ router.get(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // ================================
@@ -605,9 +629,8 @@ router.post(
       const normalizedTagName = tagName.trim();
 
       // Check if tag already exists
-      const existingTag = await knowledgeTagService.findTagByName(
-        normalizedTagName
-      );
+      const existingTag =
+        await knowledgeTagService.findTagByName(normalizedTagName);
       if (existingTag) {
         return res.json(existingTag);
       }
@@ -620,13 +643,13 @@ router.post(
           color,
           category: category as any,
         },
-        userId
+        userId,
       );
       res.status(201).json(tag);
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/tags/:tagName - Obtener etiqueta por nombre
@@ -655,7 +678,7 @@ router.get(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/tags - Obtener todas las etiquetas
@@ -669,7 +692,7 @@ router.get(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // PUT /api/knowledge/tags/:id - Actualizar etiqueta
@@ -692,7 +715,7 @@ router.put(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // DELETE /api/knowledge/tags/:id - Eliminar etiqueta por ID
@@ -714,7 +737,7 @@ router.delete(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 // GET /api/knowledge/tags/popular - Obtener etiquetas populares
@@ -737,7 +760,7 @@ router.get(
     } catch (error) {
       handleError(res, error);
     }
-  }
+  },
 );
 
 export default router;

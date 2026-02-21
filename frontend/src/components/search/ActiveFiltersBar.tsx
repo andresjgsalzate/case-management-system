@@ -4,8 +4,9 @@ import { ActionIcon } from "../ui/ActionIcons";
 export interface ActiveFilter {
   id: string;
   term: string;
-  type: "search" | "refine" | "tag" | "case";
+  type: "search" | "refine" | "tag" | "case" | "exact";
   timestamp: number;
+  isExact?: boolean; // Indica si es coincidencia exacta
 }
 
 interface ActiveFiltersBarProps {
@@ -49,6 +50,8 @@ const ActiveFiltersBar: React.FC<ActiveFiltersBarProps> = ({
               return "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-700";
             case "case":
               return "bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-200 border border-purple-200 dark:border-purple-700";
+            case "exact":
+              return "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-700";
             default: // refine
               return "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-700";
           }
@@ -62,8 +65,10 @@ const ActiveFiltersBar: React.FC<ActiveFiltersBarProps> = ({
               return "🏷️";
             case "case":
               return "📁";
+            case "exact":
+              return "=";
             default:
-              return "➕";
+              return filter.isExact ? "=" : "➕";
           }
         };
 
@@ -75,6 +80,8 @@ const ActiveFiltersBar: React.FC<ActiveFiltersBarProps> = ({
               return "hover:bg-emerald-600 dark:hover:bg-emerald-400";
             case "case":
               return "hover:bg-purple-600 dark:hover:bg-purple-400";
+            case "exact":
+              return "hover:bg-amber-600 dark:hover:bg-amber-400";
             default:
               return "hover:bg-green-600 dark:hover:bg-green-400";
           }

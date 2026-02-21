@@ -72,7 +72,7 @@ export interface KnowledgeDocument {
   matchedWords?: string[]; // Palabras de la búsqueda encontradas
   totalSearchWords?: number; // Total de palabras buscadas
   hasExactPhrase?: boolean; // Si contiene la frase exacta
-  matchLocations?: ("title" | "content" | "tags")[]; // Dónde se encontraron coincidencias
+  matchLocations?: ("title" | "content" | "tags" | "cases")[]; // Dónde se encontraron coincidencias
 
   // Special backend-loaded properties (with lazy loading)
   __createdByUser__?: User;

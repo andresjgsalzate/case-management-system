@@ -17,7 +17,11 @@ import { useToast } from "../hooks/useNotification";
 import { useFeaturePermissions } from "../hooks/usePermissions";
 import { useCrudErrorHandler } from "../hooks/useErrorHandler";
 import { knowledgeApi } from "../services/knowledge.service";
-import { containsNormalized } from "../utils/searchUtils";
+import {
+  containsNormalized,
+  matchesExact,
+  calculateWordRelevance,
+} from "../utils/searchUtils";
 import {
   DOCUMENTATION_TEMPLATE,
   EMPTY_DOCUMENT_CONTENT,
@@ -32,7 +36,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   const { handleCreateError } = useCrudErrorHandler();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"created_at" | "updated_at" | "title">(
-    "updated_at"
+    "updated_at",
   );
   const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("DESC");
   const [searchResults, setSearchResults] = useState<
@@ -123,16 +127,34 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
       setIsAdvancedSearch(true);
       setIsRefiningSearch(false);
 
+      const isExact = filters?.isExact === true;
+
       // Siempre buscar el término en todos los campos (título, contenido, tags, casos)
       const result = await knowledgeApi.documents.enhancedSearch({
         search: term,
         documentTypeId: undefined,
       });
-      setSearchResults(result.documents);
+
+      // Si es búsqueda exacta, filtrar solo los que contengan la frase exacta
+      // matchesExact respeta mayúsculas, minúsculas y acentos
+      let filteredDocuments = result.documents;
+      if (isExact) {
+        filteredDocuments = result.documents.filter((doc) => {
+          return (
+            matchesExact(doc.title, term) ||
+            matchesExact(doc.content || "", term) ||
+            doc.tags?.some((tag) => matchesExact(tag.tagName, term))
+          );
+        });
+      }
+
+      setSearchResults(filteredDocuments);
       setSearchQuery(term);
 
       // Determinar el tipo de filtro para mostrar el icono correcto
-      let filterType: "search" | "tag" | "case" = "search";
+      let filterType: "search" | "tag" | "case" | "exact" = isExact
+        ? "exact"
+        : "search";
       if (filters?.filterType === "tag") {
         filterType = "tag";
       } else if (filters?.filterType === "case") {
@@ -146,6 +168,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
           term: term,
           type: filterType,
           timestamp: Date.now(),
+          isExact: isExact,
         },
       ]);
       setResultHistory([]); // Limpiar historial al hacer nueva búsqueda
@@ -157,7 +180,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
 
   // Función para refinar búsqueda sobre resultados existentes
   const handleRefineSearch = useCallback(
-    (newTerm: string) => {
+    (newTerm: string, isExact: boolean = false) => {
       if (!searchResults || !newTerm.trim()) return;
 
       // Guardar estado actual en historial
@@ -166,52 +189,98 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
       // Crear mapa de casos para búsqueda eficiente
       const casesMap = new Map(casesData?.map((c) => [c.id, c]) || []);
 
+      // Obtener todos los términos de búsqueda actuales + el nuevo
+      const allSearchTerms = [
+        ...activeFilters.map((f) => f.term),
+        newTerm.trim(),
+      ];
+
+      // Función de coincidencia basada en si es exacta o no
+      // matchesExact respeta mayúsculas, minúsculas y acentos
+      const matchFunction = isExact ? matchesExact : containsNormalized;
+
       // Filtrar resultados actuales usando normalización de acentos
       // Busca en: título, contenido, tags y casos asociados (igual que búsqueda inicial)
-      const filtered = searchResults.filter((doc) => {
-        // Buscar en título y contenido
-        if (
-          containsNormalized(doc.title, newTerm) ||
-          containsNormalized(doc.content || "", newTerm)
-        ) {
-          return true;
-        }
+      const filtered = searchResults
+        .filter((doc) => {
+          // Buscar en título y contenido
+          if (
+            matchFunction(doc.title, newTerm) ||
+            matchFunction(doc.content || "", newTerm)
+          ) {
+            return true;
+          }
 
-        // Buscar en tags
-        if (doc.tags?.some((tag) => containsNormalized(tag.tagName, newTerm))) {
-          return true;
-        }
+          // Buscar en tags
+          if (doc.tags?.some((tag) => matchFunction(tag.tagName, newTerm))) {
+            return true;
+          }
 
-        // Buscar en casos asociados (por ID, buscar info del caso)
-        if (doc.associatedCases?.length) {
-          return doc.associatedCases.some((caseId) => {
-            const caseInfo = casesMap.get(caseId);
-            if (caseInfo) {
-              return (
-                containsNormalized(caseInfo.numeroCaso || "", newTerm) ||
-                containsNormalized(caseInfo.descripcion || "", newTerm)
-              );
-            }
-            return false;
-          });
-        }
+          // Buscar en casos asociados (por ID, buscar info del caso)
+          if (doc.associatedCases?.length) {
+            return doc.associatedCases.some((caseId) => {
+              const caseInfo = casesMap.get(caseId);
+              if (caseInfo) {
+                return (
+                  matchFunction(caseInfo.numeroCaso || "", newTerm) ||
+                  matchFunction(caseInfo.descripcion || "", newTerm)
+                );
+              }
+              return false;
+            });
+          }
 
-        return false;
-      });
+          return false;
+        })
+        .map((doc) => {
+          // Recalcular relevancia con TODOS los términos de búsqueda
+          const relevance = calculateWordRelevance(
+            allSearchTerms,
+            {
+              title: doc.title,
+              content: doc.content,
+              tags: doc.tags,
+              associatedCases: doc.associatedCases,
+            },
+            casesMap as Map<
+              string,
+              { numeroCaso?: string; descripcion?: string }
+            >,
+          );
+
+          return {
+            ...doc,
+            relevanceScore: relevance.score,
+            matchedWords: relevance.matchedWords,
+            totalSearchWords: relevance.totalWords,
+            hasExactPhrase: relevance.hasExactPhrase,
+            matchLocations: relevance.matchLocations,
+          };
+        })
+        // Reordenar por relevancia después de recalcular
+        .sort((a, b) => {
+          const scoreA = a.relevanceScore || 0;
+          const scoreB = b.relevanceScore || 0;
+          if (scoreB !== scoreA) return scoreB - scoreA;
+          const exactA = a.hasExactPhrase ? 1 : 0;
+          const exactB = b.hasExactPhrase ? 1 : 0;
+          return exactB - exactA;
+        });
 
       setSearchResults(filtered);
       setActiveFilters((prev) => [
         ...prev,
         {
-          id: `refine-${Date.now()}`,
+          id: `${isExact ? "exact" : "refine"}-${Date.now()}`,
           term: newTerm.trim(),
-          type: "refine",
+          type: isExact ? "exact" : "refine",
           timestamp: Date.now(),
+          isExact: isExact,
         },
       ]);
       setIsRefiningSearch(true);
     },
-    [searchResults, casesData]
+    [searchResults, casesData, activeFilters],
   );
 
   // Función para eliminar un filtro específico
@@ -239,7 +308,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
         setIsRefiningSearch(false);
       }
     },
-    [activeFilters, resultHistory]
+    [activeFilters, resultHistory],
   );
 
   // Función para deshacer último filtro
@@ -275,7 +344,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   const getStatusColor = (
     isPublished: boolean,
     isArchived: boolean,
-    isDeprecated: boolean
+    isDeprecated: boolean,
   ) => {
     if (isArchived)
       return "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200";
@@ -289,7 +358,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   const getStatusText = (
     isPublished: boolean,
     isArchived: boolean,
-    isDeprecated: boolean
+    isDeprecated: boolean,
   ) => {
     if (isArchived) return "Archivado";
     if (isDeprecated) return "Obsoleto";
@@ -302,7 +371,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
     if (!doc.associatedCases || !casesData) return null;
 
     const associatedCases = casesData.filter((caso: Case) =>
-      doc.associatedCases?.includes(caso.id)
+      doc.associatedCases?.includes(caso.id),
     );
 
     return associatedCases;
@@ -507,13 +576,13 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                     className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
                       doc.isPublished,
                       doc.isArchived,
-                      doc.isDeprecated
+                      doc.isDeprecated,
                     )}`}
                   >
                     {getStatusText(
                       doc.isPublished,
                       doc.isArchived,
-                      doc.isDeprecated
+                      doc.isDeprecated,
                     )}
                   </span>
                 </div>
@@ -663,8 +732,8 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
             {searchQuery
               ? "Prueba con otros términos de búsqueda."
               : permissions.canCreateKnowledge
-              ? "Comienza creando tu primer documento de conocimiento."
-              : "No tienes permisos para crear documentos. Contacta al administrador para más información."}
+                ? "Comienza creando tu primer documento de conocimiento."
+                : "No tienes permisos para crear documentos. Contacta al administrador para más información."}
           </p>
 
           {!searchQuery && permissions.canCreateKnowledge && (

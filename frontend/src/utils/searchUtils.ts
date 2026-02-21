@@ -39,6 +39,43 @@ export const containsNormalized = (text: string, search: string): boolean => {
 };
 
 /**
+ * Verifica si un texto contiene la frase exacta completa (ignorando acentos y mayúsculas)
+ * @param text - Texto donde buscar
+ * @param search - Frase exacta de búsqueda
+ * @returns true si el texto contiene la frase exacta
+ *
+ * @example
+ * matchesExactNormalized("Migración de Fondos", "migracion de") // true
+ * matchesExactNormalized("Migración de Fondos", "fondos migracion") // false (orden diferente)
+ */
+export const matchesExactNormalized = (
+  text: string,
+  search: string,
+): boolean => {
+  if (!text || !search) return false;
+  const normalizedText = normalizeText(text);
+  const normalizedSearch = normalizeText(search);
+  return normalizedText.includes(normalizedSearch);
+};
+
+/**
+ * Verifica si un texto contiene la frase EXACTA (respetando mayúsculas, minúsculas y acentos)
+ * Esta es una coincidencia verdaderamente exacta, case-sensitive y accent-sensitive
+ * @param text - Texto donde buscar
+ * @param search - Frase exacta de búsqueda (debe coincidir exactamente)
+ * @returns true si el texto contiene la frase exactamente como se escribió
+ *
+ * @example
+ * matchesExact("Pruebas1", "Pruebas1") // true
+ * matchesExact("Pruebas1", "pruebas1") // false (mayúsculas diferentes)
+ * matchesExact("Migración", "Migracion") // false (acento diferente)
+ */
+export const matchesExact = (text: string, search: string): boolean => {
+  if (!text || !search) return false;
+  return text.includes(search);
+};
+
+/**
  * Verifica si alguna palabra del texto coincide con el término de búsqueda
  * @param text - Texto donde buscar
  * @param search - Término de búsqueda
@@ -129,7 +166,7 @@ export const truncateText = (text: string, maxLength: number): string => {
 export const extractMatchContext = (
   text: string,
   search: string,
-  contextLength: number = 50
+  contextLength: number = 50,
 ): string => {
   if (!text || !search) return truncateText(text, contextLength * 2);
 
@@ -150,12 +187,128 @@ export const extractMatchContext = (
   return excerpt;
 };
 
+/**
+ * Calcula la relevancia de un documento basado en múltiples términos de búsqueda
+ * Similar a calculateWordRelevance del backend pero para uso en frontend
+ * @param searchTerms - Array de términos de búsqueda
+ * @param document - Documento con título, contenido y tags
+ * @returns Objeto con score, palabras coincidentes y ubicaciones
+ */
+export const calculateWordRelevance = (
+  searchTerms: string[],
+  document: {
+    title: string;
+    content?: string | null;
+    tags?: Array<{ tagName: string }>;
+    associatedCases?: string[];
+  },
+  casesMap?: Map<string, { numeroCaso?: string; descripcion?: string }>,
+): {
+  score: number;
+  matchedWords: string[];
+  totalWords: number;
+  hasExactPhrase: boolean;
+  matchLocations: ("title" | "content" | "tags" | "cases")[];
+} => {
+  // Combinar todos los términos de búsqueda en una frase
+  const searchPhrase = searchTerms.join(" ");
+  const normalizedSearch = normalizeText(searchPhrase);
+
+  // Obtener todas las palabras de búsqueda (mínimo 2 caracteres)
+  const searchWords = normalizedSearch
+    .split(/\s+/)
+    .filter((w) => w.length >= 2);
+
+  if (searchWords.length === 0) {
+    return {
+      score: 0,
+      matchedWords: [],
+      totalWords: 0,
+      hasExactPhrase: false,
+      matchLocations: [],
+    };
+  }
+
+  const normalizedTitle = normalizeText(document.title || "");
+  const normalizedContent = normalizeText(document.content || "");
+  const normalizedTags = (document.tags || [])
+    .map((t) => normalizeText(t.tagName))
+    .join(" ");
+
+  // Normalizar casos asociados si están disponibles
+  let normalizedCases = "";
+  if (document.associatedCases?.length && casesMap) {
+    normalizedCases = document.associatedCases
+      .map((caseId) => {
+        const caseInfo = casesMap.get(caseId);
+        if (caseInfo) {
+          return normalizeText(
+            `${caseInfo.numeroCaso || ""} ${caseInfo.descripcion || ""}`,
+          );
+        }
+        return "";
+      })
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  const fullText = `${normalizedTitle} ${normalizedContent} ${normalizedTags} ${normalizedCases}`;
+
+  // Verificar si tiene la frase exacta de búsqueda
+  const hasExactPhrase = fullText.includes(normalizedSearch);
+
+  // Contar palabras coincidentes y determinar ubicaciones
+  const matchedWords: string[] = [];
+  const matchLocations = new Set<"title" | "content" | "tags" | "cases">();
+
+  for (const word of searchWords) {
+    if (fullText.includes(word)) {
+      matchedWords.push(word);
+
+      // Determinar dónde coincide
+      if (normalizedTitle.includes(word)) matchLocations.add("title");
+      if (normalizedContent.includes(word)) matchLocations.add("content");
+      if (normalizedTags.includes(word)) matchLocations.add("tags");
+      if (normalizedCases.includes(word)) matchLocations.add("cases");
+    }
+  }
+
+  // Calcular score base (porcentaje de palabras encontradas)
+  let score = (matchedWords.length / searchWords.length) * 100;
+
+  // Bonus por frase exacta (+20%)
+  if (hasExactPhrase) {
+    score = Math.min(100, score + 20);
+  }
+
+  // Bonus por coincidencia en título (+10%)
+  if (matchLocations.has("title")) {
+    score = Math.min(100, score + 10);
+  }
+
+  // Penalización leve si solo coincide en contenido (-5%)
+  if (matchLocations.size === 1 && matchLocations.has("content")) {
+    score = Math.max(0, score - 5);
+  }
+
+  return {
+    score: Math.round(score),
+    matchedWords,
+    totalWords: searchWords.length,
+    hasExactPhrase,
+    matchLocations: Array.from(matchLocations),
+  };
+};
+
 export default {
   normalizeText,
   containsNormalized,
+  matchesExactNormalized,
+  matchesExact,
   matchesWord,
   highlightMatch,
   escapeHtml,
   truncateText,
   extractMatchContext,
+  calculateWordRelevance,
 };

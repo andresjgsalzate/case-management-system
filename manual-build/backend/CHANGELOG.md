@@ -2,6 +2,77 @@
 
 > Nuestro desarrollo de un sistema completo de gestión de casos empresarial
 
+## Versión 1.1.0 - Febrero 2026
+
+#### 🔍 **Sistema de Búsqueda Avanzada en Base de Conocimiento**
+
+Mejoramos significativamente el motor de búsqueda con características profesionales:
+
+**Búsqueda Indexada con PostgreSQL:**
+
+- **Índices funcionales**: Implementamos índices optimizados usando `unaccent` y `normalize_search` para búsquedas ultra-rápidas
+- **Índices GIN Full-Text**: Soporte para búsqueda semántica en español con `to_tsvector`
+- **Tolerancia a acentos**: Busca "migracion" y encuentra "Migración" automáticamente
+- **Case insensitive**: Sin importar mayúsculas o minúsculas
+
+**Búsqueda sobre Búsqueda (Filtrado Secundario):**
+
+- **Refinamiento de resultados**: Filtra los resultados de tu búsqueda inicial sin perderlos
+- **Filtros en cascada**: Los filtros se actualizan dinámicamente mostrando solo opciones con resultados
+- **Múltiples criterios simultáneos**: Combina tipo de documento, etiquetas, autor y estado
+
+**Búsqueda de Frase Exacta:**
+
+- **Detección automática**: El sistema identifica cuando las palabras aparecen consecutivas y en orden
+- **Badge visual**: Indicador 🎯 "Frase exacta" cuando hay coincidencia exacta
+- **Mayor relevancia**: Los documentos con frase exacta se priorizan en los resultados
+
+**Indicadores de Relevancia Inteligentes:**
+
+- **Porcentaje de coincidencia**: Score de 0-100% basado en palabras encontradas
+- **Ubicación de coincidencias**: Indicadores T (Título), C (Contenido), E (Etiquetas), CA (Casos Asociados)
+- **Ordenamiento por relevancia**: Documentos más relevantes aparecen primero
+
+#### 🔒 **Control de Visibilidad de Documentos**
+
+Nuevo sistema de permisos granulares para documentos de la Base de Conocimiento:
+
+- **Público**: Visible para todos los usuarios del sistema
+- **Privado**: Solo el autor puede ver y editar el documento
+- **Por Equipos**: Comparte automáticamente con todos los miembros de tus equipos
+- **Personalizado**: Selecciona usuarios y/o equipos específicos con quienes compartir
+- **Selector visual**: Interfaz intuitiva para buscar y agregar usuarios o equipos
+
+#### ✅ **Workflow de Revisión y Aprobación**
+
+Sistema completo de aprobación antes de publicar documentos:
+
+- **Estados del documento**: Borrador → Pendiente de Revisión → Publicado/Rechazado
+- **Enviar a revisión**: Opción para solicitar aprobación antes de publicar
+- **Panel de revisión**: Los revisores ven documentos pendientes de aprobar
+- **Historial de revisión**: Registro de quién aprobó/rechazó y cuándo
+- **Publicación directa**: Usuarios con permiso pueden publicar sin revisión
+
+#### ⭐ **Sistema de Favoritos**
+
+Guarda tus documentos más importantes para acceso rápido:
+
+- **Marcar favoritos**: Un clic para agregar o quitar de favoritos
+- **Lista personalizada**: Cada usuario tiene su propia lista de favoritos
+- **Acceso rápido**: Filtra para ver solo tus documentos favoritos
+
+#### 🏷️ **Sugerencias Inteligentes de Tags**
+
+El sistema analiza el contenido y sugiere etiquetas relevantes:
+
+- **Análisis NLP**: Extrae palabras clave del título y contenido del documento
+- **Tags similares**: Sugiere tags existentes que coincidan con el contenido
+- **Frecuencia de palabras**: Identifica términos relevantes usando n-gramas
+- **Tags populares**: Muestra las etiquetas más usadas en el sistema
+- **Un clic para agregar**: Acepta sugerencias fácilmente con un botón
+
+---
+
 ## Versión 1.0.0 - Diciembre 2025
 
 #### 🔍 **Sistema de Auditoría Completo**

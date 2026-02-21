@@ -13,7 +13,7 @@ class SystemInfoController {
             const stats = this.getSystemStats(modules);
             console.log("Estadísticas calculadas:", stats);
             const systemInfo = {
-                version: "1.0.0",
+                version: "1.1.0",
                 name: "Case Management System",
                 description: "Sistema completo de gestión de casos con funcionalidades avanzadas",
                 buildDate: new Date().toISOString(),
@@ -42,7 +42,7 @@ class SystemInfoController {
             res.status(200).json({
                 success: true,
                 data: {
-                    version: "1.0.0",
+                    version: "1.1.0",
                     name: "case-management-backend",
                     buildDate: new Date().toISOString(),
                 },
@@ -137,7 +137,7 @@ class SystemInfoController {
             console.error("Error leyendo package.json:", error);
             return {
                 name: "case-management-backend",
-                version: "1.0.0",
+                version: "1.1.0",
                 description: "Backend API para sistema de gestión de casos",
             };
         }
@@ -146,7 +146,7 @@ class SystemInfoController {
         return [
             {
                 name: "Dashboard",
-                version: "1.0.0",
+                version: "1.1.0",
                 description: "Panel principal con métricas en tiempo real",
                 features: [
                     "Métricas de casos activos/cerrados",
@@ -161,7 +161,7 @@ class SystemInfoController {
             },
             {
                 name: "Control de Casos",
-                version: "1.0.0",
+                version: "1.1.0",
                 description: "Timer y control de tiempo por caso",
                 features: [
                     "Crear, editar, eliminar casos",
@@ -188,7 +188,7 @@ class SystemInfoController {
             },
             {
                 name: "Sistema de TODOs",
-                version: "1.0.0",
+                version: "1.1.0",
                 description: "Gestión de tareas con prioridades y seguimiento",
                 features: [
                     "CRUD de tareas",
@@ -215,7 +215,7 @@ class SystemInfoController {
             },
             {
                 name: "Autenticación y Seguridad",
-                version: "1.0.0",
+                version: "1.1.0",
                 description: "Sistema seguro de autenticación con JWT",
                 features: [
                     "Login/logout seguro",
@@ -237,7 +237,7 @@ class SystemInfoController {
             },
             {
                 name: "Gestión de Usuarios",
-                version: "1.0.0",
+                version: "1.1.0",
                 description: "Administración completa de usuarios y roles",
                 features: [
                     "CRUD de usuarios",
@@ -263,7 +263,7 @@ class SystemInfoController {
             },
             {
                 name: "Sistema de Notas",
-                version: "1.0.0",
+                version: "1.1.0",
                 description: "Documentación y notas por caso",
                 features: [
                     "Editor de texto enriquecido",
@@ -284,7 +284,7 @@ class SystemInfoController {
             },
             {
                 name: "Base de Conocimiento",
-                version: "1.0.0",
+                version: "1.1.0",
                 description: "Sistema completo de documentación técnica",
                 features: [
                     "Editor BlockNote avanzado",
@@ -310,7 +310,7 @@ class SystemInfoController {
             },
             {
                 name: "Sistema de Etiquetas",
-                version: "1.0.0",
+                version: "1.1.0",
                 description: "Gestión y organización con etiquetas",
                 features: [
                     "CRUD de etiquetas",
@@ -325,7 +325,7 @@ class SystemInfoController {
             },
             {
                 name: "Gestión de Disposiciones",
-                version: "1.0.0",
+                version: "1.1.0",
                 description: "Control de disposiciones mensuales",
                 features: [
                     "Disposiciones por período",
@@ -348,7 +348,7 @@ class SystemInfoController {
             },
             {
                 name: "Sistema de Archivo",
-                version: "1.0.0",
+                version: "1.1.0",
                 description: "Archivado temporal y eliminación controlada",
                 features: [
                     "Archivo temporal reversible",
@@ -372,7 +372,7 @@ class SystemInfoController {
             },
             {
                 name: "Control de Tiempo",
-                version: "1.0.0",
+                version: "1.1.0",
                 description: "Registro y seguimiento de tiempo",
                 features: [
                     "Registro manual de tiempo",
@@ -391,7 +391,7 @@ class SystemInfoController {
             },
             {
                 name: "Administración del Sistema",
-                version: "1.0.0",
+                version: "1.1.0",
                 description: "Configuración y administración global",
                 features: [
                     "Gestión de aplicaciones",
@@ -413,7 +413,7 @@ class SystemInfoController {
             },
             {
                 name: "Sistema de Auditoría",
-                version: "1.0.0",
+                version: "1.1.0",
                 description: "Sistema completo de auditoría y trazabilidad",
                 features: [
                     "Auditoría automática de todas las operaciones CRUD",

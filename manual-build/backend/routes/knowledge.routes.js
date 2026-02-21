@@ -127,8 +127,23 @@ router.put("/knowledge/:id", auth_1.authenticateToken, async (req, res) => {
         const updateDto = await validateDto(knowledge_document_dto_1.UpdateKnowledgeDocumentDto, req.body);
         const userId = req.user.id;
         const documentId = validateParam(req.params.id, "id");
+        const previousDocument = await knowledgeDocumentService.findOne(documentId);
+        const wasPublished = previousDocument?.isPublished ||
+            previousDocument?.reviewStatus === "published" ||
+            previousDocument?.reviewStatus === "approved";
         const document = await knowledgeDocumentService.update(documentId, updateDto, userId);
-        res.json(document);
+        const revertedToDraft = wasPublished &&
+            !document.isPublished &&
+            document.reviewStatus === "draft";
+        res.json({
+            ...document,
+            _meta: {
+                revertedToDraft,
+                message: revertedToDraft
+                    ? "El documento ha sido modificado y requiere nueva aprobación para publicarse"
+                    : undefined,
+            },
+        });
     }
     catch (error) {
         handleError(res, error, 400);

@@ -280,6 +280,19 @@ router.delete("/knowledge/tags/:id", (0, authorizationMiddleware_1.requirePermis
         handleError(res, error);
     }
 });
+router.get("/knowledge/pending-review", (0, authorizationMiddleware_1.requireAnyPermission)(["knowledge.approve.team", "knowledge.approve.all"]), async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const userPermissions = req.user?.permissions || [];
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const result = await knowledgeDocumentService.getPendingReviewDocuments(userId, userPermissions, page, limit);
+        res.json(result);
+    }
+    catch (error) {
+        handleError(res, error);
+    }
+});
 router.get("/knowledge/:id", auth_1.authenticateToken, async (req, res) => {
     try {
         const document = await knowledgeDocumentService.findOne(req.params.id);
@@ -351,8 +364,23 @@ router.put("/knowledge/:id", (0, authorizationMiddleware_1.requireAnyPermission)
         if (!documentId) {
             return res.status(400).json({ error: "ID de documento requerido" });
         }
+        const previousDocument = await knowledgeDocumentService.findOne(documentId);
+        const wasPublished = previousDocument?.isPublished ||
+            previousDocument?.reviewStatus === "published" ||
+            previousDocument?.reviewStatus === "approved";
         const result = await knowledgeDocumentService.update(documentId, req.body, userId);
-        res.json(result);
+        const revertedToDraft = wasPublished &&
+            !result.isPublished &&
+            result.reviewStatus === "draft";
+        res.json({
+            ...result,
+            _meta: {
+                revertedToDraft,
+                message: revertedToDraft
+                    ? "El documento ha sido modificado y requiere nueva aprobación para publicarse"
+                    : undefined,
+            },
+        });
     }
     catch (error) {
         handleError(res, error, 400);
@@ -736,19 +764,6 @@ router.put("/knowledge/:id/reject", (0, authorizationMiddleware_1.requireAnyPerm
             });
         }
         const result = await knowledgeDocumentService.rejectDocument(documentId, userId, notes.trim());
-        res.json(result);
-    }
-    catch (error) {
-        handleError(res, error);
-    }
-});
-router.get("/knowledge/pending-review", (0, authorizationMiddleware_1.requireAnyPermission)(["knowledge.approve.team", "knowledge.approve.all"]), async (req, res) => {
-    try {
-        const userId = req.user?.id;
-        const userPermissions = req.user?.permissions || [];
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
-        const result = await knowledgeDocumentService.getPendingReviewDocuments(userId, userPermissions, page, limit);
         res.json(result);
     }
     catch (error) {

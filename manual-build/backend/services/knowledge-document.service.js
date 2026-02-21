@@ -191,12 +191,23 @@ class KnowledgeDocumentService {
         if (document.isArchived) {
             throw new Error("No se puede editar un documento archivado");
         }
+        const hasContentChanges = updateDto.jsonContent || updateDto.title || updateDto.content;
+        const wasPublished = document.isPublished ||
+            document.reviewStatus === "published" ||
+            document.reviewStatus === "approved";
+        let revertToDraft = false;
+        if (wasPublished && hasContentChanges) {
+            revertToDraft = true;
+        }
         if (updateDto.jsonContent) {
             document.version += 1;
             await this.createVersion(id, {
                 content: updateDto.jsonContent,
                 title: updateDto.title || document.title,
-                changeSummary: updateDto.changeSummary || "Actualización de contenido",
+                changeSummary: updateDto.changeSummary ||
+                    (revertToDraft
+                        ? "Documento modificado - requiere nueva aprobación"
+                        : "Actualización de contenido"),
             }, userId);
         }
         const { tags, changeSummary, associatedCases, ...updateData } = updateDto;
@@ -206,6 +217,14 @@ class KnowledgeDocumentService {
             lastEditedBy: userId,
             id: document.id,
         };
+        if (revertToDraft) {
+            documentToUpdate.isPublished = false;
+            documentToUpdate.publishedAt = null;
+            documentToUpdate.reviewStatus = "draft";
+            documentToUpdate.reviewedBy = null;
+            documentToUpdate.reviewedAt = null;
+            documentToUpdate.reviewNotes = null;
+        }
         await this.knowledgeDocumentRepository.update(id, documentToUpdate);
         if (tags !== undefined) {
             await this.updateTags(id, tags, userId);
@@ -964,35 +983,49 @@ class KnowledgeDocumentService {
             .take(limit)
             .getManyAndCount();
         const documentsWithInfo = await Promise.all(documents.map(async (doc) => {
-            const createdByUser = await doc.createdByUser;
-            const documentType = await doc.documentType;
-            const tags = doc.tagRelations && doc.tagRelations.length > 0
-                ? doc.tagRelations.map((relation) => ({
-                    id: relation.tag.id,
-                    tagName: relation.tag.tagName,
-                    color: relation.tag.color,
-                    category: relation.tag.category,
-                }))
-                : [];
-            return {
-                ...doc,
-                documentType: documentType
-                    ? {
-                        id: documentType.id,
-                        name: documentType.name,
-                        color: documentType.color,
-                    }
-                    : null,
-                __createdByUser__: createdByUser
-                    ? {
-                        id: createdByUser.id,
-                        email: createdByUser.email,
-                        fullName: createdByUser.fullName,
-                    }
-                    : null,
-                tags,
-                tagRelations: undefined,
-            };
+            try {
+                const createdByUser = await doc.createdByUser;
+                const documentType = await doc.documentType;
+                const tags = doc.tagRelations && doc.tagRelations.length > 0
+                    ? doc.tagRelations
+                        .filter((relation) => relation && relation.tag)
+                        .map((relation) => ({
+                        id: relation.tag.id,
+                        tagName: relation.tag.tagName,
+                        color: relation.tag.color,
+                        category: relation.tag.category,
+                    }))
+                    : [];
+                return {
+                    ...doc,
+                    documentType: documentType
+                        ? {
+                            id: documentType.id,
+                            name: documentType.name,
+                            color: documentType.color,
+                        }
+                        : null,
+                    __createdByUser__: createdByUser
+                        ? {
+                            id: createdByUser.id,
+                            email: createdByUser.email,
+                            fullName: createdByUser.fullName,
+                        }
+                        : null,
+                    tags,
+                    tagRelations: undefined,
+                };
+            }
+            catch (mapError) {
+                console.error("Error mapping document:", doc.id, mapError);
+                return {
+                    ...doc,
+                    documentType: null,
+                    __createdByUser__: null,
+                    tags: [],
+                    tagRelations: undefined,
+                };
+            }
         }));
         return {
             documents: documentsWithInfo,

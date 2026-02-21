@@ -71,6 +71,16 @@ El sistema analiza el contenido y sugiere etiquetas relevantes:
 - **Tags populares**: Muestra las etiquetas más usadas en el sistema
 - **Un clic para agregar**: Acepta sugerencias fácilmente con un botón
 
+#### 🔄 **Re-aprobación Automática al Modificar**
+
+Cuando un documento publicado es modificado, se revierte automáticamente a borrador:
+
+- **Control de cambios**: Al editar contenido o título de un documento publicado, este vuelve a estado borrador
+- **Nueva revisión requerida**: El documento debe pasar nuevamente por el proceso de aprobación
+- **Notificación al usuario**: Se muestra un aviso claro indicando que el documento requiere nueva aprobación
+- **Historial de versiones**: Se crea una nueva versión con el motivo "Documento modificado - requiere nueva aprobación"
+- **Seguridad del contenido**: Garantiza que todo contenido publicado ha sido revisado y aprobado
+
 ---
 
 ## Versión 1.0.0 - Diciembre 2025

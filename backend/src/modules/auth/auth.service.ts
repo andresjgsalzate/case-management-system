@@ -38,13 +38,13 @@ export class AuthService {
     });
 
     if (!user) {
-      throw createError("Invalid credentials", 401);
+      throw createError("Correo electrónico o contraseña incorrectos", 401);
     }
 
     // Verificar contraseña
     const isPasswordValid = await bcrypt.compare(password, user.password || "");
     if (!isPasswordValid) {
-      throw createError("Invalid credentials", 401);
+      throw createError("Correo electrónico o contraseña incorrectos", 401);
     }
 
     // Actualizar último login
@@ -84,7 +84,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw createError("User already exists", 409);
+      throw createError("El correo electrónico ya está registrado", 409);
     }
 
     // Encriptar contraseña

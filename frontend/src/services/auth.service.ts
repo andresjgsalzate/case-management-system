@@ -61,9 +61,13 @@ class AuthService {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(
-        errorData.error || `HTTP error! status: ${response.status}`
-      );
+      // Extraer mensaje de error correctamente de la estructura del backend
+      const errorMessage =
+        errorData.message ||
+        errorData.error?.message ||
+        (typeof errorData.error === "string" ? errorData.error : null) ||
+        `HTTP error! status: ${response.status}`;
+      throw new Error(errorMessage);
     }
 
     return await response.json();
@@ -80,16 +84,20 @@ class AuthService {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(
-        errorData.error || `HTTP error! status: ${response.status}`
-      );
+      // Extraer mensaje de error correctamente de la estructura del backend
+      const errorMessage =
+        errorData.message ||
+        errorData.error?.message ||
+        (typeof errorData.error === "string" ? errorData.error : null) ||
+        `HTTP error! status: ${response.status}`;
+      throw new Error(errorMessage);
     }
 
     return await response.json();
   }
 
   async refreshToken(
-    refreshToken: string
+    refreshToken: string,
   ): Promise<ApiResponse<{ token: string }>> {
     const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
       method: "POST",
@@ -113,7 +121,7 @@ class AuthService {
   // Método auxiliar para hacer peticiones autenticadas
   async authenticatedRequest<T>(
     url: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
   ): Promise<ApiResponse<T>> {
     const tokens = securityService.getValidTokens();
 

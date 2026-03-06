@@ -3,13 +3,18 @@ import bcrypt from "bcryptjs";
 import jwt, { SignOptions } from "jsonwebtoken";
 import { AppDataSource } from "../../config/database";
 import { UserProfile } from "../../entities/UserProfile";
+import { Role } from "../../entities/Role";
 import { config } from "../../config/environment";
 import { createError } from "../../middleware/errorHandler";
 import { LoginDto, RegisterDto, AuthResponse } from "./auth.dto";
 import { SessionService, SessionInfo } from "../../services/session.service";
 
+// ID fijo del rol "Usuario" para nuevos registros
+const DEFAULT_USER_ROLE_ID = "00000000-0000-0000-0000-000000000002";
+
 export class AuthService {
   private userRepository: Repository<UserProfile>;
+  private roleRepository: Repository<Role>;
   private sessionService: SessionService;
 
   constructor() {
@@ -19,6 +24,7 @@ export class AuthService {
     );
     try {
       this.userRepository = AppDataSource.getRepository(UserProfile);
+      this.roleRepository = AppDataSource.getRepository(Role);
       this.sessionService = new SessionService();
     } catch (error) {
       console.error("❌ Error in AuthService constructor:", error);
@@ -87,16 +93,32 @@ export class AuthService {
       throw createError("El correo electrónico ya está registrado", 409);
     }
 
+    // Buscar el rol "Usuario" por defecto
+    const defaultRole = await this.roleRepository.findOne({
+      where: { id: DEFAULT_USER_ROLE_ID },
+    });
+
+    if (!defaultRole) {
+      console.error(
+        "❌ Rol 'Usuario' no encontrado. Ejecute la migración add_usuario_role.sql",
+      );
+      throw createError(
+        "Error de configuración del sistema. Contacte al administrador.",
+        500,
+      );
+    }
+
     // Encriptar contraseña
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Crear usuario
+    // Crear usuario con el rol "Usuario" asignado
     const newUser = this.userRepository.create({
       email,
       password: hashedPassword,
       fullName,
-      roleName: "user", // rol por defecto
+      roleId: defaultRole.id,
+      roleName: defaultRole.name,
       isActive: true,
     });
 

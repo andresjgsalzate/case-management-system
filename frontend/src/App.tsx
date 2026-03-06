@@ -26,6 +26,7 @@ import PermissionsManagement from "./pages/admin/PermissionsManagement";
 import TodosPage from "./pages/TodosPage";
 import ModernTodosPage from "./pages/ModernTodosPage";
 import { UnauthorizedPage } from "./pages/UnauthorizedPage";
+import { NoAccessPage } from "./pages/NoAccessPage";
 import OriginsPage from "./pages/admin/OriginsPage";
 import ApplicationsPage from "./pages/admin/ApplicationsPage";
 import CaseStatusesPage from "./pages/admin/CaseStatusesPage";
@@ -61,6 +62,7 @@ function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/force-logout" element={<ForceLogout />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
+              <Route path="/no-access" element={<NoAccessPage />} />
 
               {/* Rutas protegidas */}
               <Route

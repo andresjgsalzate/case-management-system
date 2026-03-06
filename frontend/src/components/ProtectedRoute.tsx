@@ -16,7 +16,7 @@ const checkPermissionVariants = (
   permission: string,
   hasPermission: (perm: string) => boolean,
   userPermissions: any[],
-  _userRole?: string
+  _userRole?: string,
 ): boolean => {
   // Para permisos de auditoría, verificar permisos específicos
   if (permission.startsWith("audit.")) {
@@ -45,7 +45,7 @@ const checkPermissionVariants = (
 // Helper function to check module access via permissions instead of canAccessModule
 const checkModuleAccess = (
   module: string,
-  hasPermission: (perm: string) => boolean
+  hasPermission: (perm: string) => boolean,
 ): boolean => {
   // Map of modules to their basic view permissions (usando nombres exactos de la base de datos)
   const modulePermissions: Record<string, string[]> = {
@@ -135,6 +135,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
+  // NUEVO: Si el usuario está autenticado pero no tiene ningún permiso asignado,
+  // redirigir a la página de "sin acceso" para que contacte al administrador
+  if (
+    isAuthenticated &&
+    permissionsLoaded &&
+    (!userPermissions || userPermissions.length === 0)
+  ) {
+    return <Navigate to="/no-access" replace />;
+  }
+
   // Si requiere ser admin (basado en permisos en lugar de rol hardcodeado)
   if (adminOnly) {
     // Un admin debería tener permisos amplios como acceso al dashboard y gestión de usuarios
@@ -147,7 +157,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       "users.view.all",
     ];
     const hasAdminPermission = adminPermissions.some((permission) =>
-      hasPermission(permission)
+      hasPermission(permission),
     );
 
     if (!hasAdminPermission) {
@@ -161,7 +171,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       requiredPermission,
       hasPermission,
       userPermissions || [],
-      user?.roleName
+      user?.roleName,
     );
 
     if (!hasRequiredPermission) {
@@ -177,8 +187,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         permission,
         hasPermission,
         userPermissions || [],
-        user?.roleName
-      )
+        user?.roleName,
+      ),
     )
   ) {
     return <Navigate to="/unauthorized" replace />;

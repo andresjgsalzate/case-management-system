@@ -73,8 +73,8 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   const permissions = useFeaturePermissions();
   const { handleCreateError } = useCrudErrorHandler();
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"created_at" | "updated_at" | "title">(
-    "updated_at",
+  const [sortBy, setSortBy] = useState<"createdAt" | "updatedAt" | "title">(
+    "updatedAt",
   );
   const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("DESC");
   const [searchResults, setSearchResults] = useState<
@@ -601,13 +601,13 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
           value={`${sortBy}_${sortOrder}`}
           onChange={(e) => {
             const [field, order] = e.target.value.split("_");
-            setSortBy(field as "created_at" | "updated_at" | "title");
+            setSortBy(field as "createdAt" | "updatedAt" | "title");
             setSortOrder(order as "ASC" | "DESC");
           }}
           className="text-sm border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
         >
-          <option value="updated_at_DESC">Última actualización</option>
-          <option value="created_at_DESC">Más reciente</option>
+          <option value="updatedAt_DESC">Última actualización</option>
+          <option value="createdAt_DESC">Más reciente</option>
           <option value="title_ASC">Título (A-Z)</option>
           <option value="title_DESC">Título (Z-A)</option>
         </select>

@@ -61,7 +61,7 @@ export class TeamService {
 
       if (!manager) {
         throw new Error(
-          "El usuario especificado como manager no existe o no está activo"
+          "El usuario especificado como manager no existe o no está activo",
         );
       }
     }
@@ -136,7 +136,7 @@ export class TeamService {
           team.name
         }" - Calculando memberCount: ${memberCount}, members: ${
           team.members?.length || 0
-        }`
+        }`,
       );
     });
 
@@ -178,7 +178,7 @@ export class TeamService {
 
         if (!manager) {
           throw new Error(
-            "El usuario especificado como manager no existe o no está activo"
+            "El usuario especificado como manager no existe o no está activo",
           );
         }
 
@@ -272,7 +272,7 @@ export class TeamService {
    */
   async addMember(
     teamId: string,
-    addMemberDto: AddTeamMemberDto
+    addMemberDto: AddTeamMemberDto,
   ): Promise<TeamMember> {
     // Verificar que el equipo existe y está activo
     const team = await this.getTeamById(teamId);
@@ -337,11 +337,11 @@ export class TeamService {
     if (validationErrors.length > 0) {
       console.error(
         "❌ Errores de validación en TeamMember:",
-        validationErrors
+        validationErrors,
       );
       throw createError(
         `Errores de validación: ${validationErrors.join(", ")}`,
-        400
+        400,
       );
     }
 
@@ -380,7 +380,7 @@ export class TeamService {
    */
   async getTeamMembers(
     teamId: string,
-    query: TeamMemberQueryDto = {}
+    query: TeamMemberQueryDto = {},
   ): Promise<TeamMember[]> {
     const queryBuilder = this.teamMemberRepository
       .createQueryBuilder("tm")
@@ -393,16 +393,20 @@ export class TeamService {
       queryBuilder.andWhere("tm.role = :role", { role: query.role });
     }
 
+    // Por defecto solo mostrar miembros activos, a menos que se especifique lo contrario
     if (query.isActive !== undefined) {
       queryBuilder.andWhere("tm.isActive = :isActive", {
         isActive: query.isActive,
       });
+    } else {
+      // Por defecto, solo miembros activos
+      queryBuilder.andWhere("tm.isActive = :isActive", { isActive: true });
     }
 
     if (query.search) {
       queryBuilder.andWhere(
         "(user.fullName ILIKE :search OR user.email ILIKE :search)",
-        { search: `%${query.search}%` }
+        { search: `%${query.search}%` },
       );
     }
 
@@ -425,7 +429,7 @@ export class TeamService {
   async updateMember(
     teamId: string,
     userId: string,
-    updateMemberDto: UpdateTeamMemberDto
+    updateMemberDto: UpdateTeamMemberDto,
   ): Promise<TeamMember> {
     const member = await this.teamMemberRepository.findOne({
       where: { teamId, userId },
@@ -490,7 +494,7 @@ export class TeamService {
       const team = await this.teamRepository.findOne({ where: { id: teamId } });
       if (team?.managerId === userId) {
         throw new Error(
-          "No se puede remover al manager del equipo. Primero transfiera el liderazgo."
+          "No se puede remover al manager del equipo. Primero transfiera el liderazgo.",
         );
       }
     }
@@ -505,7 +509,7 @@ export class TeamService {
   async updateMemberRole(
     teamId: string,
     userId: string,
-    newRole: "manager" | "lead" | "senior" | "member"
+    newRole: "manager" | "lead" | "senior" | "member",
   ): Promise<TeamMember> {
     return await this.updateMember(teamId, userId, { role: newRole });
   }
@@ -581,7 +585,7 @@ export class TeamService {
   async transferLeadership(
     teamId: string,
     transferDto: TransferTeamLeadershipDto,
-    currentManagerId: string
+    currentManagerId: string,
   ): Promise<Team> {
     // Verificar que el usuario actual es manager
     const isManager = await this.isUserTeamManager(currentManagerId, teamId);
@@ -614,7 +618,7 @@ export class TeamService {
    */
   async addBulkMembers(
     teamId: string,
-    bulkMemberDto: BulkTeamMemberDto
+    bulkMemberDto: BulkTeamMemberDto,
   ): Promise<TeamMember[]> {
     const results: TeamMember[] = [];
     const errors: string[] = [];
@@ -669,11 +673,11 @@ export class TeamService {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const recentJoins = members.filter(
-      (m) => m.joinedAt && m.joinedAt > thirtyDaysAgo
+      (m) => m.joinedAt && m.joinedAt > thirtyDaysAgo,
     ).length;
 
     const recentLeaves = members.filter(
-      (m) => m.leftAt && m.leftAt > thirtyDaysAgo
+      (m) => m.leftAt && m.leftAt > thirtyDaysAgo,
     ).length;
 
     return {
@@ -701,7 +705,7 @@ export class TeamService {
   // ============================================
 
   private createTeamQueryBuilder(
-    query: TeamQueryDto
+    query: TeamQueryDto,
   ): SelectQueryBuilder<Team> {
     const queryBuilder = this.teamRepository
       .createQueryBuilder("team")
@@ -713,7 +717,7 @@ export class TeamService {
     if (query.search) {
       queryBuilder.andWhere(
         "(team.name ILIKE :search OR team.code ILIKE :search OR team.description ILIKE :search)",
-        { search: `%${query.search}%` }
+        { search: `%${query.search}%` },
       );
     }
 

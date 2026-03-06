@@ -178,7 +178,7 @@ export class TeamController {
   toggleTeamStatus = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const { id } = req.params;
@@ -278,13 +278,13 @@ export class TeamController {
   updateTeamMember = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const { teamId, userId } = req.params;
       const updateMemberDto = Object.assign(
         new UpdateTeamMemberDto(),
-        req.body
+        req.body,
       );
 
       if (!teamId || !userId) {
@@ -308,7 +308,7 @@ export class TeamController {
       const member = await this.teamService.updateMember(
         teamId,
         userId,
-        updateMemberDto
+        updateMemberDto,
       );
 
       res.json({
@@ -327,7 +327,7 @@ export class TeamController {
   removeTeamMember = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const { teamId, userId } = req.params;
@@ -355,10 +355,10 @@ export class TeamController {
   updateMemberRole = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
-      const { teamId, memberId: userId } = req.params;
+      const { teamId, userId } = req.params;
       const { role } = req.body;
 
       // Parameters logged for debugging if needed
@@ -379,7 +379,7 @@ export class TeamController {
       const member = await this.teamService.updateMemberRole(
         teamId,
         userId,
-        role
+        role,
       );
 
       res.json({
@@ -402,13 +402,13 @@ export class TeamController {
   transferLeadership = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const { teamId } = req.params;
       const transferDto = Object.assign(
         new TransferTeamLeadershipDto(),
-        req.body
+        req.body,
       );
       const currentUserId = req.user?.id; // Asumiendo middleware de autenticación
 
@@ -439,7 +439,7 @@ export class TeamController {
       const team = await this.teamService.transferLeadership(
         teamId,
         transferDto,
-        currentUserId
+        currentUserId,
       );
 
       res.json({
@@ -480,7 +480,7 @@ export class TeamController {
 
       const members = await this.teamService.addBulkMembers(
         teamId,
-        bulkMemberDto
+        bulkMemberDto,
       );
 
       res.status(201).json({
@@ -530,7 +530,7 @@ export class TeamController {
   checkUserMembership = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const { teamId, userId } = req.params;
@@ -544,7 +544,7 @@ export class TeamController {
       const isMember = await this.teamService.isUserInTeam(userId, teamId);
       const isManager = await this.teamService.isUserTeamManager(
         userId,
-        teamId
+        teamId,
       );
 
       res.json({
@@ -597,7 +597,7 @@ export class TeamController {
   getTeamsOverview = async (
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const query = req.query as unknown as TeamQueryDto;

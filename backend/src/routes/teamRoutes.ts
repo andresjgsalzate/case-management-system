@@ -21,7 +21,7 @@ router.use(AuditMiddleware.initializeAuditContext);
 router.get(
   "/",
   requireAnyPermission(["teams.view.all"]),
-  teamController.getAllTeams
+  teamController.getAllTeams,
 );
 
 // Crear nuevo equipo
@@ -29,14 +29,14 @@ router.post(
   "/",
   requireAnyPermission(["teams.create.all"]),
   AuditMiddleware.auditCreate("teams"),
-  teamController.createTeam
+  teamController.createTeam,
 );
 
 // Obtener equipo específico por ID
 router.get(
   "/:id",
   requireAnyPermission(["teams.view.all"]),
-  teamController.getTeamById
+  teamController.getTeamById,
 );
 
 // Actualizar equipo específico
@@ -44,7 +44,7 @@ router.put(
   "/:id",
   requireAnyPermission(["teams.edit.all"]),
   AuditMiddleware.auditUpdate("teams"),
-  teamController.updateTeam
+  teamController.updateTeam,
 );
 
 // Eliminar equipo específico
@@ -52,7 +52,7 @@ router.delete(
   "/:id",
   requireAnyPermission(["teams.delete.all"]),
   AuditMiddleware.auditDelete("teams"),
-  teamController.deleteTeam
+  teamController.deleteTeam,
 );
 
 // Alternar estado del equipo (activo/inactivo)
@@ -60,7 +60,7 @@ router.patch(
   "/:id/toggle-status",
   requireAnyPermission(["teams.edit.all"]),
   AuditMiddleware.auditUpdate("teams"),
-  teamController.toggleTeamStatus
+  teamController.toggleTeamStatus,
 );
 
 // ============================================
@@ -71,7 +71,7 @@ router.patch(
 router.get(
   "/:teamId/members",
   requireAnyPermission(["teams.view.all", "teams.manage.members"]),
-  teamController.getTeamMembers
+  teamController.getTeamMembers,
 );
 
 // Agregar miembro a equipo
@@ -79,31 +79,32 @@ router.post(
   "/:teamId/members",
   requireAnyPermission(["teams.manage.members"]),
   AuditMiddleware.auditCreate("team_members"),
-  teamController.addTeamMember
+  teamController.addTeamMember,
 );
 
 // Actualizar miembro de equipo
+// Nota: No usamos auditUpdate porque la entidad usa clave compuesta (teamId + userId)
 router.put(
-  "/:teamId/members/:memberId",
+  "/:teamId/members/:userId",
   requireAnyPermission(["teams.manage.members"]),
-  AuditMiddleware.auditUpdate("team_members"),
-  teamController.updateTeamMember
+  teamController.updateTeamMember,
 );
 
 // Actualizar rol de miembro
+// Nota: No usamos auditUpdate porque la entidad usa clave compuesta (teamId + userId)
 router.patch(
-  "/:teamId/members/:memberId/role",
+  "/:teamId/members/:userId/role",
   requireAnyPermission(["teams.manage.members"]),
-  AuditMiddleware.auditUpdate("team_members"),
-  teamController.updateMemberRole
+  teamController.updateMemberRole,
 );
 
 // Eliminar miembro de equipo
+// Nota: No usamos auditDelete porque la entidad usa clave compuesta (teamId + userId)
+// y el middleware auditDelete espera req.params.id simple
 router.delete(
-  "/:teamId/members/:memberId",
+  "/:teamId/members/:userId",
   requireAnyPermission(["teams.manage.members"]),
-  AuditMiddleware.auditDelete("team_members"),
-  teamController.removeTeamMember
+  teamController.removeTeamMember,
 );
 
 // ============================================
@@ -115,7 +116,7 @@ router.patch(
   "/:teamId/transfer-leadership",
   requireAnyPermission(["teams.manage.members"]),
   AuditMiddleware.auditUpdate("team_members"),
-  teamController.transferLeadership
+  teamController.transferLeadership,
 );
 
 // ============================================
@@ -127,7 +128,7 @@ router.post(
   "/:teamId/members/bulk",
   requireAnyPermission(["teams.manage.members"]),
   AuditMiddleware.auditCreate("team_members"),
-  teamController.addBulkMembers
+  teamController.addBulkMembers,
 );
 
 // ============================================
@@ -141,7 +142,7 @@ router.get("/user/my-teams", teamController.getMyTeams);
 router.get(
   "/user/:userId/membership/:teamId",
   requireAnyPermission(["teams.view.all"]),
-  teamController.checkUserMembership
+  teamController.checkUserMembership,
 );
 
 // ============================================
@@ -152,7 +153,7 @@ router.get(
 router.get(
   "/:teamId/stats",
   requireAnyPermission(["teams.view.all"]),
-  teamController.getTeamStats
+  teamController.getTeamStats,
 );
 
 export { router as teamRoutes };

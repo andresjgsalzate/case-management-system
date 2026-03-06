@@ -1,15 +1,34 @@
 -- ============================================
--- MIGRACIÓN DE PRODUCCIÓN: Corrección Sistema de Permisos
--- Fecha: 2026-03-05
+-- MIGRACIÓN DE PRODUCCIÓN: Corrección Sistema de Permisos y Triggers
+-- Fecha: 2026-03-05 (actualizado 2026-03-06)
 -- Descripción: 
 --   1. Crear permisos de teams en inglés
 --   2. Crear permisos faltantes (admin.todo_priorities, teams.manage.members)
 --   3. Asignar permisos a roles específicos
 --   4. Limpiar permisos del rol Usuario
 --   5. Eliminar duplicados en role_permissions
+--   6. Eliminar triggers con snake_case (incompatibles con TypeORM camelCase)
+--   7. Sincronizar managerId en tabla teams
 -- ============================================
 
 BEGIN;
+
+-- ============================================
+-- PASO 0: ELIMINAR TRIGGERS INCOMPATIBLES CON TypeORM
+-- Los triggers usaban snake_case (updated_at, user_id, team_id)
+-- pero TypeORM usa camelCase (updatedAt, userId, teamId)
+-- TypeORM maneja automáticamente los campos updatedAt
+-- ============================================
+
+-- Eliminar trigger de team_members (causaba error: record "new" has no field "updated_at")
+DROP TRIGGER IF EXISTS update_team_members_updated_at ON team_members;
+
+-- Eliminar trigger de teams (mismo problema)
+DROP TRIGGER IF EXISTS update_teams_updated_at ON teams;
+
+-- Nota: La función update_updated_at_column() puede seguir existiendo
+-- para otras tablas que no usen TypeORM, pero estos triggers específicos
+-- son incompatibles con las entidades de TypeORM
 
 -- ============================================
 -- PASO 1: CREAR PERMISOS DE TEAMS EN INGLÉS
@@ -120,6 +139,20 @@ WHERE a.id > b.id
   AND a."permissionId" = b."permissionId";
 
 -- ============================================
+-- PASO 6: SINCRONIZAR managerId EN TABLA TEAMS
+-- Algunos equipos tienen miembros con role='manager' pero
+-- el campo managerId en la tabla teams está vacío
+-- ============================================
+
+UPDATE teams 
+SET "managerId" = tm."userId"
+FROM team_members tm 
+WHERE teams.id = tm."teamId" 
+  AND tm.role = 'manager' 
+  AND tm."isActive" = true 
+  AND teams."managerId" IS NULL;
+
+-- ============================================
 -- VERIFICACIÓN FINAL
 -- ============================================
 
@@ -130,6 +163,9 @@ DECLARE
     usuario_perms INTEGER;
     teams_perms INTEGER;
     duplicates INTEGER;
+    trigger_team_members BOOLEAN;
+    trigger_teams BOOLEAN;
+    teams_without_manager INTEGER;
 BEGIN
     -- Contar permisos por rol
     SELECT COUNT(*) INTO admin_perms FROM role_permissions rp 
@@ -152,12 +188,35 @@ BEGIN
         HAVING COUNT(*) > 1
     ) sub;
     
+    -- Verificar triggers eliminados
+    SELECT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'update_team_members_updated_at'
+    ) INTO trigger_team_members;
+    
+    SELECT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'update_teams_updated_at'
+    ) INTO trigger_teams;
+    
+    -- Verificar equipos con miembros manager pero sin managerId
+    SELECT COUNT(*) INTO teams_without_manager
+    FROM teams t
+    WHERE t."managerId" IS NULL
+      AND EXISTS (
+        SELECT 1 FROM team_members tm 
+        WHERE tm."teamId" = t.id 
+          AND tm.role = 'manager' 
+          AND tm."isActive" = true
+      );
+    
     RAISE NOTICE '=== VERIFICACIÓN DE MIGRACIÓN ===';
     RAISE NOTICE 'Permisos Administrador: %', admin_perms;
     RAISE NOTICE 'Permisos Analista: %', analista_perms;
     RAISE NOTICE 'Permisos Usuario: % (debe ser 0)', usuario_perms;
     RAISE NOTICE 'Permisos de teams en BD: %', teams_perms;
     RAISE NOTICE 'Duplicados restantes: % (debe ser 0)', duplicates;
+    RAISE NOTICE 'Trigger team_members existe: % (debe ser false)', trigger_team_members;
+    RAISE NOTICE 'Trigger teams existe: % (debe ser false)', trigger_teams;
+    RAISE NOTICE 'Equipos sin managerId sincronizado: % (debe ser 0)', teams_without_manager;
     
     -- Validar condiciones críticas
     IF usuario_perms > 0 THEN
@@ -166,6 +225,18 @@ BEGIN
     
     IF duplicates > 0 THEN
         RAISE EXCEPTION 'ERROR: Aún existen duplicados en role_permissions';
+    END IF;
+    
+    IF trigger_team_members THEN
+        RAISE EXCEPTION 'ERROR: El trigger update_team_members_updated_at no fue eliminado';
+    END IF;
+    
+    IF trigger_teams THEN
+        RAISE EXCEPTION 'ERROR: El trigger update_teams_updated_at no fue eliminado';
+    END IF;
+    
+    IF teams_without_manager > 0 THEN
+        RAISE WARNING 'ADVERTENCIA: Hay % equipos con miembros manager pero sin managerId', teams_without_manager;
     END IF;
     
     RAISE NOTICE '=== MIGRACIÓN COMPLETADA EXITOSAMENTE ===';
@@ -193,3 +264,19 @@ COMMIT;
 -- WHERE p.module = 'teams'
 -- GROUP BY r.id, r.name 
 -- ORDER BY r.name;
+
+-- Verificar que los triggers fueron eliminados:
+-- SELECT tgname FROM pg_trigger 
+-- WHERE tgname IN ('update_team_members_updated_at', 'update_teams_updated_at');
+
+-- Ver equipos con su manager sincronizado:
+-- SELECT t.name as team_name, t."managerId", u."fullName" as manager_name
+-- FROM teams t
+-- LEFT JOIN user_profiles u ON t."managerId" = u.id
+-- ORDER BY t.name;
+
+-- Ver estructura de columnas de team_members (verificar camelCase):
+-- SELECT column_name, data_type 
+-- FROM information_schema.columns 
+-- WHERE table_name = 'team_members' 
+-- ORDER BY ordinal_position;

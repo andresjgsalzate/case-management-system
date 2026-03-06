@@ -1224,9 +1224,9 @@ export class KnowledgeDocumentService {
       visibilityConditions.push(`(
         doc.visibility = 'team' AND EXISTS (
           SELECT 1 FROM team_members tm_author
-          WHERE tm_author.user_id = doc.created_by
-          AND tm_author.is_active = true
-          AND tm_author.team_id IN (:...userTeamIdsVis)
+          WHERE tm_author."userId" = doc.created_by
+          AND tm_author."isActive" = true
+          AND tm_author."teamId" IN (:...userTeamIdsVis)
         )
       )`);
       visibilityParams.userTeamIdsVis = userTeamIds;

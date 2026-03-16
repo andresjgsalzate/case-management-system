@@ -42,8 +42,8 @@ const PendingReviewBanner: React.FC = () => {
       to="/knowledge/pending-review"
       className="block mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-start sm:items-center">
           <ActionIcon
             action="clipboard"
             className="w-6 h-6 text-yellow-600 dark:text-yellow-400 mr-3"
@@ -60,7 +60,7 @@ const PendingReviewBanner: React.FC = () => {
         </div>
         <ActionIcon
           action="arrowRight"
-          className="w-5 h-5 text-yellow-600 dark:text-yellow-400"
+          className="w-5 h-5 text-yellow-600 dark:text-yellow-400 self-end sm:self-auto"
         />
       </div>
     </Link>
@@ -480,13 +480,13 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-6">
       {/* Pending Review Banner - only for approvers */}
       {permissions.canApproveKnowledge && <PendingReviewBanner />}
 
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
               <ActionIcon action="folder" size="lg" color="blue" />
@@ -497,25 +497,39 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
             </p>
           </div>
 
-          <div className="flex space-x-3">
+          <div className="flex flex-wrap items-stretch gap-2 sm:gap-3 xl:justify-end">
             {/* Botón Panel de Revisión - solo visible para aprobadores */}
             {permissions.canApproveKnowledge && (
-              <button
-                onClick={() => navigate("/knowledge/pending-review")}
-                className="inline-flex items-center px-4 py-2 border border-yellow-300 dark:border-yellow-600 rounded-md shadow-sm text-sm font-medium text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 dark:focus:ring-offset-gray-800"
-              >
-                <ActionIcon
-                  action="clipboard"
-                  size="sm"
-                  className="mr-2 text-yellow-600 dark:text-yellow-400"
-                />
-                Panel de Revisión
-              </button>
+              <>
+                <button
+                  onClick={() => navigate("/knowledge/pending-review")}
+                  className="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-yellow-300 dark:border-yellow-600 rounded-md shadow-sm text-sm font-medium text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 dark:focus:ring-offset-gray-800"
+                >
+                  <ActionIcon
+                    action="clipboard"
+                    size="sm"
+                    className="mr-2 text-yellow-600 dark:text-yellow-400"
+                  />
+                  Panel de Revisión
+                </button>
+
+                <button
+                  onClick={() => navigate("/knowledge/review-history")}
+                  className="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-blue-300 dark:border-blue-600 rounded-md shadow-sm text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
+                >
+                  <ActionIcon
+                    action="time"
+                    size="sm"
+                    className="mr-2 text-blue-600 dark:text-blue-400"
+                  />
+                  Historial de Revisión
+                </button>
+              </>
             )}
             {permissions.canCreateKnowledge && (
               <button
                 onClick={handleCreateDocument}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
+                className="inline-flex items-center justify-center whitespace-nowrap px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
               >
                 <ActionIcon action="add" size="sm" color="primary" />
                 Nuevo Documento
@@ -527,7 +541,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
 
       {/* Smart Search */}
       <div className="mb-6">
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <div className="flex-1">
             <SmartSearch
               onSearch={handleSmartSearch}
@@ -545,7 +559,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
           {isAdvancedSearch && (
             <button
               onClick={clearAdvancedSearch}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+              className="inline-flex items-center justify-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 w-full sm:w-auto"
             >
               <ActionIcon
                 action="close"
@@ -593,7 +607,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
       </div>
 
       {/* Sort Options */}
-      <div className="mb-6 flex items-center space-x-4">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
         <span className="text-sm text-gray-600 dark:text-gray-300">
           Ordenar por:
         </span>
@@ -615,7 +629,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
 
       {/* Results Count and Search Info */}
       <div className="mb-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <p className="text-sm text-gray-600 dark:text-gray-300">
             {isAdvancedSearch ? (
               <>
@@ -644,7 +658,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
 
       {/* Documents Grid */}
       {documents && documents.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
           {documents.map((doc: KnowledgeDocument) => (
             <div
               key={doc.id}
@@ -753,7 +767,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                 })()}
 
                 {/* Footer: Tipo de documento y Autor */}
-                <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 gap-2">
                   {/* Tipo de documento */}
                   <div className="flex items-center gap-1 truncate">
                     <ActionIcon
@@ -775,7 +789,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
                       className="flex-shrink-0"
                     />
                     <span
-                      className="truncate max-w-[100px]"
+                      className="truncate max-w-[120px] sm:max-w-[140px]"
                       title={
                         doc.__createdByUser__?.fullName ||
                         doc.__createdByUser__?.email ||

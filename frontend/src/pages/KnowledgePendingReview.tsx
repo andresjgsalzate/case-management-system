@@ -148,9 +148,9 @@ const KnowledgePendingReview: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 pt-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-5 lg:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center space-x-4">
               <Link
                 to="/knowledge"
@@ -183,7 +183,7 @@ const KnowledgePendingReview: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8">
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
@@ -221,9 +221,9 @@ const KnowledgePendingReview: React.FC = () => {
                     key={doc.id}
                     className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                   >
-                    <div className="flex items-start justify-between">
+                    <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-3 mb-2">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
                           <Link
                             to={`/knowledge/${doc.id}`}
                             className="text-lg font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 truncate"
@@ -235,7 +235,7 @@ const KnowledgePendingReview: React.FC = () => {
                           )}
                         </div>
 
-                        <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500 dark:text-gray-400">
                           <span className="flex items-center">
                             <ActionIcon
                               action="user"
@@ -306,7 +306,7 @@ const KnowledgePendingReview: React.FC = () => {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center space-x-2 ml-4">
+                      <div className="flex items-center space-x-2 ml-0 xl:ml-4 self-end xl:self-auto">
                         <Link
                           to={`/knowledge/${doc.id}`}
                           className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"

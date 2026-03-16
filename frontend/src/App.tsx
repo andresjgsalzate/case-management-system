@@ -40,6 +40,7 @@ import KnowledgeBase from "./pages/KnowledgeBase";
 import KnowledgeDocumentForm from "./pages/KnowledgeDocumentForm";
 import KnowledgeDocumentView from "./pages/KnowledgeDocumentView";
 import KnowledgePendingReview from "./pages/KnowledgePendingReview";
+import KnowledgeReviewHistory from "./pages/KnowledgeReviewHistory";
 // System imports
 import { SystemInfoPage } from "./pages/SystemInfoPage";
 // Security imports
@@ -277,6 +278,22 @@ function App() {
                   >
                     <Layout>
                       <KnowledgePendingReview />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/knowledge/review-history"
+                element={
+                  <ProtectedRoute
+                    requiredPermissions={[
+                      "knowledge.approve.team",
+                      "knowledge.approve.all",
+                    ]}
+                  >
+                    <Layout>
+                      <KnowledgeReviewHistory />
                     </Layout>
                   </ProtectedRoute>
                 }

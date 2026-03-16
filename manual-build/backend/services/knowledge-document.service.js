@@ -4,6 +4,7 @@ exports.KnowledgeDocumentService = void 0;
 const typeorm_1 = require("typeorm");
 const KnowledgeDocument_1 = require("../entities/KnowledgeDocument");
 const KnowledgeDocumentVersion_1 = require("../entities/KnowledgeDocumentVersion");
+const KnowledgeDocumentReviewEvent_1 = require("../entities/KnowledgeDocumentReviewEvent");
 const Case_1 = require("../entities/Case");
 const TeamMember_1 = require("../entities/TeamMember");
 const database_1 = require("../config/database");
@@ -13,6 +14,7 @@ class KnowledgeDocumentService {
         const ds = dataSource || database_1.AppDataSource;
         this.knowledgeDocumentRepository = ds.getRepository(KnowledgeDocument_1.KnowledgeDocument);
         this.versionRepository = ds.getRepository(KnowledgeDocumentVersion_1.KnowledgeDocumentVersion);
+        this.reviewEventRepository = ds.getRepository(KnowledgeDocumentReviewEvent_1.KnowledgeDocumentReviewEvent);
         this.caseRepository = ds.getRepository(Case_1.Case);
         this.teamMemberRepository = ds.getRepository(TeamMember_1.TeamMember);
         this.knowledgeTagService = new knowledge_tag_service_1.KnowledgeTagService(ds);
@@ -224,6 +226,14 @@ class KnowledgeDocumentService {
             documentToUpdate.reviewedBy = null;
             documentToUpdate.reviewedAt = null;
             documentToUpdate.reviewNotes = null;
+            await this.recordReviewEvent(id, {
+                eventType: "RETURNED_TO_DRAFT",
+                actorUserId: userId,
+                fromStatus: document.reviewStatus ||
+                    (document.isPublished ? "published" : null),
+                toStatus: "draft",
+                comments: "Documento modificado y retornado a borrador",
+            });
         }
         await this.knowledgeDocumentRepository.update(id, documentToUpdate);
         if (tags !== undefined) {
@@ -243,9 +253,18 @@ class KnowledgeDocumentService {
         if (document.isArchived) {
             throw new Error("No se puede publicar un documento archivado");
         }
+        const previousStatus = document.reviewStatus || null;
         document.isPublished = publishDto.isPublished;
         document.publishedAt = publishDto.isPublished ? new Date() : null;
         document.lastEditedBy = userId;
+        if (publishDto.isPublished &&
+            document.reviewStatus !== "published") {
+            document.reviewStatus = "published";
+            document.reviewedBy = userId;
+            document.reviewedAt = new Date();
+            document.reviewNotes =
+                publishDto.changeSummary || "Documento publicado manualmente";
+        }
         if (!publishDto.isPublished) {
             document.version += 1;
             await this.createVersion(id, {
@@ -253,6 +272,23 @@ class KnowledgeDocumentService {
                 title: document.title,
                 changeSummary: publishDto.changeSummary || "Documento despublicado",
             }, userId);
+            await this.recordReviewEvent(id, {
+                eventType: "UNPUBLISHED",
+                actorUserId: userId,
+                fromStatus: previousStatus || "published",
+                toStatus: "draft",
+                comments: publishDto.changeSummary || "Documento despublicado",
+            });
+        }
+        else {
+            const eventType = previousStatus === "published" ? "REPUBLISHED" : "PUBLISHED";
+            await this.recordReviewEvent(id, {
+                eventType,
+                actorUserId: userId,
+                fromStatus: previousStatus,
+                toStatus: "published",
+                comments: publishDto.changeSummary || "Documento publicado",
+            });
         }
         return this.knowledgeDocumentRepository.save(document);
     }
@@ -295,6 +331,48 @@ class KnowledgeDocumentService {
             throw new Error(`Versión ${versionNumber} del documento ${documentId} no encontrada`);
         }
         return version;
+    }
+    async getReviewHistory(documentId) {
+        const document = await this.findOne(documentId);
+        if (!document) {
+            throw new Error(`Document with id ${documentId} not found`);
+        }
+        const events = await this.reviewEventRepository.find({
+            where: { documentId },
+            relations: ["actorUser"],
+            order: { createdAt: "DESC" },
+        });
+        return {
+            summary: {
+                submittedCount: events.filter((e) => e.eventType === "SUBMITTED")
+                    .length,
+                rejectedCount: events.filter((e) => e.eventType === "REJECTED").length,
+                approvedCount: events.filter((e) => e.eventType === "APPROVED").length,
+                publishedCount: events.filter((e) => e.eventType === "PUBLISHED")
+                    .length,
+                republishedCount: events.filter((e) => e.eventType === "REPUBLISHED")
+                    .length,
+                totalEvents: events.length,
+            },
+            events: await Promise.all(events.map(async (event) => {
+                const actorUser = await event.actorUser;
+                return {
+                    id: event.id,
+                    eventType: event.eventType,
+                    fromStatus: event.fromStatus,
+                    toStatus: event.toStatus,
+                    comments: event.comments,
+                    createdAt: event.createdAt,
+                    actorUser: actorUser
+                        ? {
+                            id: actorUser.id,
+                            email: actorUser.email,
+                            fullName: actorUser.fullName || actorUser.email,
+                        }
+                        : null,
+                };
+            })),
+        };
     }
     async searchContent(searchTerm, limit = 10, userId, userPermissions) {
         const userTeamIds = userId ? await this.getUserTeamIds(userId) : [];
@@ -774,9 +852,9 @@ class KnowledgeDocumentService {
             visibilityConditions.push(`(
         doc.visibility = 'team' AND EXISTS (
           SELECT 1 FROM team_members tm_author
-          WHERE tm_author.user_id = doc.created_by
-          AND tm_author.is_active = true
-          AND tm_author.team_id IN (:...userTeamIdsVis)
+          WHERE tm_author."userId" = doc.created_by
+          AND tm_author."isActive" = true
+          AND tm_author."teamId" IN (:...userTeamIdsVis)
         )
       )`);
             visibilityParams.userTeamIdsVis = userTeamIds;
@@ -873,6 +951,17 @@ class KnowledgeDocumentService {
         });
         return this.versionRepository.save(version);
     }
+    async recordReviewEvent(documentId, eventData) {
+        const event = this.reviewEventRepository.create({
+            documentId,
+            eventType: eventData.eventType,
+            actorUserId: eventData.actorUserId,
+            fromStatus: eventData.fromStatus || null,
+            toStatus: eventData.toStatus || null,
+            comments: eventData.comments || null,
+        });
+        await this.reviewEventRepository.save(event);
+    }
     async submitForReview(documentId, userId) {
         const document = await this.findOne(documentId);
         if (!document) {
@@ -899,6 +988,13 @@ class KnowledgeDocumentService {
             title: document.title,
             changeSummary: "Enviado a revisión",
         }, userId);
+        await this.recordReviewEvent(documentId, {
+            eventType: "SUBMITTED",
+            actorUserId: userId,
+            fromStatus: document.reviewStatus || "draft",
+            toStatus: "pending_review",
+            comments: "Documento enviado a revisión",
+        });
         const result = await this.findOne(documentId);
         if (!result) {
             throw new Error(`Documento ${documentId} no encontrado después de actualización`);
@@ -933,6 +1029,22 @@ class KnowledgeDocumentService {
                 ? "Documento aprobado y publicado"
                 : "Documento aprobado",
         }, reviewerId);
+        await this.recordReviewEvent(documentId, {
+            eventType: "APPROVED",
+            actorUserId: reviewerId,
+            fromStatus: "pending_review",
+            toStatus: autoPublish ? "published" : "approved",
+            comments: notes || (autoPublish ? "Aprobado y publicado" : "Aprobado"),
+        });
+        if (autoPublish) {
+            await this.recordReviewEvent(documentId, {
+                eventType: "PUBLISHED",
+                actorUserId: reviewerId,
+                fromStatus: "approved",
+                toStatus: "published",
+                comments: notes || "Publicado después de aprobación",
+            });
+        }
         const result = await this.findOne(documentId);
         if (!result) {
             throw new Error(`Documento ${documentId} no encontrado después de aprobación`);
@@ -960,6 +1072,13 @@ class KnowledgeDocumentService {
             title: document.title,
             changeSummary: `Documento rechazado: ${notes}`,
         }, reviewerId);
+        await this.recordReviewEvent(documentId, {
+            eventType: "REJECTED",
+            actorUserId: reviewerId,
+            fromStatus: "pending_review",
+            toStatus: "rejected",
+            comments: notes,
+        });
         const result = await this.findOne(documentId);
         if (!result) {
             throw new Error(`Documento ${documentId} no encontrado después de rechazo`);

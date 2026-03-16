@@ -5,6 +5,7 @@ import { CreateKnowledgeDocumentDto, UpdateKnowledgeDocumentDto, KnowledgeDocume
 export declare class KnowledgeDocumentService {
     private knowledgeDocumentRepository;
     private versionRepository;
+    private reviewEventRepository;
     private caseRepository;
     private teamMemberRepository;
     private knowledgeTagService;
@@ -24,6 +25,29 @@ export declare class KnowledgeDocumentService {
     remove(id: string): Promise<void>;
     getVersions(documentId: string): Promise<KnowledgeDocumentVersion[]>;
     getVersion(documentId: string, versionNumber: number): Promise<KnowledgeDocumentVersion>;
+    getReviewHistory(documentId: string): Promise<{
+        summary: {
+            submittedCount: number;
+            rejectedCount: number;
+            approvedCount: number;
+            publishedCount: number;
+            republishedCount: number;
+            totalEvents: number;
+        };
+        events: Array<{
+            id: string;
+            eventType: string;
+            fromStatus: string | null;
+            toStatus: string | null;
+            comments: string | null;
+            createdAt: Date;
+            actorUser: {
+                id: string;
+                email: string;
+                fullName: string;
+            } | null;
+        }>;
+    }>;
     searchContent(searchTerm: string, limit?: number, userId?: string, userPermissions?: string[]): Promise<KnowledgeDocument[]>;
     getSearchSuggestions(searchTerm: string, limit?: number, userId?: string, userPermissions?: string[]): Promise<{
         documents: Array<{
@@ -75,6 +99,7 @@ export declare class KnowledgeDocumentService {
     private updateTags;
     private loadDocumentTags;
     private createVersion;
+    private recordReviewEvent;
     submitForReview(documentId: string, userId: string): Promise<KnowledgeDocument>;
     approveDocument(documentId: string, reviewerId: string, notes?: string, autoPublish?: boolean): Promise<KnowledgeDocument>;
     rejectDocument(documentId: string, reviewerId: string, notes: string): Promise<KnowledgeDocument>;

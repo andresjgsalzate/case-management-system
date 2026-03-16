@@ -17,6 +17,7 @@ const KnowledgeDocumentTagRelation_1 = require("../entities/KnowledgeDocumentTag
 const Team_1 = require("../entities/Team");
 const TeamMember_1 = require("../entities/TeamMember");
 const KnowledgeDocumentFavorite_1 = require("../entities/KnowledgeDocumentFavorite");
+const KnowledgeDocumentReviewEvent_1 = require("../entities/KnowledgeDocumentReviewEvent");
 exports.AppDataSource = new typeorm_1.DataSource({
     type: "postgres",
     host: environment_1.config.database.host,
@@ -62,6 +63,7 @@ exports.AppDataSource = new typeorm_1.DataSource({
         entities_1.AuditEntityChange,
         UserSession_1.UserSession,
         KnowledgeDocumentFavorite_1.KnowledgeDocumentFavorite,
+        KnowledgeDocumentReviewEvent_1.KnowledgeDocumentReviewEvent,
     ],
     migrations: ["src/database/migrations/**/*.ts"],
     subscribers: ["src/database/subscribers/**/*.ts"],

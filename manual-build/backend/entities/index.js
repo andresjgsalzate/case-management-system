@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TeamMember = exports.Team = exports.AuditEntityChange = exports.AuditLog = exports.DocumentType = exports.KnowledgeDocumentTagRelation = exports.KnowledgeDocumentTag = exports.KnowledgeTag = exports.KnowledgeDocumentRelation = exports.KnowledgeDocumentFavorite = exports.KnowledgeDocumentFeedback = exports.KnowledgeDocumentVersion = exports.KnowledgeDocumentAttachment = exports.KnowledgeDocument = exports.ArchivedTodo = exports.ArchivedCaseClassification = exports.ArchivedCasePriority = exports.ArchivedCaseStatus = exports.ArchivedCase = exports.Note = exports.TodoManualTimeEntry = exports.TodoTimeEntry = exports.TodoControl = exports.TodoPriority = exports.Todo = exports.Disposition = exports.ManualTimeEntry = exports.TimeEntry = exports.CaseControl = exports.CaseStatusControl = exports.EstadoCase = exports.ClasificacionCase = exports.Case = exports.Origin = exports.Application = exports.UserProfile = exports.RolePermission = exports.Permission = exports.Role = void 0;
+exports.TeamMember = exports.Team = exports.AuditEntityChange = exports.AuditLog = exports.DocumentType = exports.KnowledgeDocumentTagRelation = exports.KnowledgeDocumentTag = exports.KnowledgeTag = exports.KnowledgeDocumentRelation = exports.KnowledgeDocumentReviewEvent = exports.KnowledgeDocumentFavorite = exports.KnowledgeDocumentFeedback = exports.KnowledgeDocumentVersion = exports.KnowledgeDocumentAttachment = exports.KnowledgeDocument = exports.ArchivedTodo = exports.ArchivedCaseClassification = exports.ArchivedCasePriority = exports.ArchivedCaseStatus = exports.ArchivedCase = exports.Note = exports.TodoManualTimeEntry = exports.TodoTimeEntry = exports.TodoControl = exports.TodoPriority = exports.Todo = exports.Disposition = exports.ManualTimeEntry = exports.TimeEntry = exports.CaseControl = exports.CaseStatusControl = exports.EstadoCase = exports.ClasificacionCase = exports.Case = exports.Origin = exports.Application = exports.UserProfile = exports.RolePermission = exports.Permission = exports.Role = void 0;
 var Role_1 = require("./Role");
 Object.defineProperty(exports, "Role", { enumerable: true, get: function () { return Role_1.Role; } });
 var Permission_1 = require("./Permission");
@@ -56,6 +56,8 @@ var KnowledgeDocumentFeedback_1 = require("./KnowledgeDocumentFeedback");
 Object.defineProperty(exports, "KnowledgeDocumentFeedback", { enumerable: true, get: function () { return KnowledgeDocumentFeedback_1.KnowledgeDocumentFeedback; } });
 var KnowledgeDocumentFavorite_1 = require("./KnowledgeDocumentFavorite");
 Object.defineProperty(exports, "KnowledgeDocumentFavorite", { enumerable: true, get: function () { return KnowledgeDocumentFavorite_1.KnowledgeDocumentFavorite; } });
+var KnowledgeDocumentReviewEvent_1 = require("./KnowledgeDocumentReviewEvent");
+Object.defineProperty(exports, "KnowledgeDocumentReviewEvent", { enumerable: true, get: function () { return KnowledgeDocumentReviewEvent_1.KnowledgeDocumentReviewEvent; } });
 var KnowledgeDocumentRelation_1 = require("./KnowledgeDocumentRelation");
 Object.defineProperty(exports, "KnowledgeDocumentRelation", { enumerable: true, get: function () { return KnowledgeDocumentRelation_1.KnowledgeDocumentRelation; } });
 var KnowledgeTag_1 = require("./KnowledgeTag");

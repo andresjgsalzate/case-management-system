@@ -20,6 +20,7 @@ const KnowledgeDocumentAttachment_1 = require("./KnowledgeDocumentAttachment");
 const KnowledgeDocumentRelation_1 = require("./KnowledgeDocumentRelation");
 const KnowledgeDocumentFeedback_1 = require("./KnowledgeDocumentFeedback");
 const KnowledgeDocumentFavorite_1 = require("./KnowledgeDocumentFavorite");
+const KnowledgeDocumentReviewEvent_1 = require("./KnowledgeDocumentReviewEvent");
 let KnowledgeDocument = class KnowledgeDocument {
 };
 exports.KnowledgeDocument = KnowledgeDocument;
@@ -249,6 +250,10 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => KnowledgeDocumentFavorite_1.KnowledgeDocumentFavorite, (favorite) => favorite.document),
     __metadata("design:type", Array)
 ], KnowledgeDocument.prototype, "favorites", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => KnowledgeDocumentReviewEvent_1.KnowledgeDocumentReviewEvent, (reviewEvent) => reviewEvent.document),
+    __metadata("design:type", Array)
+], KnowledgeDocument.prototype, "reviewEvents", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ name: "created_at", type: "timestamp with time zone" }),
     __metadata("design:type", Date)

@@ -15,6 +15,7 @@ import {
   CreateDocumentFeedbackDto,
   UpdateDocumentFeedbackDto,
   DocumentStats,
+  KnowledgeReviewHistoryResponse,
 } from "../types/knowledge";
 import { config } from "../config/config";
 import { securityService } from "./security.service";
@@ -544,6 +545,13 @@ export class KnowledgeDocumentReviewService {
     const { data } = await api.get("/knowledge/pending-review", {
       params: { page, limit },
     });
+    return data;
+  }
+
+  static async getReviewHistory(
+    documentId: string,
+  ): Promise<KnowledgeReviewHistoryResponse> {
+    const { data } = await api.get(`/knowledge/${documentId}/review-history`);
     return data;
   }
 }

@@ -433,6 +433,28 @@ router.get("/knowledge/:id/versions/:version", auth_1.authenticateToken, async (
         handleError(res, error, 404);
     }
 });
+router.get("/knowledge/:id/review-history", (0, authorizationMiddleware_1.requireAnyPermission)([
+    "knowledge.read.own",
+    "knowledge.read.team",
+    "knowledge.read.all",
+    "knowledge.review.own",
+    "knowledge.review.team",
+    "knowledge.review.all",
+    "knowledge.approve.team",
+    "knowledge.approve.all",
+]), async (req, res) => {
+    try {
+        const documentId = req.params.id;
+        if (!documentId) {
+            return res.status(400).json({ error: "ID de documento requerido" });
+        }
+        const history = await knowledgeDocumentService.getReviewHistory(documentId);
+        res.json(history);
+    }
+    catch (error) {
+        handleError(res, error, 404);
+    }
+});
 router.get("/document-types", auth_1.authenticateToken, async (req, res) => {
     try {
         const activeOnly = req.query.active === "true";

@@ -2,6 +2,41 @@
 
 > Nuestro desarrollo de un sistema completo de gestión de casos empresarial
 
+## Versión 1.2.0 - Marzo 2026
+
+#### 📋 **Página Independiente de Historial de Revisiones**
+
+Nueva vista dedicada para revisar el historial de aprobaciones de toda la Base de Conocimiento:
+
+- **Página separada**: El historial de revisiones ahora tiene su propia ruta `/knowledge/review-history`, separada del panel de aprobación
+- **Lista colapsada por defecto**: Todos los documentos aparecen con su información colapsada para una vista limpia y manejable
+- **Filtro por historial real**: Solo se muestran documentos que tienen eventos de revisión registrados (`totalEvents > 0`), eliminando el ruido de documentos sin actividad
+- **Filtro por título**: Campo de búsqueda local para filtrar documentos por nombre, útil cuando hay grandes volúmenes de documentos
+- **Consultas paralelas optimizadas**: Uso de `useQueries` de React Query para consultar el historial de múltiples documentos en paralelo
+- **Panel de eventos expandible**: Al expandir un documento se ve el resumen de contadores (aprobaciones, rechazos, envíos) y la línea de tiempo de eventos
+- **Permisos controlados**: Ruta protegida con `knowledge.approve.team` o `knowledge.approve.all`
+
+#### 📱 **Mejoras de Diseño Responsive - Base de Conocimiento**
+
+Rediseño del layout para aprovechar mejor el espacio disponible en todos los tamaños de pantalla:
+
+- **Grid adaptativo**: Las tarjetas escalan de 1 columna en móvil → 2 en tablet (`md`) → 3 en desktop (`xl`) → 4 en pantallas grandes (`2xl`)
+- **Contenedor full-width**: Reemplazamos `max-w-7xl` por `w-full` con padding progresivo (`xl:px-10 2xl:px-12`) para aprovechar pantallas anchas
+- **Botones de acción**: `flex-wrap` con `whitespace-nowrap` para que no se corten en resoluciones intermedias
+- **Bloque de búsqueda**: Layout `flex-col` en móvil → `flex-row` en tablet, adaptativo
+- **Fila de ordenamiento**: Responsive con colapso vertical en pantallas pequeñas
+- **Banner de pendientes**: Imagen y texto con layout adaptativo columna/fila
+
+#### 📱 **Mejoras de Diseño Responsive - Panel de Revisión**
+
+Mejoras en la página de aprobación de documentos pendientes:
+
+- **Filas de documentos**: Layout `flex-col` en móvil → `flex-row` en desktop (`xl:flex-row`)
+- **Metadata con wrap**: Los indicadores de estado, fecha y autor usan `flex-wrap` para verse bien en pantallas angostas
+- **Botones de acción**: Alineados al final en móvil y alineados al centro en desktop para consistencia visual
+
+---
+
 ## Versión 1.1.0 - Febrero 2026
 
 #### 🔍 **Sistema de Búsqueda Avanzada en Base de Conocimiento**
@@ -197,29 +232,38 @@ Algunos datos técnicos de lo que construimos:
 
 Aunque el sistema ya está completo y funcional, tenemos una hoja de ruta clara para continuar mejorándolo:
 
-#### **Versión 1.1.0 - Q1 2026**
+#### **Versión 1.1.0 - Q1 2026** ✅ *Completada*
 
-- Notificaciones en tiempo real con WebSockets
-- Integración con email para reportes automáticos
-- PWA para instalación como app nativa
-- Modo offline con sincronización automática
+- Búsqueda avanzada con índices PostgreSQL y tolerancia a acentos
+- Control de visibilidad de documentos (público, privado, equipos, personalizado)
+- Workflow de revisión y aprobación con panel de revisores
+- Sistema de favoritos por usuario
+- Sugerencias inteligentes de tags con NLP
+- Re-aprobación automática al modificar documentos publicados
 
-#### **Versión 1.2.0 - Q2 2026**
+#### **Versión 1.2.0 - Q1 2026** ✅ *Completada*
+
+- Página independiente de historial de revisiones
+- Mejoras responsive en Base de Conocimiento, Panel de Revisión e Historial
+- Filtro por historial real y por título en el historial de revisiones
+
+#### **Versión 1.3.0 - Q2 2026**
 
 - API GraphQL complementaria al REST actual
 - Webhooks para integraciones externas
-- App móvil con React Native
-- Sistema de workflows visuales
+- Notificaciones en tiempo real con WebSockets
+- Integración con email para reportes automáticos
 
 #### **Versión 2.0.0 - 2027**
 
 - Inteligencia artificial para clasificación automática
 - Análisis predictivo de tiempos de resolución
 - Chatbot integrado para soporte
+- App móvil con React Native
 - Migración a microservicios
 
 ---
 
 **Desarrollado con ❤️ por Andrés Jurgensen Alzate**  
 **Contacto:** andresjgsalzate@gmail.com  
-**Diciembre 2025**
+**Marzo 2026**

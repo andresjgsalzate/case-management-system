@@ -705,6 +705,35 @@ router.get(
   },
 );
 
+// GET /api/knowledge/:id/review-history - Historial de autorizaciones/rechazos/publicaciones
+router.get(
+  "/knowledge/:id/review-history",
+  requireAnyPermission([
+    "knowledge.read.own",
+    "knowledge.read.team",
+    "knowledge.read.all",
+    "knowledge.review.own",
+    "knowledge.review.team",
+    "knowledge.review.all",
+    "knowledge.approve.team",
+    "knowledge.approve.all",
+  ]),
+  async (req: Request, res: Response) => {
+    try {
+      const documentId = req.params.id;
+      if (!documentId) {
+        return res.status(400).json({ error: "ID de documento requerido" });
+      }
+
+      const history =
+        await knowledgeDocumentService.getReviewHistory(documentId);
+      res.json(history);
+    } catch (error) {
+      handleError(res, error, 404);
+    }
+  },
+);
+
 // ===========================================
 // RUTAS DE TIPOS DE DOCUMENTOS
 // ===========================================

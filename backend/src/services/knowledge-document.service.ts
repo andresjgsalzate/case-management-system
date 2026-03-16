@@ -1,6 +1,10 @@
 import { Repository, SelectQueryBuilder, ILike, DataSource, In } from "typeorm";
 import { KnowledgeDocument } from "../entities/KnowledgeDocument";
 import { KnowledgeDocumentVersion } from "../entities/KnowledgeDocumentVersion";
+import {
+  KnowledgeDocumentReviewEvent,
+  KnowledgeReviewEventType,
+} from "../entities/KnowledgeDocumentReviewEvent";
 import { Case } from "../entities/Case";
 import { TeamMember } from "../entities/TeamMember";
 import { AppDataSource } from "../config/database";
@@ -16,6 +20,7 @@ import {
 export class KnowledgeDocumentService {
   private knowledgeDocumentRepository: Repository<KnowledgeDocument>;
   private versionRepository: Repository<KnowledgeDocumentVersion>;
+  private reviewEventRepository: Repository<KnowledgeDocumentReviewEvent>;
   private caseRepository: Repository<Case>;
   private teamMemberRepository: Repository<TeamMember>;
   private knowledgeTagService: KnowledgeTagService;
@@ -24,6 +29,7 @@ export class KnowledgeDocumentService {
     const ds = dataSource || AppDataSource;
     this.knowledgeDocumentRepository = ds.getRepository(KnowledgeDocument);
     this.versionRepository = ds.getRepository(KnowledgeDocumentVersion);
+    this.reviewEventRepository = ds.getRepository(KnowledgeDocumentReviewEvent);
     this.caseRepository = ds.getRepository(Case);
     this.teamMemberRepository = ds.getRepository(TeamMember);
     this.knowledgeTagService = new KnowledgeTagService(ds);
@@ -346,6 +352,16 @@ export class KnowledgeDocumentService {
       documentToUpdate.reviewedBy = null;
       documentToUpdate.reviewedAt = null;
       documentToUpdate.reviewNotes = null;
+
+      await this.recordReviewEvent(id, {
+        eventType: "RETURNED_TO_DRAFT",
+        actorUserId: userId,
+        fromStatus:
+          ((document as any).reviewStatus as string) ||
+          (document.isPublished ? "published" : null),
+        toStatus: "draft",
+        comments: "Documento modificado y retornado a borrador",
+      });
     }
 
     // Usar update en lugar de save para evitar problemas con relaciones anidadas
@@ -378,9 +394,21 @@ export class KnowledgeDocumentService {
       throw new Error("No se puede publicar un documento archivado");
     }
 
+    const previousStatus = ((document as any).reviewStatus as string) || null;
     document.isPublished = publishDto.isPublished;
     document.publishedAt = publishDto.isPublished ? new Date() : null;
     document.lastEditedBy = userId;
+
+    if (
+      publishDto.isPublished &&
+      (document as any).reviewStatus !== "published"
+    ) {
+      (document as any).reviewStatus = "published";
+      (document as any).reviewedBy = userId;
+      (document as any).reviewedAt = new Date();
+      (document as any).reviewNotes =
+        publishDto.changeSummary || "Documento publicado manualmente";
+    }
 
     // Si se está despublicando, crear versión
     if (!publishDto.isPublished) {
@@ -394,6 +422,25 @@ export class KnowledgeDocumentService {
         },
         userId,
       );
+
+      await this.recordReviewEvent(id, {
+        eventType: "UNPUBLISHED",
+        actorUserId: userId,
+        fromStatus: previousStatus || "published",
+        toStatus: "draft",
+        comments: publishDto.changeSummary || "Documento despublicado",
+      });
+    } else {
+      const eventType: KnowledgeReviewEventType =
+        previousStatus === "published" ? "REPUBLISHED" : "PUBLISHED";
+
+      await this.recordReviewEvent(id, {
+        eventType,
+        actorUserId: userId,
+        fromStatus: previousStatus,
+        toStatus: "published",
+        comments: publishDto.changeSummary || "Documento publicado",
+      });
     }
 
     return this.knowledgeDocumentRepository.save(document);
@@ -456,6 +503,75 @@ export class KnowledgeDocumentService {
     }
 
     return version;
+  }
+
+  async getReviewHistory(documentId: string): Promise<{
+    summary: {
+      submittedCount: number;
+      rejectedCount: number;
+      approvedCount: number;
+      publishedCount: number;
+      republishedCount: number;
+      totalEvents: number;
+    };
+    events: Array<{
+      id: string;
+      eventType: string;
+      fromStatus: string | null;
+      toStatus: string | null;
+      comments: string | null;
+      createdAt: Date;
+      actorUser: {
+        id: string;
+        email: string;
+        fullName: string;
+      } | null;
+    }>;
+  }> {
+    const document = await this.findOne(documentId);
+    if (!document) {
+      throw new Error(`Document with id ${documentId} not found`);
+    }
+
+    const events = await this.reviewEventRepository.find({
+      where: { documentId },
+      relations: ["actorUser"],
+      order: { createdAt: "DESC" },
+    });
+
+    return {
+      summary: {
+        submittedCount: events.filter((e) => e.eventType === "SUBMITTED")
+          .length,
+        rejectedCount: events.filter((e) => e.eventType === "REJECTED").length,
+        approvedCount: events.filter((e) => e.eventType === "APPROVED").length,
+        publishedCount: events.filter((e) => e.eventType === "PUBLISHED")
+          .length,
+        republishedCount: events.filter((e) => e.eventType === "REPUBLISHED")
+          .length,
+        totalEvents: events.length,
+      },
+      events: await Promise.all(
+        events.map(async (event) => {
+          const actorUser = await event.actorUser;
+          return {
+            id: event.id,
+            eventType: event.eventType,
+            fromStatus: event.fromStatus,
+            toStatus: event.toStatus,
+            comments: event.comments,
+            createdAt: event.createdAt,
+            actorUser: actorUser
+              ? {
+                  id: actorUser.id,
+                  email: actorUser.email,
+                  fullName: actorUser.fullName || actorUser.email,
+                }
+              : null,
+          };
+        }),
+      ),
+    };
   }
 
   async searchContent(
@@ -1404,6 +1520,28 @@ export class KnowledgeDocumentService {
     return this.versionRepository.save(version);
   }
 
+  private async recordReviewEvent(
+    documentId: string,
+    eventData: {
+      eventType: KnowledgeReviewEventType;
+      actorUserId: string | null;
+      fromStatus?: string | null;
+      toStatus?: string | null;
+      comments?: string | null;
+    },
+  ): Promise<void> {
+    const event = this.reviewEventRepository.create({
+      documentId,
+      eventType: eventData.eventType,
+      actorUserId: eventData.actorUserId,
+      fromStatus: eventData.fromStatus || null,
+      toStatus: eventData.toStatus || null,
+      comments: eventData.comments || null,
+    });
+
+    await this.reviewEventRepository.save(event);
+  }
+
   // ================================
   // REVIEW WORKFLOW METHODS
   // ================================
@@ -1454,6 +1592,14 @@ export class KnowledgeDocumentService {
       },
       userId,
     );
+
+    await this.recordReviewEvent(documentId, {
+      eventType: "SUBMITTED",
+      actorUserId: userId,
+      fromStatus: ((document as any).reviewStatus as string) || "draft",
+      toStatus: "pending_review",
+      comments: "Documento enviado a revisión",
+    });
 
     const result = await this.findOne(documentId);
     if (!result) {
@@ -1512,6 +1658,24 @@ export class KnowledgeDocumentService {
       reviewerId,
     );
 
+    await this.recordReviewEvent(documentId, {
+      eventType: "APPROVED",
+      actorUserId: reviewerId,
+      fromStatus: "pending_review",
+      toStatus: autoPublish ? "published" : "approved",
+      comments: notes || (autoPublish ? "Aprobado y publicado" : "Aprobado"),
+    });
+
+    if (autoPublish) {
+      await this.recordReviewEvent(documentId, {
+        eventType: "PUBLISHED",
+        actorUserId: reviewerId,
+        fromStatus: "approved",
+        toStatus: "published",
+        comments: notes || "Publicado después de aprobación",
+      });
+    }
+
     const result = await this.findOne(documentId);
     if (!result) {
       throw new Error(
@@ -1558,6 +1722,14 @@ export class KnowledgeDocumentService {
       },
       reviewerId,
     );
+
+    await this.recordReviewEvent(documentId, {
+      eventType: "REJECTED",
+      actorUserId: reviewerId,
+      fromStatus: "pending_review",
+      toStatus: "rejected",
+      comments: notes,
+    });
 
     const result = await this.findOne(documentId);
     if (!result) {

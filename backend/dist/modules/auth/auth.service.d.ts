@@ -3,6 +3,7 @@ import { LoginDto, RegisterDto, AuthResponse } from "./auth.dto";
 import { SessionInfo } from "../../services/session.service";
 export declare class AuthService {
     private userRepository;
+    private roleRepository;
     private sessionService;
     constructor();
     login(loginDto: LoginDto, sessionInfo?: SessionInfo): Promise<AuthResponse>;

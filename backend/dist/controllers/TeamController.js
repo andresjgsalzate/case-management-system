@@ -229,7 +229,7 @@ class TeamController {
         };
         this.updateMemberRole = async (req, res, next) => {
             try {
-                const { teamId, memberId: userId } = req.params;
+                const { teamId, userId } = req.params;
                 const { role } = req.body;
                 if (!teamId || !userId) {
                     return res.status(400).json({

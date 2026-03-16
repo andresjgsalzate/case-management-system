@@ -18,6 +18,7 @@ import { KnowledgeDocumentAttachment } from "./KnowledgeDocumentAttachment";
 import { KnowledgeDocumentRelation } from "./KnowledgeDocumentRelation";
 import { KnowledgeDocumentFeedback } from "./KnowledgeDocumentFeedback";
 import { KnowledgeDocumentFavorite } from "./KnowledgeDocumentFavorite";
+import { KnowledgeDocumentReviewEvent } from "./KnowledgeDocumentReviewEvent";
 
 export type Priority = "low" | "medium" | "high" | "urgent";
 export type ReviewStatus =
@@ -236,6 +237,12 @@ export class KnowledgeDocument {
 
   @OneToMany(() => KnowledgeDocumentFavorite, (favorite) => favorite.document)
   favorites: KnowledgeDocumentFavorite[];
+
+  @OneToMany(
+    () => KnowledgeDocumentReviewEvent,
+    (reviewEvent) => reviewEvent.document,
+  )
+  reviewEvents: KnowledgeDocumentReviewEvent[];
 
   @CreateDateColumn({ name: "created_at", type: "timestamp with time zone" })
   createdAt: Date;

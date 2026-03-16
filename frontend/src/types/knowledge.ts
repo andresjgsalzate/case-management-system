@@ -143,6 +143,34 @@ export interface KnowledgeDocumentVersion {
   createdAt: string;
 }
 
+export interface KnowledgeReviewHistorySummary {
+  submittedCount: number;
+  rejectedCount: number;
+  approvedCount: number;
+  publishedCount: number;
+  republishedCount: number;
+  totalEvents: number;
+}
+
+export interface KnowledgeReviewHistoryEvent {
+  id: string;
+  eventType: string;
+  fromStatus: string | null;
+  toStatus: string | null;
+  comments: string | null;
+  createdAt: string;
+  actorUser: {
+    id: string;
+    email: string;
+    fullName: string;
+  } | null;
+}
+
+export interface KnowledgeReviewHistoryResponse {
+  summary: KnowledgeReviewHistorySummary;
+  events: KnowledgeReviewHistoryEvent[];
+}
+
 export interface KnowledgeDocumentAttachment {
   id: string;
   documentId: string;

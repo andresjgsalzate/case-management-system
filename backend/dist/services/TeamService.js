@@ -245,6 +245,9 @@ class TeamService {
                 isActive: query.isActive,
             });
         }
+        else {
+            queryBuilder.andWhere("tm.isActive = :isActive", { isActive: true });
+        }
         if (query.search) {
             queryBuilder.andWhere("(user.fullName ILIKE :search OR user.email ILIKE :search)", { search: `%${query.search}%` });
         }

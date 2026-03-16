@@ -7,6 +7,7 @@ import { KnowledgeDocumentAttachment } from "./KnowledgeDocumentAttachment";
 import { KnowledgeDocumentRelation } from "./KnowledgeDocumentRelation";
 import { KnowledgeDocumentFeedback } from "./KnowledgeDocumentFeedback";
 import { KnowledgeDocumentFavorite } from "./KnowledgeDocumentFavorite";
+import { KnowledgeDocumentReviewEvent } from "./KnowledgeDocumentReviewEvent";
 export type Priority = "low" | "medium" | "high" | "urgent";
 export type ReviewStatus = "draft" | "pending_review" | "approved" | "rejected" | "published";
 export type DocumentVisibility = "public" | "private" | "team" | "custom";
@@ -56,6 +57,7 @@ export declare class KnowledgeDocument {
     childRelations: KnowledgeDocumentRelation[];
     feedback: KnowledgeDocumentFeedback[];
     favorites: KnowledgeDocumentFavorite[];
+    reviewEvents: KnowledgeDocumentReviewEvent[];
     createdAt: Date;
     updatedAt: Date;
 }

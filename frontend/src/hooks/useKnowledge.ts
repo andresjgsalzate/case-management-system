@@ -20,6 +20,7 @@ import {
   KnowledgeDocumentQueryDto,
   UpdateDocumentTypeDto,
   UpdateDocumentFeedbackDto,
+  KnowledgeReviewHistoryResponse,
 } from "../types/knowledge";
 
 // Query Keys
@@ -590,6 +591,8 @@ export const useToggleFavorite = (options?: {
 export const reviewKeys = {
   all: ["knowledge", "review"] as const,
   pending: () => [...reviewKeys.all, "pending"] as const,
+  history: (documentId: string) =>
+    [...reviewKeys.all, "history", documentId] as const,
 };
 
 export const usePendingReviewDocuments = (page?: number, limit?: number) => {
@@ -598,6 +601,18 @@ export const usePendingReviewDocuments = (page?: number, limit?: number) => {
     queryFn: () =>
       KnowledgeDocumentReviewService.getPendingReviewDocuments(page, limit),
     staleTime: 30 * 1000, // 30 seconds - refresh frequently for review queue
+  });
+};
+
+export const useDocumentReviewHistory = (
+  documentId: string,
+  enabled: boolean = true,
+) => {
+  return useQuery<KnowledgeReviewHistoryResponse>({
+    queryKey: reviewKeys.history(documentId),
+    queryFn: () => KnowledgeDocumentReviewService.getReviewHistory(documentId),
+    enabled: !!documentId && enabled,
+    staleTime: 30 * 1000,
   });
 };
 

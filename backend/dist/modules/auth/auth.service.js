@@ -8,14 +8,17 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const database_1 = require("../../config/database");
 const UserProfile_1 = require("../../entities/UserProfile");
+const Role_1 = require("../../entities/Role");
 const environment_1 = require("../../config/environment");
 const errorHandler_1 = require("../../middleware/errorHandler");
 const session_service_1 = require("../../services/session.service");
+const DEFAULT_USER_ROLE_ID = "00000000-0000-0000-0000-000000000002";
 class AuthService {
     constructor() {
         console.log("🔍 AuthService constructor - AppDataSource initialized:", database_1.AppDataSource.isInitialized);
         try {
             this.userRepository = database_1.AppDataSource.getRepository(UserProfile_1.UserProfile);
+            this.roleRepository = database_1.AppDataSource.getRepository(Role_1.Role);
             this.sessionService = new session_service_1.SessionService();
         }
         catch (error) {
@@ -29,11 +32,11 @@ class AuthService {
             where: { email, isActive: true },
         });
         if (!user) {
-            throw (0, errorHandler_1.createError)("Invalid credentials", 401);
+            throw (0, errorHandler_1.createError)("Correo electrónico o contraseña incorrectos", 401);
         }
         const isPasswordValid = await bcryptjs_1.default.compare(password, user.password || "");
         if (!isPasswordValid) {
-            throw (0, errorHandler_1.createError)("Invalid credentials", 401);
+            throw (0, errorHandler_1.createError)("Correo electrónico o contraseña incorrectos", 401);
         }
         user.lastLoginAt = new Date();
         await this.userRepository.save(user);
@@ -57,7 +60,14 @@ class AuthService {
             where: { email },
         });
         if (existingUser) {
-            throw (0, errorHandler_1.createError)("User already exists", 409);
+            throw (0, errorHandler_1.createError)("El correo electrónico ya está registrado", 409);
+        }
+        const defaultRole = await this.roleRepository.findOne({
+            where: { id: DEFAULT_USER_ROLE_ID },
+        });
+        if (!defaultRole) {
+            console.error("❌ Rol 'Usuario' no encontrado. Ejecute la migración add_usuario_role.sql");
+            throw (0, errorHandler_1.createError)("Error de configuración del sistema. Contacte al administrador.", 500);
         }
         const saltRounds = 12;
         const hashedPassword = await bcryptjs_1.default.hash(password, saltRounds);
@@ -65,7 +75,8 @@ class AuthService {
             email,
             password: hashedPassword,
             fullName,
-            roleName: "user",
+            roleId: defaultRole.id,
+            roleName: defaultRole.name,
             isActive: true,
         });
         const savedUser = await this.userRepository.save(newUser);

@@ -232,7 +232,7 @@ Algunos datos técnicos de lo que construimos:
 
 Aunque el sistema ya está completo y funcional, tenemos una hoja de ruta clara para continuar mejorándolo:
 
-#### **Versión 1.1.0 - Q1 2026** ✅ *Completada*
+#### **Versión 1.1.0 - Q1 2026** ✅ _Completada_
 
 - Búsqueda avanzada con índices PostgreSQL y tolerancia a acentos
 - Control de visibilidad de documentos (público, privado, equipos, personalizado)
@@ -241,7 +241,7 @@ Aunque el sistema ya está completo y funcional, tenemos una hoja de ruta clara 
 - Sugerencias inteligentes de tags con NLP
 - Re-aprobación automática al modificar documentos publicados
 
-#### **Versión 1.2.0 - Q1 2026** ✅ *Completada*
+#### **Versión 1.2.0 - Q1 2026** ✅ _Completada_
 
 - Página independiente de historial de revisiones
 - Mejoras responsive en Base de Conocimiento, Panel de Revisión e Historial

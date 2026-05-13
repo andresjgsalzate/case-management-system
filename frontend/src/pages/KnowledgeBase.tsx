@@ -109,7 +109,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
     documentTypeId: undefined,
     sortBy,
     sortOrder,
-    limit: 12, // Load 12 documents per page for grid display
+    limit: 20, // Load 20 documents per page for grid display
   });
 
   // Flatten pages into single documents array
@@ -117,17 +117,27 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = () => {
     documentsResponse?.pages?.flatMap((page) => page.documents) ?? [];
   const totalDocuments = documentsResponse?.pages?.[0]?.total ?? 0;
 
+  // Use refs to avoid stale closures in the IntersectionObserver callback
+  const hasNextPageRef = useRef(hasNextPage);
+  const isFetchingNextPageRef = useRef(isFetchingNextPage);
+  hasNextPageRef.current = hasNextPage;
+  isFetchingNextPageRef.current = isFetchingNextPage;
+
   // Infinite scroll observer
   useEffect(() => {
     if (!loadMoreRef.current || !hasNextPage || isFetchingNextPage) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+        if (
+          entries[0].isIntersecting &&
+          hasNextPageRef.current &&
+          !isFetchingNextPageRef.current
+        ) {
           fetchNextPage();
         }
       },
-      { threshold: 0.1, rootMargin: "100px" },
+      { threshold: 0.1, rootMargin: "200px" },
     );
 
     observer.observe(loadMoreRef.current);

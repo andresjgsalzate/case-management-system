@@ -159,7 +159,14 @@ class AuthService {
         if (!user) {
             throw (0, errorHandler_1.createError)("User not found", 404);
         }
-        user.roleName = roleName;
+        const role = await this.roleRepository.findOne({
+            where: { name: roleName },
+        });
+        if (!role) {
+            throw (0, errorHandler_1.createError)(`Role '${roleName}' not found`, 404);
+        }
+        user.roleId = role.id;
+        user.roleName = role.name;
         user.updatedAt = new Date();
         const updatedUser = await this.userRepository.save(user);
         return updatedUser;

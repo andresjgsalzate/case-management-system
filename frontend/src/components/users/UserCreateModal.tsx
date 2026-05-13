@@ -21,6 +21,7 @@ export const UserCreateModal: React.FC<UserCreateModalProps> = ({
     email: "",
     fullName: "",
     password: "",
+    roleId: undefined,
     roleName: "Usuario",
     isActive: true,
   });
@@ -175,14 +176,26 @@ export const UserCreateModal: React.FC<UserCreateModalProps> = ({
             </div>
           ) : (
             <Select
-              value={formData.roleName || ""}
-              onChange={(e) => handleInputChange("roleName", e.target.value)}
+              value={formData.roleId || ""}
+              onChange={(e) => {
+                const selectedRole = roles.find(r => r.id === e.target.value);
+                if (selectedRole) {
+                  setFormData(prev => ({
+                    ...prev,
+                    roleId: selectedRole.id,
+                    roleName: selectedRole.name
+                  }));
+                  if (errors.roleName) {
+                    setErrors(prev => ({ ...prev, roleName: "" }));
+                  }
+                }
+              }}
               error={errors.roleName}
               required
             >
               <option value="">Seleccione un rol</option>
               {roles.map((role) => (
-                <option key={role.id} value={role.name}>
+                <option key={role.id} value={role.id}>
                   {role.name}
                   {role.description && ` - ${role.description}`}
                 </option>

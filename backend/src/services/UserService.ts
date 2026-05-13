@@ -111,7 +111,7 @@ export class UserService {
     try {
       const user = await this.userRepository.findOne({
         where: { id },
-        relations: ["role"],
+        // NO cargar relaciones - evita que TypeORM sobrescriba roleId
       });
 
       if (!user) {
@@ -155,11 +155,22 @@ export class UserService {
       if (role) {
         user.roleId = role.id;
         user.roleName = role.name;
+        // CRÍTICO: Eliminar la propiedad role para evitar que TypeORM la use
+        delete (user as any).role;
       }
 
       const updatedUser = await this.userRepository.save(user);
-      return this.mapToUserResponse(updatedUser, role || user.role);
+
+      // Cargar el rol para la respuesta si no lo tenemos
+      if (!role && updatedUser.roleId) {
+        role = await this.roleRepository.findOne({
+          where: { id: updatedUser.roleId },
+        }) || null;
+      }
+
+      return this.mapToUserResponse(updatedUser, role || undefined);
     } catch (error) {
+      console.error("Error in updateUser:", error);
       throw new Error(
         `Error al actualizar usuario: ${
           error instanceof Error ? error.message : "Error desconocido"

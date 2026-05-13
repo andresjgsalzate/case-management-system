@@ -1,2 +1,0 @@
-import{c as e}from"./index-DpipQwVu.js";const n=e(["break","delete","emphasis","footnote","footnoteReference","image","imageReference","inlineCode","inlineMath","link","linkReference","mdxJsxTextElement","mdxTextExpression","strong","text","textDirective"]);export{n as p};
-//# sourceMappingURL=index-DTzQ7r7Q.js.map

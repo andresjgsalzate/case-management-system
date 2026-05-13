@@ -28,6 +28,7 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
   const [formData, setFormData] = useState<UpdateUserRequest>({
     email: user.email,
     fullName: user.fullName,
+    roleId: user.roleId,
     roleName: user.roleName,
     isActive: user.isActive,
   });
@@ -215,15 +216,27 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
             </div>
           ) : (
             <Select
-              value={formData.roleName || ""}
-              onChange={(e) => handleInputChange("roleName", e.target.value)}
+              value={formData.roleId || ""}
+              onChange={(e) => {
+                const selectedRole = roles.find(r => r.id === e.target.value);
+                if (selectedRole) {
+                  setFormData(prev => ({
+                    ...prev,
+                    roleId: selectedRole.id,
+                    roleName: selectedRole.name
+                  }));
+                  if (errors.roleName) {
+                    setErrors(prev => ({ ...prev, roleName: "" }));
+                  }
+                }
+              }}
               error={errors.roleName}
               required
             >
               <option value="">Seleccione un rol</option>
               {Array.isArray(roles) &&
                 roles.map((role) => (
-                  <option key={role.id} value={role.name}>
+                  <option key={role.id} value={role.id}>
                     {role.name}
                     {role.description && ` - ${role.description}`}
                   </option>

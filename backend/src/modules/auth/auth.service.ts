@@ -237,7 +237,18 @@ export class AuthService {
       throw createError("User not found", 404);
     }
 
-    user.roleName = roleName;
+    // Buscar el rol por nombre para obtener su ID
+    const role = await this.roleRepository.findOne({
+      where: { name: roleName },
+    });
+
+    if (!role) {
+      throw createError(`Role '${roleName}' not found`, 404);
+    }
+
+    // Actualizar tanto roleId como roleName
+    user.roleId = role.id;
+    user.roleName = role.name;
     user.updatedAt = new Date();
 
     const updatedUser = await this.userRepository.save(user);

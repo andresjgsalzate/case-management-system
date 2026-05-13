@@ -69,7 +69,7 @@ function App() {
               <Route
                 path="/"
                 element={
-                  <ProtectedRoute requiredPermission="dashboard.view.own">
+                  <ProtectedRoute>
                     <Layout>
                       <SmartRedirect />
                     </Layout>

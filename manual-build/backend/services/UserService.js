@@ -111,7 +111,6 @@ class UserService {
         try {
             const user = await this.userRepository.findOne({
                 where: { id },
-                relations: ["role"],
             });
             if (!user) {
                 throw new Error("Usuario no encontrado");
@@ -150,11 +149,18 @@ class UserService {
             if (role) {
                 user.roleId = role.id;
                 user.roleName = role.name;
+                delete user.role;
             }
             const updatedUser = await this.userRepository.save(user);
-            return this.mapToUserResponse(updatedUser, role || user.role);
+            if (!role && updatedUser.roleId) {
+                role = await this.roleRepository.findOne({
+                    where: { id: updatedUser.roleId },
+                }) || null;
+            }
+            return this.mapToUserResponse(updatedUser, role || undefined);
         }
         catch (error) {
+            console.error("Error in updateUser:", error);
             throw new Error(`Error al actualizar usuario: ${error instanceof Error ? error.message : "Error desconocido"}`);
         }
     }

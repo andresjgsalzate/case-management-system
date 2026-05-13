@@ -37,13 +37,13 @@ export const SmartRedirect: React.FC = () => {
       let targetRoute = "/unauthorized"; // Por defecto
 
       // Verificar acceso al dashboard (usando permisos reales de la BD)
-      if (
-        hasPermission("dashboard.view.own") ||
+      const hasDashboard = hasPermission("dashboard.view.own") ||
         hasPermission("dashboard.view.team") ||
         hasPermission("dashboard.view.all") ||
         hasPermission("metrics.time.own") ||
-        hasPermission("metrics.cases.own")
-      ) {
+        hasPermission("metrics.cases.own");
+      
+      if (hasDashboard) {
         targetRoute = "/dashboard";
       }
       // Si no tiene acceso al dashboard, buscar otros módulos por prioridad
@@ -108,9 +108,9 @@ export const SmartRedirect: React.FC = () => {
 
         // Buscar el primer módulo al que tenga acceso
         for (const moduleOption of priorityOrder) {
-          const hasAccess = moduleOption.permissions.some((permission) =>
-            hasPermission(permission)
-          );
+          const hasAccess = moduleOption.permissions.some((permission) => {
+            return hasPermission(permission);
+          });
           if (hasAccess) {
             targetRoute = moduleOption.route;
             break;
